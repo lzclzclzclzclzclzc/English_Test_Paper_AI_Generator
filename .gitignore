@@ -1,0 +1,14 @@
+# build & tool artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+.venv/
+dist/
+build/
+
+
+# env
+.env
+.env.local
