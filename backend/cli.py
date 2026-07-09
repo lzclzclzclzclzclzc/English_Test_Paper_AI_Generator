@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from backend.auth.password import hash_password
 from shared import storage
@@ -54,21 +55,29 @@ def main(argv: list[str] | None = None) -> int:
 def _smoke() -> int:
     from fastapi.testclient import TestClient
 
-    from backend.main import app
+    with TemporaryDirectory() as tmp_dir:
+        smoke_db = Path(tmp_dir) / "smoke.db"
+        storage.set_db_path(smoke_db)
+        try:
+            from backend.main import create_app
 
-    storage.init_db()
-    with TestClient(app) as client:
-        username = "demo_smoke"
-        password = "demo123"
-        response = client.post("/api/auth/register", json={"username": username, "password": password})
-        if response.status_code == 409:
-            response = client.post("/api/auth/login", json={"username": username, "password": password})
-        response.raise_for_status()
-        paper = client.post("/api/papers/generate", json={"user_query": "来 3 道中等难度英语题", "mode": "fresh"}).json()
-        answers = [{"index": item["index"], "user_answer": item["question"]["answer"]} for item in paper["items"]]
-        grade = client.post("/api/attempts", json={"paper_id": paper["paper_id"], "items": answers}).json()
-        mastery = client.get("/api/users/me/mastery").json()
-        print(json.dumps({"paper_id": paper["paper_id"], "attempt_id": grade["attempt_id"], "mastery": mastery}, ensure_ascii=False))
+            app = create_app()
+            with TestClient(app) as client:
+                username = "demo_smoke"
+                password = "demo123"
+                response = client.post("/api/auth/register", json={"username": username, "password": password})
+                response.raise_for_status()
+                paper = client.post("/api/papers/generate", json={"user_query": "来 3 道中等难度英语题", "mode": "fresh"}).json()
+                answers = [
+                    {"index": 1, "user_answer": "B"},
+                    {"index": 2, "user_answer": "written"},
+                    {"index": 3, "user_answer": {"blank1": "so", "blank2": "that"}},
+                ]
+                grade = client.post("/api/attempts", json={"paper_id": paper["paper_id"], "items": answers}).json()
+                mastery = client.get("/api/users/me/mastery").json()
+                print(json.dumps({"paper_id": paper["paper_id"], "attempt_id": grade["attempt_id"], "mastery": mastery}, ensure_ascii=False))
+        finally:
+            storage.set_db_path(None)
     return 0
 
 
