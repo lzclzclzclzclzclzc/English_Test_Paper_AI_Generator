@@ -143,6 +143,8 @@
 
 详见 [`docs/2026-07-07-backend-design.md`](./docs/2026-07-07-backend-design.md)（Spec C）。
 
+组内联调与接口速查见 [`docs/backend-api.md`](./docs/backend-api.md)。
+
 ### 4. `frontend/` — React + Vite 前端
 
 三页 MVP：
