@@ -4,12 +4,18 @@ import ai_engine
 from ai_engine.errors import LLMError, ParserError
 
 
+def assert_trace_id_matches_header(response):
+    body = response.json()
+    assert body["trace_id"]
+    assert body["trace_id"] == response.headers["X-Trace-Id"]
+    return body
+
+
 def test_request_validation_errors_are_wrapped(client):
     response = client.post("/api/auth/register", json={"username": "ab", "password": "123"})
     assert response.status_code == 422
-    body = response.json()
+    body = assert_trace_id_matches_header(response)
     assert body["error_code"] == "request.invalid"
-    assert body["trace_id"]
 
 
 def test_ai_parser_error_maps_to_error_code(logged_in_client, monkeypatch):
@@ -19,7 +25,8 @@ def test_ai_parser_error_maps_to_error_code(logged_in_client, monkeypatch):
     monkeypatch.setattr(ai_engine, "generate_paper", fail)
     response = logged_in_client.post("/api/papers/generate", json={"user_query": "bad", "mode": "fresh"})
     assert response.status_code == 400
-    assert response.json()["error_code"] == "ai.parser_failed"
+    body = assert_trace_id_matches_header(response)
+    assert body["error_code"] == "ai.parser_failed"
 
 
 def test_ai_llm_error_maps_to_502(logged_in_client, generated_paper, monkeypatch):
@@ -37,7 +44,8 @@ def test_ai_llm_error_maps_to_502(logged_in_client, generated_paper, monkeypatch
         },
     )
     assert response.status_code == 502
-    assert response.json()["error_code"] == "ai.llm_upstream"
+    body = assert_trace_id_matches_header(response)
+    assert body["error_code"] == "ai.llm_upstream"
 
 
 def test_unhandled_exception_has_server_internal(logged_in_client, monkeypatch):
@@ -47,6 +55,5 @@ def test_unhandled_exception_has_server_internal(logged_in_client, monkeypatch):
     monkeypatch.setattr(ai_engine, "generate_paper", fail)
     response = logged_in_client.post("/api/papers/generate", json={"user_query": "boom", "mode": "fresh"})
     assert response.status_code == 500
-    body = response.json()
+    body = assert_trace_id_matches_header(response)
     assert body["error_code"] == "server.internal"
-    assert body["trace_id"]

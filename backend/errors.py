@@ -106,24 +106,24 @@ class AIInternalError(BackendError):
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(BackendError)
     async def handle_backend_error(request: Request, exc: BackendError) -> JSONResponse:
-        return backend_error_response(exc)
+        return backend_error_response(exc, request)
 
     @app.exception_handler(AIEngineError)
     async def handle_ai_engine_error(request: Request, exc: AIEngineError) -> JSONResponse:
-        return backend_error_response(map_ai_error(exc))
+        return backend_error_response(map_ai_error(exc), request)
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
-        return backend_error_response(ValidationError(exc.errors()))
+        return backend_error_response(ValidationError(exc.errors()), request)
 
     @app.exception_handler(Exception)
     async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("Unhandled backend error")
-        return backend_error_response(BackendError(str(exc)))
+        return backend_error_response(BackendError(str(exc)), request)
 
 
-def backend_error_response(exc: BackendError) -> JSONResponse:
-    trace_id = uuid4().hex
+def backend_error_response(exc: BackendError, request: Request | None = None) -> JSONResponse:
+    trace_id = _request_trace_id(request)
     logger.error("[%s] %s: %s", trace_id, type(exc).__name__, exc)
     detail = None if get_config().backend.env == "production" else exc.detail
     body = ErrorResponse(
@@ -133,6 +133,17 @@ def backend_error_response(exc: BackendError) -> JSONResponse:
         trace_id=trace_id,
     )
     return JSONResponse(status_code=exc.http_status, content=body.model_dump(mode="json"))
+
+
+def _request_trace_id(request: Request | None) -> str:
+    if request is None:
+        return uuid4().hex
+    trace_id = getattr(request.state, "trace_id", None)
+    if isinstance(trace_id, str) and trace_id:
+        return trace_id
+    trace_id = uuid4().hex
+    request.state.trace_id = trace_id
+    return trace_id
 
 
 def map_ai_error(exc: AIEngineError) -> BackendError:

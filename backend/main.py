@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.api import attempts, health, mastery, papers, solutions
 from backend.auth import routes as auth_routes
-from backend.errors import install_error_handlers
+from backend.errors import BackendError, backend_error_response, install_error_handlers
 from shared.config import get_config
 from shared import storage
 
@@ -35,8 +35,13 @@ def create_app() -> FastAPI:
     @app.middleware("http")
     async def request_logger(request: Request, call_next):
         trace_id = uuid4().hex
+        request.state.trace_id = trace_id
         start = time.perf_counter()
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception as exc:
+            logger.exception("Unhandled backend error")
+            response = backend_error_response(BackendError(str(exc)), request)
         duration_ms = round((time.perf_counter() - start) * 1000, 2)
         response.headers["X-Trace-Id"] = trace_id
         logger.info("%s %s %s %.2fms trace=%s", request.method, request.url.path, response.status_code, duration_ms, trace_id)
