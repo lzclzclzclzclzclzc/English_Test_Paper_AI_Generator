@@ -424,7 +424,7 @@ CREATE INDEX idx_qkp_kp       ON question_knowledge_points(knowledge_point_id);
 CREATE TABLE attempts (
     id            TEXT PRIMARY KEY,  -- UUID
     user_id       TEXT NOT NULL,
-    paper_id      TEXT NOT NULL,     -- 前端生成
+    paper_id      TEXT NOT NULL,     -- AI Engine 生成、后端持久化的 paper_id
     answered_at   TIMESTAMP NOT NULL
 );
 
