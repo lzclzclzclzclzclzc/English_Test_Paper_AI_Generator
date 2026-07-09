@@ -409,11 +409,12 @@ CREATE INDEX idx_att_answered ON attempts(answered_at);
 
 CREATE TABLE attempt_items (
     attempt_id             TEXT NOT NULL REFERENCES attempts(id),
+    item_index             INTEGER NOT NULL,
     source_question_id     TEXT NOT NULL,
     question_type          TEXT NOT NULL,
     is_correct             INTEGER NOT NULL CHECK (is_correct IN (0, 1)),
     kps_json               TEXT NOT NULL,
-    PRIMARY KEY (attempt_id, source_question_id)
+    PRIMARY KEY (attempt_id, item_index)
 );
 CREATE INDEX idx_att_it_source ON attempt_items(source_question_id);
 ```

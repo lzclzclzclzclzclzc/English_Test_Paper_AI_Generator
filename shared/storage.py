@@ -97,15 +97,17 @@ def init_db() -> None:
 
             CREATE TABLE IF NOT EXISTS attempt_items (
                 attempt_id TEXT NOT NULL REFERENCES attempts(id),
+                item_index INTEGER NOT NULL,
                 source_question_id TEXT NOT NULL,
                 question_type TEXT NOT NULL,
                 is_correct INTEGER NOT NULL,
                 kps_json TEXT NOT NULL,
-                PRIMARY KEY (attempt_id, source_question_id)
+                PRIMARY KEY (attempt_id, item_index)
             );
             CREATE INDEX IF NOT EXISTS idx_att_it_source ON attempt_items(source_question_id);
             """
         )
+        _migrate_attempt_items_item_index(conn)
 
 
 def _dt(value: str) -> datetime:
@@ -399,30 +401,72 @@ def write_attempt(attempt: Attempt) -> str:
         for item in attempt.items:
             values = (
                 attempt_id,
+                item.index,
                 item.source_question_id,
                 item.question_type,
                 1 if item.is_correct else 0,
                 json.dumps(item.knowledge_point_ids, ensure_ascii=False),
             )
-            if "difficulty" in attempt_item_columns:
-                conn.execute(
-                    """
-                    INSERT INTO attempt_items
-                        (attempt_id, source_question_id, question_type, difficulty, is_correct, kps_json)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    """,
-                    (*values[:3], "unknown", *values[3:]),
-                )
-            else:
-                conn.execute(
-                    """
-                    INSERT INTO attempt_items
-                        (attempt_id, source_question_id, question_type, is_correct, kps_json)
-                    VALUES (?, ?, ?, ?, ?)
-                    """,
-                    values,
-                )
+            if "item_index" not in attempt_item_columns:
+                raise RuntimeError("attempt_items schema is missing item_index")
+            conn.execute(
+                """
+                INSERT INTO attempt_items
+                    (attempt_id, item_index, source_question_id, question_type, is_correct, kps_json)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                values,
+            )
     return attempt_id
+
+
+def _migrate_attempt_items_item_index(conn: sqlite3.Connection) -> None:
+    if not _table_exists(conn, "attempt_items"):
+        return
+    columns = _table_columns(conn, "attempt_items")
+    if "item_index" in columns:
+        return
+    legacy_rows = conn.execute(
+        """
+        SELECT attempt_id, source_question_id, question_type, is_correct, kps_json
+        FROM attempt_items
+        ORDER BY attempt_id, source_question_id
+        """
+    ).fetchall()
+    conn.execute("ALTER TABLE attempt_items RENAME TO attempt_items_legacy")
+    conn.execute(
+        """
+        CREATE TABLE attempt_items (
+            attempt_id TEXT NOT NULL REFERENCES attempts(id),
+            item_index INTEGER NOT NULL,
+            source_question_id TEXT NOT NULL,
+            question_type TEXT NOT NULL,
+            is_correct INTEGER NOT NULL,
+            kps_json TEXT NOT NULL,
+            PRIMARY KEY (attempt_id, item_index)
+        )
+        """
+    )
+    per_attempt_counts: dict[str, int] = defaultdict(int)
+    for row in legacy_rows:
+        per_attempt_counts[row["attempt_id"]] += 1
+        conn.execute(
+            """
+            INSERT INTO attempt_items
+                (attempt_id, item_index, source_question_id, question_type, is_correct, kps_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                row["attempt_id"],
+                per_attempt_counts[row["attempt_id"]],
+                row["source_question_id"],
+                row["question_type"],
+                row["is_correct"],
+                row["kps_json"],
+            ),
+        )
+    conn.execute("DROP TABLE attempt_items_legacy")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_att_it_source ON attempt_items(source_question_id)")
 
 
 def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:

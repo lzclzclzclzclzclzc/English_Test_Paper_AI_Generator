@@ -108,6 +108,7 @@ class Paper(BaseModel):
 
 
 class AttemptItem(BaseModel):
+    index: int
     source_question_id: str
     knowledge_point_ids: list[str]
     question_type: QuestionType

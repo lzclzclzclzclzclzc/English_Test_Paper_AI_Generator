@@ -44,6 +44,7 @@ async def submit_attempt(body: GradeSubmissionRequest, user: User = Depends(curr
         )
         attempt_items.append(
             AttemptItem(
+                index=paper_item.index,
                 source_question_id=paper_item.source_question_id,
                 knowledge_point_ids=question.knowledge_point_ids,
                 question_type=question.question_type,
