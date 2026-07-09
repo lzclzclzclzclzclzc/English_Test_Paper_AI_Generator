@@ -3,12 +3,14 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from backend.deps import reset_rate_limits
 from shared import storage
 from shared.config import get_config, reset_config_cache
 
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
+    reset_rate_limits()
     db_path = tmp_path / "backend-test.db"
     storage.set_db_path(db_path)
     reset_config_cache()
@@ -21,6 +23,7 @@ def client(tmp_path, monkeypatch):
     with TestClient(app, raise_server_exceptions=False) as test_client:
         yield test_client
     storage.set_db_path(None)
+    reset_rate_limits()
     reset_config_cache()
 
 

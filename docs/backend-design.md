@@ -751,7 +751,7 @@ def handle_unexpected(...) -> JSONResponse:
 - 每 user_id **每分钟最多 30 次 `/papers/generate`**
 - 每 user_id **每分钟最多 60 次 `/solutions`**
 
-用 `slowapi` 库（FastAPI 生态标准）。**内存实现**（进程重启计数清零），够用。
+在 `backend/deps.py` 中用轻量内存桶实现；桶按 `(user_id, kind)` 计数，窗口为 1 分钟。提供 `check_rate_limit()`、`prune_rate_limits()`、`reset_rate_limits()` 三个入口，分别用于路由依赖、长进程清理和测试隔离。**内存实现**（进程重启计数清零，且多 worker 不共享），够用。
 
 超限返回 `429 Too Many Requests`，`error_code=rate.exceeded`。
 
