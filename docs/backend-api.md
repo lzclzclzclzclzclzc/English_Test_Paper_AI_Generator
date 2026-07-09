@@ -85,6 +85,7 @@ Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
 | 方法 | 路径 | 鉴权 | 请求体 | 响应体 |
 |---|---|---|---|---|
 | GET | `/api/health` | 否 | 无 | `{ "status": "ok" }` |
+| GET | `/api/health/ready` | 否 | 无 | readiness checks |
 | POST | `/api/auth/register` | 否 | `UserCredentials` | `User` |
 | POST | `/api/auth/login` | 否 | `UserCredentials` | `User` |
 | POST | `/api/auth/logout` | 是 | 无 | 204 |
@@ -96,6 +97,29 @@ Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
 | POST | `/api/solutions` | 是 | `SolutionRequest` | `SolutionResponse` |
 | POST | `/api/attempts` | 是 | `GradeSubmissionRequest` | `GradeSubmissionResponse` |
 | GET | `/api/users/me/mastery` | 是 | query: `window_days` | `MasteryProfile` |
+
+## 健康检查
+
+`GET /api/health` 是轻量存活检查，只返回：
+
+```json
+{ "status": "ok" }
+```
+
+`GET /api/health/ready` 是 readiness 检查，会验证 SQLite 可连接、后端关键表存在、题库 `questions` 表存在且非空。全部通过返回 200：
+
+```json
+{
+  "status": "ready",
+  "checks": {
+    "sqlite": true,
+    "core_tables": true,
+    "question_bank": true
+  }
+}
+```
+
+任一检查失败返回 503，`status` 为 `not_ready`，`checks` 中标出失败项。
 
 ## 数据模型速查
 
