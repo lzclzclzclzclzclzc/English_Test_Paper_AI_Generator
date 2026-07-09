@@ -1,0 +1,77 @@
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
+import { logout } from '@/api/auth'
+import { useAuth } from '@/hooks/useAuth'
+import { queryClient } from '@/lib/queryClient'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+
+const links = [
+  { to: '/', label: '生成试卷' },
+  { to: '/mastery', label: '掌握度' },
+] as const
+
+/** 导航栏（Spec F § 5）：白底下边线、方形"卷"字 logo、当前页 2px 下划线、头像圈。 */
+export function AppNav() {
+  const { data: user } = useAuth()
+  const navigate = useNavigate()
+
+  const logoutMutation = useMutation({
+    mutationFn: logout,
+    onSettled: () => {
+      queryClient.clear()
+      navigate('/login')
+    },
+  })
+
+  return (
+    <header className="border-b border-line bg-sheet">
+      <div className="mx-auto flex h-14 max-w-[880px] items-center justify-between px-6">
+        <div className="flex items-center gap-6">
+          <NavLink to="/" className="flex items-center gap-2.5">
+            <span className="flex size-7 items-center justify-center rounded-[4px] bg-ink font-serif text-sm font-bold text-paper">
+              卷
+            </span>
+            <span className="font-serif text-[15px] font-bold text-foreground">墨卷</span>
+          </NavLink>
+          <nav className="flex items-center gap-5">
+            {links.map(({ to, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  cn(
+                    'border-b-2 pb-0.5 text-[13.5px] transition-colors',
+                    isActive
+                      ? 'border-ink font-bold text-ink'
+                      : 'border-transparent text-text-mid hover:text-foreground',
+                  )
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+        <div className="flex items-center gap-3">
+          {user && (
+            <span
+              className="flex size-8 items-center justify-center rounded-full bg-[#dfe6ee] text-[13px] font-medium text-ink"
+              title={user.username}
+            >
+              {user.username.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+          >
+            退出登录
+          </Button>
+        </div>
+      </div>
+    </header>
+  )
+}
