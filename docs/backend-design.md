@@ -1002,7 +1002,7 @@ M5 完成后进入 Spec D（前端）实现阶段。
 
 Spec A § 12、Spec B § 17 已定义的不变量继续生效。后端补充：
 
-1. **AI Engine 完全无 HTTP 感知**：`backend/api/` 是唯一 import `ai_engine.*` 的地方
+1. **AI Engine 完全无 HTTP 感知**：`backend/services/ai_gateway.py` 是后端唯一 import `ai_engine.*` 的地方；`backend/api/` 只依赖 gateway
 2. **`paper_id` 由 AI Engine 生成，后端沿用**（不重新生成）
 3. **`user_id` 只从 session 注入**——请求体永远不传 `user_id`（除非未来支持"管理员为他人生成"，明确超出本 spec）
 4. **未登录访问受保护路由 → 401 `auth.unauthorized`**，不 302 跳转（前端拦截 401 自跳登录页）

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-import ai_engine
 from backend.deps import current_user, rate_limiter
 from backend.errors import ResourceNotFoundError
+from backend.services import ai_gateway
 from shared import storage
 from shared.schemas import (
     GeneratePaperRequest,
@@ -22,7 +22,7 @@ async def generate_paper(
     body: GeneratePaperRequest,
     user: User = Depends(rate_limiter("generate", "rate_limit_generate_per_min")),
 ) -> Paper:
-    paper = ai_engine.generate_paper(
+    paper = ai_gateway.generate_paper(
         user_query=body.user_query,
         mode=body.mode,
         wrong_items=body.wrong_items,
@@ -38,7 +38,7 @@ async def revise_paper(body: RevisePaperRequest, user: User = Depends(current_us
     current = storage.get_paper(body.paper_id, user.id)
     if not current:
         raise ResourceNotFoundError()
-    paper = ai_engine.revise_paper(current, body.user_instruction)
+    paper = ai_gateway.revise_paper(current, body.user_instruction)
     storage.save_paper(paper, user.id)
     return paper
 
