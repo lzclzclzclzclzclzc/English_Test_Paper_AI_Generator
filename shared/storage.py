@@ -279,22 +279,38 @@ def write_attempt(attempt: Attempt) -> str:
             "INSERT INTO attempts (id, user_id, paper_id, answered_at) VALUES (?, ?, ?, ?)",
             (attempt_id, attempt.user_id, attempt.paper_id, attempt.answered_at.isoformat()),
         )
+        attempt_item_columns = _table_columns(conn, "attempt_items")
         for item in attempt.items:
-            conn.execute(
-                """
-                INSERT INTO attempt_items
-                    (attempt_id, source_question_id, question_type, is_correct, kps_json)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    attempt_id,
-                    item.source_question_id,
-                    item.question_type,
-                    1 if item.is_correct else 0,
-                    json.dumps(item.knowledge_point_ids, ensure_ascii=False),
-                ),
+            values = (
+                attempt_id,
+                item.source_question_id,
+                item.question_type,
+                1 if item.is_correct else 0,
+                json.dumps(item.knowledge_point_ids, ensure_ascii=False),
             )
+            if "difficulty" in attempt_item_columns:
+                conn.execute(
+                    """
+                    INSERT INTO attempt_items
+                        (attempt_id, source_question_id, question_type, difficulty, is_correct, kps_json)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (*values[:3], "unknown", *values[3:]),
+                )
+            else:
+                conn.execute(
+                    """
+                    INSERT INTO attempt_items
+                        (attempt_id, source_question_id, question_type, is_correct, kps_json)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    values,
+                )
     return attempt_id
+
+
+def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    return {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
 
 
 def build_mastery_profile(user_id: str, window_days: int | None = None) -> MasteryProfile:
