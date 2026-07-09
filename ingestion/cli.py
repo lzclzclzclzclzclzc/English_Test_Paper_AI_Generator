@@ -12,6 +12,7 @@ import typer
 from ingestion.apply_knowledge_tree import apply_all as apply_kp_all
 from ingestion.assign_ids import assign_ids
 from ingestion.chapter_splitter import split_book, write_split_result
+from ingestion.chromadb.loader import load as chroma_load, search as chroma_search
 from ingestion.epub_to_md import convert_epub_to_md
 from ingestion.sqlite.loader import load as sqlite_load
 
@@ -116,6 +117,59 @@ def build_sqlite_cmd(
     stats = sqlite_load(tree_path=tree_path, chapters_dir=chapters_dir, db_path=db_path)
     typer.echo(f"✓ wrote SQLite DB: {db_path}")
     typer.echo(stats.summary())
+
+
+@app.command("build-vec")
+def build_vec_cmd(
+    sqlite_path: Path = typer.Option(Path("data/questions.db"), "--db",
+                                     help="SQLite question bank to read from."),
+    chroma_dir: Path = typer.Option(Path("data/chroma"), "--chroma",
+                                    help="Destination Chroma persistent directory."),
+    model_dir: Path = typer.Option(Path("models/qwen3-embedding-4b"), "--model",
+                                   help="Pre-downloaded Qwen3-Embedding-4B directory."),
+) -> None:
+    """Stage 5: build the ChromaDB `questions` collection (Spec §3.8).
+    Reads SQLite → generates embedding_text → encodes with Qwen3-Embedding-4B
+    → writes vectors + metadata. Idempotent — skips ids already in the collection."""
+    from ingestion.chromadb.embedder import EmbedderConfig
+
+    cfg = EmbedderConfig(model_dir=model_dir)
+    stats = chroma_load(sqlite_path=sqlite_path, chroma_dir=chroma_dir, embedder_cfg=cfg)
+    typer.echo(f"✓ wrote ChromaDB: {chroma_dir}")
+    typer.echo(stats.summary())
+
+
+@app.command("search-vec")
+def search_vec_cmd(
+    query: str = typer.Argument(..., help="Natural-language query to search for."),
+    n: int = typer.Option(5, "-n", help="Number of results."),
+    question_type: str = typer.Option(None, "--qt",
+                                      help="Optional filter: single_choice / word_form / sentence_rewriting."),
+    book: str = typer.Option(None, "--book", help="Optional filter: book slug."),
+    chroma_dir: Path = typer.Option(Path("data/chroma"), "--chroma",
+                                    help="Chroma persistent directory."),
+    model_dir: Path = typer.Option(Path("models/qwen3-embedding-4b"), "--model",
+                                   help="Qwen3-Embedding-4B directory."),
+) -> None:
+    """Quick similarity search against the ChromaDB collection — sanity check
+    the vector store after building it. Not the AI Engine's real Retriever."""
+    from ingestion.chromadb.embedder import EmbedderConfig
+
+    cfg = EmbedderConfig(model_dir=model_dir)
+    hits = chroma_search(
+        query, n_results=n,
+        question_type=question_type, book=book,
+        chroma_dir=chroma_dir, embedder_cfg=cfg,
+    )
+    typer.echo(f"query: {query!r}")
+    typer.echo(f"top-{n} hits:")
+    for i, h in enumerate(hits, 1):
+        typer.echo(f"\n─── #{i}  {h['id']}  (distance={h['distance']:.4f}) ───")
+        typer.echo(f"  {h['metadata']['question_type']}  {h['metadata']['chapter_l1']} / {h['metadata']['chapter_l2']}")
+        typer.echo(f"  kp: {h['metadata']['kp_ids']}")
+        # Indent multi-line document for readability.
+        for line in h["document"].splitlines():
+            typer.echo(f"    {line}")
 
 
 if __name__ == "__main__":
