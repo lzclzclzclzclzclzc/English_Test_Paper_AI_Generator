@@ -15,9 +15,12 @@ from shared.config import get_config
 from shared.schemas import (
     Attempt,
     KPMastery,
+    KnowledgePoint,
     MasteryProfile,
+    Option,
     Paper,
     PaperListItem,
+    Question,
     Session,
     User,
     UserRecord,
@@ -271,6 +274,119 @@ def mark_paper_submitted(paper_id: str) -> None:
         )
 
 
+def list_knowledge_points() -> list[KnowledgePoint]:
+    init_db()
+    with connect() as conn:
+        if not _table_exists(conn, "knowledge_points"):
+            return []
+        rows = conn.execute(
+            "SELECT id, level1, level2, aliases_json FROM knowledge_points ORDER BY level1, level2"
+        ).fetchall()
+    return [
+        KnowledgePoint(
+            id=row["id"],
+            level1=row["level1"],
+            level2=row["level2"],
+            aliases=json.loads(row["aliases_json"] or "[]"),
+        )
+        for row in rows
+    ]
+
+
+def get_question(question_id: str) -> Question | None:
+    init_db()
+    with connect() as conn:
+        if not _table_exists(conn, "questions"):
+            return None
+        row = conn.execute("SELECT * FROM questions WHERE id = ?", (question_id,)).fetchone()
+        if row is None:
+            return None
+        return _row_to_question(conn, row)
+
+
+def list_questions(
+    *,
+    question_type: str | None = None,
+    knowledge_point_ids: list[str] | None = None,
+    chapter_l2: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[Question]:
+    init_db()
+    with connect() as conn:
+        if not _table_exists(conn, "questions"):
+            return []
+        clauses: list[str] = []
+        params: list[object] = []
+        if question_type:
+            clauses.append("q.question_type = ?")
+            params.append(question_type)
+        if chapter_l2:
+            clauses.append("q.chapter_l2 = ?")
+            params.append(chapter_l2)
+        joins = ""
+        if knowledge_point_ids:
+            joins = "JOIN question_knowledge_points qkp ON qkp.question_id = q.id"
+            placeholders = ", ".join("?" for _ in knowledge_point_ids)
+            clauses.append(f"qkp.knowledge_point_id IN ({placeholders})")
+            params.extend(knowledge_point_ids)
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        rows = conn.execute(
+            f"""
+            SELECT DISTINCT q.*
+            FROM questions q
+            {joins}
+            {where}
+            ORDER BY q.id
+            LIMIT ? OFFSET ?
+            """,
+            (*params, limit, offset),
+        ).fetchall()
+        return [_row_to_question(conn, row) for row in rows]
+
+
+def write_question_solution(question_id: str, solution: str) -> bool:
+    init_db()
+    with connect() as conn:
+        if not _table_exists(conn, "questions"):
+            return False
+        cur = conn.execute(
+            "UPDATE questions SET solution = ? WHERE id = ? AND solution IS NULL",
+            (solution, question_id),
+        )
+        return cur.rowcount > 0
+
+
+def _row_to_question(conn: sqlite3.Connection, row: sqlite3.Row) -> Question:
+    kp_rows = conn.execute(
+        "SELECT knowledge_point_id FROM question_knowledge_points WHERE question_id = ? ORDER BY knowledge_point_id",
+        (row["id"],),
+    ).fetchall()
+    options = json.loads(row["options_json"]) if row["options_json"] else None
+    return Question(
+        id=row["id"],
+        book=row["book"],
+        question_type=row["question_type"],
+        chapter_l1=row["chapter_l1"],
+        chapter_l2=row["chapter_l2"],
+        number=row["number"],
+        stem=row["stem"],
+        options=[Option.model_validate(option) for option in options] if options else None,
+        hint=row["hint"],
+        original_sentence=row["original_sentence"],
+        instruction=row["instruction"],
+        template=row["template"],
+        answer=json.loads(row["answer_json"]),
+        solution=row["solution"],
+        knowledge_point_ids=[kp["knowledge_point_id"] for kp in kp_rows],
+        source_md=row["source_md"],
+        source_line=row["source_line"],
+        stem_hash=row["stem_hash"],
+        created_at=_dt(row["created_at"]),
+        version=row["version"],
+    )
+
+
 def write_attempt(attempt: Attempt) -> str:
     init_db()
     attempt_id = uuid4().hex
@@ -311,6 +427,10 @@ def write_attempt(attempt: Attempt) -> str:
 
 def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
     return {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
+    return conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (table,)).fetchone() is not None
 
 
 def build_mastery_profile(user_id: str, window_days: int | None = None) -> MasteryProfile:
