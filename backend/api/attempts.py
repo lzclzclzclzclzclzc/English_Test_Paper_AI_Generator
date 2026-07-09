@@ -52,8 +52,7 @@ async def submit_attempt(body: GradeSubmissionRequest, user: User = Depends(curr
             )
         )
     attempt = Attempt(user_id=user.id, paper_id=paper.paper_id, answered_at=datetime.now(timezone.utc), items=attempt_items)
-    attempt_id = storage.write_attempt(attempt)
-    storage.mark_paper_submitted(paper.paper_id)
+    attempt_id = storage.write_attempt_and_mark_paper_submitted(attempt)
     return GradeSubmissionResponse(attempt_id=attempt_id, items=results)
 
 

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import sqlite3
 from datetime import datetime, timezone
 
+from ai_engine import generate_paper
 from shared import storage
 from shared.schemas import Attempt, AttemptItem
 
@@ -78,6 +80,47 @@ def test_write_attempt_allows_repeated_source_question_ids(client):
         ).fetchall()
     assert [row["item_index"] for row in rows] == [1, 2]
     assert {row["source_question_id"] for row in rows} == {"q_reused"}
+
+
+def test_write_attempt_and_mark_paper_submitted_rolls_back_together(client):
+    user = storage.create_user("txn_user", "hash")
+    paper = generate_paper("来 2 道选择题", user_id=user.id)
+    storage.save_paper(paper, user.id)
+    attempt = Attempt(
+        user_id=user.id,
+        paper_id=paper.paper_id,
+        answered_at=datetime.now(timezone.utc),
+        items=[
+            AttemptItem(
+                index=1,
+                source_question_id="q_00001",
+                knowledge_point_ids=["kp_1"],
+                question_type="single_choice",
+                is_correct=True,
+            ),
+            AttemptItem(
+                index=1,
+                source_question_id="q_00002",
+                knowledge_point_ids=["kp_2"],
+                question_type="single_choice",
+                is_correct=False,
+            ),
+        ],
+    )
+
+    try:
+        storage.write_attempt_and_mark_paper_submitted(attempt)
+    except sqlite3.IntegrityError:
+        pass
+    else:
+        raise AssertionError("duplicate attempt item index should fail")
+
+    with storage.connect() as conn:
+        attempt_count = conn.execute("SELECT COUNT(*) AS count FROM attempts WHERE paper_id = ?", (paper.paper_id,)).fetchone()
+        paper_row = conn.execute("SELECT submitted, submitted_at FROM papers WHERE paper_id = ?", (paper.paper_id,)).fetchone()
+    assert attempt_count["count"] == 0
+    assert paper_row["submitted"] == 0
+    assert paper_row["submitted_at"] is None
 
 
 def test_init_db_migrates_legacy_attempt_items_difficulty_column(tmp_path):

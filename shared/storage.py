@@ -48,6 +48,9 @@ def connect() -> Iterator[sqlite3.Connection]:
         conn.execute("PRAGMA foreign_keys = ON")
         yield conn
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
@@ -270,10 +273,7 @@ def list_papers(user_id: str, limit: int = 100, offset: int = 0) -> list[PaperLi
 def mark_paper_submitted(paper_id: str) -> None:
     init_db()
     with connect() as conn:
-        conn.execute(
-            "UPDATE papers SET submitted = 1, submitted_at = ? WHERE paper_id = ?",
-            (datetime.now(timezone.utc).isoformat(), paper_id),
-        )
+        _mark_paper_submitted(conn, paper_id)
 
 
 def list_knowledge_points() -> list[KnowledgePoint]:
@@ -393,31 +393,51 @@ def write_attempt(attempt: Attempt) -> str:
     init_db()
     attempt_id = uuid4().hex
     with connect() as conn:
-        conn.execute(
-            "INSERT INTO attempts (id, user_id, paper_id, answered_at) VALUES (?, ?, ?, ?)",
-            (attempt_id, attempt.user_id, attempt.paper_id, attempt.answered_at.isoformat()),
-        )
-        attempt_item_columns = _table_columns(conn, "attempt_items")
-        for item in attempt.items:
-            values = (
-                attempt_id,
-                item.index,
-                item.source_question_id,
-                item.question_type,
-                1 if item.is_correct else 0,
-                json.dumps(item.knowledge_point_ids, ensure_ascii=False),
-            )
-            if "item_index" not in attempt_item_columns:
-                raise RuntimeError("attempt_items schema is missing item_index")
-            conn.execute(
-                """
-                INSERT INTO attempt_items
-                    (attempt_id, item_index, source_question_id, question_type, is_correct, kps_json)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                values,
-            )
+        _write_attempt(conn, attempt, attempt_id)
     return attempt_id
+
+
+def write_attempt_and_mark_paper_submitted(attempt: Attempt) -> str:
+    init_db()
+    attempt_id = uuid4().hex
+    with connect() as conn:
+        _write_attempt(conn, attempt, attempt_id)
+        _mark_paper_submitted(conn, attempt.paper_id)
+    return attempt_id
+
+
+def _write_attempt(conn: sqlite3.Connection, attempt: Attempt, attempt_id: str) -> None:
+    conn.execute(
+        "INSERT INTO attempts (id, user_id, paper_id, answered_at) VALUES (?, ?, ?, ?)",
+        (attempt_id, attempt.user_id, attempt.paper_id, attempt.answered_at.isoformat()),
+    )
+    attempt_item_columns = _table_columns(conn, "attempt_items")
+    for item in attempt.items:
+        values = (
+            attempt_id,
+            item.index,
+            item.source_question_id,
+            item.question_type,
+            1 if item.is_correct else 0,
+            json.dumps(item.knowledge_point_ids, ensure_ascii=False),
+        )
+        if "item_index" not in attempt_item_columns:
+            raise RuntimeError("attempt_items schema is missing item_index")
+        conn.execute(
+            """
+            INSERT INTO attempt_items
+                (attempt_id, item_index, source_question_id, question_type, is_correct, kps_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            values,
+        )
+
+
+def _mark_paper_submitted(conn: sqlite3.Connection, paper_id: str) -> None:
+    conn.execute(
+        "UPDATE papers SET submitted = 1, submitted_at = ? WHERE paper_id = ?",
+        (datetime.now(timezone.utc).isoformat(), paper_id),
+    )
 
 
 def _migrate_attempt_items_item_index(conn: sqlite3.Connection) -> None:
