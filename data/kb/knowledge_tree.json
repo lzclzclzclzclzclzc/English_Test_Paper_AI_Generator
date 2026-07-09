@@ -1,0 +1,504 @@
+{
+  "_note": "手工归并的中考英语知识点树。chapter_to_kp 的 key 格式：\"{question_type} / {chapter_l1} / {chapter_l2}\"，三段唯一定位；value 是该 chapter_l2 应打上的 KP id 列表（可为多值：粒度不同时拆分）。",
+  "knowledge_points": [
+    {
+      "id": "kp_sc_phonetics",
+      "level1": "single_choice",
+      "level2": "语音",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_articles",
+      "level1": "single_choice",
+      "level2": "冠词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_personal_possessive",
+      "level1": "single_choice",
+      "level2": "人称代词与物主代词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_indef_pronoun",
+      "level1": "single_choice",
+      "level2": "不定代词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_determiner",
+      "level1": "single_choice",
+      "level2": "限定词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_numerals",
+      "level1": "single_choice",
+      "level2": "数词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_nouns",
+      "level1": "single_choice",
+      "level2": "名词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_adjective",
+      "level1": "single_choice",
+      "level2": "形容词",
+      "aliases": [
+        "形容词与副词",
+        "形容词／副词"
+      ]
+    },
+    {
+      "id": "kp_sc_adverb",
+      "level1": "single_choice",
+      "level2": "副词",
+      "aliases": [
+        "形容词与副词",
+        "形容词／副词"
+      ]
+    },
+    {
+      "id": "kp_sc_prepositions",
+      "level1": "single_choice",
+      "level2": "介词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_interjection",
+      "level1": "single_choice",
+      "level2": "感叹词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_wh_words",
+      "level1": "single_choice",
+      "level2": "疑问词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_modal_verbs",
+      "level1": "single_choice",
+      "level2": "情态动词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_linking_verbs",
+      "level1": "single_choice",
+      "level2": "连系动词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_verbs",
+      "level1": "single_choice",
+      "level2": "动词时态与语态",
+      "aliases": [
+        "动词",
+        "动词（时态语态等综合）"
+      ]
+    },
+    {
+      "id": "kp_sc_infinitive",
+      "level1": "single_choice",
+      "level2": "不定式",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_gerund_participle",
+      "level1": "single_choice",
+      "level2": "动名词与分词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_conjunctions",
+      "level1": "single_choice",
+      "level2": "连词",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_object_clause",
+      "level1": "single_choice",
+      "level2": "宾语从句",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_adverbial_clause",
+      "level1": "single_choice",
+      "level2": "状语从句",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_tag_question",
+      "level1": "single_choice",
+      "level2": "反意疑问句",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_imperative",
+      "level1": "single_choice",
+      "level2": "祈使句",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_vocabulary",
+      "level1": "single_choice",
+      "level2": "词汇辨析",
+      "aliases": []
+    },
+    {
+      "id": "kp_sc_communication",
+      "level1": "single_choice",
+      "level2": "语言功能（情景交际）",
+      "aliases": [
+        "语言功能"
+      ]
+    },
+    {
+      "id": "kp_sc_misc",
+      "level1": "single_choice",
+      "level2": "其他（常识/文化）",
+      "aliases": [
+        "其他"
+      ]
+    },
+    {
+      "id": "kp_wf_noun_plural",
+      "level1": "word_form",
+      "level2": "名词变复数",
+      "aliases": [
+        "名词改复数"
+      ]
+    },
+    {
+      "id": "kp_wf_numerals",
+      "level1": "word_form",
+      "level2": "基数词与序数词",
+      "aliases": []
+    },
+    {
+      "id": "kp_wf_pronouns",
+      "level1": "word_form",
+      "level2": "人称代词、物主代词与反身代词",
+      "aliases": []
+    },
+    {
+      "id": "kp_wf_verb_to_noun",
+      "level1": "word_form",
+      "level2": "动词转换为名词",
+      "aliases": []
+    },
+    {
+      "id": "kp_wf_verb_to_adj",
+      "level1": "word_form",
+      "level2": "动词转换为形容词",
+      "aliases": []
+    },
+    {
+      "id": "kp_wf_noun_to_adj",
+      "level1": "word_form",
+      "level2": "名词转换为形容词",
+      "aliases": []
+    },
+    {
+      "id": "kp_wf_adj_to_adv",
+      "level1": "word_form",
+      "level2": "形容词转换为副词",
+      "aliases": []
+    },
+    {
+      "id": "kp_wf_adj_to_noun",
+      "level1": "word_form",
+      "level2": "形容词转换为名词",
+      "aliases": []
+    },
+    {
+      "id": "kp_wf_noun_to_noun",
+      "level1": "word_form",
+      "level2": "名词转换为名词",
+      "aliases": []
+    },
+    {
+      "id": "kp_wf_pos_to_neg",
+      "level1": "word_form",
+      "level2": "肯定词义转换为否定词义",
+      "aliases": []
+    },
+    {
+      "id": "kp_wf_adj_to_verb",
+      "level1": "word_form",
+      "level2": "形容词转换为动词",
+      "aliases": []
+    },
+    {
+      "id": "kp_wf_noun_to_verb",
+      "level1": "word_form",
+      "level2": "名词转换为动词",
+      "aliases": []
+    },
+    {
+      "id": "kp_wf_degree",
+      "level1": "word_form",
+      "level2": "形容词/副词等级",
+      "aliases": [
+        "形容词／副词等级"
+      ]
+    },
+    {
+      "id": "kp_sr_negative",
+      "level1": "sentence_rewriting",
+      "level2": "改为否定句",
+      "aliases": []
+    },
+    {
+      "id": "kp_sr_yes_no_question",
+      "level1": "sentence_rewriting",
+      "level2": "改为一般疑问句",
+      "aliases": []
+    },
+    {
+      "id": "kp_sr_wh_question",
+      "level1": "sentence_rewriting",
+      "level2": "对划线部分提问",
+      "aliases": []
+    },
+    {
+      "id": "kp_sr_tag_question",
+      "level1": "sentence_rewriting",
+      "level2": "改为反意疑问句",
+      "aliases": []
+    },
+    {
+      "id": "kp_sr_exclamation",
+      "level1": "sentence_rewriting",
+      "level2": "改为感叹句",
+      "aliases": []
+    },
+    {
+      "id": "kp_sr_passive_voice",
+      "level1": "sentence_rewriting",
+      "level2": "改为被动语态",
+      "aliases": []
+    },
+    {
+      "id": "kp_sr_to_simple",
+      "level1": "sentence_rewriting",
+      "level2": "改为简单句",
+      "aliases": []
+    },
+    {
+      "id": "kp_sr_to_complex",
+      "level1": "sentence_rewriting",
+      "level2": "改为复合句",
+      "aliases": []
+    },
+    {
+      "id": "kp_sr_merge_or_object_clause",
+      "level1": "sentence_rewriting",
+      "level2": "合并为一句或改为宾语从句复合句",
+      "aliases": [
+        "合并为一句或改为带宾语从句的复合句",
+        "合并为一句或改为带宾语从句的复合句（间接引语）"
+      ]
+    },
+    {
+      "id": "kp_sr_keep_meaning",
+      "level1": "sentence_rewriting",
+      "level2": "保持句意基本不变",
+      "aliases": []
+    },
+    {
+      "id": "kp_sr_word_ordering",
+      "level1": "sentence_rewriting",
+      "level2": "连词成句",
+      "aliases": []
+    }
+  ],
+  "chapter_to_kp": {
+    "single_choice / 1 单项选择 / 1.1 语音": [
+      "kp_sc_phonetics"
+    ],
+    "single_choice / 1 单项选择 / 1.2 冠词": [
+      "kp_sc_articles"
+    ],
+    "single_choice / 1 单项选择 / 1.3 人称代词与物主代词": [
+      "kp_sc_personal_possessive"
+    ],
+    "single_choice / 1 单项选择 / 1.4 不定代词": [
+      "kp_sc_indef_pronoun"
+    ],
+    "single_choice / 1 单项选择 / 1.4 不定代词与限定词": [
+      "kp_sc_indef_pronoun",
+      "kp_sc_determiner"
+    ],
+    "single_choice / 1 单项选择 / 1.5 数词": [
+      "kp_sc_numerals"
+    ],
+    "single_choice / 1 单项选择 / 1.6 名词": [
+      "kp_sc_nouns"
+    ],
+    "single_choice / 1 单项选择 / 1.7 形容词与副词": [
+      "kp_sc_adjective",
+      "kp_sc_adverb"
+    ],
+    "single_choice / 1 单项选择 / 1.7 形容词／副词": [
+      "kp_sc_adjective",
+      "kp_sc_adverb"
+    ],
+    "single_choice / 1 单项选择 / 1.8 介词": [
+      "kp_sc_prepositions"
+    ],
+    "single_choice / 1 单项选择 / 1.9 感叹词": [
+      "kp_sc_interjection"
+    ],
+    "single_choice / 1 单项选择 / 1.10 疑问词": [
+      "kp_sc_wh_words"
+    ],
+    "single_choice / 1 单项选择 / 1.11 情态动词": [
+      "kp_sc_modal_verbs"
+    ],
+    "single_choice / 1 单项选择 / 1.12 连系动词": [
+      "kp_sc_linking_verbs"
+    ],
+    "single_choice / 1 单项选择 / 1.13 动词": [
+      "kp_sc_verbs"
+    ],
+    "single_choice / 1 单项选择 / 1.14 不定式": [
+      "kp_sc_infinitive"
+    ],
+    "single_choice / 1 单项选择 / 1.14 连词": [
+      "kp_sc_conjunctions"
+    ],
+    "single_choice / 1 单项选择 / 1.15 动名词与分词": [
+      "kp_sc_gerund_participle"
+    ],
+    "single_choice / 1 单项选择 / 1.16 状语从句": [
+      "kp_sc_adverbial_clause"
+    ],
+    "single_choice / 1 单项选择 / 1.16 连词": [
+      "kp_sc_conjunctions"
+    ],
+    "single_choice / 1 单项选择 / 1.17 反意疑问句": [
+      "kp_sc_tag_question"
+    ],
+    "single_choice / 1 单项选择 / 1.17 状语从句": [
+      "kp_sc_adverbial_clause"
+    ],
+    "single_choice / 1 单项选择 / 1.18 反意疑问句": [
+      "kp_sc_tag_question"
+    ],
+    "single_choice / 1 单项选择 / 1.18 祈使句": [
+      "kp_sc_imperative"
+    ],
+    "single_choice / 1 单项选择 / 1.19 祈使句": [
+      "kp_sc_imperative"
+    ],
+    "single_choice / 1 单项选择 / 1.19 词汇辨析": [
+      "kp_sc_vocabulary"
+    ],
+    "single_choice / 1 单项选择 / 1.20 不定式": [
+      "kp_sc_infinitive"
+    ],
+    "single_choice / 1 单项选择 / 1.20 词汇辨析": [
+      "kp_sc_vocabulary"
+    ],
+    "single_choice / 1 单项选择 / 1.21 动名词与分词": [
+      "kp_sc_gerund_participle"
+    ],
+    "single_choice / 1 单项选择 / 1.21 语言功能": [
+      "kp_sc_communication"
+    ],
+    "single_choice / 1 单项选择 / 1.23 语言功能": [
+      "kp_sc_communication"
+    ],
+    "single_choice / 1 单项选择 / 1.24 其他": [
+      "kp_sc_misc"
+    ],
+    "word_form / 3 词性转换 / 3.1 名词变复数": [
+      "kp_wf_noun_plural"
+    ],
+    "word_form / 3 词性转换 / 3.1 名词改复数": [
+      "kp_wf_noun_plural"
+    ],
+    "word_form / 3 词性转换 / 3.2 基数词与序数词": [
+      "kp_wf_numerals"
+    ],
+    "word_form / 3 词性转换 / 3.3 人称代词、物主代词与反身代词": [
+      "kp_wf_pronouns"
+    ],
+    "word_form / 3 词性转换 / 3.4 动词转换为名词": [
+      "kp_wf_verb_to_noun"
+    ],
+    "word_form / 3 词性转换 / 3.5 动词转换为形容词": [
+      "kp_wf_verb_to_adj"
+    ],
+    "word_form / 3 词性转换 / 3.6 名词转换为形容词": [
+      "kp_wf_noun_to_adj"
+    ],
+    "word_form / 3 词性转换 / 3.7 形容词转换为副词": [
+      "kp_wf_adj_to_adv"
+    ],
+    "word_form / 3 词性转换 / 3.7 形容词转换为副词／形容词": [
+      "kp_wf_adj_to_adv"
+    ],
+    "word_form / 3 词性转换 / 3.8 形容词转换为名词": [
+      "kp_wf_adj_to_noun"
+    ],
+    "word_form / 3 词性转换 / 3.9 名词转换为名词": [
+      "kp_wf_noun_to_noun"
+    ],
+    "word_form / 3 词性转换 / 3.10 肯定词义转换为否定词义": [
+      "kp_wf_pos_to_neg"
+    ],
+    "word_form / 3 词性转换 / 3.11 形容词转换为动词": [
+      "kp_wf_adj_to_verb"
+    ],
+    "word_form / 3 词性转换 / 3.12 名词转换为动词": [
+      "kp_wf_noun_to_verb"
+    ],
+    "word_form / 3 词性转换 / 3.13 形容词/副词等级": [
+      "kp_wf_degree"
+    ],
+    "word_form / 3 词性转换 / 3.13 形容词／副词等级": [
+      "kp_wf_degree"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.1 改为否定句": [
+      "kp_sr_negative"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.2 改为一般疑问句": [
+      "kp_sr_yes_no_question"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.3 对划线部分提问": [
+      "kp_sr_wh_question"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.4 改为反意疑问句": [
+      "kp_sr_tag_question"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.5 改为感叹句": [
+      "kp_sr_exclamation"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.6 改为被动语态": [
+      "kp_sr_passive_voice"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.7 改为简单句": [
+      "kp_sr_to_simple"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.8 改为复合句": [
+      "kp_sr_to_complex"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.9 合并为一句或改为带宾语从句的复合句": [
+      "kp_sr_merge_or_object_clause"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.9 合并为一句或改为带宾语从句的复合句（间接引语）": [
+      "kp_sr_merge_or_object_clause"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.10 保持句意基本不变": [
+      "kp_sr_keep_meaning"
+    ],
+    "sentence_rewriting / 4 改写句子 / 4.11 连词成句": [
+      "kp_sr_word_ordering"
+    ]
+  }
+}
