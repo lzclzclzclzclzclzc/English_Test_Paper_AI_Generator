@@ -5,9 +5,15 @@ and returns (system, user) tuple separated by --- line.
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
+
+
+def _to_json(value) -> str:
+    """Jinja2 filter: convert value to JSON string."""
+    return json.dumps(value, ensure_ascii=False, indent=2)
 
 
 _env = Environment(
@@ -15,6 +21,7 @@ _env = Environment(
     trim_blocks=True,
     lstrip_blocks=True,
 )
+_env.filters["to_json"] = _to_json
 
 
 def load(name: str, **vars) -> tuple[str, str]:
