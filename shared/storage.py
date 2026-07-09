@@ -96,7 +96,6 @@ def init_db() -> None:
                 attempt_id TEXT NOT NULL REFERENCES attempts(id),
                 source_question_id TEXT NOT NULL,
                 question_type TEXT NOT NULL,
-                difficulty TEXT NOT NULL,
                 is_correct INTEGER NOT NULL,
                 kps_json TEXT NOT NULL,
                 PRIMARY KEY (attempt_id, source_question_id)
@@ -284,14 +283,13 @@ def write_attempt(attempt: Attempt) -> str:
             conn.execute(
                 """
                 INSERT INTO attempt_items
-                    (attempt_id, source_question_id, question_type, difficulty, is_correct, kps_json)
-                VALUES (?, ?, ?, ?, ?, ?)
+                    (attempt_id, source_question_id, question_type, is_correct, kps_json)
+                VALUES (?, ?, ?, ?, ?)
                 """,
                 (
                     attempt_id,
                     item.source_question_id,
                     item.question_type,
-                    item.difficulty,
                     1 if item.is_correct else 0,
                     json.dumps(item.knowledge_point_ids, ensure_ascii=False),
                 ),

@@ -5,7 +5,7 @@ def test_submit_attempt_grades_and_marks_paper_submitted(logged_in_client, gener
     answers = [
         {"index": 1, "user_answer": "b"},
         {"index": 2, "user_answer": " written. "},
-        {"index": 3, "user_answer": "He is so young that he cannot go to school."},
+        {"index": 3, "user_answer": {"blank1": "so", "blank2": "that"}},
     ]
     response = logged_in_client.post("/api/attempts", json={"paper_id": generated_paper["paper_id"], "items": answers})
     assert response.status_code == 200
@@ -18,7 +18,11 @@ def test_submit_attempt_grades_and_marks_paper_submitted(logged_in_client, gener
 
 
 def test_repeat_submission_is_allowed(logged_in_client, generated_paper):
-    answers = [{"index": item["index"], "user_answer": item["question"]["answer"]} for item in generated_paper["items"]]
+    answers = [
+        {"index": 1, "user_answer": "B"},
+        {"index": 2, "user_answer": "written"},
+        {"index": 3, "user_answer": ["so", "that"]},
+    ]
     first = logged_in_client.post("/api/attempts", json={"paper_id": generated_paper["paper_id"], "items": answers})
     second = logged_in_client.post("/api/attempts", json={"paper_id": generated_paper["paper_id"], "items": answers})
     assert first.status_code == 200

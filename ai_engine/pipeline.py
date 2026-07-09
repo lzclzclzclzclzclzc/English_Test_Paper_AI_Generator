@@ -27,11 +27,9 @@ def generate_paper(
 ) -> Paper:
     total_questions = _infer_total_questions(user_query)
     question_types = _infer_question_types(user_query)
-    difficulty = _infer_difficulty(user_query)
     req = GenerateRequest(
         mode=mode,
         question_types=question_types,
-        difficulty=[difficulty],
         total_questions=total_questions,
         total_score=total_questions * 5,
         revision_intensity="fresh",
@@ -40,7 +38,7 @@ def generate_paper(
         review_window_days=review_window_days,
         free_text=user_query,
     )
-    items = [_make_item(index, question_types[(index - 1) % len(question_types)], difficulty) for index in range(1, total_questions + 1)]
+    items = [_make_item(index, question_types[(index - 1) % len(question_types)]) for index in range(1, total_questions + 1)]
     return Paper(
         paper_id=uuid4().hex,
         title=_infer_title(user_query, mode),
@@ -106,21 +104,12 @@ def _infer_question_types(text: str) -> list[Literal["single_choice", "word_form
     return types or ["single_choice", "word_form", "sentence_rewriting"]
 
 
-def _infer_difficulty(text: str) -> Literal["easy", "medium", "hard"]:
-    lowered = text.lower()
-    if "hard" in lowered or "难" in text:
-        return "hard"
-    if "easy" in lowered or "简单" in text:
-        return "easy"
-    return "medium"
-
-
 def _infer_title(text: str, mode: str) -> str:
     clean = text.strip()[:24] or mode
     return f"{clean} - 英语练习"
 
 
-def _make_item(index: int, question_type: Literal["single_choice", "word_form", "sentence_rewriting"], difficulty: Literal["easy", "medium", "hard"]) -> PaperItem:
+def _make_item(index: int, question_type: Literal["single_choice", "word_form", "sentence_rewriting"]) -> PaperItem:
     if question_type == "single_choice":
         question = RevisedQuestion(
             stem=f"Choose the correct answer for question {index}.",
@@ -133,25 +122,26 @@ def _make_item(index: int, question_type: Literal["single_choice", "word_form", 
             ],
             answer="B",
             knowledge_point_ids=["kp_single_choice_basic"],
-            difficulty=difficulty,
         )
     elif question_type == "word_form":
         question = RevisedQuestion(
             stem=f"Fill in the blank with the correct form: He has ___ (write) question {index}.",
             question_type="word_form",
             options=None,
-            answer="written",
+            hint="write",
+            answer=[{"blank1": ["written"]}],
             knowledge_point_ids=["kp_word_form_participle"],
-            difficulty=difficulty,
         )
     else:
         question = RevisedQuestion(
-            stem=f"Rewrite: He is too young to go to school. (question {index})",
+            stem=None,
             question_type="sentence_rewriting",
             options=None,
-            answer="He is so young that he cannot go to school",
+            original_sentence=f"He is too young to go to school. (question {index})",
+            instruction="保持句意基本不变",
+            template="He is ________ young ________ he cannot go to school.",
+            answer=[{"blank1": ["so"], "blank2": ["that"]}],
             knowledge_point_ids=["kp_sentence_rewriting_so_that"],
-            difficulty=difficulty,
         )
     return PaperItem(
         index=index,

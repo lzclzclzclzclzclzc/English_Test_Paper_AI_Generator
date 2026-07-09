@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 QuestionType = Literal["single_choice", "word_form", "sentence_rewriting"]
-Difficulty = Literal["easy", "medium", "hard"]
 GenerationMode = Literal["fresh", "remediation", "review"]
 RevisionMode = Literal["fresh", "light", "original"]
+AnswerValue: TypeAlias = str | list[dict[str, list[str]]]
+UserAnswerValue: TypeAlias = str | list[str] | dict[str, str]
 
 
 class Option(BaseModel):
@@ -33,15 +34,23 @@ class KnowledgePoint(BaseModel):
 
 class Question(BaseModel):
     id: str
-    source: QuestionSource
+    book: str
     question_type: QuestionType
-    stem: str
+    chapter_l1: str
+    chapter_l2: str
+    number: str
+    stem: str | None = None
     options: list[Option] | None = None
-    answer: str
+    hint: str | None = None
+    original_sentence: str | None = None
+    instruction: str | None = None
+    template: str | None = None
+    answer: AnswerValue
     solution: str | None = None
     knowledge_point_ids: list[str]
-    difficulty: Difficulty
-    embedding_text: str
+    source_md: str
+    source_line: int
+    stem_hash: str
     created_at: datetime
     version: int = 1
 
@@ -49,7 +58,6 @@ class Question(BaseModel):
 class WrongItemRef(BaseModel):
     knowledge_point_ids: list[str]
     question_type: QuestionType
-    difficulty: Difficulty
 
 
 class GenerateRequest(BaseModel):
@@ -57,11 +65,9 @@ class GenerateRequest(BaseModel):
     knowledge_points: list[str] = Field(default_factory=list)
     knowledge_points_exclude: list[str] = Field(default_factory=list)
     question_types: list[QuestionType] = Field(default_factory=list)
-    difficulty: list[Difficulty] = Field(default_factory=list)
     total_questions: int = 3
     total_score: int | None = None
     type_distribution: dict[str, int] = Field(default_factory=dict)
-    difficulty_distribution: dict[str, int] = Field(default_factory=dict)
     revision_intensity: RevisionMode = "light"
     wrong_items: list[WrongItemRef] = Field(default_factory=list)
     user_id: str | None = None
@@ -70,13 +76,16 @@ class GenerateRequest(BaseModel):
 
 
 class RevisedQuestion(BaseModel):
-    stem: str
+    stem: str | None = None
     question_type: QuestionType
     options: list[Option] | None = None
-    answer: str
+    hint: str | None = None
+    original_sentence: str | None = None
+    instruction: str | None = None
+    template: str | None = None
+    answer: AnswerValue
     solution: str | None = None
     knowledge_point_ids: list[str]
-    difficulty: Difficulty
 
 
 class PaperItem(BaseModel):
@@ -102,7 +111,6 @@ class AttemptItem(BaseModel):
     source_question_id: str
     knowledge_point_ids: list[str]
     question_type: QuestionType
-    difficulty: Difficulty
     is_correct: bool
 
 
@@ -174,7 +182,7 @@ class SolutionResponse(BaseModel):
 
 class GradeSubmissionItem(BaseModel):
     index: int
-    user_answer: str
+    user_answer: UserAnswerValue
 
 
 class GradeSubmissionRequest(BaseModel):
@@ -184,8 +192,8 @@ class GradeSubmissionRequest(BaseModel):
 
 class GradeResultItem(BaseModel):
     index: int
-    user_answer: str
-    correct_answer: str
+    user_answer: UserAnswerValue
+    correct_answer: AnswerValue
     is_correct: bool
 
 
