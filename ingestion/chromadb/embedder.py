@@ -31,7 +31,7 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 
-DEFAULT_MODEL_DIR = Path("model/Qwen3-Embedding-4B")
+DEFAULT_MODEL_DIR = Path("models/Qwen3-Embedding-4B")
 DEFAULT_DEVICE    = "cuda"
 DEFAULT_BATCH     = 16
 DEFAULT_DIM       = 2560
