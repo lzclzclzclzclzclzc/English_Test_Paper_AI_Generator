@@ -7,7 +7,7 @@ __pycache__/
 .venv/
 dist/
 build/
-
+models/
 
 # env
 .env
