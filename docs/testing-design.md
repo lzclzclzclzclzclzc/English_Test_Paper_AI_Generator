@@ -1,7 +1,7 @@
 # 跨系统测试设计（Spec E）
 
 > 面向对象：整个中考英语试卷生成器系统的**跨模块 / 端到端**测试策略。
-> 依赖：[Spec A（题库摄入）](./2026-07-07-question-bank-ingestion-design.md)、[Spec B（AI Engine）](./2026-07-07-ai-engine-design.md)、[Spec C（后端）](./2026-07-07-backend-design.md)、[Spec D（前端）](./2026-07-07-frontend-design.md)。
+> 依赖：[Spec A（题库摄入）](./question-bank-ingestion-design.md)、[Spec B（AI Engine）](./ai-engine-design.md)、[Spec C（后端）](./backend-design.md)、[Spec D（前端）](./frontend-design.md)。
 
 ---
 

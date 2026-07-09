@@ -1,8 +1,8 @@
 # 前端设计（Spec D）
 
 > 面向对象：中考英语试卷生成器的 Web 前端。
-> 依赖：[Spec A（题库摄入）](./2026-07-07-question-bank-ingestion-design.md)、[Spec B（AI Engine）](./2026-07-07-ai-engine-design.md)、[Spec C（后端）](./2026-07-07-backend-design.md)。
-> 后置：[Spec E（跨系统测试）](./2026-07-07-testing-design.md)（待写）。
+> 依赖：[Spec A（题库摄入）](./question-bank-ingestion-design.md)、[Spec B（AI Engine）](./ai-engine-design.md)、[Spec C（后端）](./backend-design.md)。
+> 后置：[Spec E（跨系统测试）](./testing-design.md)（待写）。
 
 ---
 

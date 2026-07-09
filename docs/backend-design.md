@@ -4,8 +4,8 @@
 **项目根目录**：`C:\Users\I779318\Desktop\CSS\English_Test_Paper_AI_Generator`
 **范围**：FastAPI 后端子系统（`backend/`）—— 用 HTTP 把 AI Engine + 题库封装成前端可用的接口；含鉴权、试卷持久化、答题记录、判对错
 **依赖**：
-- [`./2026-07-07-question-bank-ingestion-design.md`](./2026-07-07-question-bank-ingestion-design.md)（Spec A：数据契约、SQLite、`shared/`）
-- [`./2026-07-07-ai-engine-design.md`](./2026-07-07-ai-engine-design.md)（Spec B：AI Engine 五个公开函数）
+- [`./question-bank-ingestion-design.md`](./question-bank-ingestion-design.md)（Spec A：数据契约、SQLite、`shared/`）
+- [`./ai-engine-design.md`](./ai-engine-design.md)（Spec B：AI Engine 五个公开函数）
 - 本 spec 撤销 Spec A/B 中两条决策，见 § 0.3
 **引用约定**：本文形如 "Spec A §X"、"Spec B §Y" 指向对应文档章节
 

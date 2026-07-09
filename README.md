@@ -110,7 +110,7 @@
 
 题库入库后此子系统不再运行；AI Engine 只读。
 
-详见 [`docs/2026-07-07-question-bank-ingestion-design.md`](./docs/2026-07-07-question-bank-ingestion-design.md)（Spec A）。
+详见 [`docs/question-bank-ingestion-design.md`](./docs/question-bank-ingestion-design.md)（Spec A）。
 
 ### 2. `ai_engine/` — AI 引擎
 
@@ -129,7 +129,7 @@
 - Pipeline 单向无回路，任何一步抛异常都在后端层转 HTTP 错误
 - LLM 通过 `instructor` 实现"JSON Mode + pydantic 校验 + 校验失败反馈重试"
 
-详见 [`docs/2026-07-07-ai-engine-design.md`](./docs/2026-07-07-ai-engine-design.md)（Spec B）。
+详见 [`docs/ai-engine-design.md`](./docs/ai-engine-design.md)（Spec B）。
 
 ### 3. `backend/` — FastAPI 后端
 
@@ -141,7 +141,7 @@
 - **错误体统一**：`{ error_code, message, detail, trace_id }`；11 个稳定 `error_code` 供前端精确分派
 - **速率限制**：软限制 `/papers/generate` 30/min、`/solutions` 60/min（个人项目、防意外循环）
 
-详见 [`docs/2026-07-07-backend-design.md`](./docs/2026-07-07-backend-design.md)（Spec C）。
+详见 [`docs/backend-design.md`](./docs/backend-design.md)（Spec C）。
 
 组内联调与接口速查见 [`docs/backend-api.md`](./docs/backend-api.md)。
 
@@ -155,7 +155,7 @@
 
 技术栈：Vite + React + TypeScript + shadcn/ui + TanStack Query + React Router。所有 HTTP 走一个 `apiFetch` 薄封装；`ApiError` 按 `error_code` 分派处理（401 跳登录、429 toast、其它显 message）。
 
-详见 [`docs/2026-07-07-frontend-design.md`](./docs/2026-07-07-frontend-design.md)（Spec D）。
+详见 [`docs/frontend-design.md`](./docs/frontend-design.md)（Spec D）。
 
 ### 5. `tests_e2e/` — 跨系统测试
 
@@ -170,7 +170,7 @@
 
 一个共享的 `ScriptedDeepSeekClient` 在 L2 与 L4 复用；e2e 通过测试专用端点 `/api/test/llm-scripts` 注入脚本。每晚跑一次 `live-smoke`（真 DeepSeek）探测契约漂移。
 
-详见 [`docs/2026-07-07-testing-design.md`](./docs/2026-07-07-testing-design.md)（Spec E）。
+详见 [`docs/testing-design.md`](./docs/testing-design.md)（Spec E）。
 
 ---
 
@@ -195,11 +195,12 @@
 English_Test_Paper_AI_Generator/
 ├── README.md                  # 本文件
 ├── docs/                      # 5 份设计 spec
-│   ├── 2026-07-07-question-bank-ingestion-design.md  # Spec A
-│   ├── 2026-07-07-ai-engine-design.md                # Spec B
-│   ├── 2026-07-07-backend-design.md                  # Spec C
-│   ├── 2026-07-07-frontend-design.md                 # Spec D
-│   └── 2026-07-07-testing-design.md                  # Spec E
+│   ├── question-bank-ingestion-design.md  # Spec A
+│   ├── ai-engine-design.md                # Spec B
+│   ├── backend-design.md                  # Spec C
+│   ├── frontend-design.md                 # Spec D
+│   ├── testing-design.md                  # Spec E
+│   └── backend-api.md                     # 后端协作接口手册
 │
 ├── shared/                    # 跨子系统共享层（唯一的依赖交汇点）
 │   ├── schemas.py             # 全部 pydantic 契约

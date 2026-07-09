@@ -3,7 +3,7 @@
 **创建日期**：2026-07-07
 **项目根目录**：`C:\Users\I779318\Desktop\CSS\English_Test_Paper_AI_Generator`
 **范围**：AI Engine 子系统（`ai_engine/`）的模块设计、Pipeline 编排、LLM 稳定输出栈、Prompt 组织、观测、测试与未来 FastAPI 接入契约
-**依赖**：本 spec 引用 [`./2026-07-07-question-bank-ingestion-design.md`](./2026-07-07-question-bank-ingestion-design.md)（下称 Spec A），共享数据契约、目录结构、存储、LLM 客户端、配置、测试基础设施均在 Spec A 中定义，本 spec 不复制
+**依赖**：本 spec 引用 [`./question-bank-ingestion-design.md`](./question-bank-ingestion-design.md)（下称 Spec A），共享数据契约、目录结构、存储、LLM 客户端、配置、测试基础设施均在 Spec A 中定义，本 spec 不复制
 
 ---
 
@@ -20,7 +20,7 @@
 
 **本 spec 不重复定义**：数据契约、SQLite/Chroma 表结构、`shared/` 目录内容、`ingestion/` 相关内容——全部见 Spec A。
 
-**引用约定**：本文中所有形如 "见 Spec A §X" 的引用指向 [`./2026-07-07-question-bank-ingestion-design.md`](./2026-07-07-question-bank-ingestion-design.md) 的对应章节。
+**引用约定**：本文中所有形如 "见 Spec A §X" 的引用指向 [`./question-bank-ingestion-design.md`](./question-bank-ingestion-design.md) 的对应章节。
 
 ---
 
@@ -53,7 +53,7 @@ AI Engine 采用**纯 pipeline 架构**（无反馈回路，无 agent 编排）�
 
 - **AI Engine 本身无状态**：`generate_paper` / `revise_paper` 每次都返回全新对象；AI Engine 不写任何 SQL 表（除下方 Solutioner 例外）
 - `revise_paper` 接受**完整 `Paper`** 和用户指令 → 返回**完整新 `Paper`**（`paper_id` 换新）
-- **持久化职责在后端层**：由 [Spec C](./2026-07-07-backend-design.md) 定义。FastAPI 拿到 `Paper` 后写入 `papers` 表；`revise_paper` 时后端从表里读出完整 `Paper` 喂给 AI Engine——**边界依然清晰：AI Engine 是纯函数，后端负责持久化**
+- **持久化职责在后端层**：由 [Spec C](./backend-design.md) 定义。FastAPI 拿到 `Paper` 后写入 `papers` 表；`revise_paper` 时后端从表里读出完整 `Paper` 喂给 AI Engine——**边界依然清晰：AI Engine 是纯函数，后端负责持久化**
 - **唯一的写入侧信道**：Solutioner 在特定条件下把生成的解析写回 `questions.solution`（Spec A § 2.7 不变量 6）
 
 ### 1.3 模块依赖图
@@ -790,7 +790,7 @@ tests/golden/
 
 ## 12. FastAPI 接入契约
 
-**本 spec 不实现 FastAPI**。HTTP 端点、鉴权、持久化由 [Spec C](./2026-07-07-backend-design.md) 定义并实现。本节固定 AI Engine 对外的**函数级契约**，Spec C 直接消费。
+**本 spec 不实现 FastAPI**。HTTP 端点、鉴权、持久化由 [Spec C](./backend-design.md) 定义并实现。本节固定 AI Engine 对外的**函数级契约**，Spec C 直接消费。
 
 ### 12.1 端点映射（在 Spec C 中定义）
 
@@ -924,7 +924,7 @@ CLI 是**开发者友好接口**，未来前端不通过 CLI。
 
 ## 15. 明确的非目标（本 spec 范围外）
 
-- ⚠️ FastAPI 后端由 [Spec C](./2026-07-07-backend-design.md) 定义（本 spec 只涵盖 AI Engine）
+- ⚠️ FastAPI 后端由 [Spec C](./backend-design.md) 定义（本 spec 只涵盖 AI Engine）
 - ⚠️ React 前端由 Spec D 定义（待撰写）
 - ⚠️ 用户注册/登录/鉴权由 Spec C 定义
 - ⚠️ 服务端"判对错"由 Spec C 定义（规则简单：规范化字符串等）

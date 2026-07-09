@@ -1,6 +1,6 @@
 # 后端 API 协作手册
 
-本文面向前端、测试与 AI Engine 协作同学，描述当前后端 MVP 的联调方式和 HTTP 契约。更完整的设计背景见 [Spec C 后端设计](./2026-07-07-backend-design.md)，精确字段定义以 [shared/schemas.py](../shared/schemas.py) 为准。
+本文面向前端、测试与 AI Engine 协作同学，描述当前后端 MVP 的联调方式和 HTTP 契约。更完整的设计背景见 [Spec C 后端设计](./backend-design.md)，精确字段定义以 [shared/schemas.py](../shared/schemas.py) 为准。
 
 ## 当前状态
 
