@@ -212,7 +212,7 @@ class GradeSubmissionRequest(BaseModel):
 class GradeSubmissionItem(BaseModel):
     """答题记录 + 用户答案（后端判对错后落库）。"""
     index: int                                           # 对应 PaperItem.index
-    user_answer: str                                     # 前端收集到的用户答案
+    user_answer: str | list[str] | dict[str, str]        # 单空字符串、多空顺序数组或 blankN 字典
 ```
 
 ### 2.3 后端响应体
@@ -225,8 +225,8 @@ class GradeSubmissionResponse(BaseModel):
 
 class GradeResultItem(BaseModel):
     index: int
-    user_answer: str
-    correct_answer: str
+    user_answer: str | list[str] | dict[str, str]
+    correct_answer: str | list[dict[str, list[str]]]    # 对齐题库 answer_json
     is_correct: bool
 
 class SolutionResponse(BaseModel):
@@ -334,6 +334,18 @@ def mark_paper_submitted(paper_id: str) -> None: ...
 
 # 答题（后端 spec 补齐 Spec A § 3.10 的方法）
 def write_attempt(attempt: Attempt) -> str: ...                    # 返回 attempt_id
+
+# 题库读取（真实 SQLite 题库由 Spec A 产出）
+def list_knowledge_points() -> list[KnowledgePoint]: ...
+def get_question(question_id: str) -> Question | None: ...
+def list_questions(
+    question_type: str | None = None,
+    knowledge_point_ids: list[str] | None = None,
+    chapter_l2: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[Question]: ...
+def write_question_solution(question_id: str, solution: str) -> bool: ...
 ```
 
 所有函数在 `shared/storage.py`——**存储层依然统一在 shared，两个子系统共用**。
@@ -516,7 +528,7 @@ Body:
     "items": [
       { "index": 1, "user_answer": "B" },
       { "index": 2, "user_answer": "written" },
-      ...
+      { "index": 3, "user_answer": { "blank1": "so", "blank2": "that" } }
     ]
   }
 
@@ -536,10 +548,16 @@ Body:
 **判对错规则**（`backend/services/grading.py`）：
 
 ```python
-def compare(user_answer: str, correct_answer: str, question_type: str) -> bool:
+AnswerValue = str | list[dict[str, list[str]]]
+UserAnswerValue = str | list[str] | dict[str, str]
+
+def compare(user_answer: UserAnswerValue, correct_answer: AnswerValue, question_type: str) -> bool:
+    if isinstance(correct_answer, list):
+        # word_form / sentence_rewriting:
+        # 用户答案归一化为 blankN -> value，再命中 answer_json 中任一候选组合
+        return compare_blank_answers(user_answer, correct_answer)
     if question_type == "single_choice":
         return user_answer.strip().upper() == correct_answer.strip().upper()
-    # word_form / sentence_rewriting：规范化后比较
     return normalize(user_answer) == normalize(correct_answer)
 
 def normalize(s: str) -> str:
@@ -549,7 +567,7 @@ def normalize(s: str) -> str:
     return s
 ```
 
-对应 Spec A § 1.6 的判等约定。
+对应 Spec A § 1.6 / § 2.2 的判等约定。真实题库的 `answer_json` 规则是：单选题为单字母字符串；词性转换/句子改写为 `list[dict]` 候选组合，每个 `blankN` 的 value 是可接受答案列表。后端判分不使用 `difficulty`，因为 Spec A 已删除该字段。
 
 #### `POST /api/solutions`
 
@@ -869,7 +887,7 @@ def logged_in_client(client):
   - `revise_paper` 生成新 `paper_id`，老的仍存在
 - **attempts**：
   - 提交答题后 `attempts` + `attempt_items` 都有记录
-  - 判对错逻辑正确（含大小写、空白、末尾标点）
+  - 判对错逻辑正确（含大小写、空白、末尾标点、多空候选组合）
   - 重复提交同一 paper → 允许（记多条 attempts）
 - **mastery**：
   - 无答题记录 → 返回空 profile（不 500）
@@ -943,12 +961,11 @@ python -m backend.cli serve --port 8000 --env production
 本 spec 落地后需一次性同步更新 Spec A/B（见 Task #13）：
 
 **Spec A 修改**：
-- § 1.6 保留（判对错不属于 AI Engine，正确）
+- § 1.6 / § 2.2 是当前判分依据：单选字符串；填空/改写使用 `answer_json` 多空候选组合
+- § 1.7 明确删除 `difficulty`，后端契约和 `attempt_items` 写入均不得依赖该字段
 - § 9 移除"不实现用户注册/登录/鉴权"
-- § 3.7 追加 `users` / `sessions` / `papers` 表结构（引用本 spec § 3.1）
+- § 3.8 追加 `users` / `sessions` / `papers` 表结构（引用本 spec § 3.1），并保留 Spec A 已建好的 `attempts` / `attempt_items`
 - § 10 或 § 11 增加"新增交互：后端持久化试卷、鉴权"的说明
-- § 2.5 `Attempt.paper_id` 的注释 `"前端生成的 UUID"` 改为 `"AI Engine 生成、后端持久化的 paper_id"`——现由 `Paper.paper_id` 传递（Spec B § 5.4）
-- § 2.4 `GenerateRequest.revision_intensity` 的 `= "light"` 默认值加注释：`"实际由 Parser 从 LLM 输出填充；此默认值仅在测试代码直接构造 GenerateRequest 时生效（Spec B § 3.5）"`
 
 **Spec B 修改**：
 - § 1.2 保留"AI Engine 无状态"（正确，本 spec 未改这个）
@@ -989,6 +1006,7 @@ Spec A § 12、Spec B § 17 已定义的不变量继续生效。后端补充：
 2. **`paper_id` 由 AI Engine 生成，后端沿用**（不重新生成）
 3. **`user_id` 只从 session 注入**——请求体永远不传 `user_id`（除非未来支持"管理员为他人生成"，明确超出本 spec）
 4. **未登录访问受保护路由 → 401 `auth.unauthorized`**，不 302 跳转（前端拦截 401 自跳登录页）
-5. **判对错不调 LLM**：`backend/services/grading.py` 是纯字符串比较（Spec A § 1.6 判等约定）
+5. **判对错不调 LLM**：`backend/services/grading.py` 是确定性比较（Spec A § 1.6 / § 2.2 判等约定），支持单选字符串和 `answer_json` 多空候选组合
 6. **paper 权限校验隐含在 storage 层**：`storage.get_paper(paper_id, user_id)` 内部匹配 user_id；上层无需重复校验
-7. **答题记录 `kps_json` 由后端在写入时冗余填充**：从 `paper.items[i].question.knowledge_point_ids` 抄写（Spec A § 3.7 冗余存储的落地方）。**该字段虽在 `RevisedQuestion` 上，但由 Spec A § 2.7 不变量 3 与 Spec B § 17 不变量 4 保证——`knowledge_point_ids` 在改题过程中永不修改——因此抄改后题等价于抄原题。后续维护者请勿改成 "从 `source_question_id` 反查原题"，两者结果相同但多一次 SQL 读**。
+7. **答题记录 `kps_json` 由后端在写入时冗余填充**：从 `paper.items[i].question.knowledge_point_ids` 抄写（Spec A § 3.8 冗余存储的落地方）。**该字段虽在 `RevisedQuestion` 上，但由 Spec A 不变量保证——`knowledge_point_ids` 在改题过程中永不修改——因此抄改后题等价于抄原题。后续维护者请勿改成 "从 `source_question_id` 反查原题"，两者结果相同但多一次 SQL 读**。
+8. **后端不得重新引入 `difficulty`**：真实题库 schema 已删除该字段，`attempt_items` 也不保存 difficulty。
