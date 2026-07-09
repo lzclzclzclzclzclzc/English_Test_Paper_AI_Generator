@@ -9,6 +9,7 @@
 - API 前缀：`/api`
 - 鉴权方式：用户名密码登录后写入 `session_id` httpOnly Cookie
 - 数据库：SQLite，默认路径 `data/questions.db`
+- 真实题库：当前库含 1066 道题、49 个知识点；`difficulty` 字段已从题库契约中移除
 - 当前 AI Engine：确定性 fake 实现，用于后端、前端、测试在无真实 LLM 时联调
 - Swagger UI：后端启动后访问 `http://127.0.0.1:8000/docs`
 
@@ -167,8 +168,7 @@ Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
         ],
         "answer": "B",
         "solution": null,
-        "knowledge_point_ids": ["kp_single_choice_basic"],
-        "difficulty": "medium"
+        "knowledge_point_ids": ["kp_single_choice_basic"]
       }
     }
   ],
@@ -178,6 +178,21 @@ Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
 ```
 
 前端渲染做题页主要用 `items[].question`、`items[].score`、`paper_id`。提交答案时只需要回传题号和用户答案。
+
+`question.answer` 与真实题库 `answer_json` 对齐，有两种形态：
+
+```json
+"B"
+```
+
+```json
+[
+  { "blank1": ["in"], "blank2": ["order"] },
+  { "blank1": ["so"], "blank2": ["as"] }
+]
+```
+
+单选题是单字母字符串；词性转换和句子改写是候选组合列表。外层列表表示多种可接受填法，每个 `blankN` 的数组表示该空的同义候选。
 
 ### PaperListResponse
 
@@ -206,10 +221,26 @@ Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
   "items": [
     { "index": 1, "user_answer": "B" },
     { "index": 2, "user_answer": "written" },
-    { "index": 3, "user_answer": "He is so young that he cannot go to school." }
+    { "index": 3, "user_answer": ["so", "that"] }
   ]
 }
 ```
+
+`user_answer` 支持三种提交形态：
+
+```json
+"written"
+```
+
+```json
+["so", "that"]
+```
+
+```json
+{ "blank1": "so", "blank2": "that" }
+```
+
+单空题可以直接提交字符串；多空题推荐前端提交 `blankN` 字典，数组也可按空位顺序提交。
 
 ### GradeSubmissionResponse
 
@@ -230,7 +261,8 @@ Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
 判分规则：
 
 - `single_choice`：去首尾空白后转大写比较，如 `b` 等于 `B`
-- `word_form` / `sentence_rewriting`：小写、trim、折叠多空白、忽略末尾 `. ! ? , ; :`
+- `word_form` / `sentence_rewriting`：把用户答案归一化为 `blankN`，再检查是否命中 `answer` 中任一候选组合
+- 归一化：小写、trim、折叠多空白、忽略末尾 `. ! ? , ; :`
 - 判分永远不调用 LLM
 
 ### SolutionRequest
@@ -248,8 +280,7 @@ Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
     ],
     "answer": "B",
     "solution": null,
-    "knowledge_point_ids": ["kp_single_choice_basic"],
-    "difficulty": "medium"
+    "knowledge_point_ids": ["kp_single_choice_basic"]
   },
   "source_question_id": "fake_q_0001",
   "revision_mode": "fresh"
@@ -314,7 +345,7 @@ curl -X POST http://127.0.0.1:8000/api/papers/generate ^
 curl -X POST http://127.0.0.1:8000/api/attempts ^
   -H "Content-Type: application/json" ^
   -b "session_id=<从登录响应获取>" ^
-  -d "{\"paper_id\":\"<paper_id>\",\"items\":[{\"index\":1,\"user_answer\":\"B\"}]}"
+  -d "{\"paper_id\":\"<paper_id>\",\"items\":[{\"index\":1,\"user_answer\":\"B\"},{\"index\":2,\"user_answer\":\"written\"},{\"index\":3,\"user_answer\":{\"blank1\":\"so\",\"blank2\":\"that\"}}]}"
 ```
 
 同一份试卷允许重复提交，每次都会生成新的 `attempt_id`。
@@ -335,9 +366,8 @@ curl -b "session_id=<从登录响应获取>" ^
 - 包含“词”或 `word` 时生成词形转换题
 - 包含“改写”或 `rewrite` 时生成句子改写题
 - 未指定题型时按三种题型轮换
-- 包含“简单”或 `easy` 时难度为 `easy`
-- 包含“难”或 `hard` 时难度为 `hard`
-- 默认难度为 `medium`
+- 题目不再带 `difficulty`
+- 词性转换和句子改写会返回 `answer_json` 风格的多空候选结构
 
 这让前端和测试可以稳定复现主链路。接入真实 AI Engine 时，HTTP 契约不应变化，只替换 `ai_engine` 内部实现。
 
@@ -365,6 +395,7 @@ curl -b "session_id=<从登录响应获取>" ^
 - `paper_id + user_id` 一起校验资源归属；用户 A 访问用户 B 试卷返回 404
 - 判分只在 `POST /api/attempts` 内部执行
 - 保存完整 `Paper` JSON，列表只返回摘要
+- 题库读取统一走 `shared/storage.py`，不要在业务模块里散落手写 SQL
 
 ### AI Engine
 
