@@ -181,13 +181,13 @@ class SolutionResponse(BaseModel):
 
 
 class GradeSubmissionItem(BaseModel):
-    index: int
+    index: int = Field(ge=1)
     user_answer: UserAnswerValue
 
 
 class GradeSubmissionRequest(BaseModel):
     paper_id: str
-    items: list[GradeSubmissionItem]
+    items: list[GradeSubmissionItem] = Field(min_length=1)
 
 
 class GradeResultItem(BaseModel):
