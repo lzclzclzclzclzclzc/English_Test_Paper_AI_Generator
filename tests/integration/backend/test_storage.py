@@ -123,6 +123,14 @@ def test_write_attempt_and_mark_paper_submitted_rolls_back_together(client):
     assert paper_row["submitted_at"] is None
 
 
+def test_init_db_records_applied_migrations(client):
+    storage.init_db()
+    storage.init_db()
+    with storage.connect() as conn:
+        rows = conn.execute("SELECT id FROM schema_migrations ORDER BY id").fetchall()
+    assert [row["id"] for row in rows] == [storage.MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX]
+
+
 def test_init_db_migrates_legacy_attempt_items_difficulty_column(tmp_path):
     legacy_db = tmp_path / "legacy.db"
     storage.set_db_path(legacy_db)
@@ -170,6 +178,10 @@ def test_init_db_migrates_legacy_attempt_items_difficulty_column(tmp_path):
                 """,
                 ("legacy_attempt",),
             ).fetchone()
+            migration_row = conn.execute(
+                "SELECT id FROM schema_migrations WHERE id = ?",
+                (storage.MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX,),
+            ).fetchone()
     finally:
         storage.set_db_path(None)
     columns = {column["name"] for column in table_info}
@@ -180,3 +192,4 @@ def test_init_db_migrates_legacy_attempt_items_difficulty_column(tmp_path):
     assert migrated_row["item_index"] == 1
     assert migrated_row["source_question_id"] == "q_legacy"
     assert migrated_row["kps_json"] == '["kp_legacy"]'
+    assert migration_row["id"] == storage.MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX

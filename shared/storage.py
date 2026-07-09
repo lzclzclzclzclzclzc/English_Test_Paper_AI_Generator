@@ -27,6 +27,7 @@ from shared.schemas import (
 )
 
 DB_PATH_OVERRIDE: Path | None = None
+MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX = "20260709_001_attempt_items_item_index"
 
 
 def set_db_path(path: str | Path | None) -> None:
@@ -57,6 +58,7 @@ def connect() -> Iterator[sqlite3.Connection]:
 
 def init_db() -> None:
     with connect() as conn:
+        _ensure_schema_migrations(conn)
         conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS users (
@@ -110,7 +112,7 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_att_it_source ON attempt_items(source_question_id);
             """
         )
-        _migrate_attempt_items_item_index(conn)
+        _apply_migrations(conn)
 
 
 def _dt(value: str) -> datetime:
@@ -487,6 +489,41 @@ def _migrate_attempt_items_item_index(conn: sqlite3.Connection) -> None:
         )
     conn.execute("DROP TABLE attempt_items_legacy")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_att_it_source ON attempt_items(source_question_id)")
+
+
+def _ensure_schema_migrations(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            id TEXT PRIMARY KEY,
+            applied_at TIMESTAMP NOT NULL
+        )
+        """
+    )
+
+
+def _apply_migrations(conn: sqlite3.Connection) -> None:
+    migrations = [
+        (MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX, _migrate_attempt_items_item_index),
+    ]
+    for migration_id, migration in migrations:
+        if _migration_applied(conn, migration_id):
+            continue
+        migration(conn)
+        conn.execute(
+            "INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)",
+            (migration_id, datetime.now(timezone.utc).isoformat()),
+        )
+
+
+def _migration_applied(conn: sqlite3.Connection, migration_id: str) -> bool:
+    return (
+        conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE id = ?",
+            (migration_id,),
+        ).fetchone()
+        is not None
+    )
 
 
 def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:

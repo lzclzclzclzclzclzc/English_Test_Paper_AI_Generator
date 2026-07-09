@@ -54,12 +54,14 @@ def test_backend_flow_against_copied_real_question_bank(tmp_path, monkeypatch):
             attempt_item_columns = {row["name"] for row in conn.execute("PRAGMA table_info(attempt_items)")}
             users_table = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").fetchone()
             papers_table = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='papers'").fetchone()
+            migration_count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
 
         assert question_count == 1066
         assert attempt_count == 1
         assert "difficulty" not in attempt_item_columns
         assert users_table is not None
         assert papers_table is not None
+        assert migration_count >= 1
     finally:
         storage.set_db_path(None)
         reset_config_cache()

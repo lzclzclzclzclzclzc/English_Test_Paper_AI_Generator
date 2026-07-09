@@ -293,6 +293,12 @@ CREATE TABLE papers (
 );
 CREATE INDEX idx_papers_user ON papers(user_id);
 CREATE INDEX idx_papers_generated ON papers(generated_at);
+
+-- 轻量迁移记录
+CREATE TABLE schema_migrations (
+    id         TEXT PRIMARY KEY,
+    applied_at TIMESTAMP NOT NULL
+);
 ```
 
 **关于 `papers.payload_json`**：整个 `Paper` 对象直接 JSON 序列化存一个 TEXT 字段。理由：
@@ -301,6 +307,8 @@ CREATE INDEX idx_papers_generated ON papers(generated_at);
 - 未来若真需要按题内容检索历史，仍可现建 view / 关联表
 
 **幂等性**：`paper_id` 由 AI Engine 生成的 UUID hex；理论上冲突概率为 0，无需额外去重。
+
+**迁移约定**：后端使用 `schema_migrations` 表记录已应用迁移；所有后续 schema 演进必须进入 `shared/storage.py` 的有序迁移列表，不能只散落在 `CREATE TABLE IF NOT EXISTS` 或临时修补逻辑中。
 
 ### 3.2 `attempts` 表的补充索引
 
