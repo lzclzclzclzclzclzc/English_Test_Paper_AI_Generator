@@ -13,26 +13,34 @@ def normalize(value: str) -> str:
 
 
 def compare(user_answer: UserAnswerValue, correct_answer: AnswerValue, question_type: str) -> bool:
+    """Compare a submitted answer with the stored answer_json-compatible value."""
     if isinstance(correct_answer, list):
         return _compare_blank_answers(user_answer, correct_answer)
     if question_type == "single_choice":
-        return str(user_answer).strip().upper() == correct_answer.strip().upper()
+        return isinstance(user_answer, str) and user_answer.strip().upper() == correct_answer.strip().upper()
     return normalize(str(user_answer)) == normalize(correct_answer)
 
 
 def _compare_blank_answers(user_answer: UserAnswerValue, correct_answers: list[dict[str, list[str]]]) -> bool:
     normalized_user = _user_answer_to_blanks(user_answer)
+    if not normalized_user:
+        return False
     for candidate in correct_answers:
-        if set(normalized_user) != set(candidate):
+        normalized_candidate = {
+            key: {normalize(option) for option in options}
+            for key, options in candidate.items()
+        }
+        if set(normalized_user) != set(normalized_candidate):
             continue
-        if all(normalized_user[key] in {normalize(option) for option in options} for key, options in candidate.items()):
+        if all(normalized_user[key] in normalized_candidate[key] for key in normalized_candidate):
             return True
     return False
 
 
 def _user_answer_to_blanks(user_answer: UserAnswerValue) -> dict[str, str]:
     if isinstance(user_answer, dict):
-        return {key: normalize(value) for key, value in user_answer.items()}
+        return {key: normalize(value) for key, value in user_answer.items() if value.strip()}
     if isinstance(user_answer, list):
-        return {f"blank{index}": normalize(value) for index, value in enumerate(user_answer, start=1)}
-    return {"blank1": normalize(user_answer)}
+        return {f"blank{index}": normalize(value) for index, value in enumerate(user_answer, start=1) if value.strip()}
+    normalized = normalize(user_answer)
+    return {"blank1": normalized} if normalized else {}
