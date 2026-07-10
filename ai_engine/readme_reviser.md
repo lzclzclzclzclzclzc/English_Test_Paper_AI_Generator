@@ -202,6 +202,155 @@ paper = build_paper(req, retrieval)
 
 **特点**：题干、选项全部全新生成，围绕相同知识点
 
+## 运行测试 (Run Test)
+
+### 前置条件
+
+1. 已配置 `.env` 文件（含 `LLM_API_KEY`）
+2. 已加载数据库 `data/questions.db`（执行过 `ingestion build-sqlite`）
+3. 已有题目数据 `data/chapters/shanghai_2021_yimo.json`
+4. 在项目根目录运行
+
+### 测试命令（一次跑三档对比）
+
+以下命令会从真实题库加载 3 道单选题，分别用 `original` / `light` / `fresh` 三档策略生成试卷，并打印对比结果：
+
+```bash
+python -c "
+import json
+from ai_engine.reviser import build_paper
+from shared.schemas import GenerateRequest, Question, RetrievedItem, RetrievalResult
+
+# 从真实题库加载 3 道单选题
+with open('data/chapters/shanghai_2021_yimo.json', 'r', encoding='utf-8') as f:
+    raw = json.load(f)
+questions = [Question(**q) for q in raw[:3]]
+retrieval = RetrievalResult(items=[RetrievedItem(question=q, score=0.9) for q in questions])
+
+# 三档策略对比
+for intensity in ['original', 'light', 'fresh']:
+    req = GenerateRequest(
+        mode='fresh',
+        question_types=['single_choice'],
+        total_questions=3,
+        revision_intensity=intensity,
+        free_text=f'测试 {intensity} 模式',
+    )
+    paper = build_paper(req, retrieval)
+    print(f'=== {intensity.upper()} 模式 ===')
+    print(f'标题:           {paper.title}')
+    print(f'总分:           {paper.total_score}')
+    print(f'LLM 调用次数:   {paper.metadata[\"llm_calls\"]}')
+    print(f'失败数:         {len(paper.metadata[\"revision_failures\"])}')
+    for it in paper.items:
+        print(f'  [{it.index}] 题型={it.question.question_type} 分值={it.score} 溯源={it.source_question_id} 模式={it.revision_mode}')
+        print(f'      题干: {it.question.stem[:60] if it.question.stem else \"(无)\"}')
+        print(f'      答案: {it.question.answer}')
+        if it.revision_notes:
+            print(f'      备注: {it.revision_notes}')
+    print()
+"
+```
+
+### 预期输出
+
+```
+=== ORIGINAL 模式 ===
+标题:           单选原题3道练习
+总分:           6
+LLM 调用次数:   0
+失败数:         0
+  [1] 题型=single_choice 分值=2 溯源=q_00001 模式=original
+      题干: John is good at English，so he rarely makes mistakes in Eng...
+      答案: B
+  [2] 题型=single_choice 分值=2 溯源=q_00002 模式=original
+      题干: Which of the following words is pronounced as/heɪt/?
+      答案: B
+  [3] 题型=single_choice 分值=2 溯源=q_00003 模式=original
+      题干: Which of the following underlined parts is different in pr...
+      答案: B
+
+=== LIGHT 模式 ===
+标题:           单选3道练习
+总分:           6
+LLM 调用次数:   3
+失败数:         0
+  [1] 题型=single_choice 分值=2 溯源=q_00001 模式=light
+      题干: <LLM 改写后的题干，保留结构替换词汇>
+      答案: B
+  [2] 题型=single_choice 分值=2 溯源=q_00002 模式=light
+      题干: <LLM 改写后的题干>
+      答案: B
+  [3] 题型=single_choice 分值=2 溯源=q_00003 模式=light
+      题干: <LLM 改写后的题干>
+      答案: B
+
+=== FRESH 模式 ===
+标题:           单选新题3道练习
+总分:           6
+LLM 调用次数:   3
+失败数:         0
+  [1] 题型=single_choice 分值=2 溯源=q_00001 模式=fresh
+      题干: <LLM 全新生成的题干>
+      答案: A
+  [2] 题型=single_choice 分值=2 溯源=q_00002 模式=fresh
+      题干: <LLM 全新生成的题干>
+      答案: C
+  [3] 题型=single_choice 分值=2 溯源=q_00003 模式=fresh
+      题干: <LLM 全新生成的题干>
+      答案: B
+```
+
+> 注：LIGHT/FRESH 档的题干和答案由 LLM 实时生成，每次运行结果不同。重点观察：
+> - **题型、知识点、难度保持不变**（不变量校验）
+> - **答案格式合法**（A/B/C/D）
+> - **LLM 调用次数**：original=0，light/fresh=题目数
+> - **失败数**：正常情况下为 0，若网络异常会自动 fallback 到原题
+
+### 单档快速测试
+
+如只想快速验证某一档，可使用以下简化命令：
+
+```bash
+# ORIGINAL 档（无 LLM 调用，最快验证）
+python -c "
+import json
+from ai_engine.reviser import build_paper
+from shared.schemas import GenerateRequest, Question, RetrievedItem, RetrievalResult
+with open('data/chapters/shanghai_2021_yimo.json', 'r', encoding='utf-8') as f:
+    questions = [Question(**q) for q in json.load(f)[:2]]
+paper = build_paper(
+    GenerateRequest(mode='fresh', question_types=['single_choice'], total_questions=2, revision_intensity='original', free_text='原题'),
+    RetrievalResult(items=[RetrievedItem(question=q, score=0.9) for q in questions])
+)
+print(f'标题: {paper.title}, 总分: {paper.total_score}, LLM调用: {paper.metadata[\"llm_calls\"]}')
+"
+
+# LIGHT 档（每题 1 次 LLM 调用）
+python -c "
+import json
+from ai_engine.reviser import build_paper
+from shared.schemas import GenerateRequest, Question, RetrievedItem, RetrievalResult
+with open('data/chapters/shanghai_2021_yimo.json', 'r', encoding='utf-8') as f:
+    questions = [Question(**q) for q in json.load(f)[:2]]
+paper = build_paper(
+    GenerateRequest(mode='fresh', question_types=['single_choice'], total_questions=2, revision_intensity='light', free_text='练习'),
+    RetrievalResult(items=[RetrievedItem(question=q, score=0.9) for q in questions])
+)
+print(f'标题: {paper.title}, 总分: {paper.total_score}, LLM调用: {paper.metadata[\"llm_calls\"]}')
+for it in paper.items:
+    print(f'  [{it.index}] {it.question.stem[:50]}... 答案={it.question.answer}')
+"
+```
+
+### 三档对比速查
+
+| 模式 | LLM 调用 | 失败 fallback | 关键看点 |
+|------|----------|---------------|---------|
+| **ORIGINAL** | 0 次 | 不需要 | 原题直接拷贝，最快 |
+| **LIGHT** | N 次 | 回退原题 | 题型/KP/难度不变，词汇情境替换 |
+| **FRESH** | N 次 | 回退原题 | 全新题干和选项，围绕相同 KP |
+
 ## Three-Layer Defense
 
 ### Layer 1: Schema Validation（pydantic）

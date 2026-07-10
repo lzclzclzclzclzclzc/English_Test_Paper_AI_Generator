@@ -97,6 +97,89 @@ parse(
 | `revision_intensity` | `"original"` |
 | `type_distribution` | `{"single_choice": 10}` |
 
+## 运行测试 (Run Test)
+
+### 前置条件
+
+1. 已配置 `.env` 文件（含 `LLM_API_KEY`）
+2. 已加载数据库 `data/questions.db`（执行过 `ingestion build-sqlite`）
+3. 在项目根目录运行
+
+### 测试命令
+
+在项目根目录执行以下命令，可快速验证 Parser 模块：
+
+```bash
+python -c "
+from ai_engine.parser import parse
+import json
+
+req = parse('来十道单选原题')
+print('=== Parser 测试结果 ===')
+print(f'mode:                {req.mode}')
+print(f'question_types:      {req.question_types}')
+print(f'total_questions:     {req.total_questions}')
+print(f'revision_intensity:  {req.revision_intensity}')
+print(f'type_distribution:   {req.type_distribution}')
+print(f'knowledge_points:    {req.knowledge_points}')
+print(f'difficulty:          {req.difficulty}')
+print()
+print('完整 JSON 输出：')
+print(json.dumps(req.dict(exclude_none=True), ensure_ascii=False, indent=2))
+"
+```
+
+### 预期输出
+
+```
+=== Parser 测试结果 ===
+mode:                fresh
+question_types:      ['single_choice']
+total_questions:     10
+revision_intensity:  original
+type_distribution:   {'single_choice': 10}
+knowledge_points:    []
+difficulty:          []
+
+完整 JSON 输出：
+{
+  "mode": "fresh",
+  "knowledge_points": [],
+  "knowledge_points_exclude": [],
+  "question_types": ["single_choice"],
+  "difficulty": [],
+  "total_questions": 10,
+  "type_distribution": {"single_choice": 10},
+  "difficulty_distribution": {},
+  "per_kp_min": 0,
+  "revision_intensity": "original",
+  "free_text": "来十道单选原题"
+}
+```
+
+### 不同输入测试
+
+可替换输入字符串以测试不同推断结果：
+
+```bash
+# 测试 fresh 档（用户提到"重新出"）
+python -c "from ai_engine.parser import parse; r = parse('重新出五道现在完成时的单选题'); print(f'intensity={r.revision_intensity}, types={r.question_types}, n={r.total_questions}')"
+
+# 测试 light 档（用户只说"练习"）
+python -c "from ai_engine.parser import parse; r = parse('来几道介词练习巩固一下'); print(f'intensity={r.revision_intensity}, kps={r.knowledge_points}')"
+
+# 测试 review 模式
+python -c "from ai_engine.parser import parse; r = parse('帮我复习最近一个月的错题', mode='review', user_id='u_001', review_window_days=30); print(f'mode={r.mode}, intensity={r.revision_intensity}')"
+```
+
+### 推断规则对照表
+
+| 输入示例 | 预期 `revision_intensity` |
+|---------|--------------------------|
+| "来十道单选原题" | `original` |
+| "重新出五道题" | `fresh` |
+| "来几道练习巩固一下" | `light` |
+
 ## Configuration
 
 ### `.env` File
