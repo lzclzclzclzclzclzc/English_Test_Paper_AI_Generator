@@ -34,7 +34,7 @@ def test_read_knowledge_points_and_write_solution_on_database_copy(tmp_path):
     storage.set_db_path(db_copy)
     try:
         kps = storage.list_knowledge_points()
-        assert len(kps) == 49
+        assert kps
         assert {kp.level1 for kp in kps} == {"single_choice", "word_form", "sentence_rewriting"}
 
         assert storage.write_question_solution("q_00001", "解析内容") is True

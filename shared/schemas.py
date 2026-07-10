@@ -28,7 +28,6 @@ class KnowledgePoint(BaseModel):
     id: str
     level1: str
     level2: str
-    parent_id: str | None = None
     aliases: list[str] = Field(default_factory=list)
 
 

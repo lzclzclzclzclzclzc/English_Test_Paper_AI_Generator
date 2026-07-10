@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 class StorageConfig(BaseModel):
     sqlite_path: Path = Path("data/questions.db")
+    chroma_path: Path = Path("data/chroma")
 
 
 class BackendConfig(BaseModel):
@@ -33,7 +34,8 @@ class AppConfig(BaseModel):
 def get_config() -> AppConfig:
     return AppConfig(
         storage=StorageConfig(
-            sqlite_path=Path(os.getenv("SQLITE_PATH", "data/questions.db"))
+            sqlite_path=Path(os.getenv("SQLITE_PATH", "data/questions.db")),
+            chroma_path=Path(os.getenv("CHROMA_PATH", "data/chroma")),
         ),
         backend=BackendConfig(
             host=os.getenv("BACKEND_HOST", "127.0.0.1"),

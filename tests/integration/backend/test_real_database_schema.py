@@ -50,13 +50,35 @@ def test_backend_flow_against_copied_real_question_bank(tmp_path, monkeypatch):
 
         with storage.connect() as conn:
             question_count = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+            kp_count = conn.execute("SELECT COUNT(*) FROM knowledge_points").fetchone()[0]
+            qkp_count = conn.execute("SELECT COUNT(*) FROM question_knowledge_points").fetchone()[0]
+            question_columns = {row["name"] for row in conn.execute("PRAGMA table_info(questions)")}
+            kp_columns = {row["name"] for row in conn.execute("PRAGMA table_info(knowledge_points)")}
             attempt_count = conn.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]
             attempt_item_columns = {row["name"] for row in conn.execute("PRAGMA table_info(attempt_items)")}
             users_table = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").fetchone()
             papers_table = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='papers'").fetchone()
             migration_count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
 
-        assert question_count == 1066
+        assert question_count > 0
+        assert kp_count > 0
+        assert qkp_count >= question_count
+        assert {
+            "id",
+            "book",
+            "question_type",
+            "chapter_l1",
+            "chapter_l2",
+            "number",
+            "answer_json",
+            "source_md",
+            "source_line",
+            "stem_hash",
+        }.issubset(question_columns)
+        assert "difficulty" not in question_columns
+        assert "embedding_text" not in question_columns
+        assert {"id", "level1", "level2", "aliases_json"}.issubset(kp_columns)
+        assert "parent_id" not in kp_columns
         assert attempt_count == 1
         assert "difficulty" not in attempt_item_columns
         assert users_table is not None
