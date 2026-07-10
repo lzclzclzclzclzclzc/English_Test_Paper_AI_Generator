@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+import sqlite3
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -87,3 +88,30 @@ def test_backend_flow_against_copied_real_question_bank(tmp_path, monkeypatch):
     finally:
         storage.set_db_path(None)
         reset_config_cache()
+
+
+def test_chroma_artifact_matches_real_question_bank_shape():
+    sqlite_db = Path("data/questions.db")
+    chroma_db = Path("data/chroma/chroma.sqlite3")
+    assert sqlite_db.exists(), "real question bank database is required"
+    assert chroma_db.exists(), "real ChromaDB artifact is required"
+
+    with sqlite3.connect(sqlite_db) as conn:
+        question_count = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+
+    status = storage.inspect_chroma_question_collection(expected_question_count=question_count)
+
+    assert question_count > 0
+    assert status["ready"] is True
+    assert status["collection"] == "questions"
+    assert status["dimension"] == 2560
+    assert status["embedding_count"] == question_count
+    assert {
+        "book",
+        "chapter_l1",
+        "chapter_l2",
+        "chroma:document",
+        "kp_ids",
+        "question_type",
+    }.issubset(set(status["metadata_keys"]))
+    assert "difficulty" not in status["metadata_keys"]

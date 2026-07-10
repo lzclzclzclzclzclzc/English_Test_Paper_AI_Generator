@@ -9,7 +9,8 @@
 - API 前缀：`/api`
 - 鉴权方式：用户名密码登录后写入 `session_id` httpOnly Cookie
 - 数据库：SQLite，默认路径 `data/questions.db`
-- 真实题库：当前库含 1066 道题、49 个知识点；`difficulty` 字段已从题库契约中移除
+- 向量库：ChromaDB，默认路径 `data/chroma`，集合 `questions`
+- 真实题库：后端按 ingestion 当前 schema 读取 `questions`、`knowledge_points`、`question_knowledge_points`；readiness 会同时校验 SQLite 题库和 Chroma 向量库；`difficulty` 字段已从题库契约中移除
 - 当前 AI Engine：确定性 fake 实现，用于后端、前端、测试在无真实 LLM 时联调
 - Swagger UI：后端启动后访问 `http://127.0.0.1:8000/docs`
 
@@ -106,7 +107,7 @@ Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
 { "status": "ok" }
 ```
 
-`GET /api/health/ready` 是 readiness 检查，会验证 SQLite 可连接、后端关键表存在、题库 `questions` 表存在且非空。全部通过返回 200：
+`GET /api/health/ready` 是 readiness 检查，会验证 SQLite 可连接、后端关键表存在、题库 schema 可读、Chroma collection `questions` 可读，且 Chroma 向量数与 SQLite 题量一致。全部通过返回 200：
 
 ```json
 {
@@ -114,7 +115,8 @@ Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
   "checks": {
     "sqlite": true,
     "core_tables": true,
-    "question_bank": true
+    "question_bank": true,
+    "vector_bank": true
   }
 }
 ```

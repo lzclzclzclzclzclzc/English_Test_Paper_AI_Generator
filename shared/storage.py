@@ -28,6 +28,15 @@ from shared.schemas import (
 
 DB_PATH_OVERRIDE: Path | None = None
 MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX = "20260709_001_attempt_items_item_index"
+CHROMA_COLLECTION_NAME = "questions"
+CHROMA_REQUIRED_METADATA_KEYS = {
+    "book",
+    "chapter_l1",
+    "chapter_l2",
+    "chroma:document",
+    "kp_ids",
+    "question_type",
+}
 
 
 def set_db_path(path: str | Path | None) -> None:
@@ -37,6 +46,10 @@ def set_db_path(path: str | Path | None) -> None:
 
 def get_db_path() -> Path:
     return DB_PATH_OVERRIDE or get_config().storage.sqlite_path
+
+
+def get_chroma_path() -> Path:
+    return get_config().storage.chroma_path
 
 
 @contextmanager
@@ -359,6 +372,83 @@ def write_question_solution(question_id: str, solution: str) -> bool:
             (solution, question_id),
         )
         return cur.rowcount > 0
+
+
+def inspect_chroma_question_collection(
+    *,
+    expected_question_count: int | None = None,
+    chroma_path: Path | None = None,
+) -> dict[str, object]:
+    path = chroma_path or get_chroma_path()
+    chroma_db = path / "chroma.sqlite3"
+    status: dict[str, object] = {
+        "path": str(path),
+        "database_exists": chroma_db.is_file(),
+        "collection": None,
+        "dimension": None,
+        "embedding_count": 0,
+        "metadata_keys": [],
+        "matches_question_count": False,
+        "ready": False,
+    }
+    if not chroma_db.is_file():
+        return status
+
+    try:
+        conn = sqlite3.connect(f"file:{chroma_db}?mode=ro", uri=True)
+        conn.row_factory = sqlite3.Row
+        try:
+            required_tables = {"collections", "embeddings", "embedding_metadata"}
+            rows = conn.execute(
+                """
+                SELECT name
+                FROM sqlite_master
+                WHERE type = 'table' AND name IN (?, ?, ?)
+                """,
+                tuple(required_tables),
+            ).fetchall()
+            if {row["name"] for row in rows} != required_tables:
+                return status
+
+            collection = conn.execute(
+                "SELECT name, dimension, schema_str FROM collections WHERE name = ?",
+                (CHROMA_COLLECTION_NAME,),
+            ).fetchone()
+            if collection is None:
+                return status
+
+            embedding_count = int(conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0])
+            metadata_keys = {
+                row["key"]
+                for row in conn.execute("SELECT DISTINCT key FROM embedding_metadata")
+            }
+
+            status.update(
+                {
+                    "collection": collection["name"],
+                    "dimension": collection["dimension"],
+                    "embedding_count": embedding_count,
+                    "metadata_keys": sorted(metadata_keys),
+                    "matches_question_count": (
+                        expected_question_count is None
+                        or embedding_count == expected_question_count
+                    ),
+                }
+            )
+            status["ready"] = (
+                collection["name"] == CHROMA_COLLECTION_NAME
+                and collection["dimension"] == 2560
+                and "cosine" in (collection["schema_str"] or "")
+                and CHROMA_REQUIRED_METADATA_KEYS.issubset(metadata_keys)
+                and "difficulty" not in metadata_keys
+                and bool(status["matches_question_count"])
+                and embedding_count > 0
+            )
+            return status
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        return status
 
 
 def _row_to_question(conn: sqlite3.Connection, row: sqlite3.Row) -> Question:

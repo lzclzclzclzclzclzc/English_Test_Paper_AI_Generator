@@ -46,12 +46,14 @@ def _readiness_checks() -> dict[str, bool]:
                     },
                 ),
                 "question_bank": _has_question_bank(conn),
+                "vector_bank": _has_vector_bank(conn),
             }
     except Exception:
         return {
             "sqlite": False,
             "core_tables": False,
             "question_bank": False,
+            "vector_bank": False,
         }
 
 
@@ -140,5 +142,18 @@ def _has_question_bank(conn) -> bool:
     return True
 
 
+def _has_vector_bank(conn) -> bool:
+    question_count = 0
+    if _table_exists(conn, "questions"):
+        row = conn.execute("SELECT COUNT(*) AS count FROM questions").fetchone()
+        question_count = int(row["count"])
+    status = storage.inspect_chroma_question_collection(expected_question_count=question_count)
+    return bool(status["ready"])
+
+
 def _table_columns(conn, table: str) -> set[str]:
     return {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def _table_exists(conn, table: str) -> bool:
+    return conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (table,)).fetchone() is not None

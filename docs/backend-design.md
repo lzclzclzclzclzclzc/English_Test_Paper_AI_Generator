@@ -470,7 +470,7 @@ GET  /api/auth/me                                           → User（当前登
 | Method | Path | 请求体 | 响应体 | 简述 |
 |---|---|---|---|---|
 | GET | `/api/health` | — | `{status}` | 轻量存活检查 |
-| GET | `/api/health/ready` | — | readiness checks | SQLite、关键表、题库可读性检查 |
+| GET | `/api/health/ready` | — | readiness checks | SQLite、关键表、题库 schema、Chroma 向量库可读性检查 |
 | POST | `/api/auth/register` | `UserCredentials` | `User` | 注册并自动登录 |
 | POST | `/api/auth/login` | `UserCredentials` | `User` | 登录 |
 | POST | `/api/auth/logout` | — | 204 | 登出 |

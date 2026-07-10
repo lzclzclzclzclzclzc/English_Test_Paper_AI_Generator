@@ -25,6 +25,7 @@ def test_readiness_reports_missing_question_bank(client):
     assert body["checks"]["sqlite"] is True
     assert body["checks"]["core_tables"] is True
     assert body["checks"]["question_bank"] is False
+    assert body["checks"]["vector_bank"] is False
 
 
 def test_readiness_accepts_real_question_bank_copy(tmp_path, monkeypatch):
@@ -51,6 +52,7 @@ def test_readiness_accepts_real_question_bank_copy(tmp_path, monkeypatch):
             "sqlite": True,
             "core_tables": True,
             "question_bank": True,
+            "vector_bank": True,
         }
     finally:
         storage.set_db_path(None)
