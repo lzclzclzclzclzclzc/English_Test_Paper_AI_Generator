@@ -6,7 +6,6 @@
 # 不变约束（必须严格遵守，不能修改）
 - 题型：{{ original_question.question_type }}
 - 知识点：{{ kp_names }}
-- 难度：{{ original_question.difficulty }}
 
 # 原题
 {{ original_question | to_json }}
@@ -31,7 +30,6 @@
 {
   "question_type": "single_choice",
   "knowledge_point_ids": ["kp_sc_verbs"],
-  "difficulty": "medium",
   "stem": "Tom ______ to school every day.",
   "options": [
     {"label": "A", "text": "go"},
@@ -48,7 +46,6 @@
 {
   "question_type": "single_choice",
   "knowledge_point_ids": ["kp_sc_verbs"],
-  "difficulty": "medium",
   "stem": "She ______ to the park every weekend.",
   "options": [
     {"label": "A", "text": "go"},

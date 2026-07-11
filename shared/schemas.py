@@ -10,9 +10,14 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class Option(BaseModel):
+    label: Literal["A", "B", "C", "D"]
+    text: str
+
+
 class KnowledgePoint(BaseModel):
     id: str
-    level1: str = Field(..., description="Question type: single_choice / word_form / sentence_rewriting")
+    level1: Literal["single_choice", "word_form", "sentence_rewriting"] = Field(..., description="Question type")
     level2: str = Field(..., description="Chinese name of the knowledge point")
     aliases: list[str] = Field(default_factory=list)
 
@@ -34,10 +39,8 @@ class GenerateRequest(BaseModel):
     knowledge_points: list[str] = Field(default_factory=list)
     knowledge_points_exclude: list[str] = Field(default_factory=list)
     question_types: list[Literal["single_choice", "word_form", "sentence_rewriting"]] = Field(default_factory=list)
-    difficulty: list[Literal["easy", "medium", "hard"]] = Field(default_factory=list)
     total_questions: int = 10
     type_distribution: dict[str, int] = Field(default_factory=dict)
-    difficulty_distribution: dict[str, int] = Field(default_factory=dict)
     per_kp_min: int = 0
     revision_intensity: Literal["fresh", "light", "original"] = "light"
     free_text: str = ""
@@ -51,10 +54,8 @@ class ParserLLMResponse(BaseModel):
     knowledge_points: list[str] = Field(default_factory=list)
     knowledge_points_exclude: list[str] = Field(default_factory=list)
     question_types: list[Literal["single_choice", "word_form", "sentence_rewriting"]] = Field(default_factory=list)
-    difficulty: list[Literal["easy", "medium", "hard"]] = Field(default_factory=list)
     total_questions: int = 10
     type_distribution: dict[str, int] = Field(default_factory=dict)
-    difficulty_distribution: dict[str, int] = Field(default_factory=dict)
     per_kp_min: int = 0
     revision_intensity: Literal["fresh", "light", "original"]
 
@@ -67,7 +68,7 @@ class Question(BaseModel):
     chapter_l2: str
     number: str
     stem: str | None = None
-    options: list[dict[str, str]] | None = None
+    options: list[Option] | None = None
     hint: str | None = None
     original_sentence: str | None = None
     instruction: str | None = None
@@ -78,15 +79,13 @@ class Question(BaseModel):
     source_line: int
     stem_hash: str
     knowledge_point_ids: list[str] = Field(default_factory=list)
-    difficulty: Literal["easy", "medium", "hard"] = "medium"
 
 
 class RevisedQuestion(BaseModel):
     question_type: Literal["single_choice", "word_form", "sentence_rewriting"]
     knowledge_point_ids: list[str] = Field(default_factory=list)
-    difficulty: Literal["easy", "medium", "hard"] = "medium"
     stem: str | None = None
-    options: list[dict[str, str]] | None = None
+    options: list[Option] | None = None
     hint: str | None = None
     original_sentence: str | None = None
     instruction: str | None = None

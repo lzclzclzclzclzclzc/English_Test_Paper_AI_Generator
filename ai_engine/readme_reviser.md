@@ -365,7 +365,6 @@ for it in paper.items:
 # 必须保持不变的字段
 revised.question_type == original.question_type
 set(revised.knowledge_point_ids) == set(original.knowledge_point_ids)
-revised.difficulty == original.difficulty
 ```
 
 如果校验失败，**fallback 到原题**。

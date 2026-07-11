@@ -3,7 +3,7 @@
 Three revision strategies:
 - original: copy as-is, no LLM call
 - light: keep structure, modify vocabulary/context
-- fresh: generate completely new question based on KP + difficulty
+- fresh: generate completely new question based on KP
 
 Three-layer defense + fallback mechanism.
 """
@@ -71,7 +71,6 @@ def _copy_question(q: Question) -> RevisedQuestion:
     return RevisedQuestion(
         question_type=q.question_type,
         knowledge_point_ids=q.knowledge_point_ids,
-        difficulty=q.difficulty,
         stem=q.stem,
         options=q.options,
         hint=q.hint,
@@ -86,15 +85,13 @@ def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
     """Three-layer defense validation.
 
     Layer 1: Schema validation (handled by pydantic)
-    Layer 2: Invariant validation (question_type, KP, difficulty must match)
+    Layer 2: Invariant validation (question_type, KP must match)
     Layer 3: Answer format validation
     """
     # Layer 2: Invariant validation
     if revised.question_type != original.question_type:
         return False
     if set(revised.knowledge_point_ids) != set(original.knowledge_point_ids):
-        return False
-    if revised.difficulty != original.difficulty:
         return False
 
     # Layer 3: Answer format validation
@@ -104,7 +101,7 @@ def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
             return False
         if not revised.options or len(revised.options) != 4:
             return False
-        labels = {opt.get("label") for opt in revised.options}
+        labels = {opt.label for opt in revised.options}
         if labels != {"A", "B", "C", "D"}:
             return False
     elif qt in ("word_form", "sentence_rewriting"):

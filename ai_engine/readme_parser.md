@@ -122,7 +122,6 @@ print(f'total_questions:     {req.total_questions}')
 print(f'revision_intensity:  {req.revision_intensity}')
 print(f'type_distribution:   {req.type_distribution}')
 print(f'knowledge_points:    {req.knowledge_points}')
-print(f'difficulty:          {req.difficulty}')
 print()
 print('完整 JSON 输出：')
 print(json.dumps(req.dict(exclude_none=True), ensure_ascii=False, indent=2))
@@ -139,7 +138,6 @@ total_questions:     10
 revision_intensity:  original
 type_distribution:   {'single_choice': 10}
 knowledge_points:    []
-difficulty:          []
 
 完整 JSON 输出：
 {
@@ -147,10 +145,8 @@ difficulty:          []
   "knowledge_points": [],
   "knowledge_points_exclude": [],
   "question_types": ["single_choice"],
-  "difficulty": [],
   "total_questions": 10,
   "type_distribution": {"single_choice": 10},
-  "difficulty_distribution": {},
   "per_kp_min": 0,
   "revision_intensity": "original",
   "free_text": "来十道单选原题"
@@ -217,10 +213,8 @@ GenerateRequest(
     knowledge_points: list[str],            # 目标知识点
     knowledge_points_exclude: list[str],    # 排除知识点
     question_types: list[str],              # 题型列表
-    difficulty: list[str],                  # 难度列表
     total_questions: int,                   # 题目总数（≤ 30）
     type_distribution: dict[str, int],      # 题型分布
-    difficulty_distribution: dict[str, int], # 难度分布
     per_kp_min: int,                        # 每个知识点最少题目数
     revision_intensity: str,                # ⭐ 改题尺度（LLM推断）
     free_text: str,                         # 用户原始请求

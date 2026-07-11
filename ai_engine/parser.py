@@ -71,12 +71,6 @@ def _build_prompt(
         "- sentence_rewriting: 改写句子",
     ])
     
-    difficulties = "\n".join([
-        "- easy: 简单",
-        "- medium: 中等",
-        "- hard: 困难",
-    ])
-    
     wrong_items_text = ""
     if wrong_items:
         wrong_items_text = json.dumps([item.dict() for item in wrong_items], ensure_ascii=False)
@@ -93,7 +87,6 @@ def _build_prompt(
         wrong_items=wrong_items_text if wrong_items else None,
         mastery=mastery_text if mastery else None,
         question_types=question_types,
-        difficulties=difficulties,
     )
     
     return system_prompt, user_prompt
@@ -135,13 +128,6 @@ def _local_validate(
         scale = response.total_questions / total_type_dist
         response.type_distribution = {
             k: max(1, int(v * scale)) for k, v in response.type_distribution.items()
-        }
-    
-    total_diff_dist = sum(response.difficulty_distribution.values())
-    if total_diff_dist > response.total_questions:
-        scale = response.total_questions / total_diff_dist
-        response.difficulty_distribution = {
-            k: max(1, int(v * scale)) for k, v in response.difficulty_distribution.items()
         }
     
     return response, warnings
@@ -197,10 +183,8 @@ def parse(
         knowledge_points=validated.knowledge_points,
         knowledge_points_exclude=validated.knowledge_points_exclude,
         question_types=validated.question_types,
-        difficulty=validated.difficulty,
         total_questions=validated.total_questions,
         type_distribution=validated.type_distribution,
-        difficulty_distribution=validated.difficulty_distribution,
         per_kp_min=validated.per_kp_min,
         revision_intensity=validated.revision_intensity,
         free_text=user_query,

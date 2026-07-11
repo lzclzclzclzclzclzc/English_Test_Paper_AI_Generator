@@ -1,4 +1,4 @@
-<!-- vars: user_query, mode, kp_catalog, wrong_items?, mastery?, question_types, difficulties -->
+<!-- vars: user_query, mode, kp_catalog, wrong_items?, mastery?, question_types -->
 
 # 系统角色
 你是一个中考英语试卷生成助手。你的任务是将用户的自然语言请求解析为结构化的 JSON 对象。
@@ -8,9 +8,6 @@
 
 # 题型枚举
 {{ question_types }}
-
-# 难度枚举
-{{ difficulties }}
 
 # revision_intensity 推断规则（必须选择恰好一个档位，不允许省略）
 
@@ -120,10 +117,8 @@
 - knowledge_points: 知识点 id 列表（从清单中选择）
 - knowledge_points_exclude: 要排除的知识点 id 列表
 - question_types: 题型列表（从枚举中选择）
-- difficulty: 难度列表（从枚举中选择）
 - total_questions: 题目总数（不超过 30）
 - type_distribution: 题型分布字典，如 {"single_choice": 5, "word_form": 3}
-- difficulty_distribution: 难度分布字典
 - per_kp_min: 每个知识点最少题目数
 - revision_intensity: 改题尺度（**必须**从以下三个值中选择**恰好一个**）：
   - "original"：当用户提到"原题"、"真题"、"一模"、"二模"等词时
@@ -145,10 +140,8 @@
   "knowledge_points": ["kp_sc_verbs"],
   "knowledge_points_exclude": [],
   "question_types": ["single_choice"],
-  "difficulty": ["medium"],
   "total_questions": 10,
   "type_distribution": {"single_choice": 10},
-  "difficulty_distribution": {"medium": 10},
   "per_kp_min": 0,
   "revision_intensity": "light"
 }
@@ -161,10 +154,8 @@
   "knowledge_points": ["kp_sc_indef_pronoun", "kp_sc_prepositions"],
   "knowledge_points_exclude": [],
   "question_types": ["single_choice"],
-  "difficulty": [],
   "total_questions": 10,
   "type_distribution": {"single_choice": 10},
-  "difficulty_distribution": {},
   "per_kp_min": 5,
   "revision_intensity": "light"
 }
@@ -177,10 +168,8 @@
   "knowledge_points": [],
   "knowledge_points_exclude": [],
   "question_types": [],
-  "difficulty": [],
   "total_questions": 10,
   "type_distribution": {},
-  "difficulty_distribution": {},
   "per_kp_min": 0,
   "revision_intensity": "original"
 }
@@ -193,10 +182,8 @@
   "knowledge_points": [],
   "knowledge_points_exclude": [],
   "question_types": ["single_choice"],
-  "difficulty": [],
   "total_questions": 10,
   "type_distribution": {"single_choice": 10},
-  "difficulty_distribution": {},
   "per_kp_min": 0,
   "revision_intensity": "original"
 }
@@ -209,10 +196,8 @@
   "knowledge_points": [],
   "knowledge_points_exclude": [],
   "question_types": [],
-  "difficulty": [],
   "total_questions": 10,
   "type_distribution": {},
-  "difficulty_distribution": {},
   "per_kp_min": 0,
   "revision_intensity": "original"
 }
@@ -225,10 +210,8 @@
   "knowledge_points": [],
   "knowledge_points_exclude": [],
   "question_types": ["single_choice"],
-  "difficulty": [],
   "total_questions": 10,
   "type_distribution": {"single_choice": 10},
-  "difficulty_distribution": {},
   "per_kp_min": 0,
   "revision_intensity": "fresh"
 }
@@ -241,10 +224,8 @@
   "knowledge_points": ["kp_sc_verbs"],
   "knowledge_points_exclude": [],
   "question_types": ["single_choice"],
-  "difficulty": [],
   "total_questions": 10,
   "type_distribution": {"single_choice": 10},
-  "difficulty_distribution": {},
   "per_kp_min": 0,
   "revision_intensity": "fresh"
 }
@@ -257,10 +238,8 @@
   "knowledge_points": [],
   "knowledge_points_exclude": [],
   "question_types": [],
-  "difficulty": [],
   "total_questions": 10,
   "type_distribution": {},
-  "difficulty_distribution": {},
   "per_kp_min": 0,
   "revision_intensity": "light"
 }
@@ -273,10 +252,8 @@
   "knowledge_points": [],
   "knowledge_points_exclude": [],
   "question_types": [],
-  "difficulty": [],
   "total_questions": 10,
   "type_distribution": {},
-  "difficulty_distribution": {},
   "per_kp_min": 0,
   "revision_intensity": "light"
 }
@@ -289,10 +266,8 @@
   "knowledge_points": ["kp_sc_verbs"],
   "knowledge_points_exclude": [],
   "question_types": [],
-  "difficulty": [],
   "total_questions": 10,
   "type_distribution": {},
-  "difficulty_distribution": {},
   "per_kp_min": 0,
   "revision_intensity": "light"
 }
