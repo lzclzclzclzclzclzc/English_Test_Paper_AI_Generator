@@ -177,18 +177,18 @@ def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
 
     # Process questions concurrently
     with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = []
+        future_to_idx = {}
         for idx, retrieved in enumerate(retrieval.items[:num_questions], start=1):
-            futures.append(
-                executor.submit(
-                    _revise_one,
-                    retrieved.question,
-                    req.revision_intensity,
-                    req.free_text,
-                )
+            future = executor.submit(
+                _revise_one,
+                retrieved.question,
+                req.revision_intensity,
+                req.free_text,
             )
+            future_to_idx[future] = idx
 
-        for idx, future in enumerate(as_completed(futures), start=1):
+        for future in as_completed(future_to_idx):
+            idx = future_to_idx[future]
             rq, notes = future.result()
             items.append(
                 PaperItem(
@@ -200,6 +200,8 @@ def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
                     revision_notes=notes,
                 )
             )
+
+        items.sort(key=lambda x: x.index)
 
     # Collect revision failure indices
     revision_failures = [it.index for it in items if it.revision_notes]
