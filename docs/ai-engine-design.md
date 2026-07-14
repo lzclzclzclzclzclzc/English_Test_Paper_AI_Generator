@@ -337,7 +337,7 @@ class RetrievedItem(BaseModel):
 
 | 档位 | Reviser 做什么 |
 |---|---|
-| `original` | **不调 LLM**。字段拷贝，`revision_notes=None` |
+| `original` | **不调 LLM**。字段拷贝 |
 | `light` | LLM 逐题改写：保留题型/KP/难度；改数值/词汇/句式；同步更新 `answer` 和 `options`；不填 `solution` |
 | `fresh` | LLM 参考原题风格 + KP + 难度出**新题**：题干、选项、答案全新生成；不改 KP/题型/难度；不填 `solution` |
 
@@ -351,7 +351,7 @@ class RetrievedItem(BaseModel):
   - `req.free_text`（用户原话，控制情境倾向）
   - 档位标识（`light` / `fresh`）
 - **输出**：`instructor` + `RevisedQuestion` pydantic 校验；`max_retries=2`
-- **兜底**：仍失败 → **fallback 到原题**（按 `original` 档拷贝），`revision_notes="revision failed, fallback to original"`
+- **兜底**：仍失败 → **fallback 到原题**（按 `original` 档拷贝），并把该题号记入 `Paper.metadata["revision_failures"]`
 
 ### 5.3 硬约束层（Reviser 自防御）
 
@@ -371,14 +371,12 @@ class RetrievedItem(BaseModel):
 def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
     items: list[PaperItem] = []
     for idx, retrieved in enumerate(retrieval.items[: req.total_questions], start=1):
-        rq, notes = _revise_one(retrieved.question, req.revision_intensity, req.free_text)
+        rq = _revise_one(retrieved.question, req.revision_intensity, req.free_text)
         items.append(PaperItem(
             index=idx,
             question=rq,
-            score=_default_score(rq.question_type),
             source_question_id=retrieved.question.id,
             revision_mode=req.revision_intensity,
-            revision_notes=notes,
         ))
     return Paper(
         paper_id=uuid4().hex,
@@ -386,9 +384,9 @@ def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
         generated_at=datetime.now(UTC),
         request=req,
         items=items,
-        total_score=sum(it.score for it in items),
         metadata={
             "retrieval_warnings": retrieval.warnings,
+            "shortfall": retrieval.shortfall,
             "revision_failures": [it.index for it in items
                                   if _is_fallback(it)],
             "llm_calls": _stats(),
@@ -396,15 +394,12 @@ def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
     )
 ```
 
-### 5.5 分值默认
+**契约同步说明**（2026-07-14）：`PaperItem` 已删除 `score` 与 `revision_notes` 字段，`Paper` 已删除 `total_score` 字段（见 `shared/schemas.py`）：
 
-- `single_choice`：2 分
-- `word_form`：1 分
-- `sentence_rewriting`：3 分
+- **分值删除**：不同请求题数不同 → 总分不可横向比较，分值无意义。衡量表现改用**正确率**（`Attempt.items` 里每题的 `is_correct`）。
+- **revision_notes 删除**：改题摘要属于调试信息，前端不展示；若需排查失败，`Paper.metadata["revision_failures"]` 已记录 fallback 的题号。
 
-写死为常量；未来若需前端可配，会在 `GenerateRequest` 加 `score_per_type` 字段（本 spec 不实现，见 § 12 开放问题）。
-
-### 5.6 并发
+### 5.5 并发
 
 Reviser 批量改题时并发调用 LLM，通过 `shared/llm/deepseek.py` 的内部信号量限流（默认 `max_concurrency=4`，见 Spec A § 6 `LLMConfig`）。
 
@@ -940,11 +935,12 @@ CLI 是**开发者友好接口**，未来前端不通过 CLI。
 
 1. **DeepSeek 具体模型选型**：`deepseek-chat` vs `deepseek-reasoner`——第一版用 `deepseek-chat`；Reviser fresh 档若质量不足可局部切 `deepseek-reasoner`
 2. **答题记录清理策略**：`attempts` 表长期增长；Analyzer 用 `review_window_days` 已限查询范围，但历史数据永不删——第一版不做清理，留给未来后端 spec
-3. **单题分值可配置化**：目前硬编码；若前端要让用户自定义分值，`GenerateRequest` 加 `score_per_type` 字段
-4. **`over_fetch_factor` 调优**：默认 3；实际候选池分布若很偏，可能需要调大；观测 `RetrievalResult.warnings` 频率决定
-5. **Golden set 阈值**：初始 95% / 100% / 100% 是猜测值；跑一次真实回归后按实际调整
-6. **Chroma metadata 过滤语法**：`$in` / `$and` 语法因 Chroma 版本而异，写代码时需验证；若某语法不支持则退化为"取 Top-M 再 Python 端过滤"
-7. **Wilson lower bound 的 z 值**：默认 95% (z=1.96)；若薄弱点选择太保守（低样本 KP 被压得太低），可降为 90% (z=1.645)——观测 `weak_kps` 稳定性后决定
+3. **`over_fetch_factor` 调优**：默认 3；实际候选池分布若很偏，可能需要调大；观测 `RetrievalResult.warnings` 频率决定
+4. **Golden set 阈值**：初始 95% / 100% / 100% 是猜测值；跑一次真实回归后按实际调整
+5. **Chroma metadata 过滤语法**：`$in` / `$and` 语法因 Chroma 版本而异，写代码时需验证；若某语法不支持则退化为"取 Top-M 再 Python 端过滤"
+6. **Wilson lower bound 的 z 值**：默认 95% (z=1.96)；若薄弱点选择太保守（低样本 KP 被压得太低），可降为 90% (z=1.645)——观测 `weak_kps` 稳定性后决定
+
+> **已移除的开放问题**：原"单题分值可配置化"（2026-07-14 删除）——分值字段整体废弃（题数不同总分不可比），改用正确率衡量表现，见 §5.4 契约同步说明。
 
 ---
 
@@ -960,7 +956,7 @@ Spec A § 12 定义了全局不变量。AI Engine 侧的补充：
    - `questions.solution IS NULL`
    - 三条 AND 缺一不可
 4. **Reviser 不变字段**：`question_type` / `knowledge_point_ids` / `difficulty` 在任何档位下都不被修改
-5. **Reviser 失败 fallback**：`revision_mode` 仍为原档位，但内容等同 `original`，`revision_notes` 记录 "revision failed"
+5. **Reviser 失败 fallback**：`revision_mode` 仍为原档位，但内容等同 `original`，题号记入 `Paper.metadata["revision_failures"]`
 6. **Solutioner 是 AI Engine 唯一有副作用的模块**（写 `questions.solution`）；其他所有模块只读或只产返回值
 7. **Analyzer 只读**：不修改任何持久化状态
 8. **`revision_intensity` 的填写者是 LLM，不是调用方**：`generate_paper` / `parse` 接口都不接受此参数；Parser 通过 `ParserLLMResponse.revision_intensity`（pydantic 必填）保证被填写；`GenerateRequest.revision_intensity` 一旦离开 Parser 就是完整的三值枚举之一

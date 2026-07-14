@@ -204,7 +204,6 @@ class RevisedQuestion(BaseModel):
 class PaperItem(BaseModel):
     index: int                           # 1-based position in the paper
     question: RevisedQuestion
-    score: int                           # points for this item
     source_question_id: str              # traces back to the bank question
     revision_mode: RevisionMode
 
@@ -223,7 +222,6 @@ class Paper(BaseModel):
                                          # wrong_items to the frontend. Revise
                                          # only reads the filter fields.
     items: list[PaperItem]
-    total_score: int                     # sum of PaperItem.score (set by Reviser)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
