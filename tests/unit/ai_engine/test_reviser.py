@@ -12,6 +12,7 @@ def sample_questions():
     """Load 3 random single choice questions from real question bank."""
     import hashlib
     import random
+    from datetime import datetime, timezone
     with open("data/chapters/shanghai_2021_yimo.json", "r", encoding="utf-8") as f:
         raw = json.load(f)
     single_choice = [q for q in raw if q.get("question_type") == "single_choice"]
@@ -21,6 +22,8 @@ def sample_questions():
         if "stem_hash" not in q:
             stem_text = q.get("stem", "") or ""
             q["stem_hash"] = hashlib.md5(stem_text.encode()).hexdigest()
+        if "created_at" not in q:
+            q["created_at"] = datetime.now(timezone.utc)
         questions.append(Question(**q))
     print(f"\n本次测试随机选择题目ID: {[q.id for q in questions]}")
     return questions

@@ -6,6 +6,7 @@ and returns (system, user) tuple separated by --- line.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -13,7 +14,11 @@ from jinja2 import Environment, FileSystemLoader
 
 def _to_json(value) -> str:
     """Jinja2 filter: convert value to JSON string."""
-    return json.dumps(value, ensure_ascii=False, indent=2)
+    def _default(o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        raise TypeError(f"Object of type {o.__class__.__name__} is not JSON serializable")
+    return json.dumps(value, ensure_ascii=False, indent=2, default=_default)
 
 
 _env = Environment(
