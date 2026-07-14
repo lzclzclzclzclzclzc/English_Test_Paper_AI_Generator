@@ -8,7 +8,11 @@ __pycache__/
 dist/
 build/
 models/
+debug.log
 
 # env
 .env
 .env.local
+
+# runtime vector store (rebuilt by `ingestion.cli build-vec`)
+data/chroma/
