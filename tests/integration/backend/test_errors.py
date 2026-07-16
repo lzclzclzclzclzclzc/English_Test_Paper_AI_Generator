@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import ai_engine
-from ai_engine.errors import LLMError, ParserError
+from ai_engine.errors import LLMError, ParserError, RetrieverError
 
 
 def assert_trace_id_matches_header(response):
@@ -27,6 +27,27 @@ def test_ai_parser_error_maps_to_error_code(logged_in_client, monkeypatch):
     assert response.status_code == 400
     body = assert_trace_id_matches_header(response)
     assert body["error_code"] == "ai.parser_failed"
+
+
+def test_ai_retriever_no_candidate_maps_to_422_without_persisting_paper(logged_in_client, monkeypatch):
+    """A real Retriever miss is a user-correctable request, not a 500."""
+
+    def fail(*args, **kwargs):
+        raise RetrieverError("no candidates matched the request")
+
+    monkeypatch.setattr(ai_engine, "generate_paper", fail)
+    response = logged_in_client.post(
+        "/api/papers/generate",
+        json={"user_query": "only use an unavailable knowledge point", "mode": "fresh"},
+    )
+
+    assert response.status_code == 422
+    body = assert_trace_id_matches_header(response)
+    assert body["error_code"] == "ai.no_candidate"
+
+    inspection = logged_in_client.get("/api/test/db-inspect?table=papers")
+    assert inspection.status_code == 200
+    assert inspection.json()["rows"] == []
 
 
 def test_ai_llm_error_maps_to_502(logged_in_client, generated_paper, monkeypatch):

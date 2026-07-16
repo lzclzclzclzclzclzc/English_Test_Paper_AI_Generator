@@ -203,6 +203,8 @@ Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
 }
 ```
 
+`metadata` 由 AI Engine 生成并由后端原样持久化、返回。前端可以展示其中稳定定义的字段；Retriever/Reviser 可能写入 `retrieval_warnings`、`retrieval_shortfall` 与 `revision_failures`，业务代码必须能容忍未知字段。
+
 前端渲染做题页主要用 `items[].question`、`items[].score`、`paper_id`。提交答案时只需要回传题号和用户答案。
 
 `question.answer` 与真实题库 `answer_json` 对齐，有两种形态：
