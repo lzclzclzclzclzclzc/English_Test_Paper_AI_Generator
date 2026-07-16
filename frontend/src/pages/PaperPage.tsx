@@ -10,6 +10,7 @@ import { toastApiError } from '@/lib/errors'
 import { queryClient } from '@/lib/queryClient'
 import type { AnswerDraft } from '@/lib/answers'
 import { buildSubmission, listUnanswered } from '@/lib/answers'
+import { buildPaperNotices } from '@/lib/paperNotices'
 import type { PaperItem, WrongItemRef } from '@/types/api'
 import type { RemediationHandoff } from '@/types/app'
 import { PaperSheet } from '@/components/PaperSheet'
@@ -141,6 +142,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   }
 
   const unanswered = listUnanswered(paper, answers)
+  const notices = buildPaperNotices(paper.metadata)
   const generatedAt = new Date(paper.generated_at).toLocaleString('zh-CN', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -171,6 +173,18 @@ function PaperPageInner({ paperId }: { paperId: string }) {
           }}
           onRemediate={handleRemediate}
         />
+      )}
+
+      {/* 生成说明（metadata 里的检索/改写降级提示）：只陈述事实，不打断做题 */}
+      {notices.length > 0 && (
+        <div className="rounded-md border border-[#d8e0ea] bg-ink-wash px-5 py-3">
+          <p className="mb-1 text-xs font-bold text-ink">本卷生成说明</p>
+          <ul className="flex flex-col gap-0.5 text-[13px] leading-relaxed text-text-mid">
+            {notices.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <PaperSheet

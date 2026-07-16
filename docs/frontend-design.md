@@ -145,6 +145,7 @@ frontend/
 
 **Ⅱ. PaperView（试卷区）**
 - 顶部 metadata 条：标题、生成时间、题目数量。
+- 生成说明条（2026-07-16 补，随后端契约更新）：`Paper.metadata` 由 AI Engine 写入、后端透传，`lib/paperNotices.ts::buildPaperNotices()` 宽松解析 `revision_failures`（fallback 题号）、`retrieval_shortfall`/`shortfall`（题型缺口字典，两个键名都认）、`retrieval_warnings`（成句告警，原样展示）三个字段，拼成中文说明；形态不符或字段未知时静默丢弃（契约要求容忍未知字段）。有内容时在卷面上方渲染 `--ink-wash` 提示条，无内容不占位。
 - 一个 "重新出" 按钮：弹 `<Dialog>` 输入修改意图 → `POST /api/papers/revise`（body: `{ paper_id, user_instruction }`，Spec C § 5.1）→ 后端返回新的 `Paper`（`paper_id` 换新）→ 更新缓存里的当前试卷引用。
 - 试卷题目列表：每题一个 `QuestionCard`。
 - 底部 "提交" 按钮：把答案打包成 `GradeSubmissionRequest` → `POST /api/attempts` → 展示 `GradeSubmissionResponse`。
