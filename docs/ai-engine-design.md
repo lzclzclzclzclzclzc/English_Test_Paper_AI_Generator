@@ -368,6 +368,7 @@ ordered = sorted(hard_ids, key=lambda i: scores[i], reverse=True)
 | `light` | LLM 逐题改写：保留题型/KP；改数值/词汇/句式；同步更新 `answer` 和 `options`；不填 `solution` |
 | `fresh` | LLM 参考原题风格 + KP 出**新题**：题干、选项、答案全新生成；不改 KP/题型；不填 `solution` |
 
+
 ### 5.2 逐题 LLM 调用（`light` / `fresh`）
 
 - **单题一次调用**（不 batch）——一题失败不拖全部
