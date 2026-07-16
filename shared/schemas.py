@@ -156,7 +156,13 @@ class GenerateRequest(BaseModel):
     user_id: str | None = None
     review_window_days: int | None = None
 
-    # Free text — user's original phrasing (Reviser reads for tone/scenario)
+    # Semantic topic hint — the part of the user's request that the
+    # structured fields above CANNOT express (a scenario/theme like "关于环保"
+    # / "校园生活" / "购物场景"). Parser fills this ONLY with such leftover
+    # topic wording; a pure quota/KP request (e.g. "5 道单选 5 道改写") leaves
+    # it "". The Retriever uses it as the query for the semantic (vector) path:
+    # non-empty → vector retrieval, empty → SQL random. Do NOT dump the raw
+    # user query here — that would make every request trigger vector search.
     free_text: str = ""
 
 

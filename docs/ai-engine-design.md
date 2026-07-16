@@ -178,16 +178,15 @@ def parse(
 4. **本地二次校验**（在 pydantic 之外）：
    - `knowledge_points` 里的每个 id 必须存在于 SQLite；不存在则丢弃并记入 `warnings`
    - `total_questions` ≤ 上限（默认 30）；超限截断
-   - `type_distribution` 累加 ≤ `total_questions`；超出按比例缩放
-   - `difficulty_distribution` 同理
+   - `type_distribution` 的 key 必须是合法 `question_type`（非法丢弃）；累加 ≤ `total_questions`，超出按比例缩放
    - **`revision_intensity` 不做二次校验**：其值由 pydantic `Literal["fresh","light","original"]` 必填约束保证——若 LLM 省略或输出非法值，`instructor` 会自动把校验错误反馈回 LLM 重试
-5. **构造 `GenerateRequest`**：把 `ParserLLMResponse` 的字段（含 LLM 决定的 `revision_intensity`）转填到 `GenerateRequest`；补 `mode`、`wrong_items`、`user_id`、`review_window_days`、`free_text=user_query`
+5. **构造 `GenerateRequest`**：把 `ParserLLMResponse` 的字段（含 LLM 决定的 `revision_intensity`）转填到 `GenerateRequest`；补 `mode`、`wrong_items`、`user_id`、`review_window_days`。**`free_text` 只填"结构化字段无法表达的情境/主题诉求"**（如"关于环保"、"结合校园场景"），由 LLM 在 `ParserLLMResponse.free_text` 中输出；纯配额/纯 KP 请求（如"5 道单选 5 道改写"）此字段为空串。**不要把整句 user_query 塞进 free_text**——否则每个请求都会触发 Retriever 的向量检索（见 § 3.4 规则 + Spec A `GenerateRequest.free_text` 契约）
 6. **兜底**：若 LLM 3 次仍无法产出合法 JSON → 抛 `ParserError`
 
 ### 3.3 关键决策
 
 - **LLM 只负责意图理解和结构映射**，一致性检查由本地代码做（规则确定的事情不劳烦模型）
-- **不允许 LLM 造 KP id**：清单在 prompt 里显式给出，若用户提到清单外的概念（如生僻语法点），LLM 应写入 `free_text`，本地代码丢弃非法 id
+- **不允许 LLM 造 KP id**：清单在 prompt 里显式给出，本地代码丢弃非法 id。若用户提到清单外的**情境/主题**（如"环保""校园生活"），写入 `free_text` 供 Retriever 做语义检索；若是清单外的生僻语法点且无对应 KP，则只能丢弃
 - **`total_questions` 上限**：常量，第一版 30；后续可放到 `AppConfig`
 - **`revision_intensity` 由 LLM 决定**：用户通常不会显式说"要原题/轻改/新出"，LLM 根据 prompt 语义推断（详细规则见 § 3.4）；兜底逻辑写在 prompt 里（默认选 `"light"`），不写在 Python 代码里
 
@@ -197,7 +196,26 @@ def parse(
 
 - 头部列出**所有合法 KP id + 三种 `question_type` 枚举**
 - Few-shot 覆盖：单一 KP 请求、多 KP 请求、`type_distribution` 显式指定、模糊请求（"随便出 10 道"）、`remediation` 附加错题、`review` 附加掌握度
-- 显式规则："若用户提到清单外的 KP，不要造 id，只写进 `free_text`"
+- **`free_text` 填写规则**（关键，影响 Retriever 走向量还是 SQL）：
+
+  ```
+  free_text 只填"结构化字段（knowledge_points / question_types /
+  type_distribution）无法表达的情境或主题诉求"，用于语义向量检索。
+
+  - 填入：用户描述的题目情境/主题，如"关于环保""结合校园生活场景"
+    "多用旅游购物的例子"——这些是题库没有显式标注、只能靠语义匹配的内容。
+  - 留空（""）：纯配额/纯知识点/纯题型请求，如"5 道单选 5 道改写"
+    "来 10 道时态题""随便出 10 道"——这些诉求已被结构化字段完整表达，
+    没有额外主题。
+  - 绝不把整句 user_query 原样塞进 free_text。
+  ```
+
+  配 few-shot：
+  - `"来 10 道关于环保的时态单选"` → `free_text="关于环保"`（时态/单选/数量进结构化字段）
+  - `"5 道单选 5 道改写"` → `free_text=""`
+  - `"结合校园生活多出几道介词题"` → `free_text="结合校园生活"`
+  - `"随便来 10 道"` → `free_text=""`
+
 - **`revision_intensity` 推断规则**（关键新规则）：
 
   ```
@@ -236,16 +254,15 @@ class ParserLLMResponse(BaseModel):
     """Parser 从 LLM 拿到的直接响应；由 Parser 转换为 GenerateRequest。"""
     reasoning: str = ""                    # LLM 内推理，不透传给下游
     knowledge_points: list[str] = []
-    knowledge_points_exclude: list[str] = []
     question_types: list[Literal["single_choice", "word_form",
                                  "sentence_rewriting"]] = []
-    difficulty: list[Literal["easy", "medium", "hard"]] = []
     total_questions: int
     type_distribution: dict[str, int] = {}
-    difficulty_distribution: dict[str, int] = {}
-    per_kp_min: int = 0
+    free_text: str = ""                    # 情境/主题诉求；纯配额请求留空（见 § 3.4）
     revision_intensity: Literal["fresh", "light", "original"]   # 必填，无默认
 ```
+
+> **契约对齐**（2026-07-14/15）：本模型已同步 `shared/schemas.py` 的 `GenerateRequest`——删除 `knowledge_points_exclude`、`difficulty`、`difficulty_distribution`、`per_kp_min`（均已从契约移除），新增 `free_text`（语义主题，供 Retriever 判断走向量还是 SQL）。
 
 **为什么与 `GenerateRequest` 分开**：
 

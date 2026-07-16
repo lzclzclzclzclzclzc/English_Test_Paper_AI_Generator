@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import logging
 import random
-import re
 from pathlib import Path
 
 from ai_engine.errors import RetrieverError
@@ -47,21 +46,23 @@ log = logging.getLogger(__name__)
 DEFAULT_CHROMA_DIR = Path("data/chroma")
 COLLECTION_NAME = "questions"
 
-# Over-fetch factor for the vector path: pull this many × the bucket target
-# from Chroma before intersecting with the SQL hard-filter set, so enough
-# survive the intersection. (Spec B §4.2 step 3.)
-OVER_FETCH = 3
 
-# free_text is treated as "semantic" only if it has enough Chinese/English
-# content to be worth embedding. A bare "" or "来10道题" carries no topic.
-_MEANINGFUL_CHARS = re.compile(r"[一-鿿A-Za-z]")
-_MIN_SEMANTIC_CHARS = 4
+def _dot(a, b) -> float:
+    """Dot product of two equal-length vectors. Both the query and stored
+    vectors are L2-normalised (build_vec uses normalize_embeddings=True), so
+    the dot product equals cosine similarity."""
+    return float(sum(x * y for x, y in zip(a, b)))
 
 
 def _has_semantic_intent(free_text: str) -> bool:
-    """Decide whether free_text warrants a vector search (D2 switch)."""
-    chars = _MEANINGFUL_CHARS.findall(free_text or "")
-    return len(chars) >= _MIN_SEMANTIC_CHARS
+    """Whether free_text warrants a vector search (D2 switch).
+
+    The Parser fills `free_text` ONLY with a leftover semantic topic that the
+    structured fields can't express (see GenerateRequest.free_text docstring);
+    a pure quota/KP request leaves it "". So the switch is simply "non-empty":
+    empty → SQL random path, non-empty → vector path.
+    """
+    return bool(free_text and free_text.strip())
 
 
 def _auto_device() -> str:
@@ -218,51 +219,39 @@ class Retriever:
         hard_ids: list[str],
         target: int,
     ) -> tuple[list[str], dict[str, float]]:
-        """Embed free_text, pull Top-M from Chroma, intersect with hard_ids,
-        order by similarity. Returns (ordered_ids, id→score).
+        """Rank the SQL-filtered candidates (`hard_ids`) by semantic similarity
+        to `free_text`. Returns (ordered_ids, id→score).
 
-        Chroma metadata filter narrows by question_type (cheap); the KP filter
-        stays in SQL (hard_ids) because kp_ids is a comma-joined string in
-        metadata and exact matching there is unreliable (Spec A §3.8)."""
-        hard_set = set(hard_ids)
+        Order is SQL-first, vector-second: `hard_ids` is already the exact
+        candidate set (question_type + KP filtered in SQL). We fetch *those*
+        questions' stored vectors from Chroma by id and score them locally
+        against the query vector, then sort. This guarantees the ranking is
+        over the intended KP set — never "the globally-nearest 15, of which
+        only 2 happen to be in-set" (the old query()+intersect bug).
+
+        Chroma's query() can't be limited to an id set, so we use get(ids=...)
+        + local cosine instead. Vectors were L2-normalised at build time, so
+        cosine == dot product.
+        """
         embedder = self._get_embedder()
         collection = self._get_collection()
 
         query_vec = embedder.embed([req.free_text])[0]
 
-        where = None
-        if bucket_qtypes:
-            where = (
-                {"question_type": bucket_qtypes[0]}
-                if len(bucket_qtypes) == 1
-                else {"question_type": {"$in": list(bucket_qtypes)}}
-            )
+        stored = collection.get(ids=hard_ids, include=["embeddings"])
+        got_ids = stored["ids"]
+        embeddings = stored["embeddings"]
 
-        # Over-fetch: intersection with hard_set drops some hits, so pull extra.
-        m = min(len(hard_ids), max(target * OVER_FETCH, target))
-        res = collection.query(
-            query_embeddings=[query_vec],
-            n_results=m,
-            where=where,
-            include=["distances"],
-        )
-        hit_ids = res["ids"][0]
-        distances = res["distances"][0]
-
-        ordered: list[str] = []
         scores: dict[str, float] = {}
-        for qid, dist in zip(hit_ids, distances):
-            if qid in hard_set:
-                ordered.append(qid)
-                scores[qid] = 1.0 - dist       # cosine distance → similarity
-        # If the vector hits under-cover the bucket (e.g. Chroma returned fewer
-        # than needed after intersection), top up with the remaining hard_ids
-        # in deterministic order so we still hit the target when possible.
-        if len(ordered) < target:
-            remaining = [i for i in hard_ids if i not in scores]
-            ordered.extend(remaining)
-            for i in remaining:
-                scores.setdefault(i, 0.0)
+        for qid, vec in zip(got_ids, embeddings):
+            scores[qid] = _dot(query_vec, vec)   # both normalised → cosine
+
+        # Any hard_id missing from Chroma (shouldn't happen if the vector store
+        # is in sync with SQLite) falls to the end with score 0.
+        for qid in hard_ids:
+            scores.setdefault(qid, 0.0)
+
+        ordered = sorted(hard_ids, key=lambda i: scores[i], reverse=True)
         return ordered, scores
 
 
