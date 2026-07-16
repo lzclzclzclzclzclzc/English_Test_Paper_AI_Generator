@@ -170,6 +170,12 @@ frontend/
   - 颜色标记：wilson_lower ≥ 0.7 绿；0.4-0.7 黄；< 0.4 红。
 - 数据来源：`GET /api/users/me/mastery`，TanStack Query key: `['mastery', 'me']`。
 
+### 3.7 PapersPage（`/papers`，2026-07-11 补）
+- 数据：`GET /api/papers`（只有摘要），`useInfiniteQuery(['papers','list'])`，页大小 20；响应无总数，**满页即认为有下一页**，底部「加载更多」。
+- 每行：标题 + meta（生成时间 · 题数 · 满分）+ 状态章（`submitted` → 已交卷 / 未作答），整行链接到 `/papers/{paper_id}`。
+- 失效时机：生成成功（GeneratePage）、重新出卷成功、交卷成功（PaperPage）三处 `invalidateQueries(['papers','list'])`。
+- 空态引导去生成页；视觉规则见 Spec F § 5「试卷列表页」。
+
 ---
 
 ## 4. 状态管理
@@ -183,7 +189,7 @@ frontend/
 - Query keys 约定：
   - `['auth', 'me']` — 当前用户
   - `['paper', paperId]` — 单份试卷
-  - `['papers', 'list']` — 试卷列表（暂不用页面，为未来预留）
+  - `['papers', 'list']` — 试卷列表（PapersPage 的 `useInfiniteQuery`；生成 / 重出 / 交卷成功后 invalidate）
   - `['mastery', userId | 'me']`
 
 ### 4.2 UI 状态
@@ -376,7 +382,7 @@ export default defineConfig({
 2. 国际化（中文硬编码）。
 3. 深色模式。
 4. 试卷 PDF 导出。
-5. 试卷列表页（Spec C 的 `/api/papers` 接口保留，但前端不做 UI）。
+5. ~~试卷列表页~~（2026-07-11 已实现，见 § 3.7）。
 6. 草稿保存（刷新页面丢失中间答题状态）。
 7. 富文本 / LaTeX（英语题目全部纯文本）。
 8. 无障碍（accessibility）深度优化，只做 shadcn/ui 内置的 ARIA。

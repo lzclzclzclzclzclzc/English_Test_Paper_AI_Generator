@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import type { RemediationHandoff } from '@/types/app'
 import type { GenerationMode } from '@/types/api'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -109,33 +110,48 @@ export function GenerateForm({
         ))}
       </div>
 
-      {/* 模式选择 */}
-      <RadioGroup
-        value={mode}
-        onValueChange={(v) => form.setValue('mode', v as GenerationMode)}
-        className="flex flex-wrap gap-3"
-      >
-        {MODES.map(({ value, label, hint }) => {
-          const disabled = value === 'remediation' && !remediation
-          return (
-            <Label
-              key={value}
-              title={disabled ? '交卷后，从成绩页点「错题巩固」进入' : undefined}
-              className={
-                disabled
-                  ? 'flex cursor-not-allowed items-center gap-2 rounded-md border border-line px-3 py-2 opacity-50'
-                  : mode === value
-                    ? 'flex cursor-pointer items-center gap-2 rounded-md border-[1.5px] border-ink bg-ink-wash px-3 py-2 font-medium'
-                    : 'flex cursor-pointer items-center gap-2 rounded-md border border-line-strong px-3 py-2 hover:border-muted-foreground'
-              }
-            >
-              <RadioGroupItem value={value} disabled={disabled} />
-              <span className="text-[13.5px]">{label}</span>
-              <span className="text-xs text-muted-foreground">{hint}</span>
-            </Label>
-          )
-        })}
-      </RadioGroup>
+      {/* 模式选择：文字下划线式，与导航栏当前页同一视觉语言（Spec F § 5） */}
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-1">
+        <span className="text-xs text-text-mid">出卷方式</span>
+        <RadioGroup
+          value={mode}
+          onValueChange={(v) => form.setValue('mode', v as GenerationMode)}
+          className="flex w-auto flex-wrap items-baseline gap-x-5 gap-y-1.5"
+        >
+          {MODES.map(({ value, label }) => {
+            const disabled = value === 'remediation' && !remediation
+            return (
+              <Label
+                key={value}
+                title={disabled ? '交卷后，从成绩页点「错题巩固」进入' : undefined}
+                className={cn(
+                  'gap-0 border-b-2 pb-1 text-[13.5px] leading-none transition-colors',
+                  'has-[:focus-visible]:rounded-xs has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-ring/50',
+                  disabled
+                    ? 'cursor-not-allowed border-transparent font-normal text-muted-foreground/70'
+                    : mode === value
+                      ? 'cursor-pointer border-ink font-bold text-ink'
+                      : 'cursor-pointer border-transparent font-normal text-text-mid hover:text-foreground',
+                )}
+              >
+                <span className="sr-only">
+                  <RadioGroupItem value={value} disabled={disabled} />
+                </span>
+                {/* 隐形加粗占位：选中加粗时整行不跳动 */}
+                <span className="flex flex-col">
+                  {label}
+                  <span aria-hidden className="invisible h-0 select-none font-bold">
+                    {label}
+                  </span>
+                </span>
+              </Label>
+            )
+          })}
+        </RadioGroup>
+        <span className="text-xs text-text-mid">
+          —— {MODES.find((m) => m.value === mode)?.hint}
+        </span>
+      </div>
     </form>
   )
 }

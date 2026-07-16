@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
+import { ScrollText } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { logout } from '@/api/auth'
 import { useAuth } from '@/hooks/useAuth'
@@ -8,10 +9,11 @@ import { Button } from '@/components/ui/button'
 
 const links = [
   { to: '/', label: '生成试卷' },
+  { to: '/papers', label: '我的试卷' },
   { to: '/mastery', label: '掌握度' },
 ] as const
 
-/** 导航栏（Spec F § 5）：白底下边线、方形"卷"字 logo、当前页 2px 下划线、头像圈。 */
+/** 导航栏（Spec F § 5）：白底下边线、方形卷轴图标 logo、当前页 2px 下划线、头像圈。 */
 export function AppNav() {
   const { data: user } = useAuth()
   const navigate = useNavigate()
@@ -29,8 +31,8 @@ export function AppNav() {
       <div className="mx-auto flex h-14 max-w-[880px] items-center justify-between px-6">
         <div className="flex items-center gap-6">
           <NavLink to="/" className="flex items-center gap-2.5">
-            <span className="flex size-7 items-center justify-center rounded-[4px] bg-ink font-serif text-sm font-bold text-paper">
-              卷
+            <span className="flex size-7 items-center justify-center rounded-[4px] bg-ink text-paper">
+              <ScrollText className="size-4" strokeWidth={2} />
             </span>
             <span className="font-serif text-[15px] font-bold text-foreground">墨卷</span>
           </NavLink>

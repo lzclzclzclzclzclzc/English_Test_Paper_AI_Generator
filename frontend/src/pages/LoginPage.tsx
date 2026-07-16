@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { ScrollText } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -60,8 +61,8 @@ export function LoginPage() {
       {/* 品牌 + slogan 在卡片外（Spec F § 5 登录页） */}
       <div className="flex flex-col items-center gap-2">
         <div className="flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-[4px] bg-ink font-serif text-xl font-bold text-paper">
-            卷
+          <span className="flex size-10 items-center justify-center rounded-[4px] bg-ink text-paper">
+            <ScrollText className="size-6" strokeWidth={2} />
           </span>
           <span className="font-serif text-2xl font-bold text-foreground">墨卷</span>
         </div>

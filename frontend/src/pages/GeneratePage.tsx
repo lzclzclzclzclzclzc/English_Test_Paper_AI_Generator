@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { generatePaper } from '@/api/papers'
+import { getReadiness } from '@/api/health'
 import { ApiError } from '@/api/client'
 import { toastApiError } from '@/lib/errors'
 import { queryClient } from '@/lib/queryClient'
@@ -27,11 +28,21 @@ export function GeneratePage() {
 
   const [serverError, setServerError] = useState<string | null>(null)
 
+  // 联调期后端题库/向量库可能未就绪；就绪时不渲染任何东西
+  const readiness = useQuery({
+    queryKey: ['health', 'ready'],
+    queryFn: getReadiness,
+    staleTime: 60_000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  })
+
   const generate = useMutation({
     mutationFn: generatePaper,
     onSuccess: (paper) => {
       // D1：塞缓存再导航，PaperPage 零请求命中
       queryClient.setQueryData(['paper', paper.paper_id], paper)
+      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
       navigate(`/papers/${paper.paper_id}`)
     },
     onError: (err) => {
@@ -74,6 +85,11 @@ export function GeneratePage() {
           用一句话说出你想练的题型或考点，AI 会从真题库为你组一份卷
         </p>
       </div>
+      {readiness.data?.status === 'not_ready' && (
+        <div className="mb-4 rounded-md border border-line bg-[#faf8f3] px-4 py-2.5 text-[13px] text-text-mid">
+          题库正在准备中，出卷可能暂时失败，可以稍后再试
+        </div>
+      )}
       <GenerateForm
         remediation={remediation}
         onDismissRemediation={() => setRemediation(null)}

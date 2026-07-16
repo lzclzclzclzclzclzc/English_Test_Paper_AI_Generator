@@ -3,6 +3,7 @@ import { RequireAuth } from '@/components/RequireAuth'
 import { AppLayout } from '@/components/AppLayout'
 import { LoginPage } from '@/pages/LoginPage'
 import { GeneratePage } from '@/pages/GeneratePage'
+import { PapersPage } from '@/pages/PapersPage'
 import { PaperPageRoute } from '@/pages/PaperPage'
 import { MasteryPage } from '@/pages/MasteryPage'
 
@@ -18,8 +19,7 @@ export function AppRoutes() {
         }
       >
         <Route path="/" element={<GeneratePage />} />
-        {/* 为将来的试卷列表页占位；现在重定向回生成页 */}
-        <Route path="/papers" element={<Navigate to="/" replace />} />
+        <Route path="/papers" element={<PapersPage />} />
         <Route path="/papers/:paperId" element={<PaperPageRoute />} />
         <Route path="/mastery" element={<MasteryPage />} />
       </Route>

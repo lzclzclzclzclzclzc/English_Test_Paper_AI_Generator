@@ -15,6 +15,6 @@ export const revisePaper = (req: RevisePaperRequest) =>
 
 export const getPaper = (paperId: string) => apiFetch<Paper>(`/papers/${paperId}`)
 
-/** 列表页暂未做 UI，为将来 /papers 预留。 */
+/** 列表只返回摘要（无题面、无总数）；PapersPage 以"满页即有下一页"翻页。 */
 export const listPapers = (limit = 100, offset = 0) =>
   apiFetch<PaperListResponse>(`/papers?limit=${limit}&offset=${offset}`)

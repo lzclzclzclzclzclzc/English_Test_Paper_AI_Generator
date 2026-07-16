@@ -48,13 +48,19 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   const [reviseInstruction, setReviseInstruction] = useState('')
 
   // D4：成绩只活在 mutation state（后端无历史成绩端点，刷新即回到答题态）
-  const grade = useMutation({ mutationFn: submitAttempt, onError: toastApiError })
+  const grade = useMutation({
+    mutationFn: submitAttempt,
+    // 列表页的 submitted 标记随交卷改变
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['papers', 'list'] }),
+    onError: toastApiError,
+  })
   const phase = grade.isPending ? 'submitting' : grade.data ? 'submitted' : 'answering'
 
   const revise = useMutation({
     mutationFn: revisePaper,
     onSuccess: (newPaper) => {
       queryClient.setQueryData(['paper', newPaper.paper_id], newPaper)
+      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
       navigate(`/papers/${newPaper.paper_id}`)
     },
     onError: toastApiError,
