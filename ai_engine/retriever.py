@@ -189,7 +189,7 @@ class Retriever:
             return []
 
         if use_vector:
-            ordered_ids, scores = self._vector_order(req, bucket_qtypes, hard_ids, target)
+            ordered_ids, scores = self._vector_order(req, hard_ids)
         else:
             ordered_ids = self._random_order(hard_ids)
             scores = {i: 0.0 for i in ordered_ids}
@@ -215,9 +215,7 @@ class Retriever:
     def _vector_order(
         self,
         req: GenerateRequest,
-        bucket_qtypes: list[QuestionType],
         hard_ids: list[str],
-        target: int,
     ) -> tuple[list[str], dict[str, float]]:
         """Rank the SQL-filtered candidates (`hard_ids`) by semantic similarity
         to `free_text`. Returns (ordered_ids, id→score).
