@@ -113,17 +113,15 @@
 
 # 输出格式
 请输出一个 JSON 对象，包含以下字段：
-- reasoning: 你的推理过程（用于调试，不会泄露给用户）
 - knowledge_points: 知识点 id 列表（从清单中选择）
-- knowledge_points_exclude: 要排除的知识点 id 列表
 - question_types: 题型列表（从枚举中选择）
 - total_questions: 题目总数（不超过 30）
 - type_distribution: 题型分布字典，如 {"single_choice": 5, "word_form": 3}
-- per_kp_min: 每个知识点最少题目数
 - revision_intensity: 改题尺度（**必须**从以下三个值中选择**恰好一个**）：
   - "original"：当用户提到"原题"、"真题"、"一模"、"二模"等词时
   - "light"：当用户提到"练习"、"巩固"、"复习"、"来几道"、"出几道"或知识点名称时（**默认档位**）
   - "fresh"：当用户提到"重新出"、"全新"、"场景"、"主题"、"情境"、"关于"、"结合"等词时
+- free_text: 用户请求中无法用结构化字段表达的语义主题提示（如"关于环保"、"校园生活"等），纯配额/KP请求填空字符串
 
 **重要提示**：
 - 如果用户请求中没有"原题"、"真题"、"重新出"、"全新"、"场景"、"主题"、"情境"等词，**一律选择 "light"**
@@ -133,141 +131,121 @@
 # Few-shot 示例
 
 ## 示例 1：单一知识点请求
-输入："来 10 道现在完成时的单项选择，中等难度"
+输入："来 10 道现在完成时的单项选择"
 输出：
 {
-  "reasoning": "用户请求现在完成时的单项选择题，共10道，中等难度。现在完成时属于动词时态知识点。",
   "knowledge_points": ["kp_sc_verbs"],
-  "knowledge_points_exclude": [],
   "question_types": ["single_choice"],
   "total_questions": 10,
   "type_distribution": {"single_choice": 10},
-  "per_kp_min": 0,
-  "revision_intensity": "light"
+  "revision_intensity": "light",
+  "free_text": ""
 }
 
 ## 示例 2：多知识点请求
 输入："练习一下不定代词和介词，各出 5 道"
 输出：
 {
-  "reasoning": "用户请求不定代词和介词的练习题，各5道，共10道。",
   "knowledge_points": ["kp_sc_indef_pronoun", "kp_sc_prepositions"],
-  "knowledge_points_exclude": [],
   "question_types": ["single_choice"],
   "total_questions": 10,
   "type_distribution": {"single_choice": 10},
-  "per_kp_min": 5,
-  "revision_intensity": "light"
+  "revision_intensity": "light",
+  "free_text": ""
 }
 
 ## 示例 3：真题请求（中考真题）
 输入："来 10 道中考真题"
 输出：
 {
-  "reasoning": "用户明确要求'中考真题'，匹配 original 触发词，使用 original 档位。",
   "knowledge_points": [],
-  "knowledge_points_exclude": [],
   "question_types": [],
   "total_questions": 10,
   "type_distribution": {},
-  "per_kp_min": 0,
-  "revision_intensity": "original"
+  "revision_intensity": "original",
+  "free_text": ""
 }
 
 ## 示例 4：原题请求（单选原题）
 输入："来十道单选原题"
 输出：
 {
-  "reasoning": "用户明确要求'原题'，匹配 original 触发词，使用 original 档位。",
   "knowledge_points": [],
-  "knowledge_points_exclude": [],
   "question_types": ["single_choice"],
   "total_questions": 10,
   "type_distribution": {"single_choice": 10},
-  "per_kp_min": 0,
-  "revision_intensity": "original"
+  "revision_intensity": "original",
+  "free_text": ""
 }
 
 ## 示例 5：原题请求（一模原题，带情境描述）
 输入："用一模原题练习，关于校园生活"
 输出：
 {
-  "reasoning": "用户提到'一模原题'，匹配 original 触发词，尽管有情境描述，仍优先使用 original 档位。",
   "knowledge_points": [],
-  "knowledge_points_exclude": [],
   "question_types": [],
   "total_questions": 10,
   "type_distribution": {},
-  "per_kp_min": 0,
-  "revision_intensity": "original"
+  "revision_intensity": "original",
+  "free_text": ""
 }
 
 ## 示例 6：全新题目请求（重新出）
 输入："帮我重新出十道单选题"
 输出：
 {
-  "reasoning": "用户要求'重新出'，匹配 fresh 触发词，使用 fresh 档位。",
   "knowledge_points": [],
-  "knowledge_points_exclude": [],
   "question_types": ["single_choice"],
   "total_questions": 10,
   "type_distribution": {"single_choice": 10},
-  "per_kp_min": 0,
-  "revision_intensity": "fresh"
+  "revision_intensity": "fresh",
+  "free_text": ""
 }
 
 ## 示例 7：全新题目请求（情境描述触发）
 输入："帮我按被动语态出一份练习，多用校园场景"
 输出：
 {
-  "reasoning": "用户描述了具体情境（校园场景），没有使用 original 触发词，使用 fresh 档位。被动语态属于动词知识点。",
   "knowledge_points": ["kp_sc_verbs"],
-  "knowledge_points_exclude": [],
   "question_types": ["single_choice"],
   "total_questions": 10,
   "type_distribution": {"single_choice": 10},
-  "per_kp_min": 0,
-  "revision_intensity": "fresh"
+  "revision_intensity": "fresh",
+  "free_text": "校园场景"
 }
 
 ## 示例 8：模糊请求（默认 light）
 输入："随便出 10 道练习题"
 输出：
 {
-  "reasoning": "用户没有明确指定知识点和题型，也没有使用 original 或 fresh 触发词，使用默认 light 档位。",
   "knowledge_points": [],
-  "knowledge_points_exclude": [],
   "question_types": [],
   "total_questions": 10,
   "type_distribution": {},
-  "per_kp_min": 0,
-  "revision_intensity": "light"
+  "revision_intensity": "light",
+  "free_text": ""
 }
 
 ## 示例 9：简单请求（light）
 输入："帮我出几道题"
 输出：
 {
-  "reasoning": "用户使用'帮我出几道题'，匹配 light 请求类触发词，没有 original 或 fresh 触发词，使用 light 档位。",
   "knowledge_points": [],
-  "knowledge_points_exclude": [],
   "question_types": [],
   "total_questions": 10,
   "type_distribution": {},
-  "per_kp_min": 0,
-  "revision_intensity": "light"
+  "revision_intensity": "light",
+  "free_text": ""
 }
 
 ## 示例 10：巩固请求（light）
 输入："巩固一下动词时态"
 输出：
 {
-  "reasoning": "用户使用'巩固'，匹配 light 练习类触发词，'动词时态'是知识点名称，没有 original 或 fresh 触发词，使用 light 档位。",
   "knowledge_points": ["kp_sc_verbs"],
-  "knowledge_points_exclude": [],
   "question_types": [],
   "total_questions": 10,
   "type_distribution": {},
-  "per_kp_min": 0,
-  "revision_intensity": "light"
+  "revision_intensity": "light",
+  "free_text": ""
 }

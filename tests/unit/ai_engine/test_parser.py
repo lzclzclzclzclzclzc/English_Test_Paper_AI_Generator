@@ -26,9 +26,10 @@ from ai_engine.parser import (
 )
 from ai_engine.errors import ParserError
 from shared.schemas import (
+    GenerateRequest,
     KnowledgePoint,
+    KPMastery,
     MasteryProfile,
-    ParserLLMResponse,
     WrongItemRef,
 )
 
@@ -113,7 +114,7 @@ def test_build_kp_catalog_text_omits_alias_section_when_empty(sample_kps: list[K
 # _local_validate
 # ─────────────────────────────────────────────────────────────────────────────
 def test_local_validate_drops_invalid_kp_ids(sample_kps: list[KnowledgePoint]) -> None:
-    resp = ParserLLMResponse(
+    resp = GenerateRequest(
         knowledge_points=["kp_sc_verbs", "kp_nonexistent", "kp_bad_id"],
         revision_intensity="light",
         total_questions=10,
@@ -124,19 +125,8 @@ def test_local_validate_drops_invalid_kp_ids(sample_kps: list[KnowledgePoint]) -
     assert all("invalid KP id" in w for w in warnings)
 
 
-def test_local_validate_drops_invalid_exclude_kp_ids(sample_kps: list[KnowledgePoint]) -> None:
-    resp = ParserLLMResponse(
-        knowledge_points_exclude=["kp_sc_verbs", "kp_fake"],
-        revision_intensity="light",
-        total_questions=10,
-    )
-    validated, warnings = _local_validate(resp, sample_kps)
-    assert validated.knowledge_points_exclude == ["kp_sc_verbs"]
-    assert any("invalid exclude KP id" in w for w in warnings)
-
-
 def test_local_validate_caps_total_questions(sample_kps: list[KnowledgePoint]) -> None:
-    resp = ParserLLMResponse(
+    resp = GenerateRequest(
         total_questions=100,
         revision_intensity="light",
     )
@@ -146,7 +136,7 @@ def test_local_validate_caps_total_questions(sample_kps: list[KnowledgePoint]) -
 
 
 def test_local_validate_scales_oversized_type_distribution(sample_kps: list[KnowledgePoint]) -> None:
-    resp = ParserLLMResponse(
+    resp = GenerateRequest(
         total_questions=5,
         type_distribution={"single_choice": 10, "word_form": 5},
         revision_intensity="light",
@@ -156,22 +146,10 @@ def test_local_validate_scales_oversized_type_distribution(sample_kps: list[Know
     assert total <= validated.total_questions
 
 
-def test_local_validate_scales_oversized_difficulty_distribution(sample_kps: list[KnowledgePoint]) -> None:
-    resp = ParserLLMResponse(
-        total_questions=5,
-        difficulty_distribution={"easy": 8, "medium": 4},
-        revision_intensity="light",
-    )
-    validated, _ = _local_validate(resp, sample_kps)
-    total = sum(validated.difficulty_distribution.values())
-    assert total <= validated.total_questions
-
-
 def test_local_validate_passes_through_valid_response(sample_kps: list[KnowledgePoint]) -> None:
-    resp = ParserLLMResponse(
+    resp = GenerateRequest(
         knowledge_points=["kp_sc_verbs"],
         question_types=["single_choice"],
-        difficulty=["medium"],
         total_questions=10,
         type_distribution={"single_choice": 10},
         revision_intensity="original",
@@ -207,18 +185,19 @@ def test_build_prompt_includes_kp_catalog(sample_kps: list[KnowledgePoint]) -> N
 def test_build_prompt_includes_wrong_items_for_remediation(sample_kps: list[KnowledgePoint]) -> None:
     wrong_items = [
         WrongItemRef(
-            source_question_id="q_001",
             question_type="single_choice",
             knowledge_point_ids=["kp_sc_verbs"],
         )
     ]
     _, user = _build_prompt("多练几道", "remediation", sample_kps, wrong_items, None)
-    assert "q_001" in user
+    assert "kp_sc_verbs" in user
 
 
 def test_build_prompt_includes_mastery_for_review(sample_kps: list[KnowledgePoint]) -> None:
     mastery = MasteryProfile(
-        weak_kps=["kp_sc_verbs"],
+        user_id="u_test",
+        window_days=30,
+        weak_kps=[KPMastery(knowledge_point_id="kp_sc_verbs", attempts=5, mastery=0.3)],
         dominant_types=["single_choice"],
         total_attempts_considered=10,
     )
@@ -265,7 +244,12 @@ def test_parse_fresh_intensity_from_context() -> None:
 def test_parse_review_mode_with_mastery() -> None:
     """Review mode attaches mastery context and user_id."""
     mastery = MasteryProfile(
-        weak_kps=["kp_sc_verbs", "kp_sc_prepositions"],
+        user_id="u_test",
+        window_days=30,
+        weak_kps=[
+            KPMastery(knowledge_point_id="kp_sc_verbs", attempts=5, mastery=0.3),
+            KPMastery(knowledge_point_id="kp_sc_prepositions", attempts=4, mastery=0.4),
+        ],
         dominant_types=["single_choice"],
         total_attempts_considered=20,
     )

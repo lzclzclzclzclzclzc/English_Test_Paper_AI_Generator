@@ -44,6 +44,19 @@ GenerateMode = Literal["fresh", "remediation", "review"]
 # ─────────────────────────────────────────────────────────────────────────────
 # Answer structure (Spec A §2.2)
 # ─────────────────────────────────────────────────────────────────────────────
+# A fill-in answer is a list of "candidate combinations". Each combination is a
+# dict mapping blank name → list of acceptable strings for that blank:
+#
+#     [{"blank1": ["so"], "blank2": ["that"]}]                     # one combo
+#     [{"blank1": ["It's"], "blank2": ["impossible", "hard"]}]      # multi-candidate blank
+#     [{"blank1": ["in"], "blank2": ["order"]},                    # two combos
+#      {"blank1": ["so"], "blank2": ["as"]}]
+#
+# A single-choice answer is just a bare label string: "B".
+#
+# We model a blank-group as a plain dict[str, list[str]] rather than a nested
+# model — the blank keys are dynamic ("blank1"/"blank2"/...) and the backend's
+# grading logic iterates them positionally, so a typed wrapper adds no value.
 BlankGroup = dict[str, list[str]]
 Answer = str | list[BlankGroup]
 
@@ -68,7 +81,18 @@ class KnowledgePoint(BaseModel):
 
 
 class Question(BaseModel):
-    """A question as stored in the `questions` table (post-ingestion)."""
+    """A question as stored in the `questions` table (post-ingestion).
+
+    Field-for-field mirror of the SQLite row, except `options` / `answer` are
+    the deserialised forms of `options_json` / `answer_json`, and
+    `knowledge_point_ids` is joined in from `question_knowledge_points`.
+
+    Content fields are conditionally populated by `question_type`:
+      * single_choice     — stem, options
+      * word_form         — stem, hint
+      * sentence_rewriting — original_sentence, instruction, template
+                             (template is None for 连词成句)
+    """
     id: str                              # "q_00042"
     book: str                            # "shanghai_2021_yimo"
     question_type: QuestionType
@@ -76,6 +100,7 @@ class Question(BaseModel):
     chapter_l2: str                      # "1.4 不定代词"
     number: str                          # "1" or "1-3"
 
+    # Content (conditional per question_type)
     stem: str | None = None
     options: list[Option] | None = None
     hint: str | None = None
@@ -87,9 +112,9 @@ class Question(BaseModel):
     solution: str | None = None          # None until Solutioner fills it on demand
     knowledge_point_ids: list[str] = Field(default_factory=list)
 
+    # Provenance + meta (Spec A §3.8)
     source_md: str
     source_line: int
-    stem_hash: str                       # for deduplication
     created_at: datetime
     version: int = 1
 
@@ -105,37 +130,40 @@ class WrongItemRef(BaseModel):
 
 
 class GenerateRequest(BaseModel):
-    """Structured generation request. Output of Parser, input of Retriever."""
+    """Structured generation request. Output of Parser, input of Retriever.
+
+    `difficulty` and its distribution are intentionally absent (Spec A §1.7).
+    """
     mode: GenerateMode = "fresh"
 
+    # Filters (empty = unrestricted)
     knowledge_points: list[str] = Field(default_factory=list)
-    knowledge_points_exclude: list[str] = Field(default_factory=list)
     question_types: list[QuestionType] = Field(default_factory=list)
 
-    total_questions: int = 10
+    total_questions: int
 
+    # Optional distribution constraint: {"single_choice": 5, "word_form": 3}.
+    # Keys MUST be QuestionType values (single_choice / word_form /
+    # sentence_rewriting) — Parser must not emit typos; Retriever validates.
+    # Values should sum to total_questions.
     type_distribution: dict[str, int] = Field(default_factory=dict)
-    per_kp_min: int = 0
 
+    # Revision intensity — inferred by Parser's LLM, never passed by caller
     revision_intensity: RevisionMode = "light"
 
+    # remediation / review context
     wrong_items: list[WrongItemRef] = Field(default_factory=list)
     user_id: str | None = None
     review_window_days: int | None = None
 
+    # Semantic topic hint — the part of the user's request that the
+    # structured fields above CANNOT express (a scenario/theme like "关于环保"
+    # / "校园生活" / "购物场景"). Parser fills this ONLY with such leftover
+    # topic wording; a pure quota/KP request (e.g. "5 道单选 5 道改写") leaves
+    # it "". The Retriever uses it as the query for the semantic (vector) path:
+    # non-empty → vector retrieval, empty → SQL random. Do NOT dump the raw
+    # user query here — that would make every request trigger vector search.
     free_text: str = ""
-
-
-class ParserLLMResponse(BaseModel):
-    """Parser LLM output format."""
-    reasoning: str = ""
-    knowledge_points: list[str] = Field(default_factory=list)
-    knowledge_points_exclude: list[str] = Field(default_factory=list)
-    question_types: list[QuestionType] = Field(default_factory=list)
-    total_questions: int = 10
-    type_distribution: dict[str, int] = Field(default_factory=dict)
-    per_kp_min: int = 0
-    revision_intensity: RevisionMode
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -145,13 +173,18 @@ class RetrievedItem(BaseModel):
     """One candidate question with its retrieval score."""
     question: Question
     score: float                         # semantic similarity (cosine → higher is closer)
-    bucket: str = ""                     # question type bucket
 
 
 class RetrievalResult(BaseModel):
     """Retriever output: candidate pool for the Reviser to pick/transform."""
     items: list[RetrievedItem] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    # Per-bucket shortfall: how many questions each bucket is short of the
+    # requested count, e.g. {"single_choice": 2} means SC needed 5 but only 3
+    # were found. Reviser reads this to decide whether to fresh-generate the
+    # gap — and whether it's allowed to, per revision_intensity (a user asking
+    # for "original" true exam questions should NOT get AI-invented fills;
+    # that decision lives in the Reviser, not here). Empty = fully satisfied.
     shortfall: dict[str, int] = Field(default_factory=dict)
 
 
@@ -160,7 +193,8 @@ class RetrievalResult(BaseModel):
 # ─────────────────────────────────────────────────────────────────────────────
 class RevisedQuestion(BaseModel):
     """A question after revision. Same shape as Question's content fields, but
-    without the ingestion meta (id/source/created_at)."""
+    without the ingestion meta (id/source/created_at). May equal the original
+    verbatim when revision_mode == "original"."""
     question_type: QuestionType
     stem: str | None = None
     options: list[Option] | None = None
@@ -176,25 +210,30 @@ class RevisedQuestion(BaseModel):
 class PaperItem(BaseModel):
     index: int                           # 1-based position in the paper
     question: RevisedQuestion
-    score: int                           # points for this item
     source_question_id: str              # traces back to the bank question
     revision_mode: RevisionMode
-    revision_notes: str | None = None    # failure reason if any
 
 
 class Paper(BaseModel):
     paper_id: str                        # uuid hex, minted by ai_engine (Reviser)
     title: str                           # human-readable, inferred by Reviser
     generated_at: datetime
-    request: GenerateRequest
+    request: GenerateRequest             # the request that produced it.
+                                         # ⚠️ contains user context (user_id /
+                                         # wrong_items / review_window_days /
+                                         # free_text). The backend persists Paper
+                                         # into the `papers` table — mind that
+                                         # user_id is already a column there
+                                         # (redundant here), and do NOT leak
+                                         # wrong_items to the frontend. Revise
+                                         # only reads the filter fields.
     items: list[PaperItem]
-    total_score: int                     # sum of PaperItem.score (set by Reviser)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Attempts & mastery (Spec A §2.5) — backend writes, Analyzer reads
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────
 class AttemptItem(BaseModel):
     """One graded question inside an attempt. No difficulty field (dropped)."""
     source_question_id: str
@@ -204,7 +243,8 @@ class AttemptItem(BaseModel):
 
 
 class Attempt(BaseModel):
-    """Minimal per-paper submission the frontend reports."""
+    """Minimal per-paper submission the frontend reports. Stores metadata only —
+    not the paper or the question text."""
     user_id: str
     paper_id: str
     answered_at: datetime
@@ -214,7 +254,7 @@ class Attempt(BaseModel):
 class KPMastery(BaseModel):
     knowledge_point_id: str
     attempts: int
-    mastery: float                       # Wilson score lower bound
+    mastery: float                       # Wilson score lower bound (low-sample down-weighted)
 
 
 class MasteryProfile(BaseModel):

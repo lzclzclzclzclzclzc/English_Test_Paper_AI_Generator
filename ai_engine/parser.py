@@ -16,7 +16,6 @@ from shared.schemas import (
     GenerateRequest,
     KnowledgePoint,
     MasteryProfile,
-    ParserLLMResponse,
     WrongItemRef,
 )
 from ai_engine.errors import ParserError
@@ -73,11 +72,11 @@ def _build_prompt(
     
     wrong_items_text = ""
     if wrong_items:
-        wrong_items_text = json.dumps([item.dict() for item in wrong_items], ensure_ascii=False)
+        wrong_items_text = json.dumps([item.model_dump() for item in wrong_items], ensure_ascii=False)
     
     mastery_text = ""
     if mastery:
-        mastery_text = json.dumps(mastery.dict(), ensure_ascii=False)
+        mastery_text = json.dumps(mastery.model_dump(), ensure_ascii=False)
     
     system_prompt, user_prompt = load("parser",
         user_query=user_query,
@@ -93,9 +92,9 @@ def _build_prompt(
 
 
 def _local_validate(
-    response: ParserLLMResponse,
+    response: GenerateRequest,
     kps: list[KnowledgePoint],
-) -> tuple[ParserLLMResponse, list[str]]:
+) -> tuple[GenerateRequest, list[str]]:
     """Local validation after LLM response.
     
     Filters invalid KP ids, caps question count, adjusts distributions.
@@ -110,14 +109,6 @@ def _local_validate(
         else:
             warnings.append(f"invalid KP id: {kp_id}, dropped")
     response.knowledge_points = valid_kps
-    
-    valid_exclude_kps = []
-    for kp_id in response.knowledge_points_exclude:
-        if kp_id in valid_kp_ids:
-            valid_exclude_kps.append(kp_id)
-        else:
-            warnings.append(f"invalid exclude KP id: {kp_id}, dropped")
-    response.knowledge_points_exclude = valid_exclude_kps
     
     if response.total_questions > MAX_QUESTIONS:
         warnings.append(f"total_questions capped at {MAX_QUESTIONS}")
@@ -167,7 +158,7 @@ def parse(
     
     try:
         llm_response = llm_client.structured(
-            response_model=ParserLLMResponse,
+            response_model=GenerateRequest,
             prompt=user_prompt,
             system=system_prompt,
             max_retries=3,
@@ -178,17 +169,10 @@ def parse(
     
     validated, warnings = _local_validate(llm_response, kps)
     
-    return GenerateRequest(
-        mode=mode,
-        knowledge_points=validated.knowledge_points,
-        knowledge_points_exclude=validated.knowledge_points_exclude,
-        question_types=validated.question_types,
-        total_questions=validated.total_questions,
-        type_distribution=validated.type_distribution,
-        per_kp_min=validated.per_kp_min,
-        revision_intensity=validated.revision_intensity,
-        free_text=user_query,
-        wrong_items=wrong_items,
-        user_id=user_id,
-        review_window_days=review_window_days,
-    )
+    validated.mode = mode
+    validated.wrong_items = wrong_items or []
+    validated.user_id = user_id
+    validated.review_window_days = review_window_days
+    validated.free_text = user_query
+    
+    return validated
