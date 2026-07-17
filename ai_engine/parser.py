@@ -173,6 +173,5 @@ def parse(
     validated.wrong_items = wrong_items or []
     validated.user_id = user_id
     validated.review_window_days = review_window_days
-    validated.free_text = user_query
     
     return validated

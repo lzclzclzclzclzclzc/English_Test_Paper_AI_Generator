@@ -5,7 +5,7 @@
 运行 Parser 模块，输入自然语言指令，查看结构化的 GenerateRequest 输出。
 
 ```bash
-python scripts/interactive_parser.py
+python tests/scripts/interactive_parser.py
 ```
 
 ## Reviser 模块交互脚本
@@ -13,7 +13,7 @@ python scripts/interactive_parser.py
 运行 Reviser 模块，输入参数测试题目修订，查看试卷生成结果。
 
 ```bash
-python scripts/interactive_reviser.py
+python tests/scripts/interactive_reviser.py
 ```
 
 ## 退出方式
