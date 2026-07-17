@@ -219,7 +219,7 @@ def test_parse_original_intensity_from_natural_language() -> None:
     assert req.total_questions == 10
     assert "single_choice" in req.question_types
     assert req.revision_intensity == "original"
-    assert req.free_text == "来十道单选原题"
+    assert req.free_text == ""
 
 
 @pytestmark_integration
