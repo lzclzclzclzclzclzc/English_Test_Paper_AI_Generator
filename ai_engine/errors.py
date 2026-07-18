@@ -7,20 +7,24 @@ from __future__ import annotations
 
 
 class AIEngineError(Exception):
-    """Base for all ai_engine errors."""
+    """Base exception for AI Engine errors."""
 
 
 class ParserError(AIEngineError):
-    """Parser could not turn the user query into a valid GenerateRequest."""
+    """Parser module errors."""
 
 
 class RetrieverError(AIEngineError):
-    """Retrieval could not produce any candidates (e.g. empty hard-filter set)."""
+    """Retriever module errors."""
 
 
 class ReviserError(AIEngineError):
-    """Reviser could not build a paper from the retrieval result."""
+    """Reviser module errors."""
+
+
+class SolutionerError(AIEngineError):
+    """Solutioner module errors."""
 
 
 class AnalyzerError(AIEngineError):
-    """Analyzer could not build a mastery profile."""
+    """Analyzer module errors."""

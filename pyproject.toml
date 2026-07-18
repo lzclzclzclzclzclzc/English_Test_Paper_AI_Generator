@@ -32,3 +32,6 @@ include = ["ingestion*", "shared*", "ai_engine*", "backend*"]
 testpaths = ["tests"]
 python_files = "test_*.py"
 addopts = "-v"
+markers = [
+    "integration: tests requiring real LLM API key and SQLite DB",
+]
