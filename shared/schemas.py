@@ -8,6 +8,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 QuestionType = Literal["single_choice", "word_form", "sentence_rewriting"]
 GenerationMode = Literal["fresh", "remediation", "review"]
+# Alias used by the AI-engine design.  Keep the original name because it is
+# already part of the backend contract.
+GenerateMode = GenerationMode
 RevisionMode = Literal["fresh", "light", "original"]
 AnswerValue: TypeAlias = str | list[dict[str, list[str]]]
 UserAnswerValue: TypeAlias = str | list[str] | dict[str, str]
@@ -72,6 +75,21 @@ class GenerateRequest(BaseModel):
     user_id: str | None = None
     review_window_days: int | None = None
     free_text: str = ""
+
+
+class RetrievedItem(BaseModel):
+    """A question-bank candidate selected by the retriever."""
+
+    question: Question
+    score: float = 0.0
+
+
+class RetrievalResult(BaseModel):
+    """Candidate pool and any unmet per-type quotas from retrieval."""
+
+    items: list[RetrievedItem] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    shortfall: dict[str, int] = Field(default_factory=dict)
 
 
 class RevisedQuestion(BaseModel):
@@ -229,6 +247,8 @@ for _model in [
     Question,
     WrongItemRef,
     GenerateRequest,
+    RetrievedItem,
+    RetrievalResult,
     RevisedQuestion,
     PaperItem,
     Paper,

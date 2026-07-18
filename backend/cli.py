@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import argparse
 import json
 import subprocess
@@ -9,6 +10,7 @@ from tempfile import TemporaryDirectory
 
 from backend.auth.password import hash_password
 from shared import storage
+from shared.config import reset_config_cache
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -58,6 +60,9 @@ def _smoke() -> int:
     with TemporaryDirectory() as tmp_dir:
         smoke_db = Path(tmp_dir) / "smoke.db"
         storage.set_db_path(smoke_db)
+        previous_env = os.environ.get("BACKEND_ENV")
+        os.environ["BACKEND_ENV"] = "test"
+        reset_config_cache()
         try:
             from backend.main import create_app
 
@@ -78,6 +83,11 @@ def _smoke() -> int:
                 print(json.dumps({"paper_id": paper["paper_id"], "attempt_id": grade["attempt_id"], "mastery": mastery}, ensure_ascii=False))
         finally:
             storage.set_db_path(None)
+            if previous_env is None:
+                os.environ.pop("BACKEND_ENV", None)
+            else:
+                os.environ["BACKEND_ENV"] = previous_env
+            reset_config_cache()
     return 0
 
 
