@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from time import perf_counter
 from typing import Literal
 from uuid import uuid4
 
@@ -24,17 +25,29 @@ def generate_paper(user_query: str, mode: Literal["fresh", "remediation", "revie
             from ai_engine.errors import ParserError
             raise ParserError("mode=review requires user_id")
         profile = build_profile(user_id, review_window_days)
+    parse_started = perf_counter()
     request = parser.parse(user_query, mode=mode, wrong_items=wrong_items, mastery=profile, user_id=user_id, review_window_days=review_window_days)
-    return reviser.build_paper(request, retriever.retrieve(request))
+    parsed_at = perf_counter()
+    retrieval = retriever.retrieve(request)
+    retrieved_at = perf_counter()
+    paper = reviser.build_paper(request, retrieval)
+    finished_at = perf_counter()
+    return paper.model_copy(update={"metadata": {**paper.metadata, "stage_ms": {"parser": round((parsed_at - parse_started) * 1000, 2), "retriever": round((retrieved_at - parsed_at) * 1000, 2), "reviser": round((finished_at - retrieved_at) * 1000, 2), "total": round((finished_at - parse_started) * 1000, 2)}, "vector_retrieval": bool(request.free_text.strip())}})
 
 
 def revise_paper(current_paper: Paper, user_instruction: str) -> Paper:
-    """Keep the established review endpoint behaviour while pipeline revision is scoped separately."""
+    if get_config().backend.env != "test":
+        from ai_engine import reviser
+        return reviser.revise_paper(current_paper, user_instruction)
+    """Offline test fixture for the established review endpoint."""
     old = current_paper.model_copy(deep=True)
     return Paper(paper_id=uuid4().hex, title=f"{old.title} (revised)", generated_at=datetime.now(timezone.utc), request=old.request.model_copy(update={"free_text": user_instruction}), items=[item.model_copy(update={"revision_mode": "light", "revision_notes": user_instruction, "question": item.question.model_copy(update={"stem": f"{item.question.stem} [{user_instruction}]"})}, deep=True) for item in old.items], total_score=old.total_score, metadata={**old.metadata, "revised_from": old.paper_id})
 
 
 def generate_solution(q: RevisedQuestion, *, source_question_id: str | None = None, revision_mode: Literal["fresh", "light", "original"] | None = None) -> str:
+    if get_config().backend.env != "test":
+        from ai_engine.solutioner import generate_solution as generate_live_solution
+        return generate_live_solution(q, source_question_id=source_question_id, revision_mode=revision_mode)
     return q.solution or f"答案是 {q.answer}。题型为 {q.question_type}，请结合题干要求作答。"
 
 

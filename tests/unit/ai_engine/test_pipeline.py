@@ -22,7 +22,9 @@ def test_pipeline_forwards_parser_output(monkeypatch):
 
     result = generate_paper("one original question")
 
-    assert result is paper
+    assert result.paper_id == paper.paper_id
+    assert result.metadata["vector_retrieval"] is False
+    assert result.metadata["stage_ms"]["total"] >= 0
     parser.parse.assert_called_once()
     retriever.retrieve.assert_called_once_with(request)
     reviser.build_paper.assert_called_once_with(request, retrieval)

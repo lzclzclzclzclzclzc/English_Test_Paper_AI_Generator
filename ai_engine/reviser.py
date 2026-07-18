@@ -44,3 +44,39 @@ def build_paper(request: GenerateRequest, retrieval: RetrievalResult) -> Paper:
             items.append(PaperItem(index=index, question=future.result(), score=5, source_question_id=source.id, revision_mode=request.revision_intensity))
     items.sort(key=lambda item: item.index)
     return Paper(paper_id=uuid4().hex, title=f"中考英语{request.total_questions}道练习", generated_at=datetime.now(timezone.utc), request=request, items=items, total_score=sum(item.score for item in items), metadata={"engine": "parser-retriever-reviser", "llm_calls": len(items) if request.revision_intensity != "original" else 0, "retrieval_warnings": retrieval.warnings, "retrieval_shortfall": retrieval.shortfall})
+
+
+def revise_paper(current_paper: Paper, user_instruction: str) -> Paper:
+    """Use the LLM to revise all existing items without changing their identity."""
+    request = current_paper.request.model_copy(update={"free_text": user_instruction, "revision_intensity": "light"})
+
+    def revise_item(item: PaperItem) -> PaperItem:
+        original = item.question
+        prompt = (
+            "Revise this English exam question according to the user's instruction. "
+            "Return only the JSON question. Keep question_type and knowledge_point_ids unchanged. "
+            "For single_choice provide exactly A-D and an answer label.\n"
+            f"Instruction: {user_instruction}\nQuestion: {original.model_dump_json()}"
+        )
+        try:
+            from shared.llm.deepseek import get_llm_client
+            revised = get_llm_client().structured(response_model=RevisedQuestion, prompt=prompt, max_retries=2, temperature=0.3)
+            if revised.question_type != original.question_type or set(revised.knowledge_point_ids) != set(original.knowledge_point_ids):
+                raise ValueError("LLM changed immutable question fields")
+            if original.question_type == "single_choice" and not (revised.options and len(revised.options) == 4 and revised.answer in {"A", "B", "C", "D"}):
+                raise ValueError("LLM produced an invalid single-choice question")
+            return item.model_copy(update={"question": revised, "revision_mode": "light", "revision_notes": user_instruction}, deep=True)
+        except Exception:
+            return item.model_copy(update={"revision_mode": "light", "revision_notes": "LLM revision failed; original retained."}, deep=True)
+
+    with ThreadPoolExecutor(max_workers=min(4, len(current_paper.items) or 1)) as pool:
+        items = list(pool.map(revise_item, current_paper.items))
+    return Paper(
+        paper_id=uuid4().hex,
+        title=f"{current_paper.title} (revised)",
+        generated_at=datetime.now(timezone.utc),
+        request=request,
+        items=items,
+        total_score=current_paper.total_score,
+        metadata={**current_paper.metadata, "engine": "llm-paper-reviser", "revised_from": current_paper.paper_id, "llm_calls": len(items)},
+    )
