@@ -178,8 +178,9 @@ def test_build_prompt_includes_user_query(sample_kps: list[KnowledgePoint]) -> N
 
 
 def test_build_prompt_includes_kp_catalog(sample_kps: list[KnowledgePoint]) -> None:
-    system, _ = _build_prompt("test", "fresh", sample_kps, None, None)
-    assert "kp_sc_verbs" in system or "kp_sc_verbs" in _build_kp_catalog_text(sample_kps)
+    system, user = _build_prompt("test", "fresh", sample_kps, None, None)
+    combined = system + "\n" + user
+    assert "kp_sc_verbs" in combined, "KP catalog must appear in the rendered prompt"
 
 
 def test_build_prompt_includes_wrong_items_for_remediation(sample_kps: list[KnowledgePoint]) -> None:
