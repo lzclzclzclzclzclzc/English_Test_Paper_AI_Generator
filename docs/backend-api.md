@@ -11,7 +11,7 @@
 - 数据库：SQLite，默认路径 `data/questions.db`
 - 向量库：ChromaDB，默认路径 `data/chroma`，集合 `questions`
 - 真实题库：后端按 ingestion 当前 schema 读取 `questions`、`knowledge_points`、`question_knowledge_points`；readiness 会同时校验 SQLite 题库和 Chroma 向量库；`difficulty` 字段已从题库契约中移除
-- 当前 AI Engine：确定性 fake 实现，用于后端、前端、测试在无真实 LLM 时联调
+- 当前 AI Engine：开发/生产环境走 Parser → Retriever → Reviser 真实链路；`BACKEND_ENV=test` 使用确定性 fixture，供前端和自动化测试在无 API key 时联调
 - Swagger UI：后端启动后访问 `http://127.0.0.1:8000/docs`
 
 ## 本地启动
@@ -203,7 +203,7 @@ Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
 }
 ```
 
-`metadata` 由 AI Engine 生成并由后端原样持久化、返回。前端可以展示其中稳定定义的字段；Retriever/Reviser 可能写入 `retrieval_warnings`、`retrieval_shortfall` 与 `revision_failures`，业务代码必须能容忍未知字段。
+`metadata` 由 AI Engine 生成并由后端原样持久化、返回。前端不得依赖未知字段；当前稳定的调试字段包括 `stage_ms`（parser/retriever/reviser/total 的耗时）、`vector_retrieval`、`retrieval_warnings`、`retrieval_shortfall`。这些字段适合开发面板，不应阻塞正常做题流程。
 
 前端渲染做题页主要用 `items[].question`、`items[].score`、`paper_id`。提交答案时只需要回传题号和用户答案。
 

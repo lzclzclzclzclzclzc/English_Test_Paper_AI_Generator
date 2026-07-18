@@ -9,3 +9,4 @@ instructor>=1.15,<2
 chromadb>=0.5,<2
 sentence-transformers>=5,<6
 modelscope>=1.18,<2
+python-dotenv>=1,<2

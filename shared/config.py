@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, Field
+from dotenv import load_dotenv
 
 
 class StorageConfig(BaseModel):
@@ -41,6 +42,9 @@ class AppConfig(BaseModel):
 
 @lru_cache(maxsize=1)
 def get_config() -> AppConfig:
+    # Environment variables supplied by deployment always win over .env, so
+    # local development remains convenient without weakening production config.
+    load_dotenv(".env", override=False)
     return AppConfig(
         storage=StorageConfig(
             sqlite_path=Path(os.getenv("SQLITE_PATH", "data/questions.db")),
