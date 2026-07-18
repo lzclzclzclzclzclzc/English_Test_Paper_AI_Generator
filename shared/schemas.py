@@ -233,7 +233,7 @@ class Paper(BaseModel):
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Attempts & mastery (Spec A §2.5) — backend writes, Analyzer reads
-# ────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 class AttemptItem(BaseModel):
     """One graded question inside an attempt. No difficulty field (dropped)."""
     source_question_id: str

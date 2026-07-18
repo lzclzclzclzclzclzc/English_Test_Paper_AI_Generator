@@ -1,4 +1,8 @@
-"""AI Engine error hierarchy."""
+"""AI Engine exception hierarchy.
+
+Kept minimal for now — each module raises its own subclass so the future
+FastAPI layer (Spec C) can map them to HTTP status codes uniformly.
+"""
 from __future__ import annotations
 
 
