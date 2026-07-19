@@ -1,4 +1,4 @@
-<!-- vars: user_query, mode, kp_catalog, wrong_items?, mastery?, question_types -->
+<!-- vars: user_query, mode, kp_catalog, kp_count, wrong_items?, mastery?, question_types -->
 
 # 系统角色
 你是一个中考英语试卷生成助手。你的任务是将用户的自然语言请求解析为结构化的 JSON 对象。
@@ -104,11 +104,28 @@
 模式：{{ mode }}
 
 {% if wrong_items %}
-错题分布：{{ wrong_items }}
+## 错题补练上下文（mode=remediation）
+用户刚完成的试卷中答错的题目分布如下：
+{{ wrong_items }}
+
+处理规则：
+- 从每条错题的 knowledge_point_ids 中提取知识点 id，合并去重后填入 knowledge_points
+- 从每条错题的 question_type 中统计出现最多的题型，填入 question_types（可多选）
+- 这些知识点和题型是用户的薄弱点，**必须**优先使用，不要替换或忽略
+- user_query 可以补充额外的数量或题型要求，但不能覆盖从错题中提取的知识点
 {% endif %}
 
 {% if mastery %}
-薄弱知识点：{{ mastery }}
+## 掌握度画像（mode=review）
+系统检测到用户的薄弱知识点如下：
+{{ mastery }}
+
+处理规则：
+- weak_kps 按 mastery 升序排列，排名越靠前说明该知识点越薄弱
+- 从 weak_kps 中取 knowledge_point_id，**优先**填入 knowledge_points（最多取前 5 个）
+- 若 dominant_types 非空，优先填入 question_types
+- 若 total_attempts_considered 为 0，说明用户没有答题历史，**忽略以上规则**，完全按 user_query 出题
+- user_query 中有明确的知识点或题型要求时，以 user_query 为准，mastery 数据作为补充
 {% endif %}
 
 # 输出格式
@@ -243,6 +260,102 @@
 输出：
 {
   "knowledge_points": ["kp_sc_verbs"],
+  "question_types": [],
+  "total_questions": 10,
+  "type_distribution": {},
+  "revision_intensity": "light",
+  "free_text": ""
+}
+
+## 示例 11：错题补练（mode=remediation，有 wrong_items）
+输入：
+  user_query = "针对我的错题再练几道"
+  wrong_items = [
+    {"question_type": "single_choice", "knowledge_point_ids": ["kp_sc_verbs"]},
+    {"question_type": "single_choice", "knowledge_point_ids": ["kp_sc_verbs"]},
+    {"question_type": "word_form",     "knowledge_point_ids": ["kp_wf_verb_form"]}
+  ]
+输出：
+{
+  "knowledge_points": ["kp_sc_verbs", "kp_wf_verb_form"],
+  "question_types": ["single_choice", "word_form"],
+  "total_questions": 10,
+  "type_distribution": {"single_choice": 7, "word_form": 3},
+  "revision_intensity": "light",
+  "free_text": ""
+}
+
+## 示例 12：错题补练（mode=remediation，user_query 指定数量）
+输入：
+  user_query = "再来 5 道单选练练"
+  wrong_items = [
+    {"question_type": "single_choice", "knowledge_point_ids": ["kp_sc_prepositions"]},
+    {"question_type": "single_choice", "knowledge_point_ids": ["kp_sc_prepositions"]}
+  ]
+输出：
+{
+  "knowledge_points": ["kp_sc_prepositions"],
+  "question_types": ["single_choice"],
+  "total_questions": 5,
+  "type_distribution": {"single_choice": 5},
+  "revision_intensity": "light",
+  "free_text": ""
+}
+
+## 示例 13：复习模式（mode=review，有 mastery，user_query 无特殊要求）
+输入：
+  user_query = "帮我复习一下薄弱点"
+  mastery = {
+    "weak_kps": [
+      {"knowledge_point_id": "kp_sc_misc",        "attempts": 3,  "mastery": 0.08},
+      {"knowledge_point_id": "kp_wf_verb_form",   "attempts": 10, "mastery": 0.21},
+      {"knowledge_point_id": "kp_sc_prepositions","attempts": 8,  "mastery": 0.34}
+    ],
+    "dominant_types": ["word_form", "single_choice"],
+    "total_attempts_considered": 47
+  }
+输出：
+{
+  "knowledge_points": ["kp_sc_misc", "kp_wf_verb_form", "kp_sc_prepositions"],
+  "question_types": ["word_form", "single_choice"],
+  "total_questions": 10,
+  "type_distribution": {"word_form": 5, "single_choice": 5},
+  "revision_intensity": "light",
+  "free_text": ""
+}
+
+## 示例 14：复习模式（mode=review，user_query 覆盖题型）
+输入：
+  user_query = "复习一下，只要单选题"
+  mastery = {
+    "weak_kps": [
+      {"knowledge_point_id": "kp_sc_misc",      "attempts": 3,  "mastery": 0.08},
+      {"knowledge_point_id": "kp_sc_prepositions","attempts": 8, "mastery": 0.34}
+    ],
+    "dominant_types": ["word_form"],
+    "total_attempts_considered": 20
+  }
+输出：
+{
+  "knowledge_points": ["kp_sc_misc", "kp_sc_prepositions"],
+  "question_types": ["single_choice"],
+  "total_questions": 10,
+  "type_distribution": {"single_choice": 10},
+  "revision_intensity": "light",
+  "free_text": ""
+}
+
+## 示例 15：复习模式（mode=review，无历史数据）
+输入：
+  user_query = "帮我出一套复习卷"
+  mastery = {
+    "weak_kps": [],
+    "dominant_types": [],
+    "total_attempts_considered": 0
+  }
+输出：
+{
+  "knowledge_points": [],
   "question_types": [],
   "total_questions": 10,
   "type_distribution": {},
