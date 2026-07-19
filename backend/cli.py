@@ -80,7 +80,27 @@ def _smoke() -> int:
                 ]
                 grade = client.post("/api/attempts", json={"paper_id": paper["paper_id"], "items": answers}).json()
                 mastery = client.get("/api/users/me/mastery").json()
-                print(json.dumps({"paper_id": paper["paper_id"], "attempt_id": grade["attempt_id"], "mastery": mastery}, ensure_ascii=False))
+                first_item = paper["items"][0]
+                solution = client.post(
+                    "/api/solutions",
+                    json={
+                        "question": first_item["question"],
+                        "source_question_id": first_item["source_question_id"],
+                        "revision_mode": first_item["revision_mode"],
+                    },
+                )
+                solution.raise_for_status()
+                print(
+                    json.dumps(
+                        {
+                            "paper_id": paper["paper_id"],
+                            "attempt_id": grade["attempt_id"],
+                            "mastery": mastery,
+                            "solution": solution.json()["solution"],
+                        },
+                        ensure_ascii=False,
+                    )
+                )
         finally:
             storage.set_db_path(None)
             if previous_env is None:

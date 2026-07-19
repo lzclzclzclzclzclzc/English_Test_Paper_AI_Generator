@@ -16,6 +16,32 @@ def test_health_is_lightweight_and_public(client):
     assert response.json() == {"status": "ok"}
 
 
+def test_development_cors_allows_configured_frontend_origin(tmp_path, monkeypatch):
+    db_path = tmp_path / "cors-test.db"
+    storage.set_db_path(db_path)
+    monkeypatch.setenv("BACKEND_ENV", "development")
+    monkeypatch.setenv("FRONTEND_ORIGIN", "http://127.0.0.1:5173")
+    reset_config_cache()
+
+    from backend.main import create_app
+
+    try:
+        with TestClient(create_app()) as development_client:
+            response = development_client.options(
+                "/api/auth/login",
+                headers={
+                    "Origin": "http://127.0.0.1:5173",
+                    "Access-Control-Request-Method": "POST",
+                },
+            )
+        assert response.status_code == 200
+        assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"
+        assert response.headers["access-control-allow-credentials"] == "true"
+    finally:
+        storage.set_db_path(None)
+        reset_config_cache()
+
+
 def test_readiness_reports_missing_question_bank(client):
     response = client.get("/api/health/ready")
     body = response.json()

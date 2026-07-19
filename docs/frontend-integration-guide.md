@@ -12,6 +12,8 @@
 BACKEND_ENV=test
 BACKEND_HOST=127.0.0.1
 BACKEND_PORT=8000
+# 若 Vite 不在默认 5173 端口运行，同步修改为前端实际 Origin。
+FRONTEND_ORIGIN=http://localhost:5173
 ```
 
 启动后端：
@@ -29,6 +31,7 @@ python -m backend.cli serve --reload
 
 ```env
 BACKEND_ENV=development
+FRONTEND_ORIGIN=http://localhost:5173
 LLM_API_KEY=填入本机有效密钥
 LLM_BASE_URL=https://api.deepseek.com
 LLM_MODEL=deepseek-chat

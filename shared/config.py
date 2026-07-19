@@ -21,6 +21,7 @@ class BackendConfig(BaseModel):
     session_ttl_days: int = 30
     bcrypt_rounds: int = 12
     static_dir: Path = Path("backend/static")
+    frontend_origin: str = "http://localhost:5173"
     rate_limit_generate_per_min: int = 30
     rate_limit_solutions_per_min: int = 60
 
@@ -57,6 +58,7 @@ def get_config() -> AppConfig:
             session_ttl_days=int(os.getenv("SESSION_TTL_DAYS", "30")),
             bcrypt_rounds=int(os.getenv("BCRYPT_ROUNDS", "12")),
             static_dir=Path(os.getenv("BACKEND_STATIC_DIR", "backend/static")),
+            frontend_origin=os.getenv("FRONTEND_ORIGIN", "http://localhost:5173"),
             rate_limit_generate_per_min=int(os.getenv("RATE_LIMIT_GENERATE_PER_MIN", "30")),
             rate_limit_solutions_per_min=int(os.getenv("RATE_LIMIT_SOLUTIONS_PER_MIN", "60")),
         ),
