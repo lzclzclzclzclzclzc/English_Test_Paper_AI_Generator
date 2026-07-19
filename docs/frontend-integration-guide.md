@@ -2,6 +2,8 @@
 
 本文给前端和测试同学使用。完整字段可参考 [后端 API 协作手册](./backend-api.md) 与 Swagger：`http://127.0.0.1:8000/docs`。
 
+异地联调时，请使用 [远程同源部署指南](./remote-frontend-deployment.md)，不要让本地前端直接跨站调用临时公网 API；登录 Cookie 需要同源访问才稳定。
+
 ## 1. 最快联调：离线测试模式
 
 前端页面开发、登录、做题、交卷和历史记录联调不需要 API key 或 embedding 模型。

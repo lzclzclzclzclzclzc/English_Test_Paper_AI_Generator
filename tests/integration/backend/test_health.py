@@ -42,6 +42,29 @@ def test_development_cors_allows_configured_frontend_origin(tmp_path, monkeypatc
         reset_config_cache()
 
 
+def test_production_serves_frontend_and_api_from_same_origin(tmp_path, monkeypatch):
+    static_dir = tmp_path / "static"
+    static_dir.mkdir()
+    (static_dir / "index.html").write_text("<main>frontend ready</main>", encoding="utf-8")
+    storage.set_db_path(tmp_path / "same-origin.db")
+    monkeypatch.setenv("BACKEND_ENV", "production")
+    monkeypatch.setenv("BACKEND_STATIC_DIR", str(static_dir))
+    reset_config_cache()
+
+    from backend.main import create_app
+
+    try:
+        with TestClient(create_app()) as production_client:
+            page = production_client.get("/")
+            health = production_client.get("/api/health")
+        assert page.status_code == 200
+        assert "frontend ready" in page.text
+        assert health.status_code == 200
+    finally:
+        storage.set_db_path(None)
+        reset_config_cache()
+
+
 def test_readiness_reports_missing_question_bank(client):
     response = client.get("/api/health/ready")
     body = response.json()

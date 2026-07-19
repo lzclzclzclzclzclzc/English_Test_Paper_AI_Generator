@@ -30,6 +30,7 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("cleanup-sessions")
     sub.add_parser("smoke")
+    sub.add_parser("deploy-check")
 
     args = parser.parse_args(argv)
     if args.command == "serve":
@@ -51,6 +52,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "smoke":
         return _smoke()
+    if args.command == "deploy-check":
+        return _deploy_check()
     return 1
 
 
@@ -109,6 +112,32 @@ def _smoke() -> int:
                 os.environ["BACKEND_ENV"] = previous_env
             reset_config_cache()
     return 0
+
+
+def _deploy_check() -> int:
+    """Validate the prerequisites for a same-origin remote demo deployment."""
+    from backend.api.health import _readiness_checks
+    from shared.config import get_config
+
+    config = get_config()
+    checks = {
+        "production_mode": config.backend.env == "production",
+        "llm_api_key": bool(config.llm.api_key.strip()),
+        "static_index": (config.backend.static_dir / "index.html").is_file(),
+        **_readiness_checks(),
+    }
+    ready = all(checks.values())
+    print(
+        json.dumps(
+            {
+                "status": "ready" if ready else "not_ready",
+                "checks": checks,
+                "static_dir": str(config.backend.static_dir),
+            },
+            ensure_ascii=False,
+        )
+    )
+    return 0 if ready else 2
 
 
 if __name__ == "__main__":
