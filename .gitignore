@@ -3,3 +3,4 @@ __pycache__/
 .pytest_cache/
 .env
 models/Qwen3-Embedding-4B/
+tools/cloudflared/
