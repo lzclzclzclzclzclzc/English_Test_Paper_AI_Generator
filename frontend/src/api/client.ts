@@ -15,13 +15,13 @@ export class ApiError extends Error {
 
 /**
  * fetch 薄封装（Spec D § 5.1）：
- * - 前缀 /api（dev 走 vite proxy，prod 同源）
+ * - dev 走 vite proxy，prod 同源
  * - 始终携带 Cookie
  * - 204 返回 undefined
  * - 非 2xx 抛 ApiError
  */
-export async function apiFetch<T>(path: string, opts?: RequestInit): Promise<T> {
-  const res = await fetch(`/api${path}`, {
+async function fetchJson<T>(base: string, path: string, opts?: RequestInit): Promise<T> {
+  const res = await fetch(`${base}${path}`, {
     ...opts,
     credentials: 'include',
     headers: {
@@ -45,3 +45,10 @@ export async function apiFetch<T>(path: string, opts?: RequestInit): Promise<T> 
   if (!res.ok) throw new ApiError(res.status, body as ErrorResponse)
   return body as T
 }
+
+/** 主后端（/api，队友的 backend-mvp）。 */
+export const apiFetch = <T>(path: string, opts?: RequestInit) => fetchJson<T>('/api', path, opts)
+
+/** 支付小服务（/payapi，payment/ 独立 FastAPI）。 */
+export const payFetch = <T>(path: string, opts?: RequestInit) =>
+  fetchJson<T>('/payapi', path, opts)

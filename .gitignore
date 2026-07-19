@@ -1,2 +1,10 @@
 .DS_Store
 .impeccable/
+
+# payment service
+payment/.env
+payment/.venv/
+payment/keys/*.pem
+payment/data/*.db*
+__pycache__/
+.pytest_cache/

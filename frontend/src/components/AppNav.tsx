@@ -11,6 +11,7 @@ const links = [
   { to: '/', label: '生成试卷' },
   { to: '/papers', label: '我的试卷' },
   { to: '/mastery', label: '掌握度' },
+  { to: '/membership', label: '会员' },
 ] as const
 
 /** 导航栏（Spec F § 5）：白底下边线、方形卷轴图标 logo、当前页 2px 下划线、头像圈。 */

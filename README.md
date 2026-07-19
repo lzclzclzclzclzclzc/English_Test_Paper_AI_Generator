@@ -155,6 +155,8 @@
 
 功能结构详见 [`docs/frontend-design.md`](./docs/frontend-design.md)（Spec D）；视觉规范（色板、字体、卷面语言、组件样式）详见 [`docs/frontend-visual-spec.md`](./docs/frontend-visual-spec.md)（Spec F）。
 
+> **附加子系统:`payment/`(模拟支付)** — 独立 FastAPI 小服务(:8001),接支付宝**沙盒**当面付扫码,提供会员订阅(月/季/年)的下单、扫码、轮询查单与会员顺延;登录态通过转发 cookie 到主后端 `/api/auth/me` 校验,另有完全离线的 `MOCK_PAY` 演示模式。详见 [`payment/README.md`](./payment/README.md)。
+
 ### 5. `tests_e2e/` — 跨系统测试
 
 四层测试结构：
