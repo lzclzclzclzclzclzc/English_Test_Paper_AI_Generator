@@ -444,7 +444,7 @@ def generate_solution(
     q: RevisedQuestion,
     *,
     source_question_id: str | None = None,
-    revision_mode: Literal["fresh", "light", "original"] | None = None,
+    revision_mode: RevisionMode | None = None,   # RevisionMode = Literal["fresh","light","original"]
 ) -> str: ...
 ```
 
@@ -496,16 +496,25 @@ def build_profile(user_id: str, window_days: int | None = None) -> MasteryProfil
 
 ### 7.2 内部流程
 
-1. **查询答题记录**（Spec A § 3.7 `attempts` + `attempt_items` 表）：
+1. **查询答题记录**（`attempts` + `attempt_items` 表，由后端写入）：
    ```sql
-   SELECT ai.kps_json, ai.question_type, ai.is_correct
+   SELECT ai.knowledge_point_ids_json, ai.question_type, ai.is_correct
    FROM attempts a
    JOIN attempt_items ai ON a.id = ai.attempt_id
    WHERE a.user_id = ?
-     AND (? IS NULL OR a.answered_at >= datetime('now', ? || ' days'))
+     AND (? IS NULL OR a.answered_at >= datetime('now', '-' || ? || ' days'))
    ```
+   注：`attempt_items` 表中对应 `AttemptItem.knowledge_point_ids` 的列在 SQLite 中序列化为 JSON 数组，
+   实现时通过 `json.loads(row["knowledge_point_ids_json"])` 还原为 `list[str]`。
+   `window_days` 传 `None` 则不过滤时间范围，查全部历史。
 
-2. **展开 `kps_json`**：一道题命中多个 KP → 每个 KP 都记一次（该题对错平均分摊到每个 KP 上，不按 KP 数量分摊比例——用户已确认）
+2. **展开 KP 列表**：一道题命中多个 KP → 每个 KP 都记一次（该题对错平摊到每个 KP，不按 KP 数量分比例——用户已确认）
+   ```python
+   for row in rows:
+       for kp_id in json.loads(row["knowledge_point_ids_json"]):
+           kp_stats[kp_id]["attempts"] += 1
+           kp_stats[kp_id]["correct"] += int(row["is_correct"])
+   ```
 
 3. **按 `kp_id` 分组**统计 `attempts` 和 `correct`
 
@@ -522,10 +531,10 @@ def build_profile(user_id: str, window_days: int | None = None) -> MasteryProfil
    ```
    低样本降权，避免"只做过 1 道且错了"排在"做过 20 道正确率 60%"之前
 
-5. **产出 `MasteryProfile`**：
-   - `weak_kps`：按 `mastery` 升序取前 N（默认 8）
-   - `dominant_types`：从 `attempt_items.question_type` 中按错题数排序取前 3
-   - `total_attempts_considered`：查询到的 attempt_items 总数
+5. **产出 `MasteryProfile`**（对应 `shared/schemas.py::MasteryProfile`）：
+   - `weak_kps: list[KPMastery]`：按 `mastery` 升序取前 N（默认 8）
+   - `dominant_types: list[str]`：从 `attempt_items.question_type` 中按**错题数**降序取前 3，值为 `QuestionType` 字符串
+   - `total_attempts_considered: int`：查询到的 `attempt_items` 总行数
 
 ### 7.3 边界处理
 

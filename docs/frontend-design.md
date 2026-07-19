@@ -157,17 +157,20 @@ frontend/
 ### 3.5 QuestionCard
 根据 `question.question_type` 分派（字段名与 Spec A § 2.2 / § 2.3 一致）：
 - `single_choice`：题干 + `<RadioGroup>`（4 个选项，来自 `question.options`）。用户选择结果 `"A" | "B" | "C" | "D"` 作为 `user_answer`。
-- `word_form` / `sentence_rewriting`：题干渲染时把 Spec A § 2.6 约定的 `___` 占位符替换为一个 `<Input>`。**MVP 约束**：一题**恰好一个空**（Spec A 数据契约的 `answer` 是单一 `str`，不含多空结构；未来若引入多空，需 Spec A 先扩契约）。用户输入的字符串作为 `user_answer`。
-- 已提交状态：正确/错误图标 + 显示 `correct_answer`（如果用户答错），来自 `GradeSubmissionResponse.items[].correct_answer`（Spec C § 2.3）。
+- `word_form`：渲染 `stem`（含 `___` 占位符）+ `hint`（给出的基础词形）。把 `___` 替换为一个 `<Input>`，用户输入变形后的词作为 `user_answer`。
+- `sentence_rewriting`：渲染 `original_sentence`（原句）+ `instruction`（改写要求），若有 `template` 则一并渲染作为参考框架。提供一个 `<Input>` 供用户填写改写结果，作为 `user_answer`。
 
-**答案上传结构**：所有题型统一按 Spec C § 2.2 的 `GradeSubmissionItem = { index, user_answer: string }` 上传；单选传 label，填空传字符串，无 `string[]` 变体。
+**答案上传结构**：所有题型统一按 Spec C § 2.2 的 `GradeSubmissionItem = { index, user_answer: string }` 上传；单选传 label，填空传字符串，无 `string[]` 变体。后端 `grading.py` 负责将用户字符串与 `Answer`（`str | list[BlankGroup]`）结构比对（见 Spec C § 5.2）。
+
+**提交后答案显示**：`GradeResultItem.correct_answer` 类型为 `Answer`（`string | BlankGroup[]`，见 Spec C § 2.3）。前端显示时：`string` 直接展示，`BlankGroup[]` 取第一个候选组的各空答案拼接展示（如 `"so / that"`）。
 
 ### 3.6 MasteryPage（`/mastery`）
 - 顶部：用户名 + 总答题数 + 综合正确率。
 - 主体：`MasteryTree` 组件
   - 按知识点树层级折叠。
-  - 每个叶子节点显示：`accuracy`（百分比）+ `attempts` + `wilson_lower` 条形。
-  - 颜色标记：wilson_lower ≥ 0.7 绿；0.4-0.7 黄；< 0.4 红。
+  - 每个叶子节点显示：`mastery`（Wilson score 下界，格式化为百分比）+ `attempts`（做题次数）。
+  - 颜色标记：`mastery` ≥ 0.7 绿；0.4–0.7 黄；< 0.4 红。
+  - 注：`MasteryProfile` 只含 `weak_kps`（掌握度最低的前 8 个 KP），不含全部 KP 的统计。`MasteryTree` 只渲染这 8 个，其余 KP 暂不展示（MVP）。
 - 数据来源：`GET /api/users/me/mastery`，TanStack Query key: `['mastery', 'me']`。
 
 ---
@@ -187,7 +190,7 @@ frontend/
   - `['mastery', userId | 'me']`
 
 ### 4.2 UI 状态
-- 用户在做题过程中的 `answers: Record<questionId, string>` — HomePage 的 `useState`。
+- `answers: Record<number, string>` — key 为 `PaperItem.index`（1-based），value 为用户答案字符串。用 `index` 而非 question id，因为 `RevisedQuestion` 没有 id 字段（改题后不再是题库原题）。
 - 表单状态 — React Hook Form。
 - 对话框、折叠等 — 各组件 local state。
 

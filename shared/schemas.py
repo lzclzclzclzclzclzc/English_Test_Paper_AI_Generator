@@ -246,7 +246,7 @@ class Attempt(BaseModel):
     """Minimal per-paper submission the frontend reports. Stores metadata only —
     not the paper or the question text."""
     user_id: str
-    paper_id: str
+    paper_id: str              # AI Engine 生成、后端持久化的 paper_id（Paper.paper_id）
     answered_at: datetime
     items: list[AttemptItem]
 
