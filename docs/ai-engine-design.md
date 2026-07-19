@@ -498,20 +498,20 @@ def build_profile(user_id: str, window_days: int | None = None) -> MasteryProfil
 
 1. **查询答题记录**（`attempts` + `attempt_items` 表，由后端写入）：
    ```sql
-   SELECT ai.knowledge_point_ids_json, ai.question_type, ai.is_correct
+   SELECT ai.kps_json, ai.question_type, ai.is_correct
    FROM attempts a
    JOIN attempt_items ai ON a.id = ai.attempt_id
    WHERE a.user_id = ?
      AND (? IS NULL OR a.answered_at >= datetime('now', '-' || ? || ' days'))
    ```
-   注：`attempt_items` 表中对应 `AttemptItem.knowledge_point_ids` 的列在 SQLite 中序列化为 JSON 数组，
-   实现时通过 `json.loads(row["knowledge_point_ids_json"])` 还原为 `list[str]`。
+   注：`attempt_items.kps_json` 列存的是对应 `AttemptItem.knowledge_point_ids` 的 JSON 数组，
+   实现时通过 `json.loads(row["kps_json"])` 还原为 `list[str]`。
    `window_days` 传 `None` 则不过滤时间范围，查全部历史。
 
 2. **展开 KP 列表**：一道题命中多个 KP → 每个 KP 都记一次（该题对错平摊到每个 KP，不按 KP 数量分比例——用户已确认）
    ```python
    for row in rows:
-       for kp_id in json.loads(row["knowledge_point_ids_json"]):
+       for kp_id in json.loads(row["kps_json"]):
            kp_stats[kp_id]["attempts"] += 1
            kp_stats[kp_id]["correct"] += int(row["is_correct"])
    ```
