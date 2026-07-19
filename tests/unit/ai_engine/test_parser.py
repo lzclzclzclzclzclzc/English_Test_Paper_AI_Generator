@@ -125,7 +125,19 @@ def test_local_validate_drops_invalid_kp_ids(sample_kps: list[KnowledgePoint]) -
     assert all("invalid KP id" in w for w in warnings)
 
 
-def test_local_validate_caps_total_questions(sample_kps: list[KnowledgePoint]) -> None:
+def test_local_validate_drops_invalid_type_distribution_keys(sample_kps: list[KnowledgePoint]) -> None:
+    resp = GenerateRequest(
+        total_questions=10,
+        type_distribution={"single_choice": 5, "bad_type": 5},
+        revision_intensity="light",
+    )
+    validated, warnings = _local_validate(resp, sample_kps)
+    assert "bad_type" not in validated.type_distribution
+    assert "single_choice" in validated.type_distribution
+    assert any("invalid type_distribution key" in w for w in warnings)
+
+
+
     resp = GenerateRequest(
         total_questions=100,
         revision_intensity="light",
@@ -243,7 +255,8 @@ def test_parse_fresh_intensity_from_context() -> None:
 
 @pytestmark_integration
 def test_parse_review_mode_with_mastery() -> None:
-    """Review mode attaches mastery context and user_id."""
+    """Review mode attaches mastery context; user_id/review_window_days
+    are set by the pipeline after parse() returns, not by parse() itself."""
     mastery = MasteryProfile(
         user_id="u_test",
         window_days=30,
@@ -258,12 +271,11 @@ def test_parse_review_mode_with_mastery() -> None:
         "帮我复习薄弱点",
         mode="review",
         mastery=mastery,
-        user_id="u_test",
-        review_window_days=30,
     )
     assert req.mode == "review"
-    assert req.user_id == "u_test"
-    assert req.review_window_days == 30
+    # parser does not set user_id / review_window_days — pipeline does
+    assert req.user_id is None
+    assert req.review_window_days is None
 
 
 @pytestmark_integration

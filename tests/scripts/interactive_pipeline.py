@@ -157,14 +157,11 @@ def main() -> None:
             import ai_engine.reviser as _reviser
             from shared.schemas import WrongItemRef
 
-            # build parser kwargs
+            # build parser kwargs (parse() only takes mode/wrong_items/mastery;
+            # user_id & review_window_days are set on req afterwards, like pipeline does)
             parse_kwargs: dict = {"mode": kwargs.get("mode", "fresh")}
             if "wrong_items" in kwargs:
                 parse_kwargs["wrong_items"] = kwargs["wrong_items"]
-            if "user_id" in kwargs:
-                parse_kwargs["user_id"] = kwargs["user_id"]
-            if "review_window_days" in kwargs:
-                parse_kwargs["review_window_days"] = kwargs["review_window_days"]
 
             # review mode: run build_profile first
             mastery = None
@@ -177,6 +174,8 @@ def main() -> None:
                 parse_kwargs["mastery"] = mastery
 
             req = _parser.parse(query, **parse_kwargs)
+            req.user_id = kwargs.get("user_id")
+            req.review_window_days = kwargs.get("review_window_days")
             t1 = time.time()
             print(f" ✓  {t1 - t0:.2f}s")
             print(f"      → mode={req.mode}  intensity={req.revision_intensity}  "

@@ -561,6 +561,66 @@ class TestBuildPaperMetadata:
 
         assert "bucket 'single_choice' short of 2" in paper.metadata["retrieval_warnings"]
 
+    def test_shortfall_propagated(self):
+        q = _make_sc_question()
+        req = _make_req(n=1, intensity="original")
+        retrieval = RetrievalResult(
+            items=[RetrievedItem(question=q, score=0.0)],
+            warnings=["bucket 'single_choice' short of 2"],
+            shortfall={"single_choice": 2},
+        )
+
+        paper = build_paper(req, retrieval)
+
+        assert paper.metadata["shortfall"] == {"single_choice": 2}
+
+    def test_revision_failures_empty_when_all_succeed(self):
+        q = _make_sc_question()
+        req = _make_req(n=1, intensity="light")
+        retrieval = _make_retrieval([q])
+        client = MagicMock()
+        client.structured.return_value = _make_valid_revised_sc(q)
+
+        with patch("ai_engine.reviser.get_llm_client", return_value=client):
+            paper = build_paper(req, retrieval)
+
+        assert paper.metadata["revision_failures"] == []
+
+    def test_revision_failures_records_fallback_indices(self):
+        """When some questions fall back, their 1-based indices are recorded."""
+        qs = [_make_sc_question(f"q_{i:05d}", kp_ids=["kp_sc_verbs"]) for i in range(3)]
+        req = _make_req(n=3, intensity="light")
+        retrieval = _make_retrieval(qs)
+
+        valid_revised = _make_valid_revised_sc(qs[0])
+        call_count = 0
+
+        def side_effect(**kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 2:  # one call fails → that question falls back
+                raise RuntimeError("boom")
+            return valid_revised
+
+        client = MagicMock()
+        client.structured.side_effect = side_effect
+
+        with patch("ai_engine.reviser.get_llm_client", return_value=client):
+            paper = build_paper(req, retrieval)
+
+        # Exactly one question fell back; its index is in the list.
+        assert len(paper.metadata["revision_failures"]) == 1
+        assert paper.metadata["revision_failures"][0] in {1, 2, 3}
+
+    def test_original_mode_has_no_revision_failures(self):
+        q = _make_sc_question()
+        req = _make_req(n=1, intensity="original")
+        retrieval = _make_retrieval([q])
+
+        paper = build_paper(req, retrieval)
+
+        assert paper.metadata["revision_failures"] == []
+
     def test_paper_id_is_unique(self):
         q = _make_sc_question()
         req = _make_req(n=1, intensity="original")

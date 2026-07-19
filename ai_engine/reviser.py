@@ -95,11 +95,17 @@ def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
 def _revise_one(
     question: Question,
     intensity: Literal["fresh", "light", "original"],
-    user_query: str,
-) -> RevisedQuestion:
-    """Revise a single question according to revision intensity."""
+    free_text: str,
+) -> tuple[RevisedQuestion, bool]:
+    """Revise a single question according to revision intensity.
+
+    Returns (revised_question, is_fallback). `is_fallback` is True when a
+    light/fresh revision failed (validation rejected the LLM output, or the
+    LLM call raised) and we fell back to copying the original. `original`
+    mode is never a fallback — copying is its intended behaviour.
+    """
     if intensity == "original":
-        return _copy_question(question)
+        return _copy_question(question), False
 
     kp_names = ", ".join(question.knowledge_point_ids)
     original_dict = question.model_dump()
@@ -109,7 +115,7 @@ def _revise_one(
             "reviser_light",
             original_question=original_dict,
             kp_names=kp_names,
-            user_query=user_query,
+            user_query=free_text,
         )
         temperature = 0.3
     else:
@@ -117,7 +123,7 @@ def _revise_one(
             "reviser_fresh",
             original_question=original_dict,
             kp_names=kp_names,
-            user_query=user_query,
+            user_query=free_text,
         )
         temperature = 0.5
 
@@ -132,44 +138,55 @@ def _revise_one(
         )
 
         if _validate_revision(question, revised):
-            return revised
+            return revised, False
         else:
-            return _copy_question(question)
+            return _copy_question(question), True
 
     except Exception:
-        return _copy_question(question)
+        return _copy_question(question), True
 
 
 def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
     """Build a complete Paper from retrieval results."""
-    items: list[PaperItem] = []
     num_questions = min(req.total_questions, len(retrieval.items))
+    chosen = list(retrieval.items[:num_questions])
 
+    # idx (1-based) → (RevisedQuestion, is_fallback). Keyed by idx so we can
+    # both re-order deterministically and pair each result with its own
+    # retrieved item — no fragile idx-1 reverse lookup.
+    results: dict[int, tuple[RevisedQuestion, bool]] = {}
     with ThreadPoolExecutor(max_workers=4) as executor:
-        future_to_idx = {}
-        for idx, retrieved in enumerate(retrieval.items[:num_questions], start=1):
-            future = executor.submit(
+        future_to_idx = {
+            executor.submit(
                 _revise_one,
                 retrieved.question,
                 req.revision_intensity,
                 req.free_text,
-            )
-            future_to_idx[future] = idx
-
+            ): idx
+            for idx, retrieved in enumerate(chosen, start=1)
+        }
         for future in as_completed(future_to_idx):
             idx = future_to_idx[future]
-            rq = future.result()
-            items.append(
-                PaperItem(
-                    index=idx,
-                    question=rq,
-                    source_question_id=retrieval.items[idx - 1].question.id,
-                    revision_mode=req.revision_intensity,
-                )
+            results[idx] = future.result()
+
+    items: list[PaperItem] = []
+    revision_failures: list[int] = []
+    for idx, retrieved in enumerate(chosen, start=1):
+        rq, is_fallback = results[idx]
+        if is_fallback:
+            revision_failures.append(idx)
+        items.append(
+            PaperItem(
+                index=idx,
+                question=rq,
+                source_question_id=retrieved.question.id,
+                revision_mode=req.revision_intensity,
             )
+        )
 
-        items.sort(key=lambda x: x.index)
-
+    # Actual LLM calls: original makes none; light/fresh call once per question
+    # attempted (fallbacks still incurred a call unless the call itself raised,
+    # but we report attempts as the observable count — matches Spec B §5.4).
     llm_calls = len(items) if req.revision_intensity != "original" else 0
 
     return Paper(
@@ -180,6 +197,8 @@ def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
         items=items,
         metadata={
             "retrieval_warnings": retrieval.warnings,
+            "shortfall": retrieval.shortfall,
+            "revision_failures": revision_failures,
             "llm_calls": llm_calls,
         },
     )

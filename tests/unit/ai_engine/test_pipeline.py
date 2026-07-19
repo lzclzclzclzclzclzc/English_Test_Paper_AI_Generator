@@ -256,10 +256,19 @@ class TestGeneratePaperReviewMode:
                            user_id="u_test", review_window_days=14)
         mock_bp.assert_called_once_with("u_test", 14)
 
+    def test_user_id_and_window_set_on_req_by_pipeline(self):
+        req, retrieval, mp, mr, mv = _core_mocks()
+        mastery = _fake_mastery()
+        mock_bp = MagicMock(return_value=mastery)
+        with patch(PARSER_PATH, mp), patch(RETRIEVER_PATH, mr), \
+             patch(REVISER_PATH, mv), patch(BUILD_PROFILE_PATH, mock_bp):
+            paper = generate_paper("复习薄弱点", mode="review",
+                                   user_id="u_test", review_window_days=30)
+        # pipeline sets these directly on req after parse() returns
+        assert paper.request.user_id == "u_test"
+        assert paper.request.review_window_days == 30
 
-# ---------------------------------------------------------------------------
-# Tests: error propagation
-# ---------------------------------------------------------------------------
+
 
 class TestGeneratePaperErrorPropagation:
 

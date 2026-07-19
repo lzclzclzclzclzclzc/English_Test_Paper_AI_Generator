@@ -96,12 +96,14 @@ def _local_validate(
     kps: list[KnowledgePoint],
 ) -> tuple[GenerateRequest, list[str]]:
     """Local validation after LLM response.
-    
+
     Filters invalid KP ids, caps question count, adjusts distributions.
     """
     warnings = []
     valid_kp_ids = {kp.id for kp in kps}
-    
+    valid_question_types = {"single_choice", "word_form", "sentence_rewriting"}
+
+    # Filter invalid KP ids
     valid_kps = []
     for kp_id in response.knowledge_points:
         if kp_id in valid_kp_ids:
@@ -109,18 +111,30 @@ def _local_validate(
         else:
             warnings.append(f"invalid KP id: {kp_id}, dropped")
     response.knowledge_points = valid_kps
-    
+
+    # Filter invalid type_distribution keys (dict[str, int] — pydantic does not
+    # validate the key values, so we check them here)
+    valid_dist = {}
+    for k, v in response.type_distribution.items():
+        if k in valid_question_types:
+            valid_dist[k] = v
+        else:
+            warnings.append(f"invalid type_distribution key: {k}, dropped")
+    response.type_distribution = valid_dist
+
+    # Cap total_questions
     if response.total_questions > MAX_QUESTIONS:
         warnings.append(f"total_questions capped at {MAX_QUESTIONS}")
         response.total_questions = MAX_QUESTIONS
-    
+
+    # Scale down type_distribution if sum exceeds total_questions
     total_type_dist = sum(response.type_distribution.values())
     if total_type_dist > response.total_questions:
         scale = response.total_questions / total_type_dist
         response.type_distribution = {
             k: max(1, int(v * scale)) for k, v in response.type_distribution.items()
         }
-    
+
     return response, warnings
 
 
@@ -130,21 +144,18 @@ def parse(
     mode: Literal["fresh", "remediation", "review"] = "fresh",
     wrong_items: list[WrongItemRef] | None = None,
     mastery: MasteryProfile | None = None,
-    user_id: str | None = None,
-    review_window_days: int | None = None,
 ) -> GenerateRequest:
     """Parse user's natural language query into GenerateRequest.
-    
+
     Args:
         user_query: User's natural language request
         mode: Generation mode (fresh/remediation/review)
         wrong_items: List of wrong items for remediation mode
         mastery: Mastery profile for review mode
-        user_id: User ID for review mode
-        review_window_days: Time window for review mode
-    
+
     Returns:
-        Structured GenerateRequest with all fields filled
+        Structured GenerateRequest. Caller (pipeline) is responsible for
+        setting user_id and review_window_days after this returns.
     """
     cfg = get_config()
     kps = _load_kp_catalog(str(cfg.db_path))
@@ -171,7 +182,5 @@ def parse(
     
     validated.mode = mode
     validated.wrong_items = wrong_items or []
-    validated.user_id = user_id
-    validated.review_window_days = review_window_days
-    
+
     return validated

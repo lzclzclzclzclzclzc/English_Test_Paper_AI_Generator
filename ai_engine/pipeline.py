@@ -79,6 +79,8 @@ def generate_paper(
         wrong_items=wrong_items,
         mastery=profile,
     )
+    req.user_id = user_id
+    req.review_window_days = review_window_days
 
     # 3. Retriever: GenerateRequest → candidate pool (+ shortfall)
     retrieval = retriever.retrieve(req)
