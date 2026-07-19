@@ -42,6 +42,32 @@ def test_development_cors_allows_configured_frontend_origin(tmp_path, monkeypatc
         reset_config_cache()
 
 
+def test_test_mode_cors_allows_configured_frontend_origin(tmp_path, monkeypatch):
+    db_path = tmp_path / "cors-test-mode.db"
+    storage.set_db_path(db_path)
+    monkeypatch.setenv("BACKEND_ENV", "test")
+    monkeypatch.setenv("FRONTEND_ORIGIN", "http://localhost:4173")
+    reset_config_cache()
+
+    from backend.main import create_app
+
+    try:
+        with TestClient(create_app()) as test_client:
+            response = test_client.options(
+                "/api/auth/login",
+                headers={
+                    "Origin": "http://localhost:4173",
+                    "Access-Control-Request-Method": "POST",
+                },
+            )
+        assert response.status_code == 200
+        assert response.headers["access-control-allow-origin"] == "http://localhost:4173"
+        assert response.headers["access-control-allow-credentials"] == "true"
+    finally:
+        storage.set_db_path(None)
+        reset_config_cache()
+
+
 def test_production_serves_frontend_and_api_from_same_origin(tmp_path, monkeypatch):
     static_dir = tmp_path / "static"
     static_dir.mkdir()

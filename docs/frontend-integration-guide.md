@@ -2,7 +2,14 @@
 
 本文给前端和测试同学使用。完整字段可参考 [后端 API 协作手册](./backend-api.md) 与 Swagger：`http://127.0.0.1:8000/docs`。
 
-异地联调时，请使用 [远程同源部署指南](./remote-frontend-deployment.md)，不要让本地前端直接跨站调用临时公网 API；登录 Cookie 需要同源访问才稳定。
+## 联调方式选择
+
+| 场景 | 后端运行位置 | 前端使用方式 | 是否需要 Key/模型 |
+|---|---|---|---|
+| 日常页面开发 | 每位同学自己的电脑 | 请求各自的 `127.0.0.1:8000` | 不需要，使用 `test` 模式 |
+| 真实 AI 质量验收 | 后端负责人的电脑 | 访问负责人分享的同源 HTTPS 地址 | 仅负责人机器需要 |
+
+`127.0.0.1` 只表示当前电脑；前端同学从 Git 拉取代码后，需要在**自己的电脑**启动一份 `test` 后端。异地联调不要让本地前端直接跨站调用临时公网 API；登录 Cookie 需要同源访问才稳定。请使用 [远程同源部署指南](./remote-frontend-deployment.md)。
 
 ## 1. 最快联调：离线测试模式
 
@@ -27,6 +34,8 @@ python -m backend.cli serve --reload
 
 此模式下 `POST /api/papers/generate` 返回稳定的离线试卷 fixture；其余鉴权、保存、判分、掌握度和限流逻辑与正式接口一致。不要把 test 模式当作题目质量验收。
 
+后端在 `test` 与 `development` 模式均会仅允许 `FRONTEND_ORIGIN` 指定的本地前端 Origin 携带 Cookie；前端端口变更时必须同步更新该变量。
+
 ## 2. 真实 AI 模式
 
 需要验证生成质量时，调整 `.env`：
@@ -49,7 +58,7 @@ python models/download_model.py
 
 ## 3. 前端请求约定
 
-开发期 API 地址为 `http://127.0.0.1:8000/api`。所有受保护请求必须带 Cookie：
+开发期 API 地址为**当前开发者自己电脑**的 `http://127.0.0.1:8000/api`。所有受保护请求必须带 Cookie：
 
 ```ts
 const api = async (path: string, options: RequestInit = {}) => {
@@ -141,3 +150,4 @@ const revised = await api('/papers/revise', {
 - 缺题/重复提交返回 `request.invalid` 的提示。
 - `429 rate.exceeded` 显示“稍后重试”；`502 ai.llm_upstream` 提供重试入口；错误展示可记录响应的 `trace_id`。
 - 在离线 test 模式完成流程测试，再在真实 AI 模式做少量生成质量验收。
+- 不要把负责人电脑的 `127.0.0.1` 写进前端配置；该地址在每个人电脑上都指向自己。

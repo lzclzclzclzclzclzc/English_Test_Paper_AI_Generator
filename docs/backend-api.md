@@ -13,6 +13,7 @@
 - 真实题库：后端按 ingestion 当前 schema 读取 `questions`、`knowledge_points`、`question_knowledge_points`；readiness 会同时校验 SQLite 题库和 Chroma 向量库；`difficulty` 字段已从题库契约中移除
 - 当前 AI Engine：开发/生产环境走 Parser → Retriever → Reviser 真实链路；`BACKEND_ENV=test` 使用确定性 fixture，供前端和自动化测试在无 API key 时联调
 - Swagger UI：后端启动后访问 `http://127.0.0.1:8000/docs`
+- 联调拓扑：`127.0.0.1` 仅供当前电脑使用；每位开发者在本机运行 test 后端。异地真实 AI 联调采用前端与 API 同源的 HTTPS 部署，详见 [远程同源部署指南](./remote-frontend-deployment.md)
 
 ## 本地启动
 
@@ -49,7 +50,7 @@ python -m pytest tests\integration\backend
 Set-Cookie: session_id=...; HttpOnly; Path=/; SameSite=Lax
 ```
 
-前端请求必须带上 Cookie。浏览器同源部署时自动携带；开发期如跨源请求，需要 `credentials: "include"`。
+前端请求必须带上 Cookie。`test` / `development` 模式允许 `FRONTEND_ORIGIN` 指定的本地前端跨源请求，并要求 `credentials: "include"`；生产同源部署时自动携带。生产模式的 Cookie 为 `Secure; SameSite=Strict`，因此必须通过 HTTPS 访问同一个站点。
 
 ## 统一错误体
 

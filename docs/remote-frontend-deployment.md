@@ -62,10 +62,10 @@ python -m backend.cli serve --host 127.0.0.1 --port 8000
 
 ## 4. 暴露临时 HTTPS 地址
 
-安装 Cloudflare 的 `cloudflared` 后，在**另一个终端**运行：
+安装 Cloudflare 的 `cloudflared` 后，在**另一个终端**运行。若按本项目的本地工具目录安装，请使用：
 
 ```powershell
-cloudflared tunnel --url http://127.0.0.1:8000
+& ".\tools\cloudflared\cloudflared.exe" tunnel --url http://127.0.0.1:8000
 ```
 
 终端会输出一个 `https://*.trycloudflare.com` 地址。将该地址发给队友；后端和隧道进程都必须持续运行。

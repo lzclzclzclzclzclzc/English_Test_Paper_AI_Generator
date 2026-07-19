@@ -23,7 +23,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="English Test Paper AI Generator Backend")
     install_error_handlers(app)
 
-    if config.env == "development":
+    if config.env in {"development", "test"}:
         app.add_middleware(
             CORSMiddleware,
             allow_origins=[config.frontend_origin],
