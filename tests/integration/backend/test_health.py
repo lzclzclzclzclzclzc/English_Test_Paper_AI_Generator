@@ -1,12 +1,28 @@
 from __future__ import annotations
 
 import shutil
+import sqlite3
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from shared import storage
 from shared.config import get_config, reset_config_cache
+
+
+def _require_real_question_bank() -> Path:
+    path = Path("data/questions.db")
+    if not path.exists():
+        pytest.skip("real question-bank artifact is not installed; see docs/data-artifacts.md")
+    try:
+        with sqlite3.connect(path) as conn:
+            question_count = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+    except sqlite3.DatabaseError:
+        pytest.skip("real question-bank artifact is not installed; see docs/data-artifacts.md")
+    if question_count == 0:
+        pytest.skip("real question-bank artifact is not installed; see docs/data-artifacts.md")
+    return path
 
 
 def test_health_is_lightweight_and_public(client):
@@ -104,8 +120,7 @@ def test_readiness_reports_missing_question_bank(client):
 
 
 def test_readiness_accepts_real_question_bank_copy(tmp_path, monkeypatch):
-    source_db = Path("data/questions.db")
-    assert source_db.exists(), "real question bank database is required for this integration test"
+    source_db = _require_real_question_bank()
     db_copy = tmp_path / "questions-copy.db"
     shutil.copyfile(source_db, db_copy)
 

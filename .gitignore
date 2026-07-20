@@ -4,3 +4,12 @@ __pycache__/
 .env
 models/Qwen3-Embedding-4B/
 tools/cloudflared/
+
+# Local or externally distributed question-bank artifacts.  Only the
+# reviewed source records under data/chapters/ and data/kb/knowledge_tree.json
+# belong in Git.
+data/books/
+data/raw_md/
+data/questions.db
+data/chroma/
+data/kb/knowledge_tree_draft.html

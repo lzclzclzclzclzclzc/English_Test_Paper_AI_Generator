@@ -1,14 +1,31 @@
 from __future__ import annotations
 
 import shutil
+import sqlite3
 from pathlib import Path
+
+import pytest
 
 from shared import storage
 
 
+def _require_real_question_bank() -> Path:
+    path = Path("data/questions.db")
+    if not path.exists():
+        pytest.skip("real question-bank artifact is not installed; see docs/data-artifacts.md")
+    try:
+        with sqlite3.connect(path) as conn:
+            question_count = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+    except sqlite3.DatabaseError:
+        pytest.skip("real question-bank artifact is not installed; see docs/data-artifacts.md")
+    if question_count == 0:
+        pytest.skip("real question-bank artifact is not installed; see docs/data-artifacts.md")
+    return path
+
+
 def test_read_question_bank_records_from_real_database_copy(tmp_path):
     db_copy = tmp_path / "questions-copy.db"
-    shutil.copyfile(Path("data/questions.db"), db_copy)
+    shutil.copyfile(_require_real_question_bank(), db_copy)
     storage.set_db_path(db_copy)
     try:
         q = storage.get_question("q_00001")
@@ -30,7 +47,7 @@ def test_read_question_bank_records_from_real_database_copy(tmp_path):
 
 def test_read_knowledge_points_and_write_solution_on_database_copy(tmp_path):
     db_copy = tmp_path / "questions-copy.db"
-    shutil.copyfile(Path("data/questions.db"), db_copy)
+    shutil.copyfile(_require_real_question_bank(), db_copy)
     storage.set_db_path(db_copy)
     try:
         kps = storage.list_knowledge_points()

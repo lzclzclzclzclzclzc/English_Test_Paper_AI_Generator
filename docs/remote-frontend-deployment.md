@@ -10,6 +10,8 @@
 - 前端负责人：交付可构建的前端产物，且所有 API 请求使用相对路径 `/api` 并携带 `credentials: "include"`。
 - 远程队友：只访问后端负责人分享的 HTTPS 地址。
 
+真实题库和索引的数据包边界与本地安装步骤见 [`data-artifacts.md`](./data-artifacts.md)。
+
 ## 1. 准备前端同源产物
 
 前端项目完成后，在项目根目录执行其构建命令（通常是 `npm run build`）。将构建目录**内的内容**复制到本项目的 `backend/static/`：
