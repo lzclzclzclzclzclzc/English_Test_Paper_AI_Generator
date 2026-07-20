@@ -145,6 +145,7 @@ frontend/
 
 **Ⅱ. PaperView（试卷区）**
 - 顶部 metadata 条：标题、生成时间、题目数量。
+- 生成说明条（2026-07-16 补，随后端契约更新）：`Paper.metadata` 由 AI Engine 写入、后端透传，`lib/paperNotices.ts::buildPaperNotices()` 宽松解析 `revision_failures`（fallback 题号）、`retrieval_shortfall`/`shortfall`（题型缺口字典，两个键名都认）、`retrieval_warnings`（成句告警，原样展示）三个字段，拼成中文说明；形态不符或字段未知时静默丢弃（契约要求容忍未知字段）。有内容时在卷面上方渲染 `--ink-wash` 提示条，无内容不占位。
 - 一个 "重新出" 按钮：弹 `<Dialog>` 输入修改意图 → `POST /api/papers/revise`（body: `{ paper_id, user_instruction }`，Spec C § 5.1）→ 后端返回新的 `Paper`（`paper_id` 换新）→ 更新缓存里的当前试卷引用。
 - 试卷题目列表：每题一个 `QuestionCard`。
 - 底部 "提交" 按钮：把答案打包成 `GradeSubmissionRequest` → `POST /api/attempts` → 展示 `GradeSubmissionResponse`。
@@ -173,6 +174,12 @@ frontend/
   - 注：`MasteryProfile` 只含 `weak_kps`（掌握度最低的前 8 个 KP），不含全部 KP 的统计。`MasteryTree` 只渲染这 8 个，其余 KP 暂不展示（MVP）。
 - 数据来源：`GET /api/users/me/mastery`，TanStack Query key: `['mastery', 'me']`。
 
+### 3.7 PapersPage（`/papers`，2026-07-11 补）
+- 数据：`GET /api/papers`（只有摘要），`useInfiniteQuery(['papers','list'])`，页大小 20；响应无总数，**满页即认为有下一页**，底部「加载更多」。
+- 每行：标题 + meta（生成时间 · 题数 · 满分）+ 状态章（`submitted` → 已交卷 / 未作答），整行链接到 `/papers/{paper_id}`。
+- 失效时机：生成成功（GeneratePage）、重新出卷成功、交卷成功（PaperPage）三处 `invalidateQueries(['papers','list'])`。
+- 空态引导去生成页；视觉规则见 Spec F § 5「试卷列表页」。
+
 ---
 
 ## 4. 状态管理
@@ -186,7 +193,7 @@ frontend/
 - Query keys 约定：
   - `['auth', 'me']` — 当前用户
   - `['paper', paperId]` — 单份试卷
-  - `['papers', 'list']` — 试卷列表（暂不用页面，为未来预留）
+  - `['papers', 'list']` — 试卷列表（PapersPage 的 `useInfiniteQuery`；生成 / 重出 / 交卷成功后 invalidate）
   - `['mastery', userId | 'me']`
 
 ### 4.2 UI 状态
@@ -379,7 +386,7 @@ export default defineConfig({
 2. 国际化（中文硬编码）。
 3. 深色模式。
 4. 试卷 PDF 导出。
-5. 试卷列表页（Spec C 的 `/api/papers` 接口保留，但前端不做 UI）。
+5. ~~试卷列表页~~（2026-07-11 已实现，见 § 3.7）。
 6. 草稿保存（刷新页面丢失中间答题状态）。
 7. 富文本 / LaTeX（英语题目全部纯文本）。
 8. 无障碍（accessibility）深度优化，只做 shadcn/ui 内置的 ARIA。
