@@ -6,5 +6,19 @@ payment/.env
 payment/.venv/
 payment/keys/*.pem
 payment/data/*.db*
+
+# build & tool artifacts
 __pycache__/
+*.py[cod]
+*.egg-info/
 .pytest_cache/
+.coverage
+.venv/
+dist/
+build/
+models/Qwen3-Embedding-4B
+debug.log
+
+# env
+.env
+.env.local

@@ -226,7 +226,7 @@ class GradeSubmissionResponse(BaseModel):
 class GradeResultItem(BaseModel):
     index: int
     user_answer: str
-    correct_answer: str
+    correct_answer: Answer   # str（单选）或 list[BlankGroup]（填空），与 shared.schemas.Answer 一致
     is_correct: bool
 
 class SolutionResponse(BaseModel):
@@ -241,7 +241,7 @@ class PaperListItem(BaseModel):
     title: str
     generated_at: datetime
     total_questions: int
-    total_score: int
+    # total_score 已废弃（题数不同总分不可横向比较，改用正确率衡量表现）
     submitted: bool                                     # 是否已提交答题
 ```
 
@@ -536,11 +536,34 @@ Body:
 **判对错规则**（`backend/services/grading.py`）：
 
 ```python
-def compare(user_answer: str, correct_answer: str, question_type: str) -> bool:
+from shared.schemas import Answer, BlankGroup
+
+def compare(user_answer: str, correct_answer: Answer, question_type: str) -> bool:
     if question_type == "single_choice":
-        return user_answer.strip().upper() == correct_answer.strip().upper()
-    # word_form / sentence_rewriting：规范化后比较
-    return normalize(user_answer) == normalize(correct_answer)
+        return user_answer.strip().upper() == str(correct_answer).strip().upper()
+    # word_form / sentence_rewriting：答案是 list[BlankGroup]
+    # 用户填写匹配任意一个候选组即为正确
+    if isinstance(correct_answer, list):
+        user_norm = normalize(user_answer)
+        for group in correct_answer:
+            # 每组是 {blank1: [候选...], blank2: [候选...]}，单空题只有 blank1
+            blanks = list(group.values())
+            if len(blanks) == 1:
+                # 单空：用户答案匹配该空任意候选
+                if any(normalize(c) == user_norm for c in blanks[0]):
+                    return True
+            else:
+                # 多空：user_answer 用 "/" 或空白分隔各空答案，依次匹配
+                user_parts = [normalize(p) for p in re.split(r"[/／\s]+", user_answer.strip())]
+                if len(user_parts) == len(blanks):
+                    if all(
+                        any(normalize(c) == user_parts[i] for c in candidates)
+                        for i, candidates in enumerate(blanks)
+                    ):
+                        return True
+        return False
+    # 兜底：字符串直接规范化比较
+    return normalize(user_answer) == normalize(str(correct_answer))
 
 def normalize(s: str) -> str:
     s = s.lower().strip()
@@ -767,13 +790,39 @@ class BackendConfig(BaseModel):
     static_dir: Path = Path("backend/static")     # 部署时软链或复制 frontend/dist 到此
     rate_limit_generate_per_min: int = 30
     rate_limit_solutions_per_min: int = 60
+```
 
-class AppConfig(BaseModel):
-    llm: LLMConfig
-    storage: StorageConfig
-    embedding: EmbeddingConfig
-    backend: BackendConfig                         # ★ 新增
-    llm_trace_full: bool = False
+**`BackendConfig` 放在 `backend/config.py`，不合并进 `shared/config.py`**：
+
+`shared/config.py` 是 AI Engine 和 ingestion 共用的扁平配置（`llm_api_key`、`llm_model`、`db_path` 等），AI Engine 内部已大量使用扁平访问方式（`cfg.llm_api_key`），合并嵌套结构会导致大范围破坏性改动。后端专用配置单独维护更清晰，边界更明确。
+
+```python
+# backend/config.py
+from pydantic_settings import BaseSettings
+from pathlib import Path
+from typing import Literal
+
+class BackendConfig(BaseSettings):
+    backend_host: str = "127.0.0.1"
+    backend_port: int = 8000
+    backend_env: Literal["development", "production", "test"] = "development"
+    session_ttl_days: int = 30
+    bcrypt_rounds: int = 12
+    static_dir: Path = Path("backend/static")
+    rate_limit_generate_per_min: int = 30
+    rate_limit_solutions_per_min: int = 60
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+_backend_config: BackendConfig | None = None
+
+def get_backend_config() -> BackendConfig:
+    global _backend_config
+    if _backend_config is None:
+        _backend_config = BackendConfig()
+    return _backend_config
 ```
 
 `.env` 新增：
@@ -781,8 +830,6 @@ class AppConfig(BaseModel):
 BACKEND_ENV=development
 BACKEND_PORT=8000
 ```
-
-无 `SESSION_SECRET` 需要——session_id 本身是随机 hex，不需要签名（因为它是不透明 token，不含用户信息）。
 
 ---
 
