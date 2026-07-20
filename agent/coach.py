@@ -18,22 +18,23 @@ from openai import AsyncOpenAI
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from shared.config import get_config
-from agent.tools import get_example_questions, get_user_history
+from agent.tools import get_example_questions, get_user_history, generate_paper
 
 _SKILLS_DIR = Path(__file__).parent / "skills"
 
 _COACH_BASE_PROMPT = """你是一位中考英语学习助手。
 
 你可以做的事情：
-- 制定个性化学习计划（按照下方 skill 指令执行）
+- 根据用户的自然语言请求出题（调用 generate_paper 工具，按照出题 skill 指令执行）
+- 制定个性化学习计划（按照学习计划 skill 指令执行）
 - 查找某个知识点的例题（调用 get_example_questions 工具）
 - 回答学生关于学习安排的问题
 
 ## 重要规则
 
-**严禁自己编造题目**：当学生要求查例题时，
-必须调用 get_example_questions 工具从题库获取，不能凭自己的知识生成题目。
-如果工具返回为空，告知学生该知识点暂无例题。
+**严禁自己编造题目**：当学生要求查例题或看题目时，
+必须调用工具从题库获取，不能凭自己的知识生成题目。
+如果工具返回为空，告知学生该知识点暂无题目。
 
 保持语言亲切，面向初中生。
 
@@ -73,6 +74,6 @@ def create_coach_agent() -> Agent:
     return Agent(
         name="中考英语学习助手",
         instructions=system_prompt,
-        tools=[get_user_history, get_example_questions],
+        tools=[get_user_history, get_example_questions, generate_paper],
         model=_build_model(),
     )

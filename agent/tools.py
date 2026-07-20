@@ -1,9 +1,9 @@
 """Tool definitions for the study-coach agent.
 
-Two tools:
-  get_user_history   — pull the user's answer record for the last N days,
-                       summarised per KP (attempts, correct, accuracy, mastery)
-  get_example_questions — fetch up to 3 random bank questions for a KP
+Tools:
+  get_user_history       — pull the user's answer record summarised per KP
+  get_example_questions  — fetch random bank questions for a KP
+  generate_paper         — generate a paper via the AI Engine pipeline
 """
 from __future__ import annotations
 
@@ -145,4 +145,64 @@ def get_example_questions(knowledge_point_id: str, count: int = 3) -> str:
         "knowledge_point_id": knowledge_point_id,
         "count": len(questions),
         "questions": questions,
+    }, ensure_ascii=False, indent=2)
+
+
+@function_tool
+def generate_paper(
+    user_query: str,
+    user_id: str,
+    mode: str = "fresh",
+) -> str:
+    """根据用户的自然语言请求生成一份英语练习试卷。
+
+    Args:
+        user_query: 用户的自然语言出题请求，例如"来10道现在完成时的单选题"
+        user_id: 当前用户的ID
+        mode: 出题模式，fresh（普通出题）/ remediation（错题巩固）/ review（复习薄弱点）
+
+    返回试卷的摘要信息（标题、题数、每道题的题干和答案）。
+    """
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+
+    from ai_engine.pipeline import generate_paper as _generate_paper
+
+    valid_modes = {"fresh", "remediation", "review"}
+    if mode not in valid_modes:
+        mode = "fresh"
+
+    try:
+        paper = _generate_paper(user_query, mode=mode, user_id=user_id)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+    # Build a readable summary for the agent
+    items = []
+    for item in paper.items:
+        q = item.question
+        entry: dict = {
+            "index": item.index,
+            "question_type": q.question_type,
+            "knowledge_points": q.knowledge_point_ids,
+        }
+        if q.stem:
+            entry["stem"] = q.stem
+        if q.original_sentence:
+            entry["original_sentence"] = q.original_sentence
+        if q.instruction:
+            entry["instruction"] = q.instruction
+        if q.options:
+            entry["options"] = [{"label": o.label, "text": o.text} for o in q.options]
+        if q.hint:
+            entry["hint"] = q.hint
+        entry["answer"] = q.answer if isinstance(q.answer, str) else str(q.answer)
+        items.append(entry)
+
+    return json.dumps({
+        "paper_id": paper.paper_id,
+        "title": paper.title,
+        "total_questions": len(paper.items),
+        "revision_intensity": paper.request.revision_intensity,
+        "items": items,
     }, ensure_ascii=False, indent=2)
