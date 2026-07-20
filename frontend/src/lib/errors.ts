@@ -26,6 +26,13 @@ export function toastApiError(error: unknown) {
     case 'ai.llm_upstream':
       toast.error('AI 服务暂时不可用，请稍后重试')
       return
+    case 'ai.reviser_failed':
+      toast.error('AI 改题未成功，请稍后重试或换个说法')
+      return
+    case 'ai.solutioner_failed':
+      toast.error('AI 解析生成失败，请稍后重试')
+      return
+    case 'ai.internal':
     case 'server.internal':
       toast.error(`服务暂时不可用（trace: ${trace_id.slice(0, 8)}）`)
       return

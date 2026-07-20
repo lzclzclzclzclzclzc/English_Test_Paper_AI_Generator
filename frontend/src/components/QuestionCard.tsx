@@ -5,6 +5,7 @@ import { formatCorrectAnswer, formatUserAnswer } from '@/lib/answers'
 import { SingleChoiceField } from '@/components/question-fields/SingleChoiceField'
 import { WordFormField } from '@/components/question-fields/WordFormField'
 import { SentenceRewritingField } from '@/components/question-fields/SentenceRewritingField'
+import { prettifyKp } from '@/lib/kp'
 import { cn } from '@/lib/utils'
 
 interface QuestionCardProps {
@@ -85,6 +86,27 @@ export function QuestionCard({
               正确答案：{formatCorrectAnswer(result.correct_answer)}
             </p>
           </div>
+        )}
+
+        {/* review 态附注：考点标签（答题态不显示，避免提示答案）+ AI 改写降级说明 */}
+        {isReview && question.knowledge_point_ids.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {question.knowledge_point_ids.map((kp) => (
+              <span
+                key={kp}
+                title={kp}
+                className="rounded-full border border-line-strong px-2 py-0.5 text-[11px] text-text-mid"
+              >
+                {prettifyKp(kp)}
+              </span>
+            ))}
+          </div>
+        )}
+        {/* revision_notes 形态不保证：只认引擎的改写失败标记，其余（test fixture 等）不打扰 */}
+        {isReview && item.revision_notes?.toLowerCase().includes('revision failed') && (
+          <p className="text-xs text-muted-foreground" title={item.revision_notes}>
+            本题 AI 改写未成功，使用了题库原题
+          </p>
         )}
 
         {solutionSlot}

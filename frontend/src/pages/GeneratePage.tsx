@@ -1,32 +1,16 @@
-import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { generatePaper } from '@/api/papers'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { getReadiness } from '@/api/health'
-import { ApiError } from '@/api/client'
-import { toastApiError } from '@/lib/errors'
-import { queryClient } from '@/lib/queryClient'
-import type { GeneratePaperRequest } from '@/types/api'
-import type { RemediationHandoff } from '@/types/app'
+import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import { GenerateForm, type GenerateFormValues } from '@/components/GenerateForm'
+import { UpgradeDialog } from '@/components/UpgradeDialog'
 
+/** 首页：只做新生成（fresh）。错题巩固 / 综合复习在「错题复习」页。 */
 export function GeneratePage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-
-  // D2：navigate state 只读一次存本地，挂载后立即清除 history state——
-  // 防止刷新/后退复活过期错题（navigate 只能在 effect 里调用）。
-  const [remediation, setRemediation] = useState<RemediationHandoff | null>(() => {
-    const state = location.state as { remediation?: RemediationHandoff } | null
-    return state?.remediation ?? null
-  })
-  useEffect(() => {
-    if ((location.state as { remediation?: unknown } | null)?.remediation) {
-      navigate('.', { replace: true, state: null })
-    }
-  }, [location.state, navigate])
-
   const [serverError, setServerError] = useState<string | null>(null)
+  const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
+
+  const { generate, guard, isPending, locked, freeRemaining } = useGeneratePaper(setServerError)
 
   // 联调期后端题库/向量库可能未就绪；就绪时不渲染任何东西
   const readiness = useQuery({
@@ -37,44 +21,14 @@ export function GeneratePage() {
     refetchOnWindowFocus: false,
   })
 
-  const generate = useMutation({
-    mutationFn: generatePaper,
-    onSuccess: (paper) => {
-      // D1：塞缓存再导航，PaperPage 零请求命中
-      queryClient.setQueryData(['paper', paper.paper_id], paper)
-      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
-      navigate(`/papers/${paper.paper_id}`)
-    },
-    onError: (err) => {
-      if (
-        err instanceof ApiError &&
-        (err.payload.error_code === 'ai.parser_failed' ||
-          err.payload.error_code === 'ai.no_candidate')
-      ) {
-        setServerError(
-          err.payload.error_code === 'ai.parser_failed'
-            ? 'AI 没能理解这个需求，换个说法试试（如"来 5 道现在完成时的选择题"）'
-            : '题库里找不到匹配的题，试着放宽题型或考点条件',
-        )
-      } else {
-        toastApiError(err)
-      }
-    },
-  })
-
   const handleSubmit = (values: GenerateFormValues) => {
     setServerError(null)
-    const req: GeneratePaperRequest = {
-      user_query: values.user_query,
-      mode: values.mode,
+    const reason = guard('fresh')
+    if (reason) {
+      setUpgradeReason(reason)
+      return
     }
-    if (values.mode === 'remediation' && remediation) {
-      req.wrong_items = remediation.wrongItems
-    }
-    if (values.mode === 'review') {
-      req.review_window_days = 30
-    }
-    generate.mutate(req)
+    generate({ user_query: values.user_query, mode: 'fresh' })
   }
 
   return (
@@ -91,12 +45,12 @@ export function GeneratePage() {
         </div>
       )}
       <GenerateForm
-        remediation={remediation}
-        onDismissRemediation={() => setRemediation(null)}
         onSubmit={handleSubmit}
-        isPending={generate.isPending}
+        isPending={isPending}
         serverError={serverError}
+        quotaNotice={locked ? `今日免费出卷剩 ${freeRemaining} 次，开通会员不限次数` : null}
       />
+      <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
     </div>
   )
 }

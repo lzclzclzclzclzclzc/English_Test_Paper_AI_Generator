@@ -7,11 +7,7 @@
  * 业务代码必须容忍未知字段和形态不符——这里全部宽松解析，解析不出就静默丢弃。
  */
 
-const TYPE_LABELS: Record<string, string> = {
-  single_choice: '单项选择',
-  word_form: '词形转换',
-  sentence_rewriting: '句子改写',
-}
+import { TYPE_LABELS } from '@/lib/kp'
 
 const isPositiveInt = (v: unknown): v is number =>
   typeof v === 'number' && Number.isInteger(v) && v > 0

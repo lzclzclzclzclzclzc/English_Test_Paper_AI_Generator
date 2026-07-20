@@ -7,6 +7,7 @@ import { PapersPage } from '@/pages/PapersPage'
 import { PaperPageRoute } from '@/pages/PaperPage'
 import { MasteryPage } from '@/pages/MasteryPage'
 import { MembershipPage } from '@/pages/MembershipPage'
+import { ReviewPage } from '@/pages/ReviewPage'
 
 export function AppRoutes() {
   return (
@@ -20,6 +21,7 @@ export function AppRoutes() {
         }
       >
         <Route path="/" element={<GeneratePage />} />
+        <Route path="/review" element={<ReviewPage />} />
         <Route path="/papers" element={<PapersPage />} />
         <Route path="/papers/:paperId" element={<PaperPageRoute />} />
         <Route path="/mastery" element={<MasteryPage />} />

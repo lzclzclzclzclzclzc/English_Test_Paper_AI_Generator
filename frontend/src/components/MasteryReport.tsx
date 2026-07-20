@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { MasteryProfile } from '@/types/api'
+import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -11,27 +12,6 @@ function masteryColor(m: number): { bar: string; text: string } {
   if (m >= 0.7) return { bar: 'bg-ink', text: 'text-ink' }
   if (m >= 0.4) return { bar: 'bg-mid-score', text: 'text-mid-score' }
   return { bar: 'bg-wrong', text: 'text-wrong' }
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  single_choice: '单项选择',
-  word_form: '词形转换',
-  sentence_rewriting: '句子改写',
-}
-
-/**
- * 后端暂无知识点名称端点，MVP 先把 id slug 尽量翻成人话：
- * kp_word_form_participle → "词形转换 · participle"。
- */
-function prettifyKp(id: string): string {
-  const slug = id.replace(/^kp_/, '')
-  for (const [type, label] of Object.entries(TYPE_LABELS)) {
-    if (slug.startsWith(type)) {
-      const rest = slug.slice(type.length).replace(/^_/, '').replaceAll('_', ' ')
-      return rest ? `${label} · ${rest}` : label
-    }
-  }
-  return slug.replaceAll('_', ' ')
 }
 
 export function MasteryReport({ profile }: { profile: MasteryProfile }) {
@@ -81,7 +61,7 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
           return (
             <div
               key={kp.knowledge_point_id}
-              className="grid grid-cols-[170px_1fr_90px] items-center gap-4 py-3 max-sm:grid-cols-1 max-sm:gap-1.5"
+              className="grid grid-cols-[170px_1fr_150px] items-center gap-4 py-3 max-sm:grid-cols-1 max-sm:gap-1.5"
             >
               <span className="truncate text-[13.5px] text-foreground" title={kp.knowledge_point_id}>
                 {prettifyKp(kp.knowledge_point_id)}
@@ -93,15 +73,22 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
                 />
               </div>
               <span className="text-right text-[13px]">
-                <b className={cn('font-bold', color.text)}>{Math.round(kp.mastery * 100)}%</b>
-                <span className="ml-1.5 text-muted-foreground">{kp.attempts} 次</span>
+                <b
+                  className={cn('font-bold', color.text)}
+                  title="稳健掌握度（Wilson 下界）：答题次数越少估计越保守"
+                >
+                  {Math.round(kp.mastery * 100)}%
+                </b>
+                <span className="ml-1.5 text-muted-foreground">
+                  答对 {Math.round(kp.correct_rate * 100)}% · {kp.attempts} 次
+                </span>
               </span>
             </div>
           )
         })}
       </div>
 
-      {/* 最薄弱提示条：掌握度页通向生成页的唯一动作（Spec F § 5） */}
+      {/* 最薄弱提示条：指向错题复习页（综合复习就是按画像出卷） */}
       {weakest && weakest.mastery < 0.7 && (
         <div className="flex items-center justify-between rounded-md border border-[#d8e0ea] bg-ink-wash px-5 py-3.5">
           <span className="text-[13.5px] text-ink">
@@ -109,7 +96,7 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
             {Math.round(weakest.mastery * 100)}%）
           </span>
           <Button asChild size="sm">
-            <Link to="/">针对性练一份</Link>
+            <Link to="/review">针对性练一份</Link>
           </Button>
         </div>
       )}

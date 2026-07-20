@@ -1,21 +1,24 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { usePaper } from '@/hooks/usePaper'
+import { useAuth } from '@/hooks/useAuth'
+import { useMembership } from '@/hooks/useMembership'
+import { recordGrade } from '@/lib/wrongBook'
 import { revisePaper } from '@/api/papers'
 import { submitAttempt } from '@/api/attempts'
-import { fetchSolution } from '@/api/solutions'
 import { ApiError } from '@/api/client'
 import { toastApiError } from '@/lib/errors'
 import { queryClient } from '@/lib/queryClient'
 import type { AnswerDraft } from '@/lib/answers'
 import { buildSubmission, listUnanswered } from '@/lib/answers'
 import { buildPaperNotices } from '@/lib/paperNotices'
-import type { PaperItem, WrongItemRef } from '@/types/api'
-import type { RemediationHandoff } from '@/types/app'
 import { PaperSheet } from '@/components/PaperSheet'
 import { QuestionCard } from '@/components/QuestionCard'
 import { GradeBanner, ScoreStamp } from '@/components/GradeBanner'
+import { MemberPill, UpgradeDialog } from '@/components/UpgradeDialog'
+import { RequestSummary } from '@/components/RequestSummary'
+import { SolutionBlock } from '@/components/SolutionBlock'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -47,12 +50,23 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [reviseOpen, setReviseOpen] = useState(false)
   const [reviseInstruction, setReviseInstruction] = useState('')
+  const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
+
+  const { locked } = useMembership()
+  const { data: user } = useAuth()
+  const userId = user?.id ?? 'anon'
 
   // D4：成绩只活在 mutation state（后端无历史成绩端点，刷新即回到答题态）
   const grade = useMutation({
     mutationFn: submitAttempt,
-    // 列表页的 submitted 标记随交卷改变
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['papers', 'list'] }),
+    onSuccess: (result) => {
+      // 列表页的 submitted 标记随交卷改变
+      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+      // 错题本记账：答错的收进来、答对的清账（仅真实用户，避免串号）
+      if (paper && user?.id) {
+        recordGrade(user.id, paper, result.items)
+      }
+    },
     onError: toastApiError,
   })
   const phase = grade.isPending ? 'submitting' : grade.data ? 'submitted' : 'answering'
@@ -113,12 +127,9 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   const correctCount = paper.items.filter(
     (item) => resultByIndex.get(item.index)?.is_correct,
   ).length
-  const wrongItemRefs: WrongItemRef[] = paper.items
-    .filter((item) => resultByIndex.get(item.index)?.is_correct === false)
-    .map((item) => ({
-      knowledge_point_ids: item.question.knowledge_point_ids,
-      question_type: item.question.question_type,
-    }))
+  const wrongCount = paper.items.filter(
+    (item) => resultByIndex.get(item.index)?.is_correct === false,
+  ).length
 
   const doSubmit = () => {
     setConfirmOpen(false)
@@ -133,16 +144,16 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     }
   }
 
-  const handleRemediate = () => {
-    const handoff: RemediationHandoff = {
-      wrongItems: wrongItemRefs,
-      sourcePaperTitle: paper.title,
-    }
-    navigate('/', { state: { remediation: handoff } })
-  }
+  // 错题已在判分时写入错题本，这里直接去错题复习页
+  const handleRemediate = () => navigate('/review')
 
   const unanswered = listUnanswered(paper, answers)
   const notices = buildPaperNotices(paper.metadata)
+  // metadata.revised_from：改卷生成的卷可回看原卷（宽容解析，缺失即不显示）
+  const revisedFrom =
+    typeof paper.metadata?.revised_from === 'string' && paper.metadata.revised_from.trim() !== ''
+      ? paper.metadata.revised_from
+      : null
   const generatedAt = new Date(paper.generated_at).toLocaleString('zh-CN', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -155,8 +166,19 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         <Button asChild variant="ghost" size="sm">
           <Link to="/">← 生成新试卷</Link>
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setReviseOpen(true)}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            locked
+              ? setUpgradeReason(
+                  '重新出卷是会员功能：用一句话让 AI 调整整卷（换题型、换考点、增减题量）。',
+                )
+              : setReviseOpen(true)
+          }
+        >
           重新出卷
+          {locked && <MemberPill className="ml-1.5" />}
         </Button>
       </div>
 
@@ -166,7 +188,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
           total={paper.total_score}
           correctCount={correctCount}
           totalCount={paper.items.length}
-          wrongCount={wrongItemRefs.length}
+          wrongCount={wrongCount}
           onRetry={() => {
             grade.reset()
             setAnswers({})
@@ -175,17 +197,26 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         />
       )}
 
-      {/* 生成说明（metadata 里的检索/改写降级提示）：只陈述事实，不打断做题 */}
-      {notices.length > 0 && (
-        <div className="rounded-md border border-[#d8e0ea] bg-ink-wash px-5 py-3">
-          <p className="mb-1 text-xs font-bold text-ink">本卷生成说明</p>
+      {revisedFrom && (
+        <p className="text-[12.5px] text-text-mid">
+          本卷由另一份试卷修改而来 ·{' '}
+          <Link to={`/papers/${revisedFrom}`} className="text-ink underline underline-offset-2">
+            查看原卷
+          </Link>
+        </p>
+      )}
+
+      {/* 生成说明（request 回显 + metadata 里的检索/改写降级提示）：只陈述事实，不打断做题 */}
+      <div className="flex flex-col gap-1.5 rounded-md border border-[#d8e0ea] bg-ink-wash px-5 py-3">
+        <RequestSummary request={paper.request} />
+        {notices.length > 0 && (
           <ul className="flex flex-col gap-0.5 text-[13px] leading-relaxed text-text-mid">
             {notices.map((n) => (
               <li key={n}>{n}</li>
             ))}
           </ul>
-        </div>
-      )}
+        )}
+      </div>
 
       <PaperSheet
         title={paper.title}
@@ -202,7 +233,16 @@ function PaperPageInner({ paperId }: { paperId: string }) {
               onChange={(v) => setAnswers((prev) => ({ ...prev, [item.index]: v }))}
               result={resultByIndex.get(item.index)}
               solutionSlot={
-                submitted ? <SolutionBlock paperId={paper.paper_id} item={item} /> : undefined
+                submitted ? (
+                  <SolutionBlock
+                    question={item.question}
+                    sourceQuestionId={item.source_question_id}
+                    revisionMode={item.revision_mode}
+                    cacheKey={['solution', paper.paper_id, item.index]}
+                    locked={locked}
+                    userId={userId}
+                  />
+                ) : undefined
               }
             />
           ))}
@@ -240,6 +280,8 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         </DialogContent>
       </Dialog>
 
+      <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
+
       {/* 重新出 */}
       <Dialog open={reviseOpen} onOpenChange={setReviseOpen}>
         <DialogContent>
@@ -275,82 +317,6 @@ function PaperPageInner({ paperId }: { paperId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  )
-}
-
-/**
- * 单题解析区（成绩视图）：question.solution 有值直接展示；
- * 否则按需 POST /api/solutions，用 enabled:false 的 query 缓存住——
- * 反复展开/收起不重复请求（解析限流 60/min）。
- */
-function SolutionBlock({ paperId, item }: { paperId: string; item: PaperItem }) {
-  const [open, setOpen] = useState(false)
-  const preloaded = item.question.solution
-
-  const solutionQuery = useQuery({
-    queryKey: ['solution', paperId, item.index],
-    queryFn: () =>
-      fetchSolution({
-        question: item.question,
-        source_question_id: item.source_question_id,
-        revision_mode: item.revision_mode,
-      }),
-    enabled: false,
-    staleTime: Infinity,
-    retry: false,
-  })
-
-  const text = preloaded ?? solutionQuery.data?.solution
-
-  const handleOpen = () => {
-    setOpen(true)
-    if (!preloaded && !solutionQuery.data) void solutionQuery.refetch()
-  }
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={handleOpen}
-        className="self-start rounded-full border border-line-strong bg-sheet px-3 py-1 text-xs text-text-mid transition-colors hover:border-muted-foreground hover:text-foreground"
-      >
-        查看解析
-      </button>
-    )
-  }
-
-  return (
-    <div className="rounded-md border border-[#ece7d9] bg-[#faf8f3] px-4 py-3">
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-xs font-bold text-ink">解析</span>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          收起
-        </button>
-      </div>
-      {text ? (
-        <p className="text-[13.5px] leading-relaxed text-text-mid">{text}</p>
-      ) : solutionQuery.isError ? (
-        <p className="text-[13px] text-wrong">
-          解析获取失败。
-          <button
-            type="button"
-            className="ml-1 underline"
-            onClick={() => void solutionQuery.refetch()}
-          >
-            重试
-          </button>
-        </p>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          <p className="text-xs text-text-mid">AI 正在撰写解析…</p>
-          <Skeleton className="h-4 w-3/4" />
-        </div>
-      )}
     </div>
   )
 }

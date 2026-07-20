@@ -3,12 +3,14 @@ import { ScrollText } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { logout } from '@/api/auth'
 import { useAuth } from '@/hooks/useAuth'
+import { useMembership } from '@/hooks/useMembership'
 import { queryClient } from '@/lib/queryClient'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 const links = [
   { to: '/', label: '生成试卷' },
+  { to: '/review', label: '错题复习' },
   { to: '/papers', label: '我的试卷' },
   { to: '/mastery', label: '掌握度' },
   { to: '/membership', label: '会员' },
@@ -17,6 +19,7 @@ const links = [
 /** 导航栏（Spec F § 5）：白底下边线、方形卷轴图标 logo、当前页 2px 下划线、头像圈。 */
 export function AppNav() {
   const { data: user } = useAuth()
+  const { isMember, expiresAt } = useMembership()
   const navigate = useNavigate()
 
   const logoutMutation = useMutation({
@@ -57,6 +60,14 @@ export function AppNav() {
           </nav>
         </div>
         <div className="flex items-center gap-3">
+          {isMember && (
+            <span
+              className="rounded-full border border-[#b08d3e]/45 bg-[#faf6ec] px-2 py-0.5 text-[11px] font-medium text-[#8a6d2f]"
+              title={expiresAt ? `会员有效期至 ${expiresAt.slice(0, 10)}` : undefined}
+            >
+              会员
+            </span>
+          )}
           {user && (
             <span
               className="flex size-8 items-center justify-center rounded-full bg-[#dfe6ee] text-[13px] font-medium text-ink"

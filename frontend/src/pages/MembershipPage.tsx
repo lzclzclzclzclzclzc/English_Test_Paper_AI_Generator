@@ -10,6 +10,15 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { PayOrder } from '@/types/payment'
 
+/** 权益对比：与实际前端门槛一一对应（quota.ts / GenerateForm / PaperPage）。 */
+const BENEFITS = [
+  { feature: '按描述生成新卷', free: '每天 3 次', member: '不限次数' },
+  { feature: '错题巩固 / 综合复习', free: '—', member: '✓' },
+  { feature: 'AI 单题解析', free: '每天 2 次', member: '不限次数' },
+  { feature: '一句话重新出卷', free: '—', member: '✓' },
+  { feature: '做题与判分', free: '✓', member: '✓' },
+] as const
+
 function formatDate(iso: string): string {
   const d = new Date(iso)
   const mm = String(d.getMonth() + 1).padStart(2, '0')
@@ -101,8 +110,34 @@ export function MembershipPage() {
         </div>
       )}
 
+      <div>
+        <h2 className="mb-3 font-serif text-[15px] font-bold text-foreground">权益对比</h2>
+        <div className="overflow-hidden rounded-md border border-line bg-sheet">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-line bg-ink-wash/60 text-text-mid">
+                <th className="px-4 py-2.5 text-left font-normal">功能</th>
+                <th className="w-28 px-4 py-2.5 text-center font-normal">免费</th>
+                <th className="w-28 px-4 py-2.5 text-center font-bold text-ink">会员</th>
+              </tr>
+            </thead>
+            <tbody>
+              {BENEFITS.map((b) => (
+                <tr key={b.feature} className="border-b border-line last:border-0">
+                  <td className="px-4 py-2.5 text-foreground">{b.feature}</td>
+                  <td className="px-4 py-2.5 text-center text-text-mid">{b.free}</td>
+                  <td className="px-4 py-2.5 text-center font-medium text-ink">{b.member}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <p className="text-[12px] text-muted-foreground">
-        本页为支付宝沙盒环境的模拟支付,不会产生真实扣款。
+        {healthQuery.data?.mock_pay
+          ? '当前为离线模拟支付模式,不会产生真实扣款。'
+          : '本页为支付宝沙盒环境的模拟支付,不会产生真实扣款。'}
       </p>
 
       <PayQrDialog
