@@ -1,8 +1,8 @@
 """Study-coach agent.
 
-Responsibilities (system prompt):  who the agent is and how it routes.
-Learning-plan logic lives in agent/skills/study_plan.py and is exposed to
-the coach as a tool via agent.as_tool().
+Single-agent design: Coach loads skill instructions from markdown files
+on startup and injects them into the system prompt. No sub-agents.
+Coach directly calls get_user_history and get_example_questions tools.
 """
 from __future__ import annotations
 
@@ -10,31 +10,46 @@ import os
 import sys
 from pathlib import Path
 
-# Disable SDK tracing — we don't have an OpenAI API key for the trace exporter
 os.environ.setdefault("OPENAI_AGENTS_DISABLE_TRACING", "1")
 
-from agents import Agent, OpenAIChatCompletionsModel, Runner
+from agents import Agent, OpenAIChatCompletionsModel
 from openai import AsyncOpenAI
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from shared.config import get_config
-from agent.skills.study_plan import create_study_plan_skill
+from agent.tools import get_example_questions, get_user_history
 
-_COACH_PROMPT = """你是一位中考英语学习助手。
+_SKILLS_DIR = Path(__file__).parent / "skills"
+
+_COACH_BASE_PROMPT = """你是一位中考英语学习助手。
 
 你可以做的事情：
-- 制定个性化学习计划（调用"制定学习计划"工具）
+- 制定个性化学习计划（按照下方 skill 指令执行）
+- 查找某个知识点的例题（调用 get_example_questions 工具）
 - 回答学生关于学习安排的问题
 
-当学生请求制定学习计划时，收集以下信息后调用工具：
-- 用户ID（必须）
-- 希望制定几天的计划（默认 7 天）
-- 是否有特殊要求（可选）
+## 重要规则
 
-对于其他英语学习问题，直接回答即可。
+**严禁自己编造题目**：当学生要求查例题时，
+必须调用 get_example_questions 工具从题库获取，不能凭自己的知识生成题目。
+如果工具返回为空，告知学生该知识点暂无例题。
+
 保持语言亲切，面向初中生。
+
+---
+
+{skills}
 """
+
+
+def _load_skills() -> str:
+    """Load all skill markdown files from the skills/ directory."""
+    parts = []
+    for md_file in sorted(_SKILLS_DIR.glob("*.md")):
+        content = md_file.read_text(encoding="utf-8").strip()
+        parts.append(content)
+    return "\n\n---\n\n".join(parts) if parts else ""
 
 
 def _build_model() -> OpenAIChatCompletionsModel:
@@ -50,26 +65,14 @@ def _build_model() -> OpenAIChatCompletionsModel:
 
 
 def create_coach_agent() -> Agent:
-    model = _build_model()
-    study_plan_skill = create_study_plan_skill(model)
+    skills_content = _load_skills()
+    system_prompt = _COACH_BASE_PROMPT.format(
+        skills=skills_content if skills_content else "（暂无已加载的 skill）"
+    )
 
     return Agent(
         name="中考英语学习助手",
-        instructions=_COACH_PROMPT,
-        tools=[
-            study_plan_skill.as_tool(
-                tool_name="制定学习计划",
-                tool_description=(
-                    "根据用户的历史做题记录制定个性化学习计划，并展示第一天的例题。"
-                    "需要提供：用户ID、计划天数、可选的用户要求。"
-                ),
-            )
-        ],
-        model=model,
+        instructions=system_prompt,
+        tools=[get_user_history, get_example_questions],
+        model=_build_model(),
     )
-
-
-async def ask_coach(user_message: str) -> str:
-    agent = create_coach_agent()
-    result = await Runner.run(agent, input=user_message)
-    return result.final_output
