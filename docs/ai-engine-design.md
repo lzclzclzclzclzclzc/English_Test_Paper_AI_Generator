@@ -44,17 +44,17 @@ AI Engine 采用**纯 pipeline 架构**（无反馈回路，无 agent 编排）�
 
 **独立入口**（不在主 pipeline 内）：
 
-- **Solutioner**：按需生成单题解析（用户点"生成解析"按钮时调用）
+- **Solutioner**：按需生成单题解析（用户点"查看解析"按钮时调用）
 - **Analyzer**：查用户答题历史 → 掌握度画像；供 `review` 模式的 Parser 使用，也可独立被前端调用展示"薄弱点面板"
 
 **取消 Verifier 的依据**：答案唯一无歧义（Spec A § 1.6），改题后 LLM 直接产出新答案，无需二次验证。判对错由未来 FastAPI 后端做规范化字符串比较。
 
 ### 1.2 无状态原则
 
-- **AI Engine 本身无状态**：`generate_paper` / `revise_paper` 每次都返回全新对象；AI Engine 不写任何 SQL 表（除下方 Solutioner 例外）
+- **AI Engine 完全无状态、只读**：`generate_paper` / `revise_paper` / `generate_solution` / `build_profile` 每次都返回全新对象；AI Engine **不写任何 SQL 表**——五个模块全部只读题库/答题记录或只产返回值
 - `revise_paper` 接受**完整 `Paper`** 和用户指令 → 返回**完整新 `Paper`**（`paper_id` 换新）
 - **持久化职责在后端层**：由 [Spec C](./2026-07-07-backend-design.md) 定义。FastAPI 拿到 `Paper` 后写入 `papers` 表；`revise_paper` 时后端从表里读出完整 `Paper` 喂给 AI Engine——**边界依然清晰：AI Engine 是纯函数，后端负责持久化**
-- **唯一的写入侧信道**：Solutioner 在特定条件下把生成的解析写回 `questions.solution`（Spec A § 2.7 不变量 6）
+- **Solutioner 无写回缓存**：`generate_solution` 每次调用都直接问 LLM，不读也不写 `questions.solution`（历史上曾设计"命中缓存则跳过 LLM + 原题解析写回"，现已移除，理由见 § 6）
 
 ### 1.3 模块依赖图
 
@@ -112,6 +112,7 @@ def generate_solution(
     *,
     source_question_id: str | None = None,
     revision_mode: Literal["fresh", "light", "original"] | None = None,
+    user_answer: str | list[str] | dict[str, str] | None = None,
 ) -> str: ...
 
 
@@ -142,6 +143,9 @@ def generate_paper(user_query, mode="fresh", *, wrong_items=None,
         wrong_items=wrong_items,
         mastery=profile,
     )
+    # Parser 只填题目相关字段；调用上下文由 pipeline 补
+    req.user_id = user_id
+    req.review_window_days = review_window_days
 
     # 3. Retriever：GenerateRequest → 候选题
     retrieval = retriever.retrieve(req)
@@ -181,13 +185,13 @@ def parse(
    - `fresh`：只解析 `user_query`
    - `remediation`：`user_query` + "用户刚做完试卷的错题分布：单选/时态 × 3, 词性转换/动词变名词 × 2, ..."
    - `review`：`user_query` + `mastery.weak_kps` 前 N 条（默认 8 条）作为薄弱知识点提示
-3. **LLM 调用**：走 `shared/llm/deepseek.py::DeepSeekClient.structured()`，`response_model=ParserLLMResponse`（Parser 专用响应模型，见 § 3.5），`max_retries=3`
+3. **LLM 调用**：走 `shared/llm/deepseek.py::DeepSeekClient.structured()`，**`response_model=GenerateRequest`（直接以对外契约作为响应模型）**，`max_retries=3`，`temperature=0.2`
 4. **本地二次校验**（在 pydantic 之外）：
    - `knowledge_points` 里的每个 id 必须存在于 SQLite；不存在则丢弃并记入 `warnings`
    - `total_questions` ≤ 上限（默认 30）；超限截断
    - `type_distribution` 的 key 必须是合法 `question_type`（非法丢弃）；累加 ≤ `total_questions`，超出按比例缩放
-   - **`revision_intensity` 不做二次校验**：其值由 pydantic `Literal["fresh","light","original"]` 必填约束保证——若 LLM 省略或输出非法值，`instructor` 会自动把校验错误反馈回 LLM 重试
-5. **构造 `GenerateRequest`**：把 `ParserLLMResponse` 的字段（含 LLM 决定的 `revision_intensity`）转填到 `GenerateRequest`；补 `mode`、`wrong_items`、`user_id`、`review_window_days`。**`free_text` 只填"结构化字段无法表达的情境/主题诉求"**（如"关于环保"、"结合校园场景"），由 LLM 在 `ParserLLMResponse.free_text` 中输出；纯配额/纯 KP 请求（如"5 道单选 5 道改写"）此字段为空串。**不要把整句 user_query 塞进 free_text**——否则每个请求都会触发 Retriever 的向量检索（见 § 3.4 规则 + Spec A `GenerateRequest.free_text` 契约）
+   - **`revision_intensity` 不做二次校验**：`Literal["fresh","light","original"]` 由 pydantic 约束值域（`GenerateRequest` 里默认 `"light"`）；LLM 省略即落默认，输出非法值则由 `instructor` 反馈回 LLM 重试
+5. **补全上下文字段**：LLM 已直接产出 `GenerateRequest` 的核心字段（含 `revision_intensity`）；本地代码补 `mode`、`wrong_items`（`user_id`、`review_window_days` 由 pipeline 在 `parse()` 返回后补——见 § 2.2）。**`free_text` 只填"结构化字段无法表达的情境/主题诉求"**（如"关于环保"、"结合校园场景"），由 LLM 在 `GenerateRequest.free_text` 中输出；纯配额/纯 KP 请求（如"5 道单选 5 道改写"）此字段为空串。**不要把整句 user_query 塞进 free_text**——否则每个请求都会触发 Retriever 的向量检索（见 § 3.4 规则 + Spec A `GenerateRequest.free_text` 契约）
 6. **兜底**：若 LLM 3 次仍无法产出合法 JSON → 抛 `ParserError`
 
 ### 3.3 关键决策
@@ -223,59 +227,52 @@ def parse(
   - `"结合校园生活多出几道介词题"` → `free_text="结合校园生活"`
   - `"随便来 10 道"` → `free_text=""`
 
-- **`revision_intensity` 推断规则**（关键新规则）：
+- **`revision_intensity` 推断规则**（关键规则）：prompt 用严格的**判定流程**，按优先级顺序逐条匹配，命中即定：
 
   ```
-  必须选择恰好一个档位，不允许省略。
+  1. 有 "original" 触发词 → original（最高优先级）
+  2. 有 "light" 触发词   → light（第二优先级）
+  3. 有 "fresh" 触发词或明确情境描述 → fresh
+  4. 其他所有情况 → light（默认档位）
+
+  注意：light 优先级高于 fresh——若同时命中 light 与 fresh 触发词，选 light。
 
   - "original"（直接用原题）：
-    · 用户明确要求"用原题"、"别改"、"照原题出"、"真题"、"考试原题"
-    · 或强调"真题模拟"这类需要保持原貌的场景
-
-  - "fresh"（完全按知识点新出题）：
-    · 用户明确要求"重新出"、"全新的"、"别用现成的"、"原创"
-    · 或用户描述了具体的题目情境需求（如"多出关于日常生活的题"、
-      "结合校园场景"），这类具体情境要求原题很难匹配，需要新出
+    · 触发词："原题"、"真题"、"一模"、"二模"、"考试原题"、"中考真题"、
+      "别改"、"照原题出"、"保持原样"……
+    · 有 original 触发词时忽略情境描述（如"来十道单选原题，关于校园生活" → original）
 
   - "light"（保留原题结构，改数值/词汇/情境）—— 默认档位：
-    · 用户没明确说改题尺度，只关心"练习"、"巩固"、"多做几道"
-    · 这是最常见的默认选择
-    · 若用户诉求既涉及情境要求又强调"原题"，以"原题"优先
+    · 触发词："练习"、"巩固"、"复习"、"来几道"、"出几道"，以及任何
+      知识点名称（"动词时态""不定代词""介词"……）或题型名称
+    · 知识点名称不算情境描述——纯 KP/题型请求一律 light
+
+  - "fresh"（完全按知识点新出题）：
+    · 没有 original 触发词，且有 "重新出"、"全新的"、"别用现成的"、"原创" 等词
+    · 或有明确的生活情境/主题描述（"场景""主题""情境""关于""结合""围绕"）
   ```
 
   配 few-shot（各 1-2 条）：
   - `"来 10 道现在完成时的中考真题"` → `"original"`
-  - `"帮我按被动语态出一份练习，多用校园场景"` → `"fresh"`
-  - `"多练几道时态"` → `"light"`
-  - `"复习一下我上周的错题"` → `"light"`（无特殊指示，走默认）
+  - `"帮我重新出十道单选题"` / `"帮我按被动语态出一份练习，多用校园场景"` → `"fresh"`
+  - `"多练几道时态"` / `"复习一下我上周的错题"` → `"light"`（无特殊指示，走默认）
 
-- 提示 LLM 先在响应模型内输出 `reasoning: str` 字段（`instructor` 支持在响应模型加附加字段而不返回给调用方）——实测能提升结构化 JSON 质量
+### 3.5 响应模型：直接用 `GenerateRequest`
 
-### 3.5 Parser 专用响应模型
+Parser **不用单独的内部响应模型**——`structured()` 的 `response_model` 就是对外契约 `GenerateRequest`（`shared/schemas.py`）本身。LLM 直接产出 `GenerateRequest` 的字段，Parser 随后做本地二次校验（丢非法 KP id、截断题数、清洗 `type_distribution`、缩放分布）并补 `mode` / `wrong_items`。
 
-Parser 用一个**内部响应模型**承接 LLM 输出，与最终对外的 `GenerateRequest` 分离：
+> **契约对齐**（2026-07-14/15）：`GenerateRequest` 已删除 `knowledge_points_exclude`、`difficulty`、`difficulty_distribution`、`per_kp_min`（均已从契约移除），新增 `free_text`（语义主题，供 Retriever 判断走向量还是 SQL）。
 
-```python
-# ai_engine/parser.py
-class ParserLLMResponse(BaseModel):
-    """Parser 从 LLM 拿到的直接响应；由 Parser 转换为 GenerateRequest。"""
-    reasoning: str = ""                    # LLM 内推理，不透传给下游
-    knowledge_points: list[str] = []
-    question_types: list[Literal["single_choice", "word_form",
-                                 "sentence_rewriting"]] = []
-    total_questions: int
-    type_distribution: dict[str, int] = {}
-    free_text: str = ""                    # 情境/主题诉求；纯配额请求留空（见 § 3.4）
-    revision_intensity: Literal["fresh", "light", "original"]   # 必填，无默认
-```
+**关于 `revision_intensity`**：
 
-> **契约对齐**（2026-07-14/15）：本模型已同步 `shared/schemas.py` 的 `GenerateRequest`——删除 `knowledge_points_exclude`、`difficulty`、`difficulty_distribution`、`per_kp_min`（均已从契约移除），新增 `free_text`（语义主题，供 Retriever 判断走向量还是 SQL）。
+- 契约里 `revision_intensity` 有默认值 `"light"`（`shared/schemas.py`）——LLM 省略时不会触发 pydantic 报错，而是落到默认 `"light"`。这与 prompt 里的兜底规则（无明确改题信号一律选 `light`，见 § 3.4）一致，两处默认互为保险
+- 本地代码**不对 `revision_intensity` 做二次校验**：`Literal["fresh","light","original"]` 由 pydantic 约束值域，非法值会被 instructor 反馈回 LLM 重试
 
-**为什么与 `GenerateRequest` 分开**：
+**为什么本地仍要二次校验**（而不是完全信任 LLM 产出的 `GenerateRequest`）：
 
-- `GenerateRequest` 是全系统契约（Spec A § 2.4），字段完整且经本地二次校验，下游可信
-- `ParserLLMResponse` 是 Parser 与 LLM 的私有协议；`reasoning` 只对 LLM 有用不该外泄；`knowledge_points` 里可能含非法 id 需在 Parser 层过滤
-- pydantic 必填约束（`revision_intensity` 无默认）保证：LLM 若省略此字段，instructor 触发 Layer 2 重试，把校验错误信息反馈回 LLM 重发——**不需要 Python 代码兜底**
+- `knowledge_points` 里可能含清单外的非法 id，需在 Parser 层丢弃并记 `warnings`
+- `type_distribution` 的 key 是 `dict[str,int]`，pydantic 不校验 key 值，需本地检查是否合法题型
+- `total_questions` 需按上限截断；`type_distribution` 之和超 `total_questions` 需按比例缩放
 
 ---
 
@@ -435,9 +432,11 @@ Reviser 批量改题时并发调用 LLM，通过 `shared/llm/deepseek.py` 的内
 
 ## 6. Solutioner（`ai_engine/solutioner.py`）
 
-**目标**：单题按需生成解析。用户在做题后点"生成解析"按钮时通过未来 FastAPI 调用。
+**目标**：单题按需生成解析。用户在做题后点"查看解析"按钮时通过未来 FastAPI 调用。
 
-### 6.1 接口（Spec A § 2 已引用，此处补内部逻辑）
+**无缓存、纯只读**：Solutioner **每次调用都直接问 LLM**——不读 `questions.solution`，也不写回。历史版本曾设计"原题命中缓存则跳过 LLM，并把生成的解析写回 `questions.solution`"，现已整体移除。这样 AI Engine 保持完全无状态/只读；且每次都实时生成，才能针对学生这一次的具体作答给出个性化解析（见 § 6.2 `user_answer`）。
+
+### 6.1 接口
 
 ```python
 def generate_solution(
@@ -445,38 +444,38 @@ def generate_solution(
     *,
     source_question_id: str | None = None,
     revision_mode: RevisionMode | None = None,   # RevisionMode = Literal["fresh","light","original"]
+    user_answer: str | list[str] | dict[str, str] | None = None,
 ) -> str: ...
 ```
 
+- **`user_answer`**（学生的作答，通常是**错误答案**）：三种题型全支持——单选是裸标签 `str`（`"B"`）；填空是按空顺序的 `list[str]` 或 `{blankN: text}` 的 `dict`。传入后由 `_format_user_answer()` 渲染成可读文本（如 `"blank1: went  blank2: to"`）再进 prompt。**非空时**解析的第三段变为【错误原因】，针对该错误作答说明"错在哪、为什么错"；**为空时**是通用的【易错点】（见 § 6.3）。
+- **`source_question_id` / `revision_mode`**：现为**残留参数**——签名保留（向后兼容与未来可能的溯源用途），但缓存移除后**代码内不再使用**。
+
 ### 6.2 内部流程
 
-1. **缓存查询前置**：若 `source_question_id` 存在且 `revision_mode == "original"`：
-   ```sql
-   SELECT solution FROM questions WHERE id = ?
-   ```
-   非 NULL → 直接返回，**不调 LLM**
-2. **LLM 调用**：走 `shared/llm/deepseek.py::DeepSeekClient.text()`（唯一使用 `text()` 而非 `structured()` 的模块）
-   - Prompt 输入：`q.stem` + `q.options`（若有）+ `q.answer` + `q.question_type` + `q.knowledge_point_ids` 对应的 `level2` 中文名
+1. **组装 prompt 输入**：`q.stem` + `q.options`（若有，渲染为 `A. ... / B. ...` 文本）+ `_format_answer(q.answer)`（正确答案，单选裸标签、填空渲染为 `blank1: a / b` 形式）+ `q.question_type` + `q.knowledge_point_ids` 对应的 `level2` 中文名 + `_format_user_answer(user_answer)`（学生作答，可为空）
+2. **LLM 调用**：走 `shared/llm/deepseek.py::DeepSeekClient.text()`（唯一使用 `text()` 而非 `structured()` 的模块），`temperature=0.4`
    - 输出**纯文本**（不走 pydantic 校验；解析文本更自然）
-3. **写回条件**（Spec A § 2.7 不变量 6 的实现）：
-   ```
-   source_question_id 存在
-   AND revision_mode == "original"
-   AND questions.solution IS NULL
-   ```
-   全部满足 → `UPDATE questions SET solution = ? WHERE id = ? AND solution IS NULL`
-4. **返回 solution 文本**
-
-**并发写安全**：`WHERE solution IS NULL` 保证并发写只有第一个成功；后到者 UPDATE 匹配 0 行、静默丢弃。两个返回值内容近似，无所谓丢哪份。
+   - LLM 抛异常 → 包装为 `SolutionerError`
+3. **返回 solution 文本**：`strip()` 后为空则抛 `SolutionerError`
 
 ### 6.3 Prompt 结构约定
 
-`ai_engine/prompts/solutioner.md` 要求 LLM 三段式输出：
+`ai_engine/prompts/solutioner.md` 要求 LLM 三段式输出。前两段固定，第三段随 `user_answer` 切换：
 
 ```
 【关键考点】...
 【解题思路】...
-【易错点】...
+【易错点】...          ← user_answer 为空时
+```
+
+或
+
+```
+【关键考点】...
+【解题思路】...
+【错误原因】...        ← user_answer 非空时：针对该错误作答指出错在哪、为什么错；
+                        填空/改写题若有多空，指出具体哪个空错了、正确应是什么
 ```
 
 - 无 markdown 代码块包裹
@@ -549,40 +548,30 @@ Analyzer 只查表不写；不修改任何持久化状态。
 
 ## 8. `revise_paper`（review 迭代）
 
-**目标**：用户对已生成的试卷提修改意见 → 新版试卷。**面板按钮 + 自然语言混合**通过统一入口实现。
+**目标**：用户对已生成的试卷提修改意见 → 新版试卷。**在 `pipeline.py` 内编排**，复用主 pipeline 的模块（Parser → Retriever → Reviser），没有独立的 `reviser.revise_paper` 函数。
 
-### 8.1 内部流程
+### 8.1 内部流程（`pipeline.revise_paper`）
 
-1. **Parser 增强调用**：把 `user_instruction` + `current_paper` 一起给 LLM，输出**修改指令 JSON**：
+修改本质上就是"在原试卷已有的样子上再发一次请求"，所以直接复用 `generate_paper` 的三段式：
 
-   ```python
-   class ReviseInstruction(BaseModel):
-       action: Literal["regenerate_all", "regenerate_items", "swap_items",
-                       "adjust_distribution"]
-       target_indices: list[int] = []           # regenerate_items / swap_items 用
-       new_request_overrides: dict[str, Any] = {}  # 覆盖 GenerateRequest 部分字段
+1. **拼接上下文查询**：从 `current_paper.request` 提取原试卷的形状（题数、题型中文名、考点、`free_text` 主题），拼成一段中文说明 + `user_instruction`，作为新的 `user_query`：
+
+   ```
+   这是在一份已有试卷基础上的修改请求。
+   原试卷：共 N 题；题型：单项选择、词性转换；考点：...；主题：...。
+   用户的修改要求：{user_instruction}
+   请在原试卷基础上应用修改要求，输出修改后完整的出题需求。
    ```
 
-2. **调度**：
-   - `regenerate_all` → 用 `current_paper.request` 合并 overrides 后重跑 Retriever + Reviser
-   - `regenerate_items` → 只对 `target_indices` 里的题重生（Retriever 按剩余 KP 补，Reviser 重跑那几题）
-   - `swap_items` → 只 Retriever 换候选，Reviser 保持策略
-   - `adjust_distribution` → 覆盖 request 的 `type_distribution` / `question_types` 等后 `regenerate_all`
+2. **Parser**：`parser.parse(query, mode="fresh")` → 新的 `GenerateRequest`；从原 `request` 继承 `user_id` / `review_window_days`。改题尺度仍由 Parser 内的 LLM 从指令语义推断，不显式传入
+3. **Retriever → Reviser**：`retriever.retrieve(req)` → `reviser.build_paper(req, retrieval)`，与 `generate_paper` 完全一致
+4. **溯源**：新 `Paper` 的 `metadata["revised_from"]` 记录 `current_paper.paper_id`，供前端链接回原卷
 
-3. **无状态**：所有输入来自前端，返回全新 `Paper`；**`paper_id` 换新**（便于前端做版本管理）
+### 8.2 无状态、`paper_id` 换新
 
-### 8.2 为什么不做"面板按钮"的专用接口
-
-前端的"删除第 3 题"按钮实际调用还是 `revise_paper`，只是拼一个 `"删除第 3 题"` 的中文指令给 Parser——统一入口更好维护。前端可以**本地做"删题"**（直接从数组去掉），无需服务端参与。
-
-### 8.3 Prompt
-
-`ai_engine/prompts/revise_paper.md`：
-
-- 输入：`current_paper` 简化视图（每题只保留 `index / stem / kp_ids`）+ `user_instruction`
-- 输出：`ReviseInstruction` JSON
-- Few-shot 覆盖典型场景：全部重生、指定题号重生、"把前三道换成简单的"、"多点选择题"
-- **不覆盖纯前端动作**（如"删掉最后一道"）——这类操作前端本地处理，不发起 `revise_paper` 请求。若不慎调到后端，LLM 应输出 `action="regenerate_items"` 且 `target_indices=[]` 表示"无需服务端动作"，前端收到后仅在本地删除对应索引即可
+- 所有输入来自参数（`current_paper` 由后端从 `papers` 表读出），返回全新 `Paper`；**`paper_id` 换新**（便于前端做版本管理）
+- **相对指令靠上下文解析**：把原试卷形状塞进查询头部，让"把选择题换成词形转换""多加 5 道时态题"这类相对指令能相对真实原卷解析，而不是凭空理解
+- 前端的"删除第 3 题"这类纯前端动作可**本地做**（直接从数组去掉），无需服务端参与——统一走 `revise_paper` 只用于需要重新出题/换题/调分布的语义修改
 
 ---
 
@@ -679,15 +668,14 @@ Spec A § 4.4 定义了 `LLMTrace` 结构和落地方式（JSONL 摘要 + 可选
 
 ```
 ai_engine/prompts/
+├── __init__.py                          # load() 加载器（见 § 10.3）
 ├── parser.md
 ├── reviser_light.md
 ├── reviser_fresh.md
-├── solutioner.md
-├── revise_paper.md
-└── _shared/
-    ├── kp_catalog_snippet.md.j2         # 知识点清单渲染片段（复用）
-    └── question_type_glossary.md         # 题型中文说明
+└── solutioner.md
 ```
+
+`revise_paper` **没有独立 prompt**——它复用 `parser.md`（§ 8 把原试卷上下文拼进 `user_query` 后走 Parser）。
 
 ### 10.2 模板约定
 
@@ -736,7 +724,9 @@ def load(name: str, **vars) -> tuple[str, str]:
 - 头部列出**所有合法 KP id + `question_type` 枚举**
 - Few-shot 覆盖：单一 KP / 多 KP / 显式分布 / 模糊请求 / remediation / review
 - 显式规则："不要造 KP id；清单外概念写进 `free_text`"
-- 输出模型可包含 `reasoning: str` 字段（LLM 内推理，不返回给调用方）
+- `revision_intensity` 判定流程（`original` > `light` > `fresh` > 默认 `light`，见 § 3.4）
+- vars：`user_query, mode, kp_catalog, kp_count, wrong_items?, mastery?, question_types`
+- 响应模型直接是 `GenerateRequest`（无 `reasoning` 等附加字段，见 § 3.5）
 
 **Reviser light** (`reviser_light.md`)：
 - 显式列出**不变字段**：`question_type / knowledge_point_ids` 由系统透传，不需要 LLM 输出
@@ -750,11 +740,11 @@ def load(name: str, **vars) -> tuple[str, str]:
 
 **Solutioner** (`solutioner.md`)：
 - 输出**纯文本**，禁止 markdown 代码块包裹
-- 三段式：`【关键考点】/【解题思路】/【易错点】`
+- 三段式：`【关键考点】/【解题思路】/`——第三段随 `wrong_answer` 变量切换：为空 → `【易错点】`，非空 → `【错误原因】`（针对该错误作答）
 - 词性转换/改写句子必须解释语法根据
+- vars：`question, kp_names, options_text, answer, wrong_answer`
 
-**Revise paper** (`revise_paper.md`)：
-- 见 § 8.3
+**Revise paper**：无独立 prompt，复用 `parser.md`（见 § 8）。
 
 ---
 
@@ -786,7 +776,7 @@ tests/unit/ai_engine/
 - **Parser**：不同 mode 下 prompt 是否含预期上下文；LLM 假响应的 KP id 越界时是否被丢弃并记 warning
 - **Retriever**：属性硬过滤逻辑正确（空过滤 = 全库；多 KP OR/AND 语义）；`$in` 回退分支的正确性
 - **Reviser**：三档策略下 LLM 调用次数正确（original=0；light/fresh=题数）；答案格式违规时 fallback；不变字段被改时拒绝
-- **Solutioner**：命中缓存不调 LLM；未命中调一次；写回条件的三个 `AND` 分别测试
+- **Solutioner**：每次调用都调一次 LLM（无缓存）；`user_answer` 为空 → 解析含【易错点】、非空 → 含【错误原因】；三种题型的 `user_answer` 都能被 `_format_user_answer` 渲染成可读文本；LLM 返回空串时抛 `SolutionerError`
 - **Analyzer**：Wilson 公式在若干经典输入的正确值；空历史返回空 profile；多 KP 展开正确
 - **Pipeline**：三种 mode 端到端调用（全 mock LLM）
 
@@ -832,7 +822,7 @@ Spec C § 5.1 定义完整端点表，本节仅回顾"5 个 AI Engine 函数 ↔
 |---|---|---|
 | `generate_paper(user_query, mode, ...)` | `POST /api/papers/generate` | 生成试卷（三 mode） |
 | `revise_paper(current_paper, user_instruction)` | `POST /api/papers/revise` | Review 迭代（后端先按 paper_id 从库读出 current_paper） |
-| `generate_solution(q, source_question_id, revision_mode)` | `POST /api/solutions` | 单题按需解析 |
+| `generate_solution(q, user_answer, ...)` | `POST /api/solutions` | 单题按需解析（传入学生作答则解释错因） |
 | `build_profile(user_id, window_days)` | `GET /api/users/me/mastery` | 掌握度画像（user_id 由后端从 session 注入） |
 
 ### 12.2 请求/响应体
@@ -896,9 +886,8 @@ python -m ai_engine.cli generate \
 
 # 单题生成解析
 python -m ai_engine.cli solution \
-    --question-json ./tmp/q.json \
-    --source-question-id q_00042 \
-    --revision-mode original
+    --question-json ./tmp/q.json
+# 可选：传入学生作答 --user-answer B，解析改为解释该错误答案为何错
 
 # 快速看掌握度画像
 python -m ai_engine.cli profile --user-id u_demo --window-days 30
@@ -924,7 +913,7 @@ CLI 是**开发者友好接口**，未来前端不通过 CLI。
 3. ✅ `ai_engine/retriever.py` + `question_repo.py` + 单元测试（混合检索：SQL 硬过滤 + 桶配额 + 先SQL后向量的本地相似度排序 + shortfall 兜底；15 个测试 + 10 样例 demo 报告）
 4. `ai_engine/reviser.py` + `reviser_light.md` / `reviser_fresh.md` + 单元测试（三档策略、失败 fallback、答案格式硬约束）（进行中）
 5. ✅ `ai_engine/pipeline.py` 顶层编排（懒 import；待 Parser/Reviser 落地后端到端集成测试）
-6. `ai_engine/solutioner.py` + prompt + 单元测试（含缓存写回逻辑）
+6. `ai_engine/solutioner.py` + prompt + 单元测试（每次调 LLM，无缓存；支持 `user_answer` 解释错因）
 7. `ai_engine/analyzer.py` + 单元测试（Wilson 公式验证、边界处理）
 8. `revise_paper` 分支 + prompt + 单元测试
 9. Golden set 骨架（10 条 request、10 道题）
@@ -945,7 +934,7 @@ CLI 是**开发者友好接口**，未来前端不通过 CLI。
 - `remediation` 基于错题生成
 - `review` 基于历史生成
 - `revise` 修改试卷
-- `solution` 单题解析（含缓存命中路径演示）
+- `solution` 单题解析（可选传入学生作答演示错因解析）
 
 **验收标准**：
 - 一本书完整入库（M1 里程碑）+ AI Engine 五路径全跑通
@@ -987,13 +976,9 @@ Spec A § 12 定义了全局不变量。AI Engine 侧的补充：
 
 1. **Pipeline 无反馈回路**：Parser → Retriever → Reviser 严格单向
 2. **`revise_paper` 无状态、`paper_id` 换新**
-3. **Solutioner 写回条件**（Spec A § 2.7 不变量 6 的实现，`shared/storage.py::write_solution()` 强制）：
-   - `source_question_id` 存在
-   - `revision_mode == "original"`
-   - `questions.solution IS NULL`
-   - 三条 AND 缺一不可
+3. **Solutioner 无副作用、无缓存**：`generate_solution` 每次都调 LLM，既不读 `questions.solution` 也不写回（旧的"原题解析写回"机制已移除）。`source_question_id` / `revision_mode` 为残留参数，不再被使用
 4. **Reviser 不变字段**：`question_type` / `knowledge_point_ids` 在任何档位下都不被修改（`difficulty` 字段已废弃，不在契约中）
 5. **Reviser 失败 fallback**：`revision_mode` 仍为原档位，但内容等同 `original`，题号记入 `Paper.metadata["revision_failures"]`
-6. **Solutioner 是 AI Engine 唯一有副作用的模块**（写 `questions.solution`）；其他所有模块只读或只产返回值
+6. **AI Engine 全模块只读无副作用**：Parser / Retriever / Reviser / Solutioner / Analyzer 全部只读题库或答题记录、只产返回值，**不写任何持久化状态**（Solutioner 曾是唯一的写入侧信道，写回缓存移除后不再成立）
 7. **Analyzer 只读**：不修改任何持久化状态
-8. **`revision_intensity` 的填写者是 LLM，不是调用方**：`generate_paper` / `parse` 接口都不接受此参数；Parser 通过 `ParserLLMResponse.revision_intensity`（pydantic 必填）保证被填写；`GenerateRequest.revision_intensity` 一旦离开 Parser 就是完整的三值枚举之一
+8. **`revision_intensity` 的填写者是 LLM，不是调用方**：`generate_paper` / `parse` 接口都不接受此参数；LLM 直接在 `GenerateRequest.revision_intensity` 输出（省略则落契约默认 `"light"`）；一旦离开 Parser 就是完整的三值枚举之一
