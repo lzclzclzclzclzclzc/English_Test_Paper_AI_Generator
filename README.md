@@ -168,6 +168,32 @@ npm run dev
 
 ---
 
+## 生产部署注意事项
+
+本项目当前为本地开发 / 演示配置，部署到生产环境前**必须**调整以下几处，否则存在安全或计费风险：
+
+### 1. 会员校验目前"失败即放行"（fail-open）
+
+为方便本地联调（支付服务常不启动），`frontend/src/hooks/useMembership.ts` 现在的逻辑是：
+```ts
+const isMember = query.isError || query.data?.active === true
+```
+即支付服务返回错误（宕机 / 网络异常 / 404）时，**默认把用户当作会员**，解锁错题巩固、综合复习、不限量 AI 解析等所有付费功能。
+
+- **为什么这么写**：本地开发时支付服务（`payment/`，端口 8001）往往没启动，若默认锁定，学习助手/错题巩固等功能全部不可用，无法联调。
+- **生产环境必须改回"失败即锁定"（fail-closed）**：把上面一行改为
+  ```ts
+  const isMember = query.data?.active === true
+  ```
+  并可将"出错解锁"的行为限制在开发模式下（`import.meta.env.DEV`）。否则一旦支付服务异常，全体用户免费获得会员权益，付费墙形同虚设。
+
+### 2. 其他建议
+
+- `/api/agent/chat`、`/api/agent/extract-plan` 目前无限流，生产环境应加 `rate_limiter`（`extract-plan` 会按天数循环出卷，需限制天数上限）。
+- `.env` 中的 `LLM_API_KEY` 等密钥不要提交到仓库；演示账号 `demo / demo123` 应在生产环境禁用或改密。
+
+---
+
 ## 子系统
 
 按依赖顺序：

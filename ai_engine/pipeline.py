@@ -24,8 +24,7 @@ only a call that actually reaches an unfinished module fails, and it fails
 with a clear ImportError rather than breaking the whole package.
 
 Statelessness (Spec B §1.2): every call returns fresh objects; the engine
-writes no SQL (Solutioner's solution cache is the one exception). Persistence
-is the backend's job (Spec C).
+writes no SQL. Persistence is the backend's job (Spec C).
 """
 from __future__ import annotations
 
@@ -101,10 +100,47 @@ def revise_paper(current_paper: Paper, user_instruction: str) -> Paper:
     returning a brand-new Paper (fresh paper_id). Stateless: everything comes
     from the arguments; the backend supplies `current_paper` (read from its
     `papers` table).
-    """
-    from ai_engine import reviser
 
-    return reviser.revise_paper(current_paper, user_instruction)
+    Orchestration mirrors generate_paper — Parser(instruction + original
+    context) → Retriever → Reviser — since a revision is just a new request
+    seeded with what the current paper already is. The new paper records
+    `metadata.revised_from` so the frontend can link back to the original.
+    """
+    from ai_engine import parser, retriever, reviser
+
+    # Give the Parser the original paper's shape as context, so a relative
+    # instruction ("把选择题换成词形转换") resolves against the real paper.
+    orig = current_paper.request
+    type_names = {
+        "single_choice": "单项选择",
+        "word_form": "词性转换",
+        "sentence_rewriting": "改写句子",
+    }
+    context_parts = [f"共 {orig.total_questions} 题"]
+    if orig.question_types:
+        context_parts.append(
+            "题型：" + "、".join(type_names.get(t, t) for t in orig.question_types)
+        )
+    if orig.knowledge_points:
+        context_parts.append("考点：" + "、".join(orig.knowledge_points))
+    if orig.free_text:
+        context_parts.append(f"主题：{orig.free_text}")
+
+    query = (
+        "这是在一份已有试卷基础上的修改请求。\n"
+        f"原试卷：{'；'.join(context_parts)}。\n"
+        f"用户的修改要求：{user_instruction}\n"
+        "请在原试卷基础上应用修改要求，输出修改后完整的出题需求。"
+    )
+
+    req: GenerateRequest = parser.parse(query, mode="fresh")
+    req.user_id = orig.user_id
+    req.review_window_days = orig.review_window_days
+
+    retrieval = retriever.retrieve(req)
+    paper: Paper = reviser.build_paper(req, retrieval)
+    paper.metadata["revised_from"] = current_paper.paper_id
+    return paper
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -115,10 +151,11 @@ def generate_solution(
     *,
     source_question_id: str | None = None,
     revision_mode: RevisionMode | None = None,
-    user_answer: str | None = None,
+    user_answer: str | list[str] | dict[str, str] | None = None,
 ) -> str:
-    """Generate an explanation for one question, on demand. Caches back to the
-    bank only when the question is an untouched original (Spec A §2.6 #6)."""
+    """Generate an explanation for one question, on demand. Every call hits
+    the LLM (no cache); when user_answer is given it also explains why that
+    wrong choice is incorrect."""
     from ai_engine import solutioner
 
     return solutioner.generate_solution(

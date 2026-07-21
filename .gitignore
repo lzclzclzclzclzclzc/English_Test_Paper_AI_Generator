@@ -7,6 +7,7 @@ payment/.venv/
 payment/keys/*.pem
 payment/data/*.db*
 data/payment.db
+data/agent_sessions.db*
 
 # build & tool artifacts
 __pycache__/

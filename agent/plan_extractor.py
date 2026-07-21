@@ -25,11 +25,16 @@ QuestionType = Literal["single_choice", "word_form", "sentence_rewriting"]
 
 
 class StudyPlanDay(BaseModel):
+    """一天的练习安排 = 一个出题需求（可含多个知识点/题型，对应 GenerateRequest）。"""
     index: int = Field(ge=1, description="第几天，从 1 开始")
-    knowledge_point_id: str = Field(description="知识点 id，必须从下方合法清单中选取")
-    kp_name: str = Field(description="知识点中文名")
-    question_type: QuestionType = Field(description="题型")
-    count: int = Field(ge=8, le=10, description="建议练习题数，8~10 之间")
+    theme: str = Field(default="", description="当天主题，如'名词专题'")
+    knowledge_points: list[str] = Field(
+        description="当天要练的知识点 id 列表，必须全部来自合法清单，至少一个"
+    )
+    question_types: list[QuestionType] = Field(
+        description="当天涉及的题型列表（与所选知识点的题型对应）"
+    )
+    total_questions: int = Field(ge=1, le=20, description="当天总题量")
     note: str = Field(default="", description="备注，如'严重薄弱，重点练习'")
 
 
@@ -77,15 +82,17 @@ def extract_study_plan(
     system = f"""你是一个信息提取专家。
 从用户提供的中考英语学习计划文本中，提取结构化的每日安排数据。
 
-## 合法知识点 id 清单（knowledge_point_id 只能从以下选取）
+## 合法知识点 id 清单（knowledge_points 只能从以下选取）
 {kp_catalog}
 
 ## 提取规则
-- knowledge_point_id 必须从上方清单中选择，不能编造或缩写
-- 如果原文提到的知识点名称在清单里没有完全匹配的 id，选择语义最接近的那个
-- question_type 只能是 single_choice / word_form / sentence_rewriting 之一
-- count 取原文建议练习题数，若不在 8~10 范围内则取最近的边界值
-- 每天作为一个独立条目，不要合并或跳过
+- 每一天是一个条目：包含 theme（当天主题）、knowledge_points（当天要练的知识点 id 列表）、
+  question_types（涉及的题型列表）、total_questions（当天总题量）、note（备注）
+- **一天可以有多个知识点**：原文里"第X天：名词专题（名词变复数、名词→动词…）"这类
+  一天多考点的安排，要把每个考点的 id 都提取进 knowledge_points 列表，不能只保留一个
+- knowledge_points 里的 id 必须从上方清单中选择，不能编造或缩写；找不到完全匹配就选语义最接近的
+- question_types 是这些知识点对应的题型集合（single_choice / word_form / sentence_rewriting）
+- total_questions 取原文当天的总题量（各考点题量之和，1~20）
 - note 从原文中提取该天的备注描述
 """
 
@@ -97,7 +104,7 @@ def extract_study_plan(
 {plan_text}
 ---
 
-请提取所有天的安排。"""
+请提取所有天的安排，注意把每天的多个知识点都完整放进 knowledge_points 列表。"""
 
     result: StudyPlanData = client.structured(
         response_model=StudyPlanData,
@@ -111,7 +118,12 @@ def extract_study_plan(
     result.user_id = user_id
 
     # Local validation: reject any KP id not in the bank
-    invalid = [d.knowledge_point_id for d in result.days if d.knowledge_point_id not in valid_kps]
+    invalid = [
+        kp
+        for day in result.days
+        for kp in day.knowledge_points
+        if kp not in valid_kps
+    ]
     if invalid:
         raise ValueError(
             f"plan_extractor returned invalid KP ids (not in question bank): {invalid}"

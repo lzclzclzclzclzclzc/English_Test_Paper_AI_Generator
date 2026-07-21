@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery, type QueryKey } from '@tanstack/react-query'
 import { fetchSolution } from '@/api/solutions'
 import { consumeQuota, quotaRemaining, FREE_SOLUTION_PER_DAY } from '@/lib/quota'
-import type { RevisedQuestion, RevisionMode } from '@/types/api'
+import type { RevisedQuestion, RevisionMode, UserAnswerValue } from '@/types/api'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface SolutionBlockProps {
@@ -16,7 +16,7 @@ interface SolutionBlockProps {
   locked: boolean
   userId: string
   /** 用户答错时传入所选答案，解析会解释为何该答案错误 */
-  userAnswer?: string | null
+  userAnswer?: UserAnswerValue | null
 }
 
 /**

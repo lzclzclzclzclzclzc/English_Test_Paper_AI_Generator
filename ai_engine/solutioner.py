@@ -51,12 +51,30 @@ def _kp_level2_names(db_path: str, kp_ids: list[str]) -> list[str]:
     return [name_map.get(kp_id, kp_id) for kp_id in kp_ids]
 
 
+def _format_user_answer(user_answer: str | list[str] | dict[str, str] | None) -> str:
+    """Render the user's (wrong) submitted answer into readable prompt text.
+
+    Single-choice is a bare label ("B"). Fill-in is a list (by blank order) or
+    a {blankN: text} dict — rendered as "blank1: went  blank2: to" so the LLM
+    can pinpoint which blank the student got wrong."""
+    if not user_answer:
+        return ""
+    if isinstance(user_answer, str):
+        return user_answer.strip()
+    if isinstance(user_answer, list):
+        parts = [f"blank{i}: {v}" for i, v in enumerate(user_answer, start=1) if str(v).strip()]
+        return "  ".join(parts)
+    # dict
+    parts = [f"{k}: {v}" for k, v in user_answer.items() if str(v).strip()]
+    return "  ".join(parts)
+
+
 def generate_solution(
     q: RevisedQuestion,
     *,
     source_question_id: str | None = None,
     revision_mode: RevisionMode | None = None,
-    user_answer: str | None = None,
+    user_answer: str | list[str] | dict[str, str] | None = None,
 ) -> str:
     """Generate (or fetch cached) an explanation for one question.
 
@@ -84,7 +102,7 @@ def generate_solution(
         kp_names="、".join(kp_names) if kp_names else "（无）",
         options_text=options_text,
         answer=_format_answer(q.answer),
-        wrong_answer=user_answer or "",
+        wrong_answer=_format_user_answer(user_answer),
     )
 
     client = get_llm_client()

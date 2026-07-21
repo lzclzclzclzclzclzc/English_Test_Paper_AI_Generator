@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { agentChat } from '@/api/agent'
+import { agentChat, clearAgentSession } from '@/api/agent'
 import { toastApiError } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import type { AgentAction, AgentHistoryItem } from '@/types/api'
+import type { AgentAction } from '@/types/api'
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'error'
@@ -22,48 +22,58 @@ const SUGGESTIONS = [
   '查一下介词的例题',
 ] as const
 
+// 仅缓存展示用的气泡列表；真正的对话上下文由后端 SQLiteSession 按用户维护。
 const SESSION_KEY = 'agent.chat'
 
-function loadSession(): { messages: ChatMessage[]; history: AgentHistoryItem[] } {
+function loadMessages(): ChatMessage[] {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed?.messages)) return parsed.messages
+    }
   } catch { /* ignore */ }
-  return { messages: [], history: [] }
+  return []
 }
 
-function saveSession(messages: ChatMessage[], history: AgentHistoryItem[]) {
+function saveMessages(messages: ChatMessage[]) {
   try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ messages, history }))
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ messages }))
   } catch { /* ignore */ }
 }
 
 export function GeneratePage() {
   const navigate = useNavigate()
   const [input, setInput] = useState('')
-  const init = loadSession()
-  const [messages, setMessages] = useState<ChatMessage[]>(init.messages)
-  const [history, setHistory] = useState<AgentHistoryItem[]>(init.history)
+  const [messages, setMessages] = useState<ChatMessage[]>(loadMessages)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const chatMutation = useMutation({
     mutationFn: agentChat,
     onSuccess: (res) => {
-      setHistory(res.history)
       setMessages((prev) => {
         const updated = [...prev, { role: 'assistant' as const, content: res.reply, action: res.action }]
-        saveSession(updated, res.history)
+        saveMessages(updated)
         return updated
       })
     },
     onError: (err) => {
       setMessages((prev) => {
         const updated = [...prev, { role: 'error' as const, content: '出错了，请稍后重试或换个说法' }]
-        saveSession(updated, history)
+        saveMessages(updated)
         return updated
       })
       toastApiError(err)
     },
+  })
+
+  const clearMutation = useMutation({
+    mutationFn: clearAgentSession,
+    onSuccess: () => {
+      setMessages([])
+      saveMessages([])
+    },
+    onError: toastApiError,
   })
 
   const isPending = chatMutation.isPending
@@ -79,10 +89,15 @@ export function GeneratePage() {
     setInput('')
     setMessages((prev) => {
       const updated = [...prev, { role: 'user' as const, content: trimmed }]
-      saveSession(updated, history)
+      saveMessages(updated)
       return updated
     })
-    chatMutation.mutate({ message: trimmed, history })
+    chatMutation.mutate({ message: trimmed })
+  }
+
+  const startNewChat = () => {
+    if (chatMutation.isPending || clearMutation.isPending) return
+    clearMutation.mutate()
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -94,6 +109,21 @@ export function GeneratePage() {
 
   return (
     <div className="mx-auto -mb-16 flex h-[calc(100svh-3.5rem)] max-w-[800px] flex-col px-4">
+      {/* 顶栏：新对话（仅有消息时显示） */}
+      {messages.length > 0 && (
+        <div className="flex justify-end pt-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-text-mid"
+            disabled={clearMutation.isPending || chatMutation.isPending}
+            onClick={startNewChat}
+          >
+            {clearMutation.isPending ? '清空中…' : '＋ 新对话'}
+          </Button>
+        </div>
+      )}
+
       {/* 消息列表 */}
       <div className="min-h-0 flex-1 overflow-y-auto py-6">
         {messages.length === 0 && (

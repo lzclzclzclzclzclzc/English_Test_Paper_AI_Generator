@@ -48,7 +48,6 @@ export function QuestionCard({
           </span>
         )}
         <span className="text-sm font-medium text-text-mid">{item.index}.</span>
-        <span className="text-xs text-muted-foreground">{item.score}分</span>
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -103,12 +102,6 @@ export function QuestionCard({
               </span>
             ))}
           </div>
-        )}
-        {/* revision_notes 形态不保证：只认引擎的改写失败标记，其余（test fixture 等）不打扰 */}
-        {isReview && item.revision_notes?.toLowerCase().includes('revision failed') && (
-          <p className="text-xs text-muted-foreground" title={item.revision_notes}>
-            本题 AI 改写未成功，使用了题库原题
-          </p>
         )}
 
         {solutionSlot}

@@ -263,7 +263,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
 
       <PaperSheet
         title={paper.title}
-        meta={`共 ${paper.items.length} 题 · 满分 ${paper.total_score} 分 · ${generatedAt}`}
+        meta={`共 ${paper.items.length} 题 · ${generatedAt}`}
         stamp={submitted ? <ScoreStamp correctCount={correctCount} totalCount={paper.items.length} /> : undefined}
       >
         <div className="divide-y divide-dashed divide-line">
@@ -288,7 +288,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
                       (() => {
                         const r = resultByIndex.get(item.index)
                         if (!r || r.is_correct) return null
-                        return typeof r.user_answer === 'string' ? r.user_answer : null
+                        return r.user_answer ?? null
                       })()
                     }
                   />

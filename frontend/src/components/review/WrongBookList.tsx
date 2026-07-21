@@ -113,10 +113,8 @@ function WrongBookRow({
   const item: PaperItem = {
     index: ordinal,
     question,
-    score: entry.score,
     source_question_id: entry.sourceQuestionId,
     revision_mode: entry.revisionMode,
-    revision_notes: null,
   }
   const result: GradeResultItem = {
     index: ordinal,

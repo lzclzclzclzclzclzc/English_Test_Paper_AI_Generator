@@ -13,6 +13,9 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 function DayCard({ day }: { day: StudyPlanDay }) {
+  const typeLabels = [...new Set(day.question_types)]
+    .map((t) => TYPE_LABEL[t] ?? t)
+    .join(' / ')
   return (
     <div className="flex items-center gap-4 rounded-lg border border-line bg-sheet px-4 py-3">
       {/* 序号 */}
@@ -21,14 +24,31 @@ function DayCard({ day }: { day: StudyPlanDay }) {
       </div>
 
       {/* 内容 */}
-      <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-        <div className="flex items-center gap-2">
-          <span className="text-[13.5px] font-medium text-foreground">{day.kp_name}</span>
-          <span className="rounded-full bg-ink-wash px-2 py-0.5 text-[11px] text-text-mid">
-            {TYPE_LABEL[day.question_type] ?? day.question_type}
-          </span>
-          <span className="text-[12px] text-text-mid">{day.count} 道</span>
+      <div className="flex flex-1 flex-col gap-1 overflow-hidden">
+        <div className="flex flex-wrap items-center gap-2">
+          {day.theme && (
+            <span className="text-[13.5px] font-medium text-foreground">{day.theme}</span>
+          )}
+          {typeLabels && (
+            <span className="rounded-full bg-ink-wash px-2 py-0.5 text-[11px] text-text-mid">
+              {typeLabels}
+            </span>
+          )}
+          <span className="text-[12px] text-text-mid">{day.total_questions} 道</span>
         </div>
+        {/* 当天覆盖的知识点 */}
+        {day.kp_names.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {day.kp_names.map((name, i) => (
+              <span
+                key={i}
+                className="rounded-full border border-line-strong px-2 py-0.5 text-[11px] text-text-mid"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-2 text-[12px] text-text-mid">
           {day.date && (
             <>

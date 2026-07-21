@@ -37,7 +37,7 @@ def generate_solution(
     *,
     source_question_id: str | None = None,
     revision_mode: Literal["fresh", "light", "original"] | None = None,
-    user_answer: str | None = None,
+    user_answer: str | list[str] | dict[str, str] | None = None,
 ) -> str:
     return run_generate_solution(
         question,

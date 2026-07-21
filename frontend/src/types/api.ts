@@ -70,10 +70,8 @@ export interface WrongItemRef {
 export interface GenerateRequest {
   mode: GenerationMode
   knowledge_points: string[]
-  knowledge_points_exclude: string[]
   question_types: QuestionType[]
   total_questions: number
-  total_score: number | null
   type_distribution: Record<string, number>
   revision_intensity: RevisionMode
   wrong_items: WrongItemRef[]
@@ -86,10 +84,8 @@ export interface PaperItem {
   /** 1-based，提交答题时按此回传 */
   index: number
   question: RevisedQuestion
-  score: number
   source_question_id: string
   revision_mode: RevisionMode
-  revision_notes: string | null
 }
 
 export interface Paper {
@@ -98,7 +94,6 @@ export interface Paper {
   generated_at: string
   request: GenerateRequest
   items: PaperItem[]
-  total_score: number
   metadata: Record<string, unknown>
 }
 
@@ -125,8 +120,8 @@ export interface SolutionRequest {
   question: RevisedQuestion
   source_question_id: string
   revision_mode: RevisionMode
-  /** 用户选错的答案，传入后解析会解释为何该选项错误 */
-  user_answer?: string | null
+  /** 用户答错的答案，传入后解析会解释为何错（单选是字母，填空/改写是数组或字典） */
+  user_answer?: UserAnswerValue | null
 }
 
 export interface SolutionResponse {
@@ -167,7 +162,6 @@ export interface PaperListItem {
   title: string
   generated_at: string
   total_questions: number
-  total_score: number
   submitted: boolean
 }
 
@@ -218,15 +212,10 @@ export interface UserCredentials {
 }
 
 // ---- Agent 对话 ----
-
-export interface AgentHistoryItem {
-  role: string
-  content: string | unknown[]
-}
+// 对话历史由后端 SQLiteSession 按用户维护，前端只发新消息、不回传 history。
 
 export interface AgentChatRequest {
   message: string
-  history: AgentHistoryItem[]
 }
 
 export type AgentAction =
@@ -234,7 +223,6 @@ export type AgentAction =
 
 export interface AgentChatResponse {
   reply: string
-  history: AgentHistoryItem[]
   action: AgentAction | null
 }
 
@@ -243,10 +231,11 @@ export interface AgentChatResponse {
 export interface StudyPlanDay {
   index: number
   date: string | null       // YYYY-MM-DD
-  knowledge_point_id: string
-  kp_name: string
-  question_type: QuestionType
-  count: number
+  theme: string
+  knowledge_points: string[]
+  kp_names: string[]
+  question_types: QuestionType[]
+  total_questions: number
   note: string
   paper_id: string
   paper_title: string
@@ -258,11 +247,6 @@ export interface StudyPlan {
   total_days: number
   created_at: string
   days: StudyPlanDay[]
-}
-
-export interface ExtractPlanRequest {
-  plan_text: string
-  start_date?: string | null
 }
 
 

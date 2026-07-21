@@ -7,6 +7,7 @@ Coach directly calls get_user_history and get_example_questions tools.
 from __future__ import annotations
 
 import os
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -36,12 +37,64 @@ _COACH_BASE_PROMPT = """你是一位中考英语学习助手。
 必须调用工具从题库获取，不能凭自己的知识生成题目。
 如果工具返回为空，告知学生该知识点暂无题目。
 
+**只能使用下方"题库知识点清单"中真实存在的知识点**：
+出题、制定学习计划、推荐练习时，只能选用清单里列出的知识点，
+严禁编造清单中没有的考点（例如"名词所有格""综合词性转换"若不在清单里就不能用）。
+每个知识点属于某一种题型（单项选择 / 词形转换 / 改写句子），
+安排练习时题型必须与该知识点所属的题型一致，否则会出卷失败。
+制定学习计划时，只从清单里挑选知识点排入每日安排。
+
 保持语言亲切，面向初中生。
+
+---
+
+{kp_catalog}
 
 ---
 
 {skills}
 """
+
+
+def _load_kp_catalog() -> str:
+    """Load the real KP catalog grouped by question type (level1), so the
+    agent only ever plans/generates against knowledge points that actually
+    exist in the bank — with the correct question type for each."""
+    type_names = {
+        "single_choice": "单项选择",
+        "word_form": "词形转换",
+        "sentence_rewriting": "改写句子",
+    }
+    db_path = str(get_config().db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT id, level1, level2 FROM knowledge_points ORDER BY level1, level2"
+        ).fetchall()
+    except sqlite3.Error:
+        return "## 题库知识点清单\n（暂时无法读取知识点清单）"
+    finally:
+        conn.close()
+
+    if not rows:
+        return "## 题库知识点清单\n（题库暂无知识点）"
+
+    grouped: dict[str, list[tuple[str, str]]] = {}
+    for kp_id, level1, level2 in rows:
+        grouped.setdefault(level1, []).append((kp_id, level2))
+
+    lines = [
+        "## 题库知识点清单",
+        "以下是题库中真实存在的全部知识点，按题型分组。"
+        "出题 / 学习计划只能从这里选，且题型必须与所属分组一致：",
+        "",
+    ]
+    for level1, kps in grouped.items():
+        lines.append(f"### {type_names.get(level1, level1)}（question_type = {level1}）")
+        for kp_id, level2 in kps:
+            lines.append(f"- {level2}（{kp_id}）")
+        lines.append("")
+    return "\n".join(lines).strip()
 
 
 def _load_skills() -> str:
@@ -68,7 +121,8 @@ def _build_model() -> OpenAIChatCompletionsModel:
 def create_coach_agent() -> Agent:
     skills_content = _load_skills()
     system_prompt = _COACH_BASE_PROMPT.format(
-        skills=skills_content if skills_content else "（暂无已加载的 skill）"
+        kp_catalog=_load_kp_catalog(),
+        skills=skills_content if skills_content else "（暂无已加载的 skill）",
     )
 
     return Agent(

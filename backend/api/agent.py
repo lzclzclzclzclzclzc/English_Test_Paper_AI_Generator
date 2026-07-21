@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import re
 import sys
-from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Literal
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from backend.deps import current_user
 from backend.schemas import AgentChatRequest, AgentChatResponse, User
@@ -39,34 +37,57 @@ async def agent_chat(
     _ensure_agent_path()
     from agents import Runner
     from agent.coach import create_coach_agent
+    from agent.tools import set_current_user_id
+
+    # Bind the authenticated user server-side. Tools read this — never a
+    # user_id supplied by the LLM, so a user cannot make a tool operate on
+    # someone else's data.
+    set_current_user_id(user.id)
 
     agent = create_coach_agent()
-    system_ctx = {"role": "system", "content": f"当前用户ID：{user.id}，用户名：{user.username}"}
-    full_input = [system_ctx] + body.history + [{"role": "user", "content": body.message}]
-
-    result = await Runner.run(agent, input=full_input)
+    # Conversation memory is server-side, keyed by user. The client sends only
+    # the new message; the SDK loads/saves history from the session store, so
+    # the client cannot forge system/assistant turns (prompt injection).
+    # Only the new user message is passed as input — a per-turn system message
+    # would be persisted and duplicated across turns; the agent's `instructions`
+    # already carry the system prompt.
+    session = _user_session(user.id)
+    result = await Runner.run(agent, input=body.message, session=session)
     reply: str = result.final_output or ""
-    history = list(result.to_input_list())
     action = _parse_action(reply)
 
-    return AgentChatResponse(reply=reply, history=history, action=action)
+    return AgentChatResponse(reply=reply, action=action)
 
 
-# ─── Extract Plan ──────────────────────────────────────────────────────────
+@router.post("/chat/clear", status_code=204)
+async def clear_agent_chat(user: User = Depends(current_user)) -> None:
+    """开始新对话：清空该用户的会话历史。"""
+    _ensure_agent_path()
+    await _user_session(user.id).clear_session()
 
-class ExtractPlanRequest(BaseModel):
-    plan_text: str = Field(min_length=1)
-    start_date: str | None = None   # YYYY-MM-DD; defaults to today
 
+def _user_session(user_id: str):
+    from agents import SQLiteSession
+    from shared.config import get_config
+
+    db_path = get_config().data_dir / "agent_sessions.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    return SQLiteSession(session_id=f"user_{user_id}", db_path=str(db_path))
+
+
+# ─── Study plan output models (used by /study-plans/latest) ──────────────────
 
 class StudyPlanDayOut(BaseModel):
+    model_config = {"extra": "ignore"}  # tolerate legacy/extra keys in stored JSON
+
     index: int
-    date: str | None
-    knowledge_point_id: str
-    kp_name: str
-    question_type: str
-    count: int
-    note: str
+    date: str | None = None
+    theme: str = ""
+    knowledge_points: list[str] = []
+    kp_names: list[str] = []
+    question_types: list[str] = []
+    total_questions: int = 0
+    note: str = ""
     paper_id: str
     paper_title: str
 
@@ -77,69 +98,6 @@ class StudyPlanOut(BaseModel):
     total_days: int
     created_at: str
     days: list[StudyPlanDayOut]
-
-
-@router.post("/extract-plan", response_model=StudyPlanOut)
-async def extract_plan(
-    body: ExtractPlanRequest,
-    user: User = Depends(current_user),
-) -> StudyPlanOut:
-    """Phase 2: extract structured plan from natural-language text, generate
-    one paper per day, persist and return the study plan."""
-    _ensure_agent_path()
-    from agent.plan_extractor import extract_study_plan
-    from ai_engine import retriever as _retriever
-    from ai_engine import reviser as _reviser
-
-    start = date.fromisoformat(body.start_date) if body.start_date else date.today()
-
-    plan_data = extract_study_plan(body.plan_text, user_id=user.id, start_date=start)
-
-    days_out: list[StudyPlanDayOut] = []
-    for day in plan_data.days:
-        from shared.schemas import GenerateRequest
-        req = GenerateRequest(
-            total_questions=day.count,
-            knowledge_points=[day.knowledge_point_id],
-            question_types=[day.question_type],
-            revision_intensity="light",
-            user_id=user.id,
-        )
-        retrieval = _retriever.retrieve(req)
-        paper = _reviser.build_paper(req, retrieval)
-        storage.save_paper(paper, user.id)
-
-        day_date = None
-        if body.start_date:
-            from datetime import timedelta
-            d = start + timedelta(days=day.index - 1)
-            day_date = d.isoformat()
-
-        days_out.append(StudyPlanDayOut(
-            index=day.index,
-            date=day_date,
-            knowledge_point_id=day.knowledge_point_id,
-            kp_name=day.kp_name,
-            question_type=day.question_type,
-            count=day.count,
-            note=day.note,
-            paper_id=paper.paper_id,
-            paper_title=paper.title,
-        ))
-
-    serialisable = {
-        "total_days": plan_data.total_days,
-        "days": [d.model_dump() for d in days_out],
-    }
-    plan_id = storage.save_study_plan(user.id, plan_data.total_days, serialisable)
-
-    return StudyPlanOut(
-        plan_id=plan_id,
-        user_id=user.id,
-        total_days=plan_data.total_days,
-        created_at=datetime.now(timezone.utc).isoformat(),
-        days=days_out,
-    )
 
 
 @router.get("/study-plans/latest", response_model=StudyPlanOut | None)
