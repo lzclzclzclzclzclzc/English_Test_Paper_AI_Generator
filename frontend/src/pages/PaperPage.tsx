@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { usePaper } from '@/hooks/usePaper'
 import { useAuth } from '@/hooks/useAuth'
 import { useMembership } from '@/hooks/useMembership'
 import { recordGrade } from '@/lib/wrongBook'
 import { revisePaper } from '@/api/papers'
-import { submitAttempt } from '@/api/attempts'
+import { submitAttempt, getAttemptByPaper } from '@/api/attempts'
 import { ApiError } from '@/api/client'
 import { toastApiError } from '@/lib/errors'
 import { queryClient } from '@/lib/queryClient'
@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
+import type { GradeSubmissionResponse } from '@/types/api'
 
 /**
  * 薄壳：以 key=paperId 强制重挂载内层——revise 换 id 导航后
@@ -51,17 +52,28 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   const [reviseOpen, setReviseOpen] = useState(false)
   const [reviseInstruction, setReviseInstruction] = useState('')
   const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
+  // 点「重做」后置 true，强制忽略历史结果、回到答题态
+  const [redoing, setRedoing] = useState(false)
 
   const { locked } = useMembership()
   const { data: user } = useAuth()
   const userId = user?.id ?? 'anon'
 
-  // D4：成绩只活在 mutation state（后端无历史成绩端点，刷新即回到答题态）
+  // 打开时拉取上次答题结果（未交卷返回 null），用于复盘展示
+  const history = useQuery({
+    queryKey: ['attempt', 'by-paper', paperId],
+    queryFn: () => getAttemptByPaper(paperId),
+    staleTime: 30_000,
+  })
+
+  // D4：本次交卷成绩活在 mutation state
   const grade = useMutation({
     mutationFn: submitAttempt,
     onSuccess: (result) => {
       // 列表页的 submitted 标记随交卷改变
       queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+      // 更新历史结果缓存，重新打开可直接复盘
+      queryClient.setQueryData(['attempt', 'by-paper', paperId], result)
       // 错题本记账：答错的收进来、答对的清账（仅真实用户，避免串号）
       if (paper && user?.id) {
         recordGrade(user.id, paper, result.items)
@@ -69,7 +81,11 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     },
     onError: toastApiError,
   })
-  const phase = grade.isPending ? 'submitting' : grade.data ? 'submitted' : 'answering'
+
+  // 展示用结果：本次交卷优先，否则用历史结果（正在重做时忽略历史）
+  const shownResult: GradeSubmissionResponse | null | undefined =
+    grade.data ?? (redoing ? null : history.data)
+  const phase = grade.isPending ? 'submitting' : shownResult ? 'submitted' : 'answering'
 
   const revise = useMutation({
     mutationFn: revisePaper,
@@ -82,11 +98,11 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   })
 
   const resultByIndex = useMemo(
-    () => new Map((grade.data?.items ?? []).map((r) => [r.index, r])),
-    [grade.data],
+    () => new Map((shownResult?.items ?? []).map((r) => [r.index, r])),
+    [shownResult],
   )
 
-  if (isLoading) {
+  if (isLoading || history.isLoading) {
     return (
       <div className="mx-auto flex max-w-[880px] flex-col gap-4 px-6 pt-10">
         <Skeleton className="mx-auto h-9 w-2/3" />
@@ -192,6 +208,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
           onRetry={() => {
             grade.reset()
             setAnswers({})
+            setRedoing(true)
           }}
           onRemediate={handleRemediate}
         />

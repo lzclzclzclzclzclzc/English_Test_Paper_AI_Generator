@@ -484,6 +484,43 @@ def _row_to_question(conn: sqlite3.Connection, row: sqlite3.Row) -> Question:
     )
 
 
+def get_latest_attempt(paper_id: str, user_id: str) -> dict | None:
+    """Return the latest attempt for a paper as {attempt_id, items:[{index,
+    is_correct, user_answer}]}, or None if the paper was never submitted.
+
+    correct_answer is NOT stored here — the caller reconstructs it from the paper.
+    """
+    init_db()
+    with connect() as conn:
+        attempt_row = conn.execute(
+            """
+            SELECT id FROM attempts
+            WHERE paper_id = ? AND user_id = ?
+            ORDER BY answered_at DESC
+            LIMIT 1
+            """,
+            (paper_id, user_id),
+        ).fetchone()
+        if not attempt_row:
+            return None
+        attempt_id = attempt_row["id"]
+        has_user_answer = "user_answer_json" in _table_columns(conn, "attempt_items")
+        cols = "item_index, is_correct" + (", user_answer_json" if has_user_answer else "")
+        item_rows = conn.execute(
+            f"SELECT {cols} FROM attempt_items WHERE attempt_id = ? ORDER BY item_index",
+            (attempt_id,),
+        ).fetchall()
+    items = []
+    for r in item_rows:
+        raw = r["user_answer_json"] if has_user_answer else None
+        items.append({
+            "index": r["item_index"],
+            "is_correct": bool(r["is_correct"]),
+            "user_answer": json.loads(raw) if raw else None,
+        })
+    return {"attempt_id": attempt_id, "items": items}
+
+
 def write_attempt(attempt: StoredAttempt) -> str:
     init_db()
     attempt_id = uuid4().hex
@@ -507,24 +544,27 @@ def _write_attempt(conn: sqlite3.Connection, attempt: StoredAttempt, attempt_id:
         (attempt_id, attempt.user_id, attempt.paper_id, attempt.answered_at.isoformat()),
     )
     attempt_item_columns = _table_columns(conn, "attempt_items")
+    if "item_index" not in attempt_item_columns:
+        raise RuntimeError("attempt_items schema is missing item_index")
+    # incremental migration: store the user's submitted answer for review replay
+    if "user_answer_json" not in attempt_item_columns:
+        conn.execute("ALTER TABLE attempt_items ADD COLUMN user_answer_json TEXT")
     for item in attempt.items:
-        values = (
-            attempt_id,
-            item.index,
-            item.source_question_id,
-            item.question_type,
-            1 if item.is_correct else 0,
-            json.dumps(item.knowledge_point_ids, ensure_ascii=False),
-        )
-        if "item_index" not in attempt_item_columns:
-            raise RuntimeError("attempt_items schema is missing item_index")
         conn.execute(
             """
             INSERT INTO attempt_items
-                (attempt_id, item_index, source_question_id, question_type, is_correct, kps_json)
-            VALUES (?, ?, ?, ?, ?, ?)
+                (attempt_id, item_index, source_question_id, question_type, is_correct, kps_json, user_answer_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            values,
+            (
+                attempt_id,
+                item.index,
+                item.source_question_id,
+                item.question_type,
+                1 if item.is_correct else 0,
+                json.dumps(item.knowledge_point_ids, ensure_ascii=False),
+                json.dumps(item.user_answer, ensure_ascii=False) if item.user_answer is not None else None,
+            ),
         )
 
 

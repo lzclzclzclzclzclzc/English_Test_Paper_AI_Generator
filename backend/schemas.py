@@ -84,6 +84,7 @@ class StoredAttemptItem(BaseModel):
     knowledge_point_ids: list[str]
     question_type: QuestionType
     is_correct: bool
+    user_answer: UserAnswerValue | None = None
 
 
 class StoredAttempt(BaseModel):
