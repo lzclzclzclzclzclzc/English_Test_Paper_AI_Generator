@@ -125,6 +125,8 @@ export interface SolutionRequest {
   question: RevisedQuestion
   source_question_id: string
   revision_mode: RevisionMode
+  /** 用户选错的答案，传入后解析会解释为何该选项错误 */
+  user_answer?: string | null
 }
 
 export interface SolutionResponse {

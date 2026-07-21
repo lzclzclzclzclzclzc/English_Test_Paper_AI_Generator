@@ -49,6 +49,7 @@ class SolutionRequest(BaseModel):
     question: RevisedQuestion
     source_question_id: str | None = None
     revision_mode: RevisionMode | None = None
+    user_answer: str | None = None  # 用户选错的答案，有值时解析中解释为何错
 
 
 class SolutionResponse(BaseModel):

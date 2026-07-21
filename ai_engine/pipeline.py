@@ -115,6 +115,7 @@ def generate_solution(
     *,
     source_question_id: str | None = None,
     revision_mode: RevisionMode | None = None,
+    user_answer: str | None = None,
 ) -> str:
     """Generate an explanation for one question, on demand. Caches back to the
     bank only when the question is an untouched original (Spec A §2.6 #6)."""
@@ -124,6 +125,7 @@ def generate_solution(
         q,
         source_question_id=source_question_id,
         revision_mode=revision_mode,
+        user_answer=user_answer,
     )
 
 

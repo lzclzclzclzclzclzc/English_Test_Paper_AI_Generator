@@ -15,6 +15,8 @@ interface SolutionBlockProps {
   /** true = 已确认非会员，AI 解析受每日免费次数限制 */
   locked: boolean
   userId: string
+  /** 用户答错时传入所选答案，解析会解释为何该答案错误 */
+  userAnswer?: string | null
 }
 
 /**
@@ -30,6 +32,7 @@ export function SolutionBlock({
   cacheKey,
   locked,
   userId,
+  userAnswer,
 }: SolutionBlockProps) {
   const [open, setOpen] = useState(false)
   const [exhausted, setExhausted] = useState(false)
@@ -42,6 +45,7 @@ export function SolutionBlock({
         question,
         source_question_id: sourceQuestionId,
         revision_mode: revisionMode,
+        user_answer: userAnswer ?? null,
       }),
     enabled: false,
     staleTime: Infinity,

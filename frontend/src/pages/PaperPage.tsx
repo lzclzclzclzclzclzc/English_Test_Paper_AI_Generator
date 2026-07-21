@@ -241,6 +241,13 @@ function PaperPageInner({ paperId }: { paperId: string }) {
                     cacheKey={['solution', paper.paper_id, item.index]}
                     locked={locked}
                     userId={userId}
+                    userAnswer={
+                      (() => {
+                        const r = resultByIndex.get(item.index)
+                        if (!r || r.is_correct) return null
+                        return typeof r.user_answer === 'string' ? r.user_answer : null
+                      })()
+                    }
                   />
                 ) : undefined
               }
