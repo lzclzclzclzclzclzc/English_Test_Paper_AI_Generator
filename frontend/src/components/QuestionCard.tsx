@@ -6,6 +6,7 @@ import { SingleChoiceField } from '@/components/question-fields/SingleChoiceFiel
 import { WordFormField } from '@/components/question-fields/WordFormField'
 import { SentenceRewritingField } from '@/components/question-fields/SentenceRewritingField'
 import { prettifyKp } from '@/lib/kp'
+import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { cn } from '@/lib/utils'
 
 interface QuestionCardProps {
@@ -28,6 +29,7 @@ export function QuestionCard({
   result,
   solutionSlot,
 }: QuestionCardProps) {
+  useKnowledgePoints()  // 目录到达后重渲染，考点标签显示为中文名
   const { question } = item
   const isReview = mode === 'review'
 

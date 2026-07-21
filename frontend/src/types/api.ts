@@ -181,9 +181,16 @@ export interface PaperListResponse {
 export interface KPMastery {
   knowledge_point_id: string
   attempts: number
-  correct_rate: number
   /** Wilson lower bound，越低越薄弱 */
   mastery: number
+}
+
+/** GET /api/knowledge-points 目录项（用于 id→中文名展示） */
+export interface KnowledgePoint {
+  id: string
+  level1: QuestionType
+  level2: string
+  aliases: string[]
 }
 
 /** GET /api/users/me/mastery?window_days= */

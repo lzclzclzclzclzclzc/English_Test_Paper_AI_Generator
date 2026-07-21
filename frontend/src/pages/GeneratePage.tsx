@@ -93,9 +93,9 @@ export function GeneratePage() {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-56px)] max-w-[800px] flex-col px-4">
+    <div className="mx-auto -mb-16 flex h-[calc(100svh-3.5rem)] max-w-[800px] flex-col px-4">
       {/* 消息列表 */}
-      <div className="flex-1 overflow-y-auto py-6">
+      <div className="min-h-0 flex-1 overflow-y-auto py-6">
         {messages.length === 0 && (
           <div className="flex flex-col items-center gap-6 pt-16 text-center">
             <div className="flex flex-col gap-1">

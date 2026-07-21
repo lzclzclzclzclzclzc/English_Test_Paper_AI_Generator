@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { MasteryProfile } from '@/types/api'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
+import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +16,7 @@ function masteryColor(m: number): { bar: string; text: string } {
 }
 
 export function MasteryReport({ profile }: { profile: MasteryProfile }) {
+  useKnowledgePoints()  // 确保目录到达后重渲染，考点显示为中文名
   if (profile.total_attempts_considered === 0) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-md border border-line bg-sheet px-6 py-16 text-center">
@@ -80,7 +82,7 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
                   {Math.round(kp.mastery * 100)}%
                 </b>
                 <span className="ml-1.5 text-muted-foreground">
-                  答对 {Math.round(kp.correct_rate * 100)}% · {kp.attempts} 次
+                  {kp.attempts} 次
                 </span>
               </span>
             </div>
