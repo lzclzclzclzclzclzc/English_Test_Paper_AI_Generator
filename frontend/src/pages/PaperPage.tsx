@@ -5,7 +5,7 @@ import { usePaper } from '@/hooks/usePaper'
 import { useAuth } from '@/hooks/useAuth'
 import { useMembership } from '@/hooks/useMembership'
 import { recordGrade } from '@/lib/wrongBook'
-import { revisePaper } from '@/api/papers'
+import { revisePaper, generatePaper } from '@/api/papers'
 import { submitAttempt, getAttemptByPaper } from '@/api/attempts'
 import { ApiError } from '@/api/client'
 import { toastApiError } from '@/lib/errors'
@@ -58,6 +58,16 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   const { locked } = useMembership()
   const { data: user } = useAuth()
   const userId = user?.id ?? 'anon'
+
+  // 错题巩固：用当前试卷答错的题定向组卷。不自动跳转——完成后由按钮点击跳转
+  const remediation = useMutation({
+    mutationFn: generatePaper,
+    onSuccess: (newPaper) => {
+      queryClient.setQueryData(['paper', newPaper.paper_id], newPaper)
+      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+    },
+    onError: toastApiError,
+  })
 
   // 打开时拉取上次答题结果（未交卷返回 null），用于复盘展示
   const history = useQuery({
@@ -137,9 +147,6 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   }
 
   const submitted = phase === 'submitted'
-  const earned = paper.items
-    .filter((item) => resultByIndex.get(item.index)?.is_correct)
-    .reduce((sum, item) => sum + item.score, 0)
   const correctCount = paper.items.filter(
     (item) => resultByIndex.get(item.index)?.is_correct,
   ).length
@@ -160,8 +167,25 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     }
   }
 
-  // 错题已在判分时写入错题本，这里直接去错题复习页
-  const handleRemediate = () => navigate('/review')
+  // 错题巩固：用当前试卷答错的题（考点+题型）定向生成一份新的巩固卷
+  const handleRemediate = () => {
+    const wrongItems = paper.items
+      .filter((item) => resultByIndex.get(item.index)?.is_correct === false)
+      .map((item) => ({
+        knowledge_point_ids: item.question.knowledge_point_ids,
+        question_type: item.question.question_type,
+      }))
+    if (wrongItems.length === 0) return
+    if (locked) {
+      setUpgradeReason('错题巩固是会员功能：AI 会围绕你这份卷做错的题定向组卷。')
+      return
+    }
+    remediation.mutate({
+      user_query: '针对我这份试卷里做错的题目，出一份针对性的巩固练习',
+      mode: 'remediation',
+      wrong_items: wrongItems,
+    })
+  }
 
   const unanswered = listUnanswered(paper, answers)
   const notices = buildPaperNotices(paper.metadata)
@@ -200,17 +224,19 @@ function PaperPageInner({ paperId }: { paperId: string }) {
 
       {submitted && (
         <GradeBanner
-          earned={earned}
-          total={paper.total_score}
-          correctCount={correctCount}
-          totalCount={paper.items.length}
           wrongCount={wrongCount}
           onRetry={() => {
             grade.reset()
+            remediation.reset()
             setAnswers({})
             setRedoing(true)
           }}
           onRemediate={handleRemediate}
+          remediating={remediation.isPending}
+          remediatedPaperId={remediation.data?.paper_id ?? null}
+          onOpenRemediation={() => {
+            if (remediation.data) navigate(`/papers/${remediation.data.paper_id}`)
+          }}
         />
       )}
 
