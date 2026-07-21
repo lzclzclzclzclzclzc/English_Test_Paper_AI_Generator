@@ -164,7 +164,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
       {/* 卷面之上的现代控件区（Spec F：纸上的东西不发光、控件不仿古） */}
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" size="sm">
-          <Link to="/">← 生成新试卷</Link>
+          <Link to="/papers">← 我的试卷</Link>
         </Button>
         <Button
           variant="outline"
@@ -221,7 +221,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
       <PaperSheet
         title={paper.title}
         meta={`共 ${paper.items.length} 题 · 满分 ${paper.total_score} 分 · ${generatedAt}`}
-        stamp={submitted ? <ScoreStamp earned={earned} /> : undefined}
+        stamp={submitted ? <ScoreStamp correctCount={correctCount} totalCount={paper.items.length} /> : undefined}
       >
         <div className="divide-y divide-dashed divide-line">
           {paper.items.map((item) => (

@@ -8,6 +8,7 @@ import { PaperPageRoute } from '@/pages/PaperPage'
 import { MasteryPage } from '@/pages/MasteryPage'
 import { MembershipPage } from '@/pages/MembershipPage'
 import { ReviewPage } from '@/pages/ReviewPage'
+import { StudyPlanPage } from '@/pages/StudyPlanPage'
 
 export function AppRoutes() {
   return (
@@ -26,6 +27,7 @@ export function AppRoutes() {
         <Route path="/papers/:paperId" element={<PaperPageRoute />} />
         <Route path="/mastery" element={<MasteryPage />} />
         <Route path="/membership" element={<MembershipPage />} />
+        <Route path="/study-plan" element={<StudyPlanPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

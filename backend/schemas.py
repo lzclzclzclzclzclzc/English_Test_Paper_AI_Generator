@@ -104,6 +104,17 @@ class PaperListResponse(BaseModel):
     items: list[PaperListItem]
 
 
+class AgentChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=4000)
+    history: list[dict] = Field(default_factory=list)
+
+
+class AgentChatResponse(BaseModel):
+    reply: str
+    history: list[dict]
+    action: dict | None = None
+
+
 class ErrorResponse(BaseModel):
     error_code: str
     message: str

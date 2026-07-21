@@ -208,7 +208,54 @@ export interface UserCredentials {
   password: string
 }
 
-// ---- 错误封装 ----
+// ---- Agent 对话 ----
+
+export interface AgentHistoryItem {
+  role: string
+  content: string | unknown[]
+}
+
+export interface AgentChatRequest {
+  message: string
+  history: AgentHistoryItem[]
+}
+
+export type AgentAction =
+  | { type: 'open_paper'; paper_id: string }
+
+export interface AgentChatResponse {
+  reply: string
+  history: AgentHistoryItem[]
+  action: AgentAction | null
+}
+
+// ---- 学习计划 ----
+
+export interface StudyPlanDay {
+  index: number
+  date: string | null       // YYYY-MM-DD
+  knowledge_point_id: string
+  kp_name: string
+  question_type: QuestionType
+  count: number
+  note: string
+  paper_id: string
+  paper_title: string
+}
+
+export interface StudyPlan {
+  plan_id: string
+  user_id: string
+  total_days: number
+  created_at: string
+  days: StudyPlanDay[]
+}
+
+export interface ExtractPlanRequest {
+  plan_text: string
+  start_date?: string | null
+}
+
 
 /**
  * 所有业务错误的统一响应体。error_code 稳定清单（backend/errors.py）：

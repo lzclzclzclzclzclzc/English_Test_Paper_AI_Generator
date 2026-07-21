@@ -72,6 +72,7 @@ def seed_user(conn: sqlite3.Connection, user_id: str, seed: int = 42) -> dict:
     base_ts = int(time.time())
 
     attempt_used: dict[str, set[str]] = {}
+    attempt_item_index: dict[str, int] = {}  # per-attempt item counter
 
     def _new_attempt(seq: int) -> str:
         aid = f"att_{user_id}_{base_ts}_{seq}"
@@ -81,6 +82,7 @@ def seed_user(conn: sqlite3.Connection, user_id: str, seed: int = 42) -> dict:
             (aid, user_id),
         )
         attempt_used[aid] = set()
+        attempt_item_index[aid] = 0
         return aid
 
     attempts_pool = [_new_attempt(i) for i in range(3)]
@@ -113,11 +115,12 @@ def seed_user(conn: sqlite3.Connection, user_id: str, seed: int = 42) -> dict:
 
             is_correct = 1 if rng.random() < target_acc else 0
             correct += is_correct
+            attempt_item_index[aid] += 1
             conn.execute(
                 "INSERT INTO attempt_items "
-                "(attempt_id, source_question_id, question_type, is_correct, kps_json) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (aid, src, qtype, is_correct, json.dumps([kp_id])),
+                "(attempt_id, item_index, source_question_id, question_type, is_correct, kps_json) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (aid, attempt_item_index[aid], src, qtype, is_correct, json.dumps([kp_id])),
             )
             attempt_used[aid].add(src)
 
@@ -134,7 +137,7 @@ def seed_user(conn: sqlite3.Connection, user_id: str, seed: int = 42) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--user", default="u_demo_review", help="用户ID")
+    parser.add_argument("--user", default="test", help="用户ID")
     parser.add_argument("--clear", action="store_true", help="只清除数据，不插入")
     args = parser.parse_args()
 

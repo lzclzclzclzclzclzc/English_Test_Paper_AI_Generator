@@ -8,6 +8,7 @@ and automatic retry on schema mismatch (max 3 attempts).
 """
 from __future__ import annotations
 
+import sqlite3
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -17,6 +18,7 @@ from pydantic import BaseModel, Field
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from shared.config import get_config
 from shared.llm.deepseek import get_llm_client
 
 QuestionType = Literal["single_choice", "word_form", "sentence_rewriting"]
@@ -24,7 +26,7 @@ QuestionType = Literal["single_choice", "word_form", "sentence_rewriting"]
 
 class StudyPlanDay(BaseModel):
     index: int = Field(ge=1, description="第几天，从 1 开始")
-    knowledge_point_id: str = Field(description="知识点 id，必须是 kp_ 开头的真实 id")
+    knowledge_point_id: str = Field(description="知识点 id，必须从下方合法清单中选取")
     kp_name: str = Field(description="知识点中文名")
     question_type: QuestionType = Field(description="题型")
     count: int = Field(ge=8, le=10, description="建议练习题数，8~10 之间")
@@ -37,16 +39,15 @@ class StudyPlanData(BaseModel):
     days: list[StudyPlanDay]
 
 
-_EXTRACT_SYSTEM = """你是一个信息提取专家。
-从用户提供的中考英语学习计划文本中，提取结构化的每日安排数据。
-
-提取规则：
-- knowledge_point_id 必须是原文中出现的真实 KP id（格式为 kp_xxx），不能编造
-- question_type 只能是 single_choice / word_form / sentence_rewriting 之一，根据原文的题型描述判断
-- count 取原文建议练习题数，若不在 8~10 范围内则取最近的边界值
-- 每天作为一个独立条目，不要合并或跳过
-- note 从原文中提取该天的备注描述（如"严重薄弱"、"巩固复习"等）
-"""
+def _load_valid_kp_ids() -> dict[str, str]:
+    """Load all KP ids from the question bank. Returns {id: level2_name}."""
+    db_path = str(get_config().db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        rows = conn.execute("SELECT id, level2 FROM knowledge_points ORDER BY id").fetchall()
+        return {r[0]: r[1] for r in rows}
+    finally:
+        conn.close()
 
 
 def extract_study_plan(
@@ -65,9 +66,28 @@ def extract_study_plan(
         Validated StudyPlanData, with instructor retry on schema errors.
 
     Raises:
+        ValueError: if extracted KP ids are not in the question bank
         Exception: if LLM fails after 3 retries
     """
     client = get_llm_client()
+    valid_kps = _load_valid_kp_ids()
+
+    kp_catalog = "\n".join(f"- {kp_id}: {name}" for kp_id, name in valid_kps.items())
+
+    system = f"""你是一个信息提取专家。
+从用户提供的中考英语学习计划文本中，提取结构化的每日安排数据。
+
+## 合法知识点 id 清单（knowledge_point_id 只能从以下选取）
+{kp_catalog}
+
+## 提取规则
+- knowledge_point_id 必须从上方清单中选择，不能编造或缩写
+- 如果原文提到的知识点名称在清单里没有完全匹配的 id，选择语义最接近的那个
+- question_type 只能是 single_choice / word_form / sentence_rewriting 之一
+- count 取原文建议练习题数，若不在 8~10 范围内则取最近的边界值
+- 每天作为一个独立条目，不要合并或跳过
+- note 从原文中提取该天的备注描述
+"""
 
     prompt = f"""以下是一份学习计划文本，请提取每日安排：
 
@@ -77,18 +97,25 @@ def extract_study_plan(
 {plan_text}
 ---
 
-请提取所有天的安排，knowledge_point_id 必须与原文中的 KP id 完全一致。"""
+请提取所有天的安排。"""
 
     result: StudyPlanData = client.structured(
         response_model=StudyPlanData,
         prompt=prompt,
-        system=_EXTRACT_SYSTEM,
+        system=system,
         max_retries=3,
         temperature=0.1,
     )
 
-    # Override user_id with the session value (don't trust LLM-extracted one)
+    # Override user_id with the session value
     result.user_id = user_id
+
+    # Local validation: reject any KP id not in the bank
+    invalid = [d.knowledge_point_id for d in result.days if d.knowledge_point_id not in valid_kps]
+    if invalid:
+        raise ValueError(
+            f"plan_extractor returned invalid KP ids (not in question bank): {invalid}"
+        )
 
     # Attach dates to notes if start_date provided
     if start_date:

@@ -93,7 +93,66 @@
 
 ---
 
-## 五个子系统
+## 本地启动
+
+### 环境要求
+
+- Python 3.11+
+- Node.js 18+
+- `.env` 文件放在项目根目录（见下方模板）
+
+### `.env` 配置模板
+
+```env
+LLM_API_KEY=your_deepseek_api_key
+LLM_BASE_URL=https://api.deepseek.com
+LLM_MODEL=deepseek-v4-flash
+BACKEND_ENV=development
+```
+
+### 首次初始化（只需跑一次）
+
+```bash
+# 初始化数据库表结构
+PYTHONIOENCODING=utf-8 python -m backend.cli init-db
+
+# 创建测试用户（用户名 demo，密码 demo123）
+PYTHONIOENCODING=utf-8 python -m backend.cli create-user --username demo --password demo123
+
+# 注入演示答题记录（用于学习计划功能）
+PYTHONIOENCODING=utf-8 python agent/seed_demo.py --user demo
+```
+
+### 每次启动（三个终端分别运行）
+
+**终端 1 — 主后端（端口 8000）**
+```bash
+PYTHONIOENCODING=utf-8 python -m backend.cli serve --reload
+```
+
+**终端 2 — 支付服务（端口 8001）**
+```bash
+cd payment
+python -m uvicorn app.main:app --port 8001 --reload
+```
+
+**终端 3 — 前端开发服务器（端口 5173）**
+```bash
+cd frontend
+npm install   # 首次需要
+npm run dev
+```
+
+浏览器打开 [http://localhost:5173](http://localhost:5173)，用 `demo / demo123` 登录。
+
+> **Windows PowerShell** 设置环境变量方式不同：
+> ```powershell
+> $env:PYTHONIOENCODING="utf-8"; python -m backend.cli serve --reload
+> ```
+
+---
+
+
 
 按依赖顺序：
 

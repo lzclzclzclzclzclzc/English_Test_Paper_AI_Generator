@@ -149,6 +149,89 @@ def get_example_questions(knowledge_point_id: str, count: int = 3) -> str:
 
 
 @function_tool
+def implement_study_plan(plan_text: str, user_id: str, start_date: str = "") -> str:
+    """将自然语言学习计划转化为结构化计划并生成每日试卷，持久化到数据库。
+
+    Args:
+        plan_text: Coach 输出的完整自然语言学习计划文本
+        user_id: 当前用户ID
+        start_date: 计划开始日期，格式 YYYY-MM-DD，空则取今天
+
+    返回 JSON，包含 plan_id 和每日安排摘要（index, kp_name, paper_id, paper_title）。
+    如果成功，还会追加标记 <plan_implemented plan_id="..."/>，Agent 应在回复末尾原样输出该标记。
+    """
+    import sys
+    from datetime import date, timedelta
+
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+
+    from agent.plan_extractor import extract_study_plan
+    from ai_engine import retriever as _retriever
+    from ai_engine import reviser as _reviser
+    from shared import storage as _storage
+    from shared.schemas import GenerateRequest
+
+    parsed_start = date.fromisoformat(start_date) if start_date else date.today()
+
+    try:
+        plan_data = extract_study_plan(plan_text, user_id=user_id, start_date=parsed_start)
+    except Exception as e:
+        return json.dumps({"error": f"计划解析失败: {e}"}, ensure_ascii=False)
+
+    days_out = []
+    for day in plan_data.days:
+        req = GenerateRequest(
+            total_questions=day.count,
+            knowledge_points=[day.knowledge_point_id],
+            question_types=[day.question_type],
+            revision_intensity="light",
+            user_id=user_id,
+        )
+        try:
+            retrieval = _retriever.retrieve(req)
+            paper = _reviser.build_paper(req, retrieval)
+            _storage.save_paper(paper, user_id)
+        except Exception as e:
+            days_out.append({"index": day.index, "kp_name": day.kp_name, "error": str(e)})
+            continue
+
+        day_date = (parsed_start + timedelta(days=day.index - 1)).isoformat()
+        days_out.append({
+            "index": day.index,
+            "date": day_date,
+            "kp_name": day.kp_name,
+            "paper_id": paper.paper_id,
+            "paper_title": paper.title,
+        })
+
+    serialisable = {
+        "total_days": plan_data.total_days,
+        "days": [
+            {
+                "index": d["index"],
+                "date": d.get("date"),
+                "knowledge_point_id": plan_data.days[i].knowledge_point_id,
+                "kp_name": plan_data.days[i].kp_name,
+                "question_type": plan_data.days[i].question_type,
+                "count": plan_data.days[i].count,
+                "note": plan_data.days[i].note,
+                "paper_id": d.get("paper_id", ""),
+                "paper_title": d.get("paper_title", ""),
+            }
+            for i, d in enumerate(days_out)
+            if "error" not in d
+        ],
+    }
+    plan_id = _storage.save_study_plan(user_id, plan_data.total_days, serialisable)
+
+    return json.dumps({
+        "plan_id": plan_id,
+        "total_days": plan_data.total_days,
+        "days": days_out,
+    }, ensure_ascii=False, indent=2)
+
+
+@function_tool
 def generate_paper(
     user_query: str,
     user_id: str,
@@ -176,6 +259,14 @@ def generate_paper(
         paper = _generate_paper(user_query, mode=mode, user_id=user_id)
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+    # Persist the paper to the backend DB so /api/papers/{id} works
+    if user_id:
+        try:
+            from shared import storage as _storage
+            _storage.save_paper(paper, user_id)
+        except Exception:
+            pass  # best-effort; don't fail the tool if save fails
 
     # Build a readable summary for the agent
     items = []

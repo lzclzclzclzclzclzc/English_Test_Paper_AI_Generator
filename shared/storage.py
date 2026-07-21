@@ -119,6 +119,16 @@ def init_db() -> None:
                 PRIMARY KEY (attempt_id, item_index)
             );
             CREATE INDEX IF NOT EXISTS idx_att_it_source ON attempt_items(source_question_id);
+
+            CREATE TABLE IF NOT EXISTS study_plans (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL REFERENCES users(id),
+                created_at TIMESTAMP NOT NULL,
+                status TEXT NOT NULL DEFAULT 'active',
+                total_days INTEGER NOT NULL,
+                plan_json TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_study_plans_user ON study_plans(user_id, status);
             """
         )
         _apply_migrations(conn)
@@ -670,3 +680,35 @@ def _wilson_lower_bound(correct: int, total: int, z: float = 1.96) -> float:
     centre = phat + z * z / (2 * total)
     margin = z * math.sqrt((phat * (1 - phat) + z * z / (4 * total)) / total)
     return max(0.0, (centre - margin) / denom)
+
+
+# ─── Study Plans ───────────────────────────────────────────────────────────
+
+def save_study_plan(user_id: str, total_days: int, plan_data: dict) -> str:
+    """Persist a new study plan, superseding any existing active plan for the user."""
+    init_db()
+    plan_id = uuid4().hex
+    now = datetime.now(timezone.utc).isoformat()
+    with connect() as conn:
+        conn.execute(
+            "UPDATE study_plans SET status = 'superseded' WHERE user_id = ? AND status = 'active'",
+            (user_id,),
+        )
+        conn.execute(
+            "INSERT INTO study_plans (id, user_id, created_at, status, total_days, plan_json) VALUES (?, ?, ?, 'active', ?, ?)",
+            (plan_id, user_id, now, total_days, json.dumps(plan_data, ensure_ascii=False)),
+        )
+    return plan_id
+
+
+def get_latest_study_plan(user_id: str) -> dict | None:
+    """Return the most recently created active study plan for the user, or None."""
+    init_db()
+    with connect() as conn:
+        if not _table_exists(conn, "study_plans"):
+            return None
+        row = conn.execute(
+            "SELECT plan_json FROM study_plans WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1",
+            (user_id,),
+        ).fetchone()
+    return json.loads(row["plan_json"]) if row else None

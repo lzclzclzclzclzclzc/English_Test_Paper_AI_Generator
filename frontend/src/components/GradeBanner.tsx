@@ -52,13 +52,13 @@ export function GradeBanner({
 }
 
 /** 分数章（Spec F § 4.5）：右上角旋转红章，只出现在成绩视图的卷面上。 */
-export function ScoreStamp({ earned }: { earned: number }) {
+export function ScoreStamp({ correctCount, totalCount }: { correctCount: number; totalCount: number }) {
   return (
     <div
       aria-hidden
       className="absolute right-8 top-6 flex rotate-[8deg] items-center justify-center border-[3px] border-wrong px-3 py-1 font-serif text-2xl font-black text-wrong opacity-90"
     >
-      {earned} 分
+      {correctCount}/{totalCount}
     </div>
   )
 }
