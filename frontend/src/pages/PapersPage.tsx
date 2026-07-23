@@ -81,7 +81,7 @@ function PaperRow({ paper }: { paper: PaperListItem }) {
             {paper.title}
           </span>
           <span className="text-[12.5px] text-text-mid">
-            {generatedAt} · {paper.total_questions} 题 · 满分 {paper.total_score} 分
+            {generatedAt} · {paper.total_questions} 题
           </span>
         </div>
         <span

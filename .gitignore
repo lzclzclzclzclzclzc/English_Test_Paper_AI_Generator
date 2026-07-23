@@ -6,6 +6,8 @@ payment/.env
 payment/.venv/
 payment/keys/*.pem
 payment/data/*.db*
+data/payment.db
+data/agent_sessions.db*
 
 # build & tool artifacts
 __pycache__/
@@ -18,6 +20,7 @@ dist/
 build/
 models/Qwen3-Embedding-4B
 debug.log
+.playwright-mcp
 
 # env
 .env

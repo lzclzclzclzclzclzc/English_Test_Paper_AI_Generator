@@ -18,5 +18,6 @@ async def generate_solution(
         body.question,
         source_question_id=body.source_question_id,
         revision_mode=body.revision_mode,
+        user_answer=body.user_answer,
     )
     return SolutionResponse(solution=solution)

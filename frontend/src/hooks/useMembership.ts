@@ -4,7 +4,7 @@ import { getMembership } from '@/api/payment'
 /**
  * 会员状态（与会员页、支付弹窗共享 ['payMembership'] 缓存，支付成功即失效重取）。
  * locked 才代表「确认是非会员」：加载中不锁，避免会员看到锁标闪烁；
- * 支付服务不可用时按非会员处理（锁定，但会员页可重试）。
+ * 支付服务不可用时按会员处理（不锁定），避免联调时功能被阻断。
  */
 export function useMembership() {
   const query = useQuery({
@@ -13,7 +13,8 @@ export function useMembership() {
     retry: false,
     staleTime: 30_000,
   })
-  const isMember = query.data?.active === true
+  // 支付服务出错时 isError=true，此时默认放行（不锁），仅明确返回 active:false 才锁
+  const isMember = query.isError || query.data?.active === true
   return {
     isMember,
     locked: !query.isLoading && !isMember,

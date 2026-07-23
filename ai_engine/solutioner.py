@@ -1,23 +1,10 @@
 """Solutioner module: generate an explanation for a single question on demand.
 
-Called when the user clicks "生成解析" (through the future FastAPI layer). This
-is the ONLY AI Engine module with a write side-effect: when the question is an
-untouched original bank question, the generated solution is cached back to
-`questions.solution` (Spec A §2.7 invariant 6 / Spec B §6).
-
-Flow (Spec B §6.2):
-  1. cache lookup   — source_question_id present AND revision_mode == "original"
-                      AND questions.solution NOT NULL → return it, no LLM call
-  2. LLM call       — DeepSeekClient.text() (the only module using text(), not
-                      structured()); plain-text three-section output
-  3. write-back     — source_question_id present AND revision_mode == "original"
-                      AND questions.solution IS NULL → UPDATE (guarded by
-                      `WHERE solution IS NULL` for concurrent-write safety)
-  4. return solution text
+Called when the user clicks "查看解析". Every call goes to the LLM — no
+write-back cache. This keeps explanations personalised: when user_answer is
+provided the LLM explains why that specific wrong answer is incorrect.
 """
 from __future__ import annotations
-
-import sqlite3
 
 from shared.config import get_config
 from shared.llm.deepseek import get_llm_client
@@ -46,25 +33,11 @@ def _format_answer(answer: Answer) -> str:
 
 
 
-def _fetch_cached_solution(db_path: str, question_id: str) -> str | None:
-    """Return the stored solution for a bank question, or None if absent/NULL."""
-    conn = sqlite3.connect(db_path)
-    try:
-        row = conn.execute(
-            "SELECT solution FROM questions WHERE id = ?", (question_id,)
-        ).fetchone()
-    finally:
-        conn.close()
-    if row is None:
-        return None
-    return row[0]  # may be None
-
-
 def _kp_level2_names(db_path: str, kp_ids: list[str]) -> list[str]:
-    """Map KP ids to their level2 中文 names for the prompt. Unknown ids are
-    kept as-is so the prompt still carries some signal."""
+    """Map KP ids to their level2 中文 names for the prompt."""
     if not kp_ids:
         return []
+    import sqlite3
     conn = sqlite3.connect(db_path)
     try:
         placeholders = ",".join("?" * len(kp_ids))
@@ -78,20 +51,22 @@ def _kp_level2_names(db_path: str, kp_ids: list[str]) -> list[str]:
     return [name_map.get(kp_id, kp_id) for kp_id in kp_ids]
 
 
-def _write_back_solution(db_path: str, question_id: str, solution: str) -> None:
-    """Cache the solution back to the bank, only if still NULL.
+def _format_user_answer(user_answer: str | list[str] | dict[str, str] | None) -> str:
+    """Render the user's (wrong) submitted answer into readable prompt text.
 
-    `WHERE solution IS NULL` makes concurrent writes safe: only the first write
-    wins, later ones match 0 rows and are silently dropped (Spec B §6.2)."""
-    conn = sqlite3.connect(db_path)
-    try:
-        conn.execute(
-            "UPDATE questions SET solution = ? WHERE id = ? AND solution IS NULL",
-            (solution, question_id),
-        )
-        conn.commit()
-    finally:
-        conn.close()
+    Single-choice is a bare label ("B"). Fill-in is a list (by blank order) or
+    a {blankN: text} dict — rendered as "blank1: went  blank2: to" so the LLM
+    can pinpoint which blank the student got wrong."""
+    if not user_answer:
+        return ""
+    if isinstance(user_answer, str):
+        return user_answer.strip()
+    if isinstance(user_answer, list):
+        parts = [f"blank{i}: {v}" for i, v in enumerate(user_answer, start=1) if str(v).strip()]
+        return "  ".join(parts)
+    # dict
+    parts = [f"{k}: {v}" for k, v in user_answer.items() if str(v).strip()]
+    return "  ".join(parts)
 
 
 def generate_solution(
@@ -99,6 +74,7 @@ def generate_solution(
     *,
     source_question_id: str | None = None,
     revision_mode: RevisionMode | None = None,
+    user_answer: str | list[str] | dict[str, str] | None = None,
 ) -> str:
     """Generate (or fetch cached) an explanation for one question.
 
@@ -114,14 +90,6 @@ def generate_solution(
     cfg = get_config()
     db_path = str(cfg.db_path)
 
-    is_original = source_question_id is not None and revision_mode == "original"
-
-    # 1. cache lookup (original only)
-    if is_original:
-        cached = _fetch_cached_solution(db_path, source_question_id)
-        if cached:
-            return cached
-
     # 2. LLM call
     kp_names = _kp_level2_names(db_path, q.knowledge_point_ids)
     options_text = ""
@@ -134,6 +102,7 @@ def generate_solution(
         kp_names="、".join(kp_names) if kp_names else "（无）",
         options_text=options_text,
         answer=_format_answer(q.answer),
+        wrong_answer=_format_user_answer(user_answer),
     )
 
     client = get_llm_client()
@@ -150,9 +119,4 @@ def generate_solution(
     if not solution:
         raise SolutionerError("LLM returned an empty solution")
 
-    # 3. write-back (original only, guarded by solution IS NULL)
-    if is_original:
-        _write_back_solution(db_path, source_question_id, solution)
-
-    # 4. return
     return solution

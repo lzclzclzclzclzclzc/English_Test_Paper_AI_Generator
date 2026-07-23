@@ -1,10 +1,27 @@
-# English Test Paper AI Generator
+# 墨卷 · 中考英语 AI 练习系统
 
-面向**中考英语**的 AI 试卷生成系统：学生用自然语言描述需求（如"来 20 道现在完成时的选择题，中等难度"），系统从题库检索、由 LLM 加工，生成一份可在浏览器直接作答的完整试卷；支持基于错题的针对性巩固和基于历史答题的综合复习。
+面向**中考英语**的 AI 出题与练习系统。你用一句话说出想练什么（"来 10 道现在完成时的单选"、"帮我制定 7 天学习计划"），系统就从题库检索、由 AI 加工，生成一份能直接在浏览器作答的试卷；交卷后自动判分、给出逐题解析，还能围绕错题定向再练、按薄弱考点制定学习计划。
 
 选择**中考英语**原因：纯文字题目，不涉及图片。
 
-> **状态**：设计文档已完成（5 份 spec，见 [`docs/`](./docs)）；实施计划（writing-plans）待启动。
+> **状态**：核心链路已跑通——AI 学习助手对话出题、做题判分、错题巩固、学习计划、掌握度画像、会员订阅均可用。
+
+---
+
+## 用户能做什么
+
+登录后（默认演示账号 `demo / demo123`），顶部导航有六个入口：
+
+| 页面 | 你能做的事 |
+|------|-----------|
+| **学习助手**（首页） | 和 AI 对话：说一句话让它出题、查某个考点的例题、或制定学习计划。出题完成后点「开始做题」直接进入试卷 |
+| **错题复习** | 做错的题会自动收进错题本，可勾选若干题让 AI 出一份针对性巩固卷，也可以按最近 N 天的答题记录出综合复习卷 |
+| **学习计划** | 让 AI 根据你的历史正确率排出未来几天的每日练习，每天一份针对薄弱考点的卷子，点进去就能练 |
+| **我的试卷** | 生成过的卷都在这里。没做完的随时接着做，做过的点进去直接看**上次的作答结果**（对错、你的答案 vs 正确答案、解析），也能一键重做 |
+| **掌握度** | 按知识点展示你的掌握程度（Wilson 分数），颜色标出薄弱点 |
+| **会员** | 扫码开通会员（支付宝沙盒 / 离线演示模式），解锁错题巩固、综合复习、不限量 AI 解析等功能 |
+
+**做题体验**：交卷后每题标 ✓/✗，卷面右上角盖"对/总"红章；点每题下方「查看解析」由 AI 讲解——**答错的题会专门解释你选的那个选项为什么错**。
 
 ---
 
@@ -26,8 +43,8 @@
 |------|--------|
 | 单项选择、词性转换、改写句子 | 阅读理解、作文 |
 | 纯文本题目 | 含图片的题目 |
-| 基于错题/历史的针对性生成 | 多用户高并发 |
-| 用户名+密码本地登录 | OAuth/SSO/邮箱验证 |
+| AI 对话出题 / 错题巩固 / 学习计划 | 多用户高并发 |
+| 用户名+密码本地登录 + 会员订阅 | OAuth/SSO/邮箱验证 |
 | 后端持久化试卷、答题、掌握度 | 分布式部署、多进程 session 共享 |
 
 ---
@@ -37,37 +54,36 @@
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                              浏览器（React + Vite）                       │
-│  登录页          主页                    掌握度页                         │
-│  ─────         生成 + 做题 + 提交         知识点树 + 颜色标记              │
+│  学习助手(AI对话)   错题复习   学习计划   我的试卷   掌握度   会员          │
+│  ────────────     出题/判分/解析/重做 · 错题巩固 · 每日计划 · 掌握度画像    │
 └─────────────────────────┬────────────────────────────────────────────────┘
                           │ HTTP + Cookie
                           ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                        FastAPI 后端（backend/）                           │
 │  ─────────────────────────────────────────────────────────────────────   │
-│  /api/auth/*     注册、登录、登出、当前用户                                │
-│  /api/papers/*   生成、重出、读取、列表                                    │
-│  /api/solutions  按需生成单题解析                                          │
-│  /api/attempts   提交答题 + 判对错 + 落库                                  │
+│  /api/auth/*       注册、登录、登出、当前用户                              │
+│  /api/agent/*      AI 学习助手对话、生成/实施学习计划                       │
+│  /api/papers/*     生成、重出、读取、列表                                  │
+│  /api/solutions    按需生成单题解析（含"为何选错"）                        │
+│  /api/attempts     提交答题 + 判对错 + 落库 + 按试卷取历史结果             │
 │  /api/users/me/mastery  掌握度画像                                         │
 │                                                                          │
 │  职责：鉴权、试卷持久化、答题记录、规范化字符串判对错、错误统一封装        │
-└─────────────────┬──────────────────┬─────────────────────────────────────┘
-                  │                  │
-                  │ 函数调用          │ 读写
-                  ▼                  ▼
-┌──────────────────────────────┐   ┌──────────────────────────────────────┐
-│    AI Engine（ai_engine/）    │   │       shared/（共享层）              │
-│  ─────────────────────────── │   │  ─────────────────────────────────── │
-│  Parser     自然语言 → Request│   │  schemas.py    全体 pydantic 契约    │
-│  Retriever  属性过滤 + 向量检索│   │  storage.py    SQLite + Chroma 门面   │
-│  Reviser    三档改题策略      │   │  embedding.py  Qwen 4B（本地）        │
-│  Solutioner 按需生成解析      │   │  llm/deepseek.py  DeepSeek 客户端     │
-│  Analyzer   Wilson 掌握度画像 │   │  config.py     AppConfig 单例         │
-│                              │   │                                      │
-│  纯函数、无状态、只调 LLM 与  │   │  唯一的跨子系统边界；防依赖倒置        │
-│  shared/                     │   │                                      │
-└──────────────────────────────┘   └──────────────────────────────────────┘
+└──────────┬───────────────────┬──────────────────┬────────────────────────┘
+           │                   │                  │
+           │ 加载 skill+工具    │ 函数调用          │ 读写
+           ▼                   ▼                  ▼
+┌────────────────────┐ ┌──────────────────┐ ┌──────────────────────────────┐
+│  agent/（学习助手）  │ │ AI Engine        │ │       shared/（共享层）      │
+│  ────────────────  │ │ (ai_engine/)     │ │  ─────────────────────────── │
+│  单 Agent + skill   │ │  Parser          │ │  schemas.py   pydantic 契约  │
+│  (markdown) + 工具  │ │  Retriever       │ │  storage.py   SQLite+Chroma  │
+│  · 出题             │ │  Reviser         │ │  embedding.py Qwen 4B（本地）│
+│  · 查例题           │ │  Solutioner      │ │  llm/deepseek.py DeepSeek    │
+│  · 制定/实施学习计划 │ │  Analyzer        │ │  config.py    AppConfig      │
+│  (OpenAI Agents SDK)│ │  纯函数、无状态   │ │  唯一的跨子系统边界           │
+└────────────────────┘ └──────────────────┘ └──────────────────────────────┘
                                                     │
                                                     ▼
                                      ┌──────────────────────────┐
@@ -93,7 +109,92 @@
 
 ---
 
-## 五个子系统
+## 本地启动
+
+### 环境要求
+
+- Python 3.11+
+- Node.js 18+
+- `.env` 文件放在项目根目录（见下方模板）
+
+### `.env` 配置模板
+
+```env
+LLM_API_KEY=your_deepseek_api_key
+LLM_BASE_URL=https://api.deepseek.com
+LLM_MODEL=deepseek-v4-flash
+BACKEND_ENV=development
+```
+
+### 首次初始化（只需跑一次）
+
+```bash
+# 初始化数据库表结构
+PYTHONIOENCODING=utf-8 python -m backend.cli init-db
+
+# 创建测试用户（用户名 demo，密码 demo123）
+PYTHONIOENCODING=utf-8 python -m backend.cli create-user --username demo --password demo123
+
+# 注入演示答题记录（用于学习计划功能）
+PYTHONIOENCODING=utf-8 python agent/seed_demo.py --user demo
+```
+
+### 每次启动（三个终端分别运行）
+
+**终端 1 — 主后端（端口 8000）**
+```bash
+PYTHONIOENCODING=utf-8 python -m backend.cli serve --reload
+```
+
+**终端 2 — 支付服务（端口 8001）**
+```bash
+cd payment
+python -m uvicorn app.main:app --port 8001 --reload
+```
+
+**终端 3 — 前端开发服务器（端口 5173）**
+```bash
+cd frontend
+npm install   # 首次需要
+npm run dev
+```
+
+浏览器打开 [http://localhost:5173](http://localhost:5173)，用 `demo / demo123` 登录。
+
+> **Windows PowerShell** 设置环境变量方式不同：
+> ```powershell
+> $env:PYTHONIOENCODING="utf-8"; python -m backend.cli serve --reload
+> ```
+
+---
+
+## 生产部署注意事项
+
+本项目当前为本地开发 / 演示配置，部署到生产环境前**必须**调整以下几处，否则存在安全或计费风险：
+
+### 1. 会员校验目前"失败即放行"（fail-open）
+
+为方便本地联调（支付服务常不启动），`frontend/src/hooks/useMembership.ts` 现在的逻辑是：
+```ts
+const isMember = query.isError || query.data?.active === true
+```
+即支付服务返回错误（宕机 / 网络异常 / 404）时，**默认把用户当作会员**，解锁错题巩固、综合复习、不限量 AI 解析等所有付费功能。
+
+- **为什么这么写**：本地开发时支付服务（`payment/`，端口 8001）往往没启动，若默认锁定，学习助手/错题巩固等功能全部不可用，无法联调。
+- **生产环境必须改回"失败即锁定"（fail-closed）**：把上面一行改为
+  ```ts
+  const isMember = query.data?.active === true
+  ```
+  并可将"出错解锁"的行为限制在开发模式下（`import.meta.env.DEV`）。否则一旦支付服务异常，全体用户免费获得会员权益，付费墙形同虚设。
+
+### 2. 其他建议
+
+- `/api/agent/chat`、`/api/agent/extract-plan` 目前无限流，生产环境应加 `rate_limiter`（`extract-plan` 会按天数循环出卷，需限制天数上限）。
+- `.env` 中的 `LLM_API_KEY` 等密钥不要提交到仓库；演示账号 `demo / demo123` 应在生产环境禁用或改密。
+
+---
+
+## 子系统
 
 按依赖顺序：
 
@@ -121,7 +222,7 @@
 | **Parser** | `user_query` → `GenerateRequest`；`revision_intensity` 由 LLM 从自然语言推断（不暴露给用户面板） |
 | **Retriever** | 属性硬过滤（SQL）+ 语义向量检索（Chroma，取 Top-M 与硬过滤集在 Python 端求交） |
 | **Reviser** | 三档改题：`original`（拷贝）/ `light`（保留结构改词汇）/ `fresh`（按 KP+难度新出题）；三层防御 + fallback |
-| **Solutioner** | 单题按需生成解析；原题解析写回题库缓存 |
+| **Solutioner** | 单题按需生成解析；答错时额外解释用户所选选项为何错误（每次实时调 LLM，不缓存） |
 | **Analyzer** | 用 Wilson score lower bound 计算 KP 掌握度，输出薄弱点画像 |
 
 **关键设计**：
@@ -143,13 +244,24 @@
 
 详见 [`docs/backend-design.md`](./docs/backend-design.md)（Spec C）。
 
-### 4. `frontend/` — React + Vite 前端
+### 4. `agent/` — AI 学习助手
 
-三页 MVP：
+学习助手页背后的对话式 Agent（基于 OpenAI Agents SDK + DeepSeek）。采用**单 Agent + skill-as-markdown** 设计：技能写成 markdown（`agent/skills/*.md`）在启动时注入系统提示，Agent 按需调用工具完成任务。
 
-- **登录页** — 注册/登录 tab；Zod 表单校验
-- **主页** — 生成表单 + 试卷视图 + 成绩视图（提交后展开）
-- **掌握度页** — 知识点树 + Wilson 分数条形 + 颜色标记
+- **工具**：`get_user_history`（按知识点汇总做题记录）、`get_example_questions`（题库随机取例题）、`generate_paper`（调 AI Engine 出卷并落库）、`implement_study_plan`（把自然语言计划解析成结构化的每日安排并逐日出卷）
+- **两段式学习计划**：先用自然语言给出计划；用户说"帮我实施"时才调 `implement_study_plan` 真正生成每日试卷
+- `user_id` 由后端从登录态注入，不经用户输入
+
+### 5. `frontend/` — React + Vite 前端
+
+产品名「墨卷」。登录后是六个功能页（详见开头「用户能做什么」）：
+
+- **学习助手**（`/`）— 多轮对话 UI，Markdown 渲染（支持表格），出题后给「开始做题」入口
+- **错题复习**（`/review`）— 本地错题本 + 错题巩固 / 综合复习两个出卷入口
+- **学习计划**（`/study-plan`）— 每日卡片，逐日进入练习
+- **我的试卷**（`/papers`、`/papers/:id`）— 列表 + 做题/复盘页；已交卷的直接回放上次结果，可重做，可从错题一键组巩固卷
+- **掌握度**（`/mastery`）— 知识点树 + Wilson 分数条形 + 颜色标记
+- **会员**（`/membership`）— 扫码订阅
 
 技术栈：Vite + React + TypeScript + shadcn/ui + TanStack Query + React Router。所有 HTTP 走一个 `apiFetch` 薄封装；`ApiError` 按 `error_code` 分派处理（401 跳登录、429 toast、其它显 message）。
 
@@ -157,7 +269,7 @@
 
 > **附加子系统:`payment/`(模拟支付)** — 独立 FastAPI 小服务(:8001),接支付宝**沙盒**当面付扫码,提供会员订阅(月/季/年)的下单、扫码、轮询查单与会员顺延;登录态通过转发 cookie 到主后端 `/api/auth/me` 校验,另有完全离线的 `MOCK_PAY` 演示模式。详见 [`payment/README.md`](./payment/README.md)。
 
-### 5. `tests_e2e/` — 跨系统测试
+### 6. `tests/`、`tests_e2e/` — 测试
 
 四层测试结构：
 
@@ -212,8 +324,10 @@ English_Test_Paper_AI_Generator/
 ├── ingestion/                 # 子系统 1：题库摄入（Spec A）
 ├── ai_engine/                 # 子系统 2：AI 引擎（Spec B）
 ├── backend/                   # 子系统 3：FastAPI 后端（Spec C）
-├── frontend/                  # 子系统 4：React 前端（Spec D）
-├── tests_e2e/                 # 子系统 5：跨系统 e2e（Spec E）
+├── agent/                     # 子系统 4：AI 学习助手（Agents SDK + skills）
+├── frontend/                  # 子系统 5：React 前端（Spec D）
+├── payment/                   # 附加：模拟支付服务（:8001）
+├── tests/ tests_e2e/          # 子系统 6：单元 / 集成 / 跨系统 e2e（Spec E）
 │
 └── data/                      # 运行时产物（gitignored）
     ├── raw_md/                # EPUB 转出的 md

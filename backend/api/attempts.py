@@ -49,6 +49,7 @@ async def submit_attempt(body: GradeSubmissionRequest, user: User = Depends(curr
                 knowledge_point_ids=question.knowledge_point_ids,
                 question_type=question.question_type,
                 is_correct=is_correct,
+                user_answer=submitted.user_answer,
             )
         )
     attempt = StoredAttempt(user_id=user.id, paper_id=paper.paper_id, answered_at=datetime.now(timezone.utc), items=attempt_items)
@@ -78,3 +79,29 @@ def _validate_submission_items(
             }
         )
     return by_index
+
+
+@router.get("/by-paper/{paper_id}", response_model=GradeSubmissionResponse | None)
+async def get_attempt_by_paper(
+    paper_id: str,
+    user: User = Depends(current_user),
+) -> GradeSubmissionResponse | None:
+    """Return the latest attempt result for a paper (for review replay), or
+    null if never submitted. correct_answer is reconstructed from the paper."""
+    attempt = storage.get_latest_attempt(paper_id, user.id)
+    if not attempt:
+        return None
+    paper = storage.get_paper(paper_id, user.id)
+    if not paper:
+        raise ResourceNotFoundError()
+    answer_by_index = {item.index: item.question.answer for item in paper.items}
+    items = [
+        GradeResultItem(
+            index=it["index"],
+            user_answer=it["user_answer"] if it["user_answer"] is not None else "",
+            correct_answer=answer_by_index.get(it["index"], ""),
+            is_correct=it["is_correct"],
+        )
+        for it in attempt["items"]
+    ]
+    return GradeSubmissionResponse(attempt_id=attempt["attempt_id"], items=items)

@@ -26,10 +26,8 @@ const q = (over: Partial<RevisedQuestion>): RevisedQuestion => ({
 const item = (index: number, question: RevisedQuestion): PaperItem => ({
   index,
   question,
-  score: 5,
   source_question_id: `q_${index}`,
   revision_mode: 'original',
-  revision_notes: null,
 })
 
 const paper = (items: PaperItem[]): Paper => ({
@@ -39,10 +37,8 @@ const paper = (items: PaperItem[]): Paper => ({
   request: {
     mode: 'fresh',
     knowledge_points: [],
-    knowledge_points_exclude: [],
     question_types: [],
     total_questions: items.length,
-    total_score: null,
     type_distribution: {},
     revision_intensity: 'light',
     wrong_items: [],
@@ -51,7 +47,6 @@ const paper = (items: PaperItem[]): Paper => ({
     free_text: '',
   },
   items,
-  total_score: items.length * 5,
   metadata: {},
 })
 

@@ -9,8 +9,9 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 const links = [
-  { to: '/', label: '生成试卷' },
+  { to: '/', label: '学习助手' },
   { to: '/review', label: '错题复习' },
+  { to: '/study-plan', label: '学习计划' },
   { to: '/papers', label: '我的试卷' },
   { to: '/mastery', label: '掌握度' },
   { to: '/membership', label: '会员' },

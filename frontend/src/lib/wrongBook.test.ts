@@ -44,10 +44,8 @@ function paperWith(items: Array<Partial<PaperItem> & { index: number }>): Paper 
     request: {
       mode: 'fresh',
       knowledge_points: [],
-      knowledge_points_exclude: [],
       question_types: ['single_choice'],
       total_questions: items.length,
-      total_score: items.length * 5,
       type_distribution: {},
       revision_intensity: 'light',
       wrong_items: [],
@@ -57,13 +55,10 @@ function paperWith(items: Array<Partial<PaperItem> & { index: number }>): Paper 
     },
     items: items.map((it) => ({
       question: question(),
-      score: 5,
       source_question_id: `q_${it.index}`,
       revision_mode: 'light',
-      revision_notes: null,
       ...it,
     })),
-    total_score: items.length * 5,
     metadata: {},
   }
 }

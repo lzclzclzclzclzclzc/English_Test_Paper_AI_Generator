@@ -49,6 +49,9 @@ class SolutionRequest(BaseModel):
     question: RevisedQuestion
     source_question_id: str | None = None
     revision_mode: RevisionMode | None = None
+    # 用户答错的答案，有值时解析中解释为何错。单选是 "B"，填空/改写是
+    # list[str] 或 {blankN: str}，与 GradeSubmissionItem.user_answer 同型。
+    user_answer: UserAnswerValue | None = None
 
 
 class SolutionResponse(BaseModel):
@@ -83,6 +86,7 @@ class StoredAttemptItem(BaseModel):
     knowledge_point_ids: list[str]
     question_type: QuestionType
     is_correct: bool
+    user_answer: UserAnswerValue | None = None
 
 
 class StoredAttempt(BaseModel):
@@ -102,6 +106,17 @@ class PaperListItem(BaseModel):
 
 class PaperListResponse(BaseModel):
     items: list[PaperListItem]
+
+
+class AgentChatRequest(BaseModel):
+    # No history field: conversation memory lives server-side (SQLiteSession),
+    # keyed by the authenticated user — the client cannot inject/forge turns.
+    message: str = Field(min_length=1, max_length=4000)
+
+
+class AgentChatResponse(BaseModel):
+    reply: str
+    action: dict | None = None
 
 
 class ErrorResponse(BaseModel):

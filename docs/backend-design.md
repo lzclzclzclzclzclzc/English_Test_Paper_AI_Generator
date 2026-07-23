@@ -88,10 +88,10 @@ FastAPI 依赖注入链
    │  ↳ 依赖 1：从 cookie 解 session → current_user (User pydantic)
    │  ↳ 依赖 2：从请求 body 解析 → GeneratePaperRequest (pydantic)
    ▼
-路由处理器（backend/api/papers.py::generate_paper_endpoint）
-   │  ↳ 调 ai_engine.generate_paper(user_query, mode, user_id=current_user.id, ...)
-   │       → Paper 对象
-   │  ↳ 调 backend/services/paper_store.py::save(paper, user_id) → paper 写入 SQLite
+路由处理器（backend/api/papers.py::generate_paper）
+   │  ↳ 调 services/ai_gateway.generate_paper(user_query, mode, user_id=current_user.id, ...)
+   │       → Paper 对象（ai_gateway 转调 ai_engine.pipeline）
+   │  ↳ 调 shared/storage.py::save_paper(paper, user_id) → paper 写入 SQLite
    ▼
 FastAPI 序列化
    │  ↳ 返回 Paper（pydantic 模型，Spec A § 2.3）自动序列化为 JSON
@@ -115,27 +115,33 @@ backend/
 ├── errors.py                   # 统一错误体 + 异常处理器
 ├── auth/
 │   ├── __init__.py
-│   ├── models.py               # User pydantic 模型
 │   ├── password.py             # bcrypt 封装
-│   ├── session.py              # session_id 生成、cookie 处理、SessionStore
+│   ├── session.py              # session_id cookie 处理（set/clear）
 │   └── routes.py               # /auth/register /auth/login /auth/logout /auth/me
 ├── api/
 │   ├── __init__.py
+│   ├── health.py               # /health /health/ready
 │   ├── papers.py               # /papers/generate /papers/revise /papers/{id} /papers
 │   ├── solutions.py            # /solutions
-│   ├── attempts.py             # /attempts
-│   └── mastery.py              # /users/me/mastery
+│   ├── attempts.py             # /attempts /attempts/by-paper/{paper_id}
+│   ├── mastery.py              # /users/me/mastery
+│   ├── agent.py                # /agent/chat /agent/chat/clear /agent/study-plans/latest
+│   ├── knowledge_points.py     # /knowledge-points
+│   └── _test.py                # 仅 test 环境挂载（见 § 5.5）
 ├── services/
 │   ├── __init__.py
-│   ├── paper_store.py          # papers 表 CRUD
-│   ├── attempt_store.py        # attempts / attempt_items 写入 + 判对错
-│   ├── user_store.py           # users 表 CRUD
+│   ├── ai_gateway.py           # 转调 ai_engine.pipeline 的 5 个函数（唯一 import ai_engine 处）
 │   └── grading.py              # 规范化字符串比较（无 LLM）
+├── deps.py                     # 依赖注入：current_user、rate_limiter
+├── errors.py                   # 统一错误体 + 异常处理器
 ├── static/                     # 部署时软链接或复制 frontend/dist；开发时空
-└── cli.py                      # 开发调试命令（启动、创建管理员、初始化 DB）
+└── cli.py                      # 开发调试命令（启动、创建用户、初始化 DB）
 ```
 
-`shared/` 保持不变（Spec A § 5），新增 `shared/schemas.py` 内的 `User`、`Session`、`GeneratePaperRequest` 等契约类型（下节详述）。
+**注意**：`backend/schemas.py` 承载所有后端专用 pydantic 契约（`User`、`Session`、
+`GeneratePaperRequest` 等），而非追加进 `shared/schemas.py`——`shared/schemas.py` 仅保留
+跨 AI Engine / ingestion / backend 三方共享的题库契约。数据库读写方法（用户、会话、
+试卷、答题、学习计划等）则统一在 `shared/storage.py`，两个子系统共用（见 § 3.3）。
 
 ### 1.4 与 AI Engine / 题库的依赖方向
 
@@ -153,9 +159,10 @@ frontend/  ──HTTP──►  backend/  ──function call──►  ai_engin
 
 ---
 
-## 2. 共享契约扩展（`shared/schemas.py` 新增）
+## 2. 后端契约（`backend/schemas.py`）
 
-以下类型追加到 Spec A § 2 的契约中：
+后端专用的 pydantic 契约定义在 `backend/schemas.py`（不追加进 `shared/schemas.py`）；
+它们 `from shared.schemas import ...` 复用题库类型（`Answer`、`Paper`、`RevisedQuestion` 等）。
 
 ### 2.1 用户
 
@@ -164,6 +171,10 @@ class User(BaseModel):
     id: str                          # UUID hex
     username: str                    # 3-32 字符，字母数字下划线
     created_at: datetime
+
+class UserRecord(User):
+    """内部用：多带一个 password_hash 字段；绝不返回给前端。"""
+    password_hash: str
 
 class UserCredentials(BaseModel):
     """注册/登录用；密码明文只在请求瞬时存在，绝不入库。"""
@@ -181,10 +192,13 @@ class Session(BaseModel):
 ### 2.2 后端请求体
 
 ```python
+UserAnswerValue: TypeAlias = str | list[str] | dict[str, str]
+# 单选是裸 str（"B"）；填空/改写是 list[str]（按空顺序）或 {blankN: str}
+
 class GeneratePaperRequest(BaseModel):
     """POST /api/papers/generate 的 body。"""
     user_query: str = Field(min_length=1, max_length=2000)
-    mode: Literal["fresh", "remediation", "review"] = "fresh"
+    mode: GenerateMode = "fresh"                          # "fresh" | "remediation" | "review"
     wrong_items: list[WrongItemRef] | None = None       # remediation 时可选
     review_window_days: int | None = None                # review 时可选
     # 无 revision_intensity：由 LLM 从 user_query 推断（见 Spec B § 3.4）
@@ -199,20 +213,23 @@ class SolutionRequest(BaseModel):
     """POST /api/solutions 的 body。"""
     # 前端持有整个 PaperItem，把 question + 溯源信息发过来
     question: RevisedQuestion
-    source_question_id: str
-    revision_mode: Literal["fresh", "light", "original"]
+    source_question_id: str | None = None
+    revision_mode: RevisionMode | None = None            # "fresh" | "light" | "original"
+    # 学生答错的答案；有值时解析会解释"为什么这个答案错"。与
+    # GradeSubmissionItem.user_answer 同型。
+    user_answer: UserAnswerValue | None = None
 
 class GradeSubmissionRequest(BaseModel):
     """POST /api/attempts 的 body：前端提交一份完整答题。"""
     paper_id: str
-    items: list[GradeSubmissionItem]
+    items: list[GradeSubmissionItem] = Field(min_length=1)
     # user_id 由后端从 session 注入
     # answered_at 由后端 datetime.now() 生成
 
 class GradeSubmissionItem(BaseModel):
     """答题记录 + 用户答案（后端判对错后落库）。"""
-    index: int                                           # 对应 PaperItem.index
-    user_answer: str                                     # 前端收集到的用户答案
+    index: int = Field(ge=1)                             # 对应 PaperItem.index
+    user_answer: UserAnswerValue                         # 前端收集到的用户答案
 ```
 
 ### 2.3 后端响应体
@@ -225,8 +242,8 @@ class GradeSubmissionResponse(BaseModel):
 
 class GradeResultItem(BaseModel):
     index: int
-    user_answer: str
-    correct_answer: Answer   # str（单选）或 list[BlankGroup]（填空），与 shared.schemas.Answer 一致
+    user_answer: UserAnswerValue   # 与提交时同型（str / list[str] / dict）
+    correct_answer: Answer         # str（单选）或 list[BlankGroup]（填空），与 shared.schemas.Answer 一致
     is_correct: bool
 
 class SolutionResponse(BaseModel):
@@ -243,6 +260,33 @@ class PaperListItem(BaseModel):
     total_questions: int
     # total_score 已废弃（题数不同总分不可横向比较，改用正确率衡量表现）
     submitted: bool                                     # 是否已提交答题
+
+class AgentChatRequest(BaseModel):
+    """POST /api/agent/chat 的 body。无 history 字段——对话记忆在服务端
+    （SQLiteSession，按用户 id 归属），客户端只发新消息，无法伪造历史轮次。"""
+    message: str = Field(min_length=1, max_length=4000)
+
+class AgentChatResponse(BaseModel):
+    reply: str
+    action: dict | None = None       # 如 {"type": "open_paper", "paper_id": "..."}
+```
+
+**答题落库的内部契约**（写入 `attempt_items`，不直接对前端暴露）：
+
+```python
+class StoredAttemptItem(BaseModel):
+    index: int
+    source_question_id: str
+    knowledge_point_ids: list[str]
+    question_type: QuestionType
+    is_correct: bool
+    user_answer: UserAnswerValue | None = None   # 供"复盘回放"重现用户答案
+
+class StoredAttempt(BaseModel):
+    user_id: str
+    paper_id: str
+    answered_at: datetime
+    items: list[StoredAttemptItem]
 ```
 
 ### 2.4 统一错误体
@@ -293,7 +337,22 @@ CREATE TABLE papers (
 );
 CREATE INDEX idx_papers_user ON papers(user_id);
 CREATE INDEX idx_papers_generated ON papers(generated_at);
+
+-- 学习计划（AI 学习教练 agent 生成；见 § 5.6）
+CREATE TABLE study_plans (
+    id          TEXT PRIMARY KEY,       -- UUID hex
+    user_id     TEXT NOT NULL REFERENCES users(id),
+    created_at  TIMESTAMP NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'active',  -- 'active' | 'superseded'
+    total_days  INTEGER NOT NULL,
+    plan_json   TEXT NOT NULL           -- 完整计划（days[] 等）序列化
+);
+CREATE INDEX idx_study_plans_user ON study_plans(user_id, status);
 ```
+
+**关于 `study_plans`**：每个用户同一时刻只有一个 `active` 计划——`save_study_plan`
+先把该用户已有的 `active` 计划标记为 `superseded`，再插入新的 `active` 行；
+`get_latest_study_plan` 只取最新的 `active` 计划。
 
 **关于 `papers.payload_json`**：整个 `Paper` 对象直接 JSON 序列化存一个 TEXT 字段。理由：
 - `Paper` 是复合嵌套结构（items → RevisedQuestion → options 等），拆表工作量大且没有查询需求（前端只按 `paper_id` 单点读）
@@ -311,6 +370,17 @@ CREATE INDEX idx_att_paper ON attempts(paper_id);   -- 判断"这份试卷是否
 ```
 
 **决策**：一份 paper 允许被同一用户提交多次（比如"再做一遍"）。`papers.submitted` 只标记"至少提交过一次"，`attempts` 表记完整历史。查询"这份试卷做过几遍"通过 `SELECT COUNT(*) FROM attempts WHERE paper_id = ?`。
+
+### 3.2b `attempt_items` 的 `user_answer_json` 列（复盘回放）
+
+`attempt_items` 增加一列 `user_answer_json TEXT`（可空），存学生当次提交的原始答案，
+供"复盘回放"（重新打开一份已提交试卷、重现用户答案与对错）用。此列通过 `_write_attempt`
+里的**增量 `ALTER TABLE`** 加上（首次写入时检测缺列则补），因此老库无需专门迁移脚本即可平滑升级。
+`storage.get_latest_attempt(paper_id, user_id)` 读取该列返回最近一次 attempt；
+`correct_answer` **不落库**，由调用方从 `Paper` 重建（见 § 5.2 `GET /api/attempts/by-paper/{paper_id}`）。
+
+> 另有一条正式迁移 `20260709_001_attempt_items_item_index`（记录在 `schema_migrations` 表）：
+> 把早期无 `item_index` 主键的 `attempt_items` 重建为 `(attempt_id, item_index)` 复合主键。
 
 ### 3.3 `shared/storage.py` 需要新增的方法
 
@@ -332,8 +402,17 @@ def get_paper(paper_id: str, user_id: str) -> Paper | None: ...    # user_id 用
 def list_papers(user_id: str, limit: int = 100, offset: int = 0) -> list[PaperListItem]: ...
 def mark_paper_submitted(paper_id: str) -> None: ...
 
-# 答题（后端 spec 补齐 Spec A § 3.10 的方法）
-def write_attempt(attempt: Attempt) -> str: ...                    # 返回 attempt_id
+# 答题
+def write_attempt(attempt: StoredAttempt) -> str: ...               # 返回 attempt_id
+def write_attempt_and_mark_paper_submitted(attempt: StoredAttempt) -> str: ...  # 一个事务内写入+标记
+def get_latest_attempt(paper_id: str, user_id: str) -> dict | None: ...  # 复盘回放；含 user_answer
+
+# 知识点目录（前端中文名显示）
+def list_knowledge_points() -> list[KnowledgePoint]: ...
+
+# 学习计划（AI 学习教练 agent）
+def save_study_plan(user_id: str, total_days: int, plan_data: dict) -> str: ...  # 新计划顶替旧 active
+def get_latest_study_plan(user_id: str) -> dict | None: ...
 ```
 
 所有函数在 `shared/storage.py`——**存储层依然统一在 shared，两个子系统共用**。
@@ -436,6 +515,7 @@ GET  /api/auth/me                                           → User（当前登
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `GET /api/health`、`GET /api/health/ready`（探针）
 - 所有 `/`、`/assets/*` 静态文件路径
 - OpenAPI 文档：`/docs`、`/openapi.json`
 
@@ -447,8 +527,13 @@ GET  /api/auth/me                                           → User（当前登
 
 ### 5.1 总览
 
+所有业务路由都挂在 `/api` 前缀下（`main.py` 逐个 `include_router(..., prefix="/api")`）。
+下表是当前实现的全部端点：
+
 | Method | Path | 请求体 | 响应体 | 简述 |
 |---|---|---|---|---|
+| GET | `/api/health` | — | `{status}` | 存活探针 |
+| GET | `/api/health/ready` | — | `{status, checks}` | 就绪探针（SQLite/题库/向量库） |
 | POST | `/api/auth/register` | `UserCredentials` | `User` | 注册并自动登录 |
 | POST | `/api/auth/login` | `UserCredentials` | `User` | 登录 |
 | POST | `/api/auth/logout` | — | 204 | 登出 |
@@ -459,7 +544,15 @@ GET  /api/auth/me                                           → User（当前登
 | GET | `/api/papers` | — | `PaperListResponse` | 历史试卷列表 |
 | POST | `/api/solutions` | `SolutionRequest` | `SolutionResponse` | 单题按需解析 |
 | POST | `/api/attempts` | `GradeSubmissionRequest` | `GradeSubmissionResponse` | 提交答题 + 判对错 + 写库 |
+| GET | `/api/attempts/by-paper/{paper_id}` | — | `GradeSubmissionResponse \| null` | 一份试卷最近一次答题结果（复盘回放） |
 | GET | `/api/users/me/mastery` | — | `MasteryProfile` | 掌握度画像 |
+| GET | `/api/knowledge-points` | — | `list[KnowledgePoint]` | 知识点目录（前端中文名显示） |
+| POST | `/api/agent/chat` | `AgentChatRequest` | `AgentChatResponse` | 与 AI 学习教练对话 |
+| POST | `/api/agent/chat/clear` | — | 204 | 开始新对话（清空该用户会话历史） |
+| GET | `/api/agent/study-plans/latest` | — | `StudyPlanOut \| null` | 当前用户最新学习计划 |
+
+除 `/api/health*`、`/api/auth/register`、`/api/auth/login` 外，所有端点都要求 `current_user`
+鉴权（见 § 4.6）。`/api/test/*` 仅在 test 环境挂载（见 § 5.5）。
 
 ### 5.2 关键端点细节
 
@@ -523,47 +616,35 @@ Body:
 内部：
   1. current_user
   2. paper = storage.get_paper(paper_id, current_user.id) → 404 if None
-  3. 逐题判对错：
+  3. 校验提交项：index 无重复 / 无未知 / 无缺漏（否则 422 request.invalid）
+  4. 逐题判对错：
      - 找到 paper.items[i] 对应的 PaperItem
      - 用 grading.compare(user_answer, paper_item.question.answer, question_type)
-     - 结果得 GradeResultItem
-  4. 构造 Attempt 对象（含 kps_json 冗余，Spec A § 3.7 决策）
-  5. storage.write_attempt(attempt)
-  6. storage.mark_paper_submitted(paper_id)
+     - 结果得 GradeResultItem（含 correct_answer 回显）
+  5. 构造 StoredAttempt（items 冗余存 knowledge_point_ids + user_answer）
+  6. storage.write_attempt_and_mark_paper_submitted(attempt)  # 写 attempt + 标记 paper 已提交（同一事务）
   7. return GradeSubmissionResponse
 ```
 
-**判对错规则**（`backend/services/grading.py`）：
+**判对错规则**（`backend/services/grading.py`，无 LLM，纯规范化字符串比较）：
 
 ```python
-from shared.schemas import Answer, BlankGroup
+UserAnswerValue = str | list[str] | dict[str, str]
 
-def compare(user_answer: str, correct_answer: Answer, question_type: str) -> bool:
-    if question_type == "single_choice":
-        return user_answer.strip().upper() == str(correct_answer).strip().upper()
-    # word_form / sentence_rewriting：答案是 list[BlankGroup]
-    # 用户填写匹配任意一个候选组即为正确
+def compare(user_answer: UserAnswerValue, correct_answer: Answer, question_type: str) -> bool:
+    # 填空/改写：correct_answer 是 list[BlankGroup]，用户填写匹配任意候选组即对
     if isinstance(correct_answer, list):
-        user_norm = normalize(user_answer)
-        for group in correct_answer:
-            # 每组是 {blank1: [候选...], blank2: [候选...]}，单空题只有 blank1
-            blanks = list(group.values())
-            if len(blanks) == 1:
-                # 单空：用户答案匹配该空任意候选
-                if any(normalize(c) == user_norm for c in blanks[0]):
-                    return True
-            else:
-                # 多空：user_answer 用 "/" 或空白分隔各空答案，依次匹配
-                user_parts = [normalize(p) for p in re.split(r"[/／\s]+", user_answer.strip())]
-                if len(user_parts) == len(blanks):
-                    if all(
-                        any(normalize(c) == user_parts[i] for c in candidates)
-                        for i, candidates in enumerate(blanks)
-                    ):
-                        return True
-        return False
-    # 兜底：字符串直接规范化比较
-    return normalize(user_answer) == normalize(str(correct_answer))
+        return _compare_blank_answers(user_answer, correct_answer)
+    # 单选：大小写无关比较
+    if question_type == "single_choice":
+        return isinstance(user_answer, str) and user_answer.strip().upper() == correct_answer.strip().upper()
+    # 兜底：字符串规范化比较
+    return normalize(str(user_answer)) == normalize(correct_answer)
+
+def _compare_blank_answers(user_answer, correct_answers) -> bool:
+    # 把 user_answer（dict{blankN:str} / list[str] / 单个 str）归一为 {blankN: 规范化答案}
+    # 逐个候选组比对：blank 集合一致，且每个 blank 的用户答案落在该组候选集合里 → True
+    ...
 
 def normalize(s: str) -> str:
     s = s.lower().strip()
@@ -572,7 +653,8 @@ def normalize(s: str) -> str:
     return s
 ```
 
-对应 Spec A § 1.6 的判等约定。
+对应 Spec A § 1.6 的判等约定。用户答案 `UserAnswerValue` 支持三种形态：单选裸 `str`、
+填空按空顺序的 `list[str]`、或按空名的 `dict[str, str]`。
 
 #### `POST /api/solutions`
 
@@ -583,11 +665,15 @@ Body: SolutionRequest（含 question + source_question_id + revision_mode）
   1. current_user（登录才能生成，防滥用）
   2. solution = ai_engine.generate_solution(
          q=body.question,
-         source_question_id=body.source_question_id,
-         revision_mode=body.revision_mode,
+         source_question_id=body.source_question_id,   # 可选
+         revision_mode=body.revision_mode,             # 可选
+         user_answer=body.user_answer,                 # 可选：学生答错的答案
      )
   3. return SolutionResponse(solution=solution)
 ```
+
+**`user_answer` 字段**：前端可把学生本题答错的答案一并传来，Solutioner 据此在解析中
+针对性地解释"为什么这个答案错"。为空则生成通用解析。
 
 **关键**：Solutioner 内部会判断"命中缓存 / 写回题库"（Spec B § 6.2），后端不参与这个决策。
 
@@ -601,6 +687,71 @@ Query: window_days=30 (可选)
   2. profile = ai_engine.build_profile(current_user.id, window_days)
   3. return profile
 ```
+
+#### `GET /api/attempts/by-paper/{paper_id}`（复盘回放）
+
+```
+内部：
+  1. current_user
+  2. attempt = storage.get_latest_attempt(paper_id, current_user.id)
+       → None 则返回 null（该卷从未提交）
+  3. paper = storage.get_paper(paper_id, current_user.id) → 404 if None
+  4. 用 paper 重建每题 correct_answer（对错与 user_answer 来自 attempt）
+  5. return GradeSubmissionResponse
+```
+
+用于"看已提交试卷的批改结果"：`user_answer` 从 `attempt_items.user_answer_json` 取，
+`correct_answer` 不落库、由 `Paper` 重建。从未提交的试卷返回 `null`（非 404）。
+
+#### `GET /api/knowledge-points`
+
+```
+内部：
+  1. current_user
+  2. return storage.list_knowledge_points()   # list[KnowledgePoint]（id / level1 / level2 / aliases）
+```
+
+供前端把题目上的 `knowledge_point_ids` 映射成中文名显示。
+
+#### `POST /api/agent/chat`（AI 学习教练）
+
+```
+Body: { "message": "帮我制定一个 7 天的复习计划" }
+
+内部：
+  1. current_user
+  2. set_current_user_id(user.id)     # 把当前用户绑到服务端；agent 工具只读这个 id，
+                                       #   绝不用 LLM 传来的 user_id → 防越权操作他人数据
+  3. agent = create_coach_agent()
+  4. session = SQLiteSession("user_{id}", data/agent_sessions.db)  # 服务端对话记忆
+  5. result = await Runner.run(agent, input=message, session=session)
+  6. action = 从 reply 里解析 <paper_ready paper_id="..."/> → {"type":"open_paper","paper_id":...}
+  7. return AgentChatResponse(reply=result.final_output, action=action)
+```
+
+**记忆在服务端**：对话历史存 `data/agent_sessions.db`（`SQLiteSession`，按用户 id 归属）。
+客户端**只发新消息**，不发历史——SDK 从会话库加载/保存历史，客户端无法伪造 system/assistant
+轮次（防提示注入）。`action` 字段让前端识别"试卷已生成，可跳转打开"。
+
+#### `POST /api/agent/chat/clear`
+
+```
+内部：current_user → 清空该用户的 SQLiteSession 历史（开始新对话）→ 204
+```
+
+#### `GET /api/agent/study-plans/latest`
+
+```
+内部：
+  1. current_user
+  2. plan = storage.get_latest_study_plan(current_user.id)
+       → None 则返回 null
+  3. 组装为 StudyPlanOut（含 days[]，每天带 theme / knowledge_points / kp_names /
+     question_types / paper_id / paper_title 等）返回
+```
+
+学习计划由学习教练 agent 在对话过程中调用工具落库（`save_study_plan`），本端点供前端
+"学习计划"页读取当前 `active` 计划。
 
 ### 5.3 URL 前缀约定
 
@@ -748,9 +899,11 @@ def handle_unexpected(...) -> JSONResponse:
 - 每 user_id **每分钟最多 30 次 `/papers/generate`**
 - 每 user_id **每分钟最多 60 次 `/solutions`**
 
-用 `slowapi` 库（FastAPI 生态标准）。**内存实现**（进程重启计数清零），够用。
+用一个**进程内的滑动窗口计数器**（`backend/deps.py::rate_limiter`，按 `(user_id, kind)` 建 deque，
+窗口 1 分钟；进程重启计数清零），够用，无需第三方库。
 
-超限返回 `429 Too Many Requests`，`error_code=rate.exceeded`。
+超限返回 `429 Too Many Requests`，`error_code=rate.exceeded`。速率限制作为依赖 `rate_limiter(kind, limit_attr)`
+挂在 `/papers/generate` 与 `/solutions` 两个端点上。
 
 ### 7.2 请求日志中间件
 
@@ -758,13 +911,13 @@ def handle_unexpected(...) -> JSONResponse:
 
 ### 7.3 CORS
 
-**部署形态 C 下不需要 CORS**（同源）。**但开发期为了以防前端跑在 5173 时误发跨源请求**，加一个宽松 CORS 配置：
+**部署形态 C 下不需要 CORS**（同源）。**但开发/测试期为了以防前端跑在 5173 时误发跨源请求**，加一个宽松 CORS 配置：
 
 ```python
-if config.env == "development":
+if config.env in {"development", "test"}:
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173"],
+        allow_origins=[config.frontend_origin],   # 默认 http://localhost:5173
         allow_credentials=True,     # cookie 必需
         allow_methods=["*"],
         allow_headers=["*"],
@@ -778,52 +931,35 @@ Vite 代理配好后其实用不到，但作为 double-safety 保留。
 
 ## 8. 配置
 
-`shared/config.py`（Spec A § 6）中的 `AppConfig` 追加：
+后端配置作为**嵌套字段** `backend` 挂在 `shared/config.py` 的 `AppConfig` 上（`BackendConfig`
+是一个 `BaseModel`，通过 `get_config().backend` 访问）：
 
 ```python
+# shared/config.py
 class BackendConfig(BaseModel):
+    env: Literal["development", "production", "test"] = "development"
     host: str = "127.0.0.1"
     port: int = 8000
-    env: Literal["development", "production", "test"] = "development"
     session_ttl_days: int = 30
     bcrypt_rounds: int = 12
     static_dir: Path = Path("backend/static")     # 部署时软链或复制 frontend/dist 到此
-    rate_limit_generate_per_min: int = 30
-    rate_limit_solutions_per_min: int = 60
-```
-
-**`BackendConfig` 放在 `backend/config.py`，不合并进 `shared/config.py`**：
-
-`shared/config.py` 是 AI Engine 和 ingestion 共用的扁平配置（`llm_api_key`、`llm_model`、`db_path` 等），AI Engine 内部已大量使用扁平访问方式（`cfg.llm_api_key`），合并嵌套结构会导致大范围破坏性改动。后端专用配置单独维护更清晰，边界更明确。
-
-```python
-# backend/config.py
-from pydantic_settings import BaseSettings
-from pathlib import Path
-from typing import Literal
-
-class BackendConfig(BaseSettings):
-    backend_host: str = "127.0.0.1"
-    backend_port: int = 8000
-    backend_env: Literal["development", "production", "test"] = "development"
-    session_ttl_days: int = 30
-    bcrypt_rounds: int = 12
-    static_dir: Path = Path("backend/static")
+    frontend_origin: str = "http://localhost:5173"  # 开发/测试期 CORS 允许来源
     rate_limit_generate_per_min: int = 30
     rate_limit_solutions_per_min: int = 60
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-
-_backend_config: BackendConfig | None = None
-
-def get_backend_config() -> BackendConfig:
-    global _backend_config
-    if _backend_config is None:
-        _backend_config = BackendConfig()
-    return _backend_config
+class AppConfig(BaseSettings):
+    # ... 扁平的 AI Engine / ingestion 配置（llm_api_key、db_path 等）...
+    data_dir: Path = Path("data")
+    backend: BackendConfig = BackendConfig()
 ```
+
+**环境变量覆盖**：`get_config()` 用 `BACKEND_ENV` / `BACKEND_PORT` / `BACKEND_HOST` /
+`SESSION_TTL_DAYS` / `BCRYPT_ROUNDS` / `BACKEND_STATIC_DIR` / `FRONTEND_ORIGIN` /
+`RATE_LIMIT_GENERATE_PER_MIN` / `RATE_LIMIT_SOLUTIONS_PER_MIN` 覆盖对应字段。
+
+> 历史说明：早期设计曾打算把 `BackendConfig` 单独放在 `backend/config.py`（独立
+> `BaseSettings`）。实际实现改为**嵌套进 `shared/config.py` 的 `AppConfig.backend`**——
+> 单一配置入口 `get_config()` 更简单，AI Engine 仍用扁平字段（`cfg.llm_api_key`）不受影响。
 
 `.env` 新增：
 ```
@@ -1011,13 +1147,13 @@ python -m backend.cli serve --port 8000 --env production
 
 前置：Spec A 的 M1 完成、Spec B 的 M2/M3/M4 完成（AI Engine 可用）。
 
-1. `shared/schemas.py` 追加本 spec § 2 契约类型
+1. `backend/schemas.py` 定义本 spec § 2 契约类型（后端专用，非 `shared/schemas.py`）
 2. `shared/storage.py` 追加本 spec § 3.3 方法
-3. SQLite migration：新增 `users` / `sessions` / `papers` 表
+3. SQLite migration：新增 `users` / `sessions` / `papers` / `study_plans` 表；`attempt_items` 增 `user_answer_json` 列
 4. `backend/errors.py` + 统一错误处理器
 5. `backend/auth/`：password + session + routes + `current_user` 依赖
-6. `backend/services/`：paper_store、attempt_store、grading、user_store
-7. `backend/api/`：papers、solutions、attempts、mastery、grading（内部）
+6. `backend/services/`：ai_gateway、grading
+7. `backend/api/`：health、papers、solutions、attempts、mastery、knowledge_points、agent
 8. `backend/main.py`：FastAPI app + 中间件 + StaticFiles
 9. `backend/cli.py`：serve / init-db / create-user / smoke
 10. 后端集成测试（本 spec § 10）
@@ -1032,7 +1168,7 @@ M5 完成后进入 Spec D（前端）实现阶段。
 
 Spec A § 12、Spec B § 17 已定义的不变量继续生效。后端补充：
 
-1. **AI Engine 完全无 HTTP 感知**：`backend/api/` 是唯一 import `ai_engine.*` 的地方
+1. **AI Engine 完全无 HTTP 感知**：`backend/services/ai_gateway.py` 是唯一 import `ai_engine.*` 的地方（`backend/api/agent.py` 另 import `agent.*` 学习教练包，但不碰 `ai_engine`）
 2. **`paper_id` 由 AI Engine 生成，后端沿用**（不重新生成）
 3. **`user_id` 只从 session 注入**——请求体永远不传 `user_id`（除非未来支持"管理员为他人生成"，明确超出本 spec）
 4. **未登录访问受保护路由 → 401 `auth.unauthorized`**，不 302 跳转（前端拦截 401 自跳登录页）

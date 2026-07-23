@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class BackendConfig(BaseModel):
@@ -22,6 +22,12 @@ class BackendConfig(BaseModel):
 
 
 class AppConfig(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
     data_dir: Path = Path("data")
     db_path: Path = Path("data/questions.db")
     chroma_path: Path = Path("data/chroma")
@@ -36,10 +42,6 @@ class AppConfig(BaseSettings):
 
     max_questions_per_paper: int = 30
     backend: BackendConfig = BackendConfig()
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 _config: AppConfig | None = None

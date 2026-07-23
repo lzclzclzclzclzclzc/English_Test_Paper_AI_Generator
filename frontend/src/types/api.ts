@@ -70,10 +70,8 @@ export interface WrongItemRef {
 export interface GenerateRequest {
   mode: GenerationMode
   knowledge_points: string[]
-  knowledge_points_exclude: string[]
   question_types: QuestionType[]
   total_questions: number
-  total_score: number | null
   type_distribution: Record<string, number>
   revision_intensity: RevisionMode
   wrong_items: WrongItemRef[]
@@ -86,10 +84,8 @@ export interface PaperItem {
   /** 1-based，提交答题时按此回传 */
   index: number
   question: RevisedQuestion
-  score: number
   source_question_id: string
   revision_mode: RevisionMode
-  revision_notes: string | null
 }
 
 export interface Paper {
@@ -98,7 +94,6 @@ export interface Paper {
   generated_at: string
   request: GenerateRequest
   items: PaperItem[]
-  total_score: number
   metadata: Record<string, unknown>
 }
 
@@ -125,6 +120,8 @@ export interface SolutionRequest {
   question: RevisedQuestion
   source_question_id: string
   revision_mode: RevisionMode
+  /** 用户答错的答案，传入后解析会解释为何错（单选是字母，填空/改写是数组或字典） */
+  user_answer?: UserAnswerValue | null
 }
 
 export interface SolutionResponse {
@@ -165,7 +162,6 @@ export interface PaperListItem {
   title: string
   generated_at: string
   total_questions: number
-  total_score: number
   submitted: boolean
 }
 
@@ -179,9 +175,16 @@ export interface PaperListResponse {
 export interface KPMastery {
   knowledge_point_id: string
   attempts: number
-  correct_rate: number
   /** Wilson lower bound，越低越薄弱 */
   mastery: number
+}
+
+/** GET /api/knowledge-points 目录项（用于 id→中文名展示） */
+export interface KnowledgePoint {
+  id: string
+  level1: QuestionType
+  level2: string
+  aliases: string[]
 }
 
 /** GET /api/users/me/mastery?window_days= */
@@ -208,7 +211,44 @@ export interface UserCredentials {
   password: string
 }
 
-// ---- 错误封装 ----
+// ---- Agent 对话 ----
+// 对话历史由后端 SQLiteSession 按用户维护，前端只发新消息、不回传 history。
+
+export interface AgentChatRequest {
+  message: string
+}
+
+export type AgentAction =
+  | { type: 'open_paper'; paper_id: string }
+
+export interface AgentChatResponse {
+  reply: string
+  action: AgentAction | null
+}
+
+// ---- 学习计划 ----
+
+export interface StudyPlanDay {
+  index: number
+  date: string | null       // YYYY-MM-DD
+  theme: string
+  knowledge_points: string[]
+  kp_names: string[]
+  question_types: QuestionType[]
+  total_questions: number
+  note: string
+  paper_id: string
+  paper_title: string
+}
+
+export interface StudyPlan {
+  plan_id: string
+  user_id: string
+  total_days: number
+  created_at: string
+  days: StudyPlanDay[]
+}
+
 
 /**
  * 所有业务错误的统一响应体。error_code 稳定清单（backend/errors.py）：
