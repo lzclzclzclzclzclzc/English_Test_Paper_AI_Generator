@@ -43,7 +43,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "8",
-    "stem": "W: Sorry, I’m late, Mr. Lee. The bus was delayed.\nW: That’s all right. Please take your seat.\nQuestion: Why was the girl late?",
+    "stem": "W: Sorry, I’m late, Mr. Lee. The bus was delayed.\nM: That’s all right. Please take your seat.\nQuestion: Why was the girl late?",
     "options": [
       {
         "label": "A",
@@ -80,7 +80,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "9",
-    "stem": "M: You look quiet today.\nM: I stayed up late finishing my animation project.\nM: No wonder.\nQuestion: How does the woman probably feel?",
+    "stem": "M: You look quiet today.\nW: I stayed up late finishing my animation project.\nM: No wonder.\nQuestion: How does the woman probably feel?",
     "options": [
       {
         "label": "A",
@@ -117,7 +117,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "10",
-    "stem": "M: I broke the man’s sunglasses and he wanted me to pay him 500 yuan.\nM: That sounds too much for such an old pair.\nQuestion: What does the woman mean?",
+    "stem": "M: I broke the man’s sunglasses and he wanted me to pay him 500 yuan.\nW: That sounds too much for such an old pair.\nQuestion: What does the woman mean?",
     "options": [
       {
         "label": "A",
@@ -154,7 +154,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "6",
-    "stem": "W: Hi, Bob, did you know that the club leader has changed the time from 3:30 PM to 4:30 PM and it’s permanent, not just for this week.\nW: Oh, that’s better for me. I have a class until four o’clock PM.\nQ: When should the boy attend the club?",
+    "stem": "W: Hi, Bob, did you know that the club leader has changed the time from 3:30 PM to 4:30 PM and it’s permanent, not just for this week.\nM: Oh, that’s better for me. I have a class until four o’clock PM.\nQ: When should the boy attend the club?",
     "options": [
       {
         "label": "A",
@@ -191,7 +191,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "7",
-    "stem": "W: Do you visit your grandparents very often?\nW: Not very often, usually just once a month. But I call them every week.\nQ: How often does the boy go to see his grandparents?",
+    "stem": "W: Do you visit your grandparents very often?\nM: Not very often, usually just once a month. But I call them every week.\nQ: How often does the boy go to see his grandparents?",
     "options": [
       {
         "label": "A",
@@ -265,7 +265,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "9",
-    "stem": "M: Madam, I have a package for Mrs. White. Could I get the pickup code?\nM: Just a moment. Let me check. It’s 35277. Oh, sorry, it’s 352177.\nM: That’s correct. Here is your package.\nQ: What is the pickup code for the woman’s package?",
+    "stem": "M: Madam, I have a package for Mrs. White. Could I get the pickup code?\nM: Just a moment. Let me check. It’s 35277. Oh, sorry, it’s 352177.\nW: That’s correct. Here is your package.\nQ: What is the pickup code for the woman’s package?",
     "options": [
       {
         "label": "A",
@@ -302,7 +302,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "10",
-    "stem": "M: Hey, you finished the math homework. I’m stuck on the last problem.\nM: Well, the last problem was pretty tricky, but I managed to figure it out at last. Do you want me to explain it to you?\nM: That would be great. I’ve been staring at it for an hour and still can’t get it.\nM: No worries, I felt the same way at first. Let’s go through it step by step.\nQ: How did the girl feel about the math homework?",
+    "stem": "W: Hey, you finished the math homework. I’m stuck on the last problem.\nM: Well, the last problem was pretty tricky, but I managed to figure it out at last. Do you want me to explain it to you?\nW: That would be great. I’ve been staring at it for an hour and still can’t get it.\nM: No worries, I felt the same way at first. Let’s go through it step by step.\nQ: How did the girl feel about the math homework?",
     "options": [
       {
         "label": "A",
@@ -413,7 +413,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "8",
-    "stem": "M: Now, what seems to be the trouble, Mrs. Smith?\nM: I’m feeling sick in my stomach and last night I had some chest pain.\nM: Don’t worry. let me have a look.\nQuestion: What is the possible relationship between the two speakers?",
+    "stem": "M: Now, what seems to be the trouble, Mrs. Smith?\nW: I’m feeling sick in my stomach and last night I had some chest pain.\nM: Don’t worry. let me have a look.\nQuestion: What is the possible relationship between the two speakers?",
     "options": [
       {
         "label": "A",
@@ -450,7 +450,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "9",
-    "stem": "M: Hello, room service, what can I do for you?\nM: Yes, this is Room 369. The air-conditioner is out of service. Can you send someone to check it?\nM: Sorry, Madam, I will have it fixed right away.\nQuestion: Why does the lady make a phone call?",
+    "stem": "M: Hello, room service, what can I do for you?\nW: Yes, this is Room 369. The air-conditioner is out of service. Can you send someone to check it?\nM: Sorry, Madam, I will have it fixed right away.\nQuestion: Why does the lady make a phone call?",
     "options": [
       {
         "label": "A",
@@ -598,7 +598,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "8",
-    "stem": "W: Jack, your work looks great. How did you prepare it?\nW: Thanks. My parents introduced a new AI tool to me. I used it to draw pictures for me.\nQuestion: How did Jack prepare his work?",
+    "stem": "W: Jack, your work looks great. How did you prepare it?\nM: Thanks. My parents introduced a new AI tool to me. I used it to draw pictures for me.\nQuestion: How did Jack prepare his work?",
     "options": [
       {
         "label": "A",
@@ -672,7 +672,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "10",
-    "stem": "W: Did you ask Mr. Lee if we could hand in the project next Monday?\nW: I did. He said we must hand it in this Friday. He won’t change it.\nW: Oh no. I thought he might agree because of the school concert this week.\nW: He said we should plan our time better. We’d better speed up.\nQuestion: What can we learn from the dialogue?",
+    "stem": "M: Did you ask Mr. Lee if we could hand in the project next Monday?\nW: I did. He said we must hand it in this Friday. He won’t change it.\nM: Oh no. I thought he might agree because of the school concert this week.\nW: He said we should plan our time better. We’d better speed up.\nQuestion: What can we learn from the dialogue?",
     "options": [
       {
         "label": "A",
@@ -709,7 +709,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "6",
-    "stem": "M: It is raining heavily. Will you go home by bike as usual?\nM: No. My mom called and told me to wait, she will drive me home.\nQ: How will the girl go home?",
+    "stem": "M: It is raining heavily. Will you go home by bike as usual?\nW: No. My mom called and told me to wait, she will drive me home.\nQ: How will the girl go home?",
     "options": [
       {
         "label": "A",
@@ -746,7 +746,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "7",
-    "stem": "M: Linda, I don’t know how to shop online. Can you help me?\nM: Sure, Grandpa. I will as soon as I finish my homework.\nQ: What will the girl do?",
+    "stem": "M: Linda, I don’t know how to shop online. Can you help me?\nW: Sure, Grandpa. I will as soon as I finish my homework.\nQ: What will the girl do?",
     "options": [
       {
         "label": "A",
@@ -783,7 +783,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "8",
-    "stem": "W: I heard you have moved to the city.\nW: Yes. My new home is near my office. It takes only five minutes to get there.\nW: Well. I still prefer living in the country because of the fresh air.\nQ: Why did the man move to the city?",
+    "stem": "W: I heard you have moved to the city.\nM: Yes. My new home is near my office. It takes only five minutes to get there.\nW: Well. I still prefer living in the country because of the fresh air.\nQ: Why did the man move to the city?",
     "options": [
       {
         "label": "A",
@@ -857,7 +857,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "10",
-    "stem": "W: Dad, I can’t find my notebook. Have you seen it anywhere?\nW: Sorry, I haven’t. Why not ask your mother?\nQ: What does the man mean?",
+    "stem": "W: Dad, I can’t find my notebook. Have you seen it anywhere?\nM: Sorry, I haven’t. Why not ask your mother?\nQ: What does the man mean?",
     "options": [
       {
         "label": "A",
@@ -894,7 +894,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "7",
-    "stem": "M: Grandma, can I fly a kite in the park?\nM: Not today, dear. The wind is too strong.\nQuestion: What is the weather like today?",
+    "stem": "W: Grandma, can I fly a kite in the park?\nM: Not today, dear. The wind is too strong.\nQuestion: What is the weather like today?",
     "options": [
       {
         "label": "A",
@@ -931,7 +931,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "8",
-    "stem": "W: Jack, have you finished your book report?\nW: Not yet. I’m going to the city library to work on it. They have all the books I need.\nW: Come home early for dinner.\nQuestion: Where is Jack going?",
+    "stem": "W: Jack, have you finished your book report?\nM: Not yet. I’m going to the city library to work on it. They have all the books I need.\nW: Come home early for dinner.\nQuestion: Where is Jack going?",
     "options": [
       {
         "label": "A",
@@ -1042,7 +1042,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "11",
-    "stem": "W: Excuse me, your music is a bit loud. My baby just fell asleep.\nW: Oh, I’m sorry. I’ll turn it down right away.\nQuestion: What is the man apologizing for?",
+    "stem": "W: Excuse me, your music is a bit loud. My baby just fell asleep.\nM: Oh, I’m sorry. I’ll turn it down right away.\nQuestion: What is the man apologizing for?",
     "options": [
       {
         "label": "A",
@@ -1079,7 +1079,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "12",
-    "stem": "M: Good morning, Airport Information Desk. Can I assist you?\nM: Hello, I need help. I can’t find my friend.\nM: Can you describe him for me?\nM: Yes, he’s quite tall—about six feet. He’s wearing a blue jacket and a white baseball cap.\nQuestion: Why does the woman describe her friend’s appearance?",
+    "stem": "M: Good morning, Airport Information Desk. Can I assist you?\nW: Hello, I need help. I can’t find my friend.\nM: Can you describe him for me?\nW: Yes, he’s quite tall—about six feet. He’s wearing a blue jacket and a white baseball cap.\nQuestion: Why does the woman describe her friend’s appearance?",
     "options": [
       {
         "label": "A",
@@ -1116,7 +1116,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "13",
-    "stem": "M: You look tired, Jane. Is everything okay?\nM: The physics test is tomorrow. I still have three chapters to review. What if I can’t finish?\nQuestion: What is Jane worried about?",
+    "stem": "M: You look tired, Jane. Is everything okay?\nW: The physics test is tomorrow. I still have three chapters to review. What if I can’t finish?\nQuestion: What is Jane worried about?",
     "options": [
       {
         "label": "A",
@@ -1153,7 +1153,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "14",
-    "stem": "M: Hello, Jasmine. You look so busy. I can do some AI searching for you.\nM: Great! I didn’t know you are good at it. Thanks a lot.\nQuestion: What can we learn from the dialogue?",
+    "stem": "M: Hello, Jasmine. You look so busy. I can do some AI searching for you.\nW: Great! I didn’t know you are good at it. Thanks a lot.\nQuestion: What can we learn from the dialogue?",
     "options": [
       {
         "label": "A",
@@ -1190,7 +1190,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "6",
-    "stem": "W: What would you like, tea or juice?\nW: Well, thank you. I’m not thirsty. I’ve just drunk a bottle of water.\nQuestion: What has the man just drunk?",
+    "stem": "W: What would you like, tea or juice?\nM: Well, thank you. I’m not thirsty. I’ve just drunk a bottle of water.\nQuestion: What has the man just drunk?",
     "options": [
       {
         "label": "A",
@@ -1227,7 +1227,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "7",
-    "stem": "W: Hey, Adam. Who do you think dances better, Brian or Dan?\nW: Well, Brian and Dan are both good dancers, but I think Michael is better than them.\nQuestion: Who is the best dancer?",
+    "stem": "W: Hey, Adam. Who do you think dances better, Brian or Dan?\nM: Well, Brian and Dan are both good dancers, but I think Michael is better than them.\nQuestion: Who is the best dancer?",
     "options": [
       {
         "label": "A",
@@ -1264,7 +1264,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "8",
-    "stem": "W: Excuse me, I just arrived on the flight from Bangkok, and my suitcase is missing.\nW: Oh, sorry, madam. Could you put down your information on this form? We will do everything we can to find your suitcase.\nW: Okay, I will fill it out right away. Thank you.\nQuestion: Where does the conversation probably take place?",
+    "stem": "W: Excuse me, I just arrived on the flight from Bangkok, and my suitcase is missing.\nM: Oh, sorry, madam. Could you put down your information on this form? We will do everything we can to find your suitcase.\nW: Okay, I will fill it out right away. Thank you.\nQuestion: Where does the conversation probably take place?",
     "options": [
       {
         "label": "A",
@@ -1301,7 +1301,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "9",
-    "stem": "W: I borrowed this camera from Laura. I dropped it and it doesn’t work now.\nW: Oh, I think you should tell her about it first, and then find someone to repair it.\nW: Okay, I will.\nQuestion: What does the man suggest the woman do first?",
+    "stem": "W: I borrowed this camera from Laura. I dropped it and it doesn’t work now.\nM: Oh, I think you should tell her about it first, and then find someone to repair it.\nW: Okay, I will.\nQuestion: What does the man suggest the woman do first?",
     "options": [
       {
         "label": "A",
@@ -1338,7 +1338,7 @@
     "chapter_l1": "1 听力选择",
     "chapter_l2": null,
     "number": "10",
-    "stem": "W: Shall we go cycling in the country park this afternoon?\nW: Well, um, if you really want to go, I will go with you. But I’ve just got over my cold and I’m still a bit weak.\nQuestion: What does the man mean?",
+    "stem": "W: Shall we go cycling in the country park this afternoon?\nM: Well, um, if you really want to go, I will go with you. But I’ve just got over my cold and I’m still a bit weak.\nQuestion: What does the man mean?",
     "options": [
       {
         "label": "A",

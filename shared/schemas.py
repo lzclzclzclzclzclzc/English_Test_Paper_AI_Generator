@@ -36,7 +36,7 @@ from pydantic import BaseModel, Field
 # ─────────────────────────────────────────────────────────────────────────────
 # Shared enums / aliases
 # ─────────────────────────────────────────────────────────────────────────────
-QuestionType = Literal["single_choice", "word_form", "sentence_rewriting"]
+QuestionType = Literal["single_choice", "word_form", "sentence_rewriting", "listening_single_choice"]
 RevisionMode = Literal["fresh", "light", "original"]
 GenerateMode = Literal["fresh", "remediation", "review"]
 

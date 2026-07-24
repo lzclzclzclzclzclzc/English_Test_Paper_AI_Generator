@@ -3,6 +3,7 @@ import type { GradeResultItem, PaperItem } from '@/types/api'
 import type { AnswerDraft, BlankMap } from '@/lib/answers'
 import { formatCorrectAnswer, formatUserAnswer } from '@/lib/answers'
 import { SingleChoiceField } from '@/components/question-fields/SingleChoiceField'
+import { ListeningSingleChoiceField } from '@/components/question-fields/ListeningSingleChoiceField'
 import { WordFormField } from '@/components/question-fields/WordFormField'
 import { SentenceRewritingField } from '@/components/question-fields/SentenceRewritingField'
 import { prettifyKp } from '@/lib/kp'
@@ -59,6 +60,14 @@ export function QuestionCard({
             onChange={onChange}
             result={result}
           />
+        ) : question.question_type === 'listening_single_choice' ? (
+          <ListeningSingleChoiceField
+            question={question}
+            mode={mode}
+            value={typeof value === 'string' ? value : undefined}
+            onChange={onChange}
+            result={result}
+          />
         ) : question.question_type === 'word_form' ? (
           <WordFormField
             question={question}
@@ -78,7 +87,7 @@ export function QuestionCard({
         )}
 
         {/* review 态：答错时的答案比对（单选已在选项上高亮，不重复） */}
-        {isReview && result && !result.is_correct && question.question_type !== 'single_choice' && (
+        {isReview && result && !result.is_correct && question.question_type !== 'single_choice' && question.question_type !== 'listening_single_choice' && (
           <div className="flex flex-col gap-0.5 text-[13px]">
             <p className="text-wrong">
               你的答案：<span className="line-through">{formatUserAnswer(result.user_answer)}</span>

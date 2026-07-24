@@ -22,7 +22,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS knowledge_points (
     id            TEXT PRIMARY KEY,
     level1        TEXT NOT NULL
-                    CHECK (level1 IN ('single_choice', 'word_form', 'sentence_rewriting')),
+                    CHECK (level1 IN ('single_choice', 'word_form', 'sentence_rewriting', 'listening_single_choice')),
     level2        TEXT NOT NULL,
     aliases_json  TEXT NOT NULL DEFAULT '[]'
 );
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS questions (
     id                  TEXT PRIMARY KEY,       -- q_00001
     book                TEXT NOT NULL,
     question_type       TEXT NOT NULL
-                          CHECK (question_type IN ('single_choice', 'word_form', 'sentence_rewriting')),
+                          CHECK (question_type IN ('single_choice', 'word_form', 'sentence_rewriting', 'listening_single_choice')),
     chapter_l1          TEXT NOT NULL,          -- "1 单项选择"
     chapter_l2          TEXT NOT NULL,          -- "1.4 不定代词"
     number              TEXT NOT NULL,          -- "1" or "1-3"

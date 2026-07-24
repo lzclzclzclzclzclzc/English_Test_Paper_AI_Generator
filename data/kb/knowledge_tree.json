@@ -314,6 +314,12 @@
       "level1": "sentence_rewriting",
       "level2": "连词成句",
       "aliases": []
+    },
+    {
+      "id": "kp_listening_dialogue",
+      "level1": "listening_single_choice",
+      "level2": "听力对话理解",
+      "aliases": ["听力", "听力理解", "对话"]
     }
   ],
   "chapter_to_kp": {
@@ -499,6 +505,9 @@
     ],
     "sentence_rewriting / 4 改写句子 / 4.11 连词成句": [
       "kp_sr_word_ordering"
+    ],
+    "listening_single_choice / 1 听力选择 / None": [
+      "kp_listening_dialogue"
     ]
   }
 }

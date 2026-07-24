@@ -19,6 +19,8 @@
 - 单选题答案必须是 A/B/C/D 之一，不能包含其他内容
 - 选项数量必须为 4，标签为 A/B/C/D
 - answer 必须是 options 中某个选项的 label
+- 听力选择题（listening_single_choice）的 stem 必须包含说话者标识（M: 男声 / W: 女声）和问题（Question:），示例格式：
+  M: Good morning.\nW: Hello.\nQuestion: What time is it?
 
 # 输出格式
 （instructor 会自动附加 JSON Schema）

@@ -70,7 +70,7 @@
 - 请求类："来几道"、"出几道"、"出一些"、"来一些"、"帮我出"、"帮我找"
 - 模糊类："随便出"、"随意出"、"随便来"
 - 知识点类：任何知识点名称（如"动词时态"、"不定代词"、"冠词"、"介词"、"形容词"、"副词"等）
-- 题型类：任何题型名称（如"单选题"、"单项选择"、"词性转换"、"改写句子"等）
+- 题型类：任何题型名称（如"单选题"、"单项选择"、"词性转换"、"改写句子"、"听力"、"听力选择"等）
 
 **适用场景**（满足以下任一条件）：
 - 用户只说"练习"、"巩固"、"复习"等练习类词汇
@@ -359,6 +359,18 @@
   "question_types": [],
   "total_questions": 10,
   "type_distribution": {},
+  "revision_intensity": "light",
+  "free_text": ""
+}
+
+## 示例 16：听力选择题请求
+输入："来 10 道听力选择题"
+输出：
+{
+  "knowledge_points": [],
+  "question_types": ["listening_single_choice"],
+  "total_questions": 10,
+  "type_distribution": {"listening_single_choice": 10},
   "revision_intensity": "light",
   "free_text": ""
 }
