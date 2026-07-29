@@ -26,12 +26,12 @@ export function SentenceRewritingField({
   return (
     <div className="flex flex-col gap-2">
       {question.original_sentence && (
-        <p className="font-question text-[15px] leading-[1.7] text-foreground">
+        <p className="text-[17px] leading-[1.9] text-ink">
           {question.original_sentence}
         </p>
       )}
       {question.instruction && (
-        <p className="text-[13px] text-muted-foreground">（{question.instruction}）</p>
+        <p className="text-[13px] text-quiet">（{question.instruction}）</p>
       )}
       {question.template && (
         <BlankedText

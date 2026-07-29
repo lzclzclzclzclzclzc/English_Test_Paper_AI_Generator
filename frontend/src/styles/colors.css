@@ -1,0 +1,81 @@
+/* ── Colors ─────────────────────────────────────────────────────────────
+   Warm paper ground · soft charcoal ink · one terracotta accent.
+
+   THE ONE CHROMA RULE — Terracotta Coral is the only saturated color on any
+   screen, reserved for interaction and emphasis (link hover, post-title
+   hover, in-article underlines, the <mark> wash). It never fills a surface.
+
+   THE TINTED NEUTRAL RULE — pure #000 / #fff are forbidden. Every neutral is
+   warm-tinted toward the paper hue. Borders, dividers and hover tints are
+   opacity-stepped Ink (in dark mode, opacity-stepped Warm Off-White), never
+   a separate gray.
+
+   THE CONTRAST FLOOR — opacity-stepped Ink is for borders + hover tints, not
+   for quieting text. Text tints clear WCAG AA: on cream, body text never
+   drops below Ink /75. Hierarchy steps down through size + whitespace.
+   ──────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Base palette ── */
+  --ink: oklch(38% 0.004 90);             /* ≈ #353534  soft warm charcoal — text */
+  --rice-cream: oklch(96.8% 0.005 95);    /* ≈ #f6f5f1  light-mode paper */
+  --warm-off-white: oklch(90% 0.01 88);   /* dark-mode text (softened, never glaring) */
+  --deep-ink-surface: oklch(24% 0.016 72);/* dark-mode ground — warm charcoal, not black */
+  --accent-base: oklch(49% 0.155 33);     /* Terracotta Coral — the lone chroma (light) */
+  --accent-bright: oklch(72% 0.13 35);    /* brighter coral for dark mode */
+  --accent: var(--accent-base);           /* the accent in use; brightens in dark mode */
+
+  /* ── Opacity-stepped Ink — borders, dividers, hover tints (NOT text) ── */
+  --ink-5: color-mix(in oklab, var(--ink) 5%, transparent);
+  --ink-10: color-mix(in oklab, var(--ink) 10%, transparent);
+  --ink-15: color-mix(in oklab, var(--ink) 15%, transparent);
+  --ink-20: color-mix(in oklab, var(--ink) 20%, transparent);
+  --ink-30: color-mix(in oklab, var(--ink) 30%, transparent);
+
+  /* ── Semantic surfaces ── */
+  --surface-page: var(--rice-cream);
+  --surface-raised: var(--rice-cream);    /* overlays / code blocks sit on the same paper */
+
+  /* ── Semantic text (all clear AA on cream) ── */
+  --text-strong: var(--ink);                                          /* titles, full ink */
+  --text-body: var(--ink);                                            /* prose */
+  --text-muted: color-mix(in oklab, var(--ink) 82%, transparent);     /* excerpts, secondary */
+  --text-quiet: color-mix(in oklab, var(--ink) 75%, transparent);     /* kickers, dates — the floor */
+
+  /* ── Semantic lines + tints ── */
+  --border-hairline: var(--ink-15);       /* default 1px hairline */
+  --border-soft: var(--ink-10);           /* image borders */
+  --hover-tint: var(--ink-5);             /* hover/active background wash */
+  --border-width: 1px;
+
+  /* ── Accent emphasis ── */
+  --accent-wash: color-mix(in oklab, var(--accent) 18%, transparent); /* <mark> highlight */
+}
+
+/* ── Dark mode — warm charcoal ground, warm off-white ink, brighter coral.
+   The accent brightens and every opacity-stepped neutral re-bases onto Warm
+   Off-White, so borders/tints read as light-on-dark. ──────────────────────── */
+.dark {
+  --accent: var(--accent-bright);
+
+  /* Bare --ink is used directly as a text fill by many components; in dark it
+     must become the warm off-white. (The --ink-5..30 border/tint steps below
+     are re-based separately, so this only flips text — not borders.) */
+  --ink: var(--warm-off-white);
+
+  --ink-5: color-mix(in oklab, var(--warm-off-white) 5%, transparent);
+  --ink-10: color-mix(in oklab, var(--warm-off-white) 10%, transparent);
+  --ink-15: color-mix(in oklab, var(--warm-off-white) 20%, transparent);
+  --ink-20: color-mix(in oklab, var(--warm-off-white) 25%, transparent);
+  --ink-30: color-mix(in oklab, var(--warm-off-white) 30%, transparent);
+
+  --surface-page: var(--deep-ink-surface);
+  --surface-raised: var(--deep-ink-surface);
+
+  --text-strong: var(--warm-off-white);
+  --text-body: var(--warm-off-white);
+  --text-muted: color-mix(in oklab, var(--warm-off-white) 70%, transparent);
+  --text-quiet: color-mix(in oklab, var(--warm-off-white) 60%, transparent);
+
+  --accent-wash: color-mix(in oklab, var(--accent-bright) 26%, transparent);
+}

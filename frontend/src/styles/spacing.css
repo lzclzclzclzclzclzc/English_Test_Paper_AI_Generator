@@ -1,0 +1,38 @@
+/* ── Spacing, radius & elevation ────────────────────────────────────────
+   Generous and unhurried. Depth comes from hairline borders, tonal tints and
+   whitespace — NOT shadows.
+
+   THE FLAT-PAPER RULE — surfaces are flat at rest. Shadow + blur are reserved
+   for genuinely floating overlays (the search panel). A card with a resting
+   shadow is forbidden.
+   ──────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Spacing scale ── */
+  --space-gutter: 1rem;            /* base inline gutter */
+  --space-block: 1.5rem;           /* between stacked blocks */
+  --space-list-gap: 2.5rem;        /* compact index (archive, tags) */
+  --space-list-gap-lg: 3.5rem;     /* spacious featured feed (home) */
+  --space-section-gap: 4rem;       /* between page sections */
+  --space-page-top: 8rem;          /* fixed-header offset / page top padding */
+
+  /* ── Corner radii — gently squared, never pill ── */
+  --radius-sm: 0.25rem;            /* chips, icon buttons */
+  --radius-md: 0.375rem;           /* cover images, code blocks */
+  --radius-input: 3px;             /* search field */
+
+  /* ── Control sizing ── */
+  --control-size: 36px;            /* icon button square / theme toggles */
+  --control-stroke: 1.5px;         /* icon stroke weight */
+  --hit-target-min: 44px;          /* minimum touch target */
+
+  /* ── Elevation — overlays only (the one legitimate shadow + blur) ── */
+  --shadow-overlay: 0 10px 15px -3px color-mix(in oklab, var(--ink) 12%, transparent),
+                    0 4px 6px -4px color-mix(in oklab, var(--ink) 10%, transparent);
+  --blur-overlay: 8px;             /* backdrop-blur on the search backdrop */
+  --blur-header: 4px;              /* frosted header bar */
+
+  /* ── Motion ── */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --duration: 300ms; /* @kind other */
+}

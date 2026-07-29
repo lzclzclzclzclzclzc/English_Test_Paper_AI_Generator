@@ -3,6 +3,9 @@
 > 面向对象：中考英语试卷生成器（产品名 **墨卷**）的 Web 前端。
 > 依赖：[Spec A（题库摄入）](./2026-07-07-question-bank-ingestion-design.md)、[Spec B（AI Engine）](./2026-07-07-ai-engine-design.md)、[Spec C（后端）](./2026-07-07-backend-design.md)。
 > 后置：[Spec E（跨系统测试）](./2026-07-07-testing-design.md)（待写）。
+> 2026-07-27 改版：视觉与信息架构按设计交接包「喫茶去」重构（左侧可折叠导航 +
+> 多屏结构 + 落地页/设置页），视觉规则全部移至 [Spec F v2（frontend-visual-spec）](./frontend-visual-spec.md)；
+> 本文中与其冲突的旧描述以带删除线的修订标注为准。
 
 ---
 
@@ -137,22 +140,29 @@ frontend/
 
 ## 3. 页面与路由
 
-### 3.1 路由表
+### 3.1 路由表（2026-07-27 随喫茶去改版更新）
 | 路径 | 页面 | 是否需登录 | 说明 |
 |------|------|-----------|------|
-| `/login` | LoginPage | 否 | 登录 + 注册（切换 tab） |
-| `/` | GeneratePage | 是 | 学习助手：与 study-coach agent 多轮对话 |
-| `/review` | ReviewPage | 是 | 错题复习：错题巩固 / 综合复习 + 本地错题本 |
+| `/welcome` | LandingPage | 否 | 对外落地页（产品介绍，CTA 指向 `/login`） |
+| `/login` | LoginPage | 否 | 登录 + 注册（切换 tab），左右两栏布局 |
+| `/` | GeneratePage | 是 | 生成试卷（fresh 模式表单 + 管线进度演示） |
+| `/assistant` | AssistantPage | 是 | 学习助手：与 study-coach agent 多轮对话（可出卷 / 查例题 / 制定计划） |
+| `/papers` | PapersPage | 是 | 历史试卷列表 |
+| `/papers/:paperId` | PaperPage | 是 | 试卷详情：做题 / 交卷判分 / 复盘回放（同屏切换） |
+| `/review` | ReviewPage | 是 | 错题本 + 错题巩固 / 综合复习出卷入口 |
+| `/mastery` | MasteryPage | 是 | 用户掌握度报告 |
 | `/study-plan` | StudyPlanPage | 是 | 学习计划：按天打卡 |
-| `/papers` | PapersPage | 是 | 我的试卷列表 |
-| `/papers/:paperId` | PaperPage | 是 | 试卷详情：做题 / 复盘 |
-| `/mastery` | MasteryPage | 是 | 掌握度报告 |
-| `/membership` | MembershipPage | 是 | 会员 / 支付 |
+| `/membership` | MembershipPage | 是 | 会员开通 / 续费（支付子系统） |
+| `/settings` | SettingsPage | 是 | 账号信息 · 阅读外观（深色切换）· 速率限制说明 |
 | `*` | 重定向到 `/` | — | 未匹配的 URL |
 
-需登录的页面统一挂在 `<RequireAuth><AppLayout/></RequireAuth>` 之下：`AppLayout` 渲染顶部 `AppNav` + `<Outlet/>`，并在挂载时预取知识点目录（见 § 3.9）。
+需登录的页面统一挂在 `<RequireAuth><AppLayout/></RequireAuth>` 之下：`AppLayout` 渲染
+左侧可折叠导航 `Sidebar`（232/66px，三组：出卷 = 生成试卷 / 学习助手 / 历史试卷，
+复习 = 错题本 / 掌握度 / 学习计划，资料 = 会员 / 设置；见 Spec F v2 § 4）+ `<Outlet/>`，
+并在挂载时预取知识点目录（见 § 3.9）。侧栏底部是用户名首字母头像、会员标与「登出」。
 
-顶部导航（`AppNav`）品牌名 **墨卷**，含六个入口：**学习助手（/）· 错题复习（/review）· 学习计划（/study-plan）· 我的试卷（/papers）· 掌握度（/mastery）· 会员（/membership）**，右侧是会员标（`isMember` 时显示）、用户名首字母头像与「退出登录」按钮。
+> 合并说明（2026-07-29）：dev 曾把学习助手放在 `/` 取代出卷表单；并入喫茶去改版后
+> 二者共存——`/` 保留 handoff 的结构化出卷表单，对话式入口独立成 `/assistant`。
 
 ### 3.2 路由守卫
 - 使用 `<RequireAuth>` 高阶组件包裹需要登录的路由：
@@ -163,25 +173,29 @@ frontend/
 - **只有一处发起跳转**：`useQuery(['auth','me'])` 若返回 401，全局 `onError` 钩子（§ 6.4）负责把 `['auth','me']` 缓存置 `null`；然后 `RequireAuth` 感知到 `null` 后跳转。**RequireAuth 自身不再直接触发新的 `GET /api/auth/me`**——统一由 `useAuth` hook 承担，避免"守卫也发一次、useAuth 也发一次"的重复请求与跳转竞态。
 
 ### 3.3 LoginPage（`/login`）
-- 卡片外顶部是品牌 **墨卷** + slogan「用你的话，出你的卷」。
-- 一个 `<Tabs>`：**登录 / 注册**。
+- 左右两栏（Spec F v2 § 5 第 2 屏）：左栏品牌 + 说明句 + 会话策略小字，右栏 24rem 表单。
+- 登录 / 注册两个 tab（选中项 2px 赤陶下边框）。
 - 两个 Tab 共用字段：`username`（3-32 字符，pattern `^[a-zA-Z0-9_]+$`）、`password`（6-128 字符）。**与 Spec C `UserCredentials` 严格对齐**；边界改动必须两处同步。
 - 表单校验：React Hook Form + Zod schema，前端先校验，然后 POST。注册与登录的响应都是 `User` 且都会 `Set-Cookie`（注册即自动登录）。
 - 成功后：把用户写入 `queryClient.setQueryData(['auth','me'], user)`，`navigate(from ?? '/', { replace: true })`。
 - 失败：`auth.invalid_credentials` / `auth.username_conflict` 用后端 `message` 显示为表单 root 错误；其余错误显示「登录服务暂时不可用，请稍后重试」。
 
-### 3.4 GeneratePage（学习助手，`/`）
-首页是一个与 study-coach agent 的**多轮 AI 对话界面**（不再是出卷表单）。
+### 3.4 GeneratePage（`/`）与 AssistantPage（学习助手，`/assistant`）
 
-- **对话流**：用户气泡（右，靠 `bg-ink`）与助手气泡（左）交替；助手内容用 **react-markdown + remark-gfm** 渲染（支持 GFM 表格）。等待回复时展示三点跳动的「思考中」动画。
+**GeneratePage（结构化出卷，喫茶去 handoff 第 4 屏）**
+- 44rem `<textarea>` + 建议 chips + 主按钮「生成试卷」，只做 fresh 模式
+  （错题巩固 / 综合复习在错题本页）；非会员显示当日免费次数。
+- 点击生成后展开 `PipelineProgress` 四步管线面板（假进度 + 真计时，Spec F v2 § 5）。
+- 顶部依据 `GET /api/health/ready` 在题库未就绪时提示。
+
+**AssistantPage（学习助手，与 study-coach agent 的多轮对话）**
+- **对话流**：用户消息（右对齐，`accent-wash` 底）与助手回复（无框正文 + 底部细线）交替；助手内容用 **react-markdown + remark-gfm** 渲染（`.chat-md` 样式，支持 GFM 表格）。等待回复时展示赤陶脉冲点「思考中」。
 - **建议 chips**：空对话时展示引导标题「学习助手」+ 若干示例（如「来 5 道现在完成时的选择题」「帮我制定 7 天学习计划」），点击即发送。
-- **输入区**：底部 `<Textarea>`，Enter 发送、Shift+Enter 换行，也有「发送」按钮。
-- **新对话**：有消息时右上角出现「＋ 新对话」按钮 → `POST /api/agent/chat/clear` 清空**服务端**该用户的会话历史，并清空本地气泡。
-- **会话上下文归属**：真正的对话上下文由后端 `SQLiteSession` 按用户维护；**客户端每次只发送本条 `message`**（`POST /api/agent/chat`，见 § 4.3 的 `AgentChatRequest`），不回传历史。前端仅把用于展示的气泡列表存进 `sessionStorage`（key `agent.chat`），刷新页面能恢复显示但不参与上下文。
-- **开始做题**：当 agent 产出一份试卷时，回复带 `action = { type: 'open_paper', paper_id }`；此时助手气泡下方出现「开始做题 →」按钮，点击 `navigate('/papers/{paper_id}')`。
-- 出错时追加一条错误气泡「出错了，请稍后重试或换个说法」，并 toast。
-
-> 结构化出卷表单并未消失：`GenerateForm` 组件被**错题复习页**（§ 3.8）复用，承担错题巩固 / 综合复习两个显式出卷入口。
+- **输入区**：底部 `<textarea>`，Enter 发送、Shift+Enter 换行，也有「发送」按钮。
+- **新对话**：有消息时右上角出现「＋ 新对话」→ `POST /api/agent/chat/clear` 清空**服务端**该用户的会话历史，并清空本地消息。
+- **会话上下文归属**：真正的对话上下文由后端 `SQLiteSession` 按用户维护；**客户端每次只发送本条 `message`**（`POST /api/agent/chat`，见 § 4.3 的 `AgentChatRequest`），不回传历史。前端仅把用于展示的消息列表存进 `sessionStorage`（key `agent.chat`），刷新页面能恢复显示但不参与上下文。
+- **开始做题**：当 agent 产出一份试卷时，回复带 `action = { type: 'open_paper', paper_id }`；此时回复下方出现「开始做题 →」按钮，点击 `navigate('/papers/{paper_id}')`。
+- 出错时追加一条错误消息「出错了，请稍后重试或换个说法」，并 toast。
 
 ### 3.5 PaperPage（试卷详情，`/papers/:paperId`）
 做题与复盘同页，按阶段切换。外层 `PaperPageRoute` 以 `key={paperId}` 强制重挂载内层，使 revise 换 id 导航后本地 state（答案、成绩、对话框）自动清空。
@@ -207,10 +221,10 @@ frontend/
 **提交后答案显示**：`GradeResultItem.correct_answer` 为 `AnswerValue`（`string | Array<Record<string,string[]>>`）。前端显示时：`string` 直接展示，候选组数组取第一组各空答案拼接展示。
 
 ### 3.7 MasteryPage（`/mastery`）
-- 顶部：标题 + 时间窗 `<Select>`（全部记录 / 最近 90 / 30 / 7 天）+ 颜色图例。
+- 顶部：标题 + 时间窗**分段按钮**（全部记录 / 近 90 / 30 / 7 天，选中 = 赤陶边 + wash 底）。
 - 主体：`MasteryReport` 组件，渲染 `MasteryProfile`
-  - `weak_kps`（Wilson score 下界最低的若干 KP），每项显示中文考点名（`prettifyKp` 解析）+ `mastery` 百分比 + `attempts`。
-  - 颜色标记：`mastery` ≥ 0.7 深色（ink）；0.4–0.7 中间色；< 0.4 红。
+  - `weak_kps`（Wilson score 下界最低的若干 KP），每项显示中文考点名（`prettifyKp` 解析）+ `mastery` 分数（等宽字）+ `attempts`。
+  - 颜色分级（One Chroma Rule，Spec F v2 § 6）：进度条一律赤陶——`mastery` < 0.4 全饱和（薄弱点更醒目），≥ 0.4 降到 0.45 不透明度；**不用绿/黄/红**。
   - `MasteryProfile` 只含薄弱 KP 概览（`weak_kps` / `dominant_types` / `total_attempts_considered`），不含全部 KP 统计。
 - 数据来源：`GET /api/users/me/mastery?window_days=`，TanStack Query key: `['mastery','me',windowKey]`。
 
@@ -224,7 +238,7 @@ frontend/
 
 **ReviewPage（错题复习）**
 - 本地错题本：`lib/wrongBook.ts` 按用户存做错的题（交卷时 `recordGrade` 记账，答对清账）；`WrongBookList` 展示，可勾选、删除，并可就地看解析。
-- 两个显式出卷入口（复用 `GenerateForm` + `useGeneratePaper`）：
+- 两个显式出卷入口（`ReviewGeneratePanel` 细线分栏 + `useGeneratePaper`）：
   - **错题巩固**（`mode: 'remediation'`）：以错题本里选中的题定向组卷。
   - **综合复习**（`mode: 'review'`）：按 `review_window_days` 时间窗内答题记录出复习卷。
 - 两者都是会员功能：非会员触发 `UpgradeDialog`；出卷共享逻辑与配额见 § 4.4。
@@ -242,7 +256,7 @@ frontend/
 
 **StudyPlanPage（学习计划，`/study-plan`）**
 - 展示最新一份学习计划：`GET /api/agent/study-plans/latest`（`useQuery(['study-plan','latest'])`，无计划返回 `null` → 空态引导去学习助手制定）。
-- 顶部显示总天数与起始日期。每天一张 `DayCard`：序号 + 主题（`theme`）+ 题型标签 + **当天可覆盖多个知识点**（`kp_names` 中文标签）+ 当天总题量（`total_questions`）+ 可选日期/备注 + 「开始练习 →」链接到当天预生成的 `paper_id`。
+- 顶部显示总天数与起始日期。每天一行 `DayRow`（细线行式，无卡片）：DAY 序号 + 主题（`theme`）+ 题型标签 + **当天可覆盖多个知识点**（`kp_names` 中文标签）+ 当天总题量（`total_questions`）+ 可选日期/备注 + 「开始练习 →」链接到当天预生成的 `paper_id`。
 
 ### 3.10 MembershipPage（会员 / 支付，`/membership`）
 - 与独立支付小服务通信（`payment/`，dev 经 `/payapi` 代理到 `:8001`）。
@@ -270,7 +284,7 @@ frontend/
 
 ### 4.2 UI 状态
 - `answers: Record<number, AnswerDraft>` — key 为 `PaperItem.index`（1-based）。用 `index` 而非 question id，因为 `RevisedQuestion` 没有 id 字段（改题后不再是题库原题）。
-- 学习助手的气泡列表 — GeneratePage local state，另存 `sessionStorage`（仅展示，非上下文）。
+- 学习助手的消息列表 — AssistantPage local state，另存 `sessionStorage`（仅展示，非上下文）。
 - 表单状态 — React Hook Form。
 - 对话框、折叠、重做态等 — 各组件 / 页面 local state。
 
@@ -367,7 +381,7 @@ export const generatePaper = (req: GeneratePaperRequest) =>
 4. `useAuth` 拿到用户对象 → RequireAuth 放行 → 跳转 `from` 或 `/`。
 
 ### 6.3 登出流程
-- 顶部导航栏一个 "登出" 按钮 → `POST /api/auth/logout` → `queryClient.clear()` → `navigate('/login')`。
+- 侧栏底部（用户名下方）"登出" 链接 → `POST /api/auth/logout` → `queryClient.clear()` → `navigate('/login')`。
 
 ### 6.4 全局 401 处理
 `queryClient` 的 `defaultOptions.queries.onError` 与 `mutations.onError` 中：
@@ -392,12 +406,17 @@ if (error instanceof ApiError && error.status === 401) {
 - Skeleton（加载态）
 
 ### 7.2 自定义组件
-- `AppLayout`、`AppNav`、`RequireAuth`、`PaperSheet`、`QuestionCard`、`GradeBanner`（含 `ScoreStamp`）、`SolutionBlock`、`RequestSummary`、`MasteryReport`、`GenerateForm`、`UpgradeDialog`（含 `MemberPill`）、`PayQrDialog`，以及 `review/`、`question-fields/` 下的子组件。
-- 所有自定义组件禁止直接调用 `fetch`，只通过 hooks / `api/` 层。
+- `Sidebar` / `AppLayout`（左侧可折叠导航外壳）、`GenerateForm`、`PipelineProgress`、
+  `QuestionCard`（+ `question-fields/*`）、`AnswerCard`（粘顶答题卡）、`GradeBanner`、
+  `SolutionBlock`、`MasteryReport`、`RequestSummary`、`RequireAuth`、
+  `review/WrongBookList`、`review/ReviewGeneratePanel`、`UpgradeDialog`（含 `MemberPill`）、`PayQrDialog`。
+- 所有自定义组件禁止直接调用 `fetch`，只通过 hooks 消费 `api/` 层。
 
-### 7.3 样式
-- Tailwind 原子类，`tailwind.config.js` 用 shadcn/ui 默认主题。
-- 不引入额外 CSS 框架。
+### 7.3 样式（2026-07-27 随喫茶去改版更新）
+- Tailwind v4 原子类；设计 tokens 来自设计交接包，原样拷入
+  `src/styles/{colors,typography,spacing,base}.css`，由 `index.css` 的
+  `@theme inline` 映射为语义类并接管 shadcn 变量（见 Spec F v2 § 2）。
+- 不引入额外 CSS 框架；组件里禁止写死颜色，只用语义类 / token。
 
 ---
 
@@ -463,7 +482,7 @@ export default defineConfig({
 
 1. 移动端适配（只保证 1280×720 以上桌面浏览器）。
 2. 国际化（中文硬编码）。
-3. 深色模式。
+3. ~~深色模式~~（2026-07-27 已随喫茶去 token 低成本实现：设置页「阅读外观」切换 `.dark`，持久化 localStorage）。
 4. 试卷 PDF 导出。
 5. ~~试卷列表页~~（2026-07-11 已实现，见 § 3.7）。
 6. 草稿保存（刷新页面丢失中间答题状态）。
@@ -478,6 +497,13 @@ export default defineConfig({
 1. **未提交试卷刷新丢失答案**：MVP 接受。若用户反馈强烈，后续加 `sessionStorage` 草稿保存。
 2. **试卷长度上限**：题目 > 100 时前端渲染性能是否 OK？后端已有硬上限（Spec C），前端等真实测量。
 3. **移动端**：等看是否有实际需求。
+4. **（2026-07-27，设计交接包指出的后端缺口）错题聚合端点缺失**：spec C 没有
+   「按用户聚合错题」的端点，当前错题本是前端 localStorage 记账（仅本设备）。
+   建议后端新增 `GET /api/users/me/wrong-items?window_days=`，前端即可换成服务端错题本。
+5. **（同上）题库只读检索端点缺失**：handoff 第 10 屏「题库浏览」需要
+   `GET /api/questions?…`（搜索 + 题型/难度筛选），端点就绪后按 Spec F v2 § 5 表格补屏。
+6. **（同上）`GET /api/papers` 摘要无得分字段**：历史试卷列表只能显示
+   「已交卷 / 未作答」，无法显示「已交 45/60」。
 
 ---
 

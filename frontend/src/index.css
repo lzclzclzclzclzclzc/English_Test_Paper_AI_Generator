@@ -2,116 +2,81 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* 喫茶去设计 tokens（design handoff tokens/*.css 原样拷入 src/styles/）。
+   fonts.css 未拷入：Noto Serif SC 走 index.html 的 <link>；
+   京华老宋体子集 woff2 未随包提供，--font-display 回退到正文衬线（handoff 允许）。 */
+@import "./styles/colors.css";
+@import "./styles/typography.css";
+@import "./styles/spacing.css";
+@import "./styles/base.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    /* 全站衬线（喫茶去：字体全部衬线，只有 400/700 两个字重） */
+    --font-sans: var(--font-serif);
     --font-heading: var(--font-serif);
-    --font-sans: 'Noto Sans SC', system-ui, sans-serif;
-    --font-serif: 'Noto Serif SC', serif;
-    /* 英文题干专用（Spec F § 3） */
-    --font-question: Georgia, 'Noto Serif SC', serif;
+    /* 英文题干沿用正文衬线栈（Georgia 在栈首，拉丁自动走 Georgia） */
+    --font-question: var(--font-serif);
+    --font-weight-medium: 400;
+    --font-weight-semibold: 700;
+
+    /* ── 喫茶去语义色 ── */
     --color-ink: var(--ink);
-    --color-ink-wash: var(--ink-wash);
-    --color-paper: var(--paper);
-    --color-sheet: var(--sheet);
-    --color-text-mid: var(--text-mid);
-    --color-line: var(--line);
-    --color-line-soft: var(--line-soft);
-    --color-line-strong: var(--line-strong);
-    --color-wrong: var(--wrong);
-    --color-weak: var(--wrong);
-    --color-mid-score: var(--mid-score);
-    /* 命名为 correct 而非 right：避免与 Tailwind 内置 text-right（对齐）冲突 */
-    --color-correct: var(--right);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
+    --color-paper: var(--surface-page);
     --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
-}
+    --color-wash: var(--accent-wash);
+    --color-hairline: var(--border-hairline);
+    --color-soft: var(--border-soft);
+    --color-tint: var(--hover-tint);
+    --color-muted-ink: var(--text-muted);
+    --color-quiet: var(--text-quiet);
+    --color-ink-5: var(--ink-5);
+    --color-ink-10: var(--ink-10);
+    --color-ink-15: var(--ink-15);
+    --color-ink-20: var(--ink-20);
+    --color-ink-30: var(--ink-30);
 
-:root {
-    /* 墨卷 Spec F § 2.1 基础色 */
-    --ink: #1e3a5f;
-    --ink-wash: #eef2f7;
-    --paper: #f7f5f0;
-    --sheet: #ffffff;
-    --text-mid: #55524a;
-    --line: #e3ded2;
-    --line-soft: #f0ece2;
-    --line-strong: #ddd8cc;
+    /* ── shadcn 映射：组件自动进入喫茶去外观 ── */
+    --color-background: var(--surface-page);
+    --color-foreground: var(--text-body);
+    --color-card: var(--surface-page);
+    --color-card-foreground: var(--text-body);
+    --color-popover: var(--surface-raised);
+    --color-popover-foreground: var(--text-body);
+    --color-primary: var(--accent);
+    --color-primary-foreground: var(--surface-page);
+    --color-secondary: var(--hover-tint);
+    --color-secondary-foreground: var(--text-body);
+    --color-muted: var(--hover-tint);
+    --color-muted-foreground: var(--text-muted);
+    --color-accent-foreground: var(--text-body);
+    --color-destructive: var(--accent);
+    --color-border: var(--border-hairline);
+    --color-input: var(--ink-20);
+    --color-ring: var(--accent);
+    --color-sidebar: var(--surface-page);
+    --color-sidebar-foreground: var(--text-body);
+    --color-sidebar-primary: var(--accent);
+    --color-sidebar-primary-foreground: var(--surface-page);
+    --color-sidebar-accent: var(--accent-wash);
+    --color-sidebar-accent-foreground: var(--accent);
+    --color-sidebar-border: var(--border-hairline);
+    --color-sidebar-ring: var(--accent);
+    --color-chart-1: var(--accent);
+    --color-chart-2: var(--ink-30);
+    --color-chart-3: var(--ink-20);
+    --color-chart-4: var(--ink-10);
+    --color-chart-5: var(--ink-5);
 
-    /* 墨卷 Spec F § 2.2 语义色 */
-    --wrong: #a8503e;
-    --mid-score: #b98a3a;
-    --right: #3e6e4e;
-
-    /* 墨卷 Spec F § 2.3 shadcn 映射 */
-    --background: #f7f5f0;
-    --foreground: #2c2a24;
-    --card: #ffffff;
-    --card-foreground: #2c2a24;
-    --popover: #ffffff;
-    --popover-foreground: #2c2a24;
-    --primary: #1e3a5f;
-    --primary-foreground: #f7f5f0;
-    --secondary: #eef2f7;
-    --secondary-foreground: #1e3a5f;
-    --muted: #f0ece2;
-    --muted-foreground: #8a8578;
-    --accent: #eef2f7;
-    --accent-foreground: #1e3a5f;
-    --destructive: #a8503e;
-    --border: #e3ded2;
-    --input: #ddd8cc;
-    --ring: #1e3a5f;
-    --chart-1: #1e3a5f;
-    --chart-2: #3e6e4e;
-    --chart-3: #b98a3a;
-    --chart-4: #a8503e;
-    --chart-5: #8a8578;
-    --radius: 0.375rem;
-    --sidebar: #ffffff;
-    --sidebar-foreground: #2c2a24;
-    --sidebar-primary: #1e3a5f;
-    --sidebar-primary-foreground: #f7f5f0;
-    --sidebar-accent: #eef2f7;
-    --sidebar-accent-foreground: #1e3a5f;
-    --sidebar-border: #e3ded2;
-    --sidebar-ring: #1e3a5f;
+    /* 圆角：0.25rem（按钮/chip/格子）、0.375rem（代码块/解析框）。不用胶囊圆角。 */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.25rem;
+    --radius-xl: 0.375rem;
+    --radius-2xl: 0.375rem;
+    --radius-3xl: 0.375rem;
+    --radius-4xl: 0.375rem;
 }
 
 @layer base {
@@ -122,6 +87,67 @@
     @apply bg-background text-foreground;
     }
   html {
-    @apply font-sans;
+    @apply font-serif;
     }
 }
+
+/* ── 喫茶去仅有的两个动效（handoff § 动效）── */
+@keyframes kk-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.kk-rise { animation: kk-rise 0.3s ease-out; }
+
+@keyframes kk-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+.kk-pulse { animation: kk-pulse 1.1s ease-in-out infinite; }
+
+/* ── 学习助手的 markdown 回复（喫茶去：细线表格、两字重、无装饰） ── */
+.chat-md :is(h1, h2, h3, h4) {
+  font-weight: 400;
+  color: var(--ink);
+  margin: 1.2em 0 0.4em;
+}
+.chat-md h1 { font-size: 1.25em; }
+.chat-md h2 { font-size: 1.15em; }
+.chat-md h3, .chat-md h4 { font-size: 1.05em; }
+.chat-md p { margin: 0.5em 0; }
+.chat-md :is(ul, ol) { margin: 0.5em 0; padding-left: 1.6em; }
+.chat-md li { margin: 0.25em 0; }
+.chat-md strong { font-weight: 700; }
+.chat-md a { color: var(--accent); text-underline-offset: 2px; }
+.chat-md code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--hover-tint);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+}
+.chat-md pre {
+  overflow-x: auto;
+  border: 1px solid var(--border-hairline);
+  border-radius: 0.375rem;
+  padding: 0.8em 1em;
+  margin: 0.6em 0;
+}
+.chat-md pre code { background: none; padding: 0; }
+.chat-md table { width: 100%; border-collapse: collapse; margin: 0.6em 0; font-size: 0.92em; }
+.chat-md th {
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.85em;
+  letter-spacing: 0.06em;
+  color: var(--text-quiet);
+  border-bottom: 1px solid var(--ink-20);
+  padding: 0.45em 0.7em;
+}
+.chat-md td { border-bottom: 1px solid var(--border-hairline); padding: 0.45em 0.7em; }
+.chat-md blockquote {
+  margin: 0.6em 0;
+  padding-left: 1em;
+  border-left: 2px solid var(--ink-20);
+  color: var(--text-muted);
+}
+.chat-md hr { border: 0; border-top: 1px solid var(--border-hairline); margin: 1em 0; }

@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { BadgeCheck } from 'lucide-react'
 import { createOrder, getMembership, getPayHealth, getPlans } from '@/api/payment'
+import { PageHeader } from '@/components/PageHeader'
 import { PayQrDialog } from '@/components/PayQrDialog'
 import { formatYuan } from '@/lib/money'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { PayOrder } from '@/types/payment'
 
@@ -26,6 +25,7 @@ function formatDate(iso: string): string {
   return `${d.getFullYear()}-${mm}-${dd}`
 }
 
+/** 会员（喫茶去外观）：无卡片，套餐为细线分栏，价格用赤陶数字。 */
 export function MembershipPage() {
   const [activeOrder, setActiveOrder] = useState<PayOrder | null>(null)
 
@@ -48,25 +48,19 @@ export function MembershipPage() {
   const membership = membershipQuery.data
 
   return (
-    <div className="mx-auto flex max-w-[760px] flex-col gap-6 px-6 pt-12">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-serif text-2xl font-bold text-foreground">会员</h1>
-        <p className="text-[13.5px] text-text-mid">开通会员,解锁不限量组卷与全部功能</p>
-      </div>
+    <div className="flex max-w-[52rem] flex-col gap-10">
+      <PageHeader title="会员" intro="开通会员，解锁不限量组卷与全部功能。" />
 
       {membershipQuery.isLoading ? (
-        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-10 w-full" />
       ) : membership?.active && membership.expires_at ? (
-        <div className="flex items-center gap-2 rounded-md border border-ink/25 bg-[#eef2f7] px-4 py-3">
-          <BadgeCheck className="size-4 text-ink" />
-          <span className="text-[13.5px] font-medium text-ink">
-            会员有效期至 {formatDate(membership.expires_at)}
-          </span>
+        <div className="border-t border-accent pt-2.5 text-[13.5px] text-ink">
+          会员有效期至 <b>{formatDate(membership.expires_at)}</b>
         </div>
       ) : (
-        <div className="rounded-md border border-line bg-sheet px-4 py-3 text-[13.5px] text-text-mid">
+        <div className="border-t border-hairline pt-2.5 text-[13.5px] text-muted-ink">
           {membership?.expires_at
-            ? `会员已于 ${formatDate(membership.expires_at)} 到期,续费后从今天起重新计算`
+            ? `会员已于 ${formatDate(membership.expires_at)} 到期，续费后从今天起重新计算`
             : '尚未开通会员'}
         </div>
       )}
@@ -78,66 +72,67 @@ export function MembershipPage() {
           <Skeleton className="h-44" />
         </div>
       ) : plansQuery.isError ? (
-        <div className="flex flex-col items-center gap-3 py-16">
-          <p className="text-[13.5px] text-muted-foreground">套餐加载失败,请确认支付服务已启动</p>
+        <div className="flex flex-col items-start gap-3">
+          <p className="text-[13.5px] text-muted-ink">套餐加载失败，请确认支付服务已启动</p>
           <Button variant="outline" size="sm" onClick={() => plansQuery.refetch()}>
             重试
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-3 divide-x divide-ink-10 border-y border-hairline max-sm:grid-cols-1 max-sm:divide-x-0 max-sm:divide-y max-sm:divide-ink-10">
           {plansQuery.data?.map((plan) => (
-            <Card key={plan.id} className="rounded-md">
-              <CardContent className="flex flex-col items-center gap-3 pt-2 text-center">
-                <span className="font-serif text-[15px] font-bold text-foreground">
-                  {plan.name}
-                </span>
-                <span className="text-2xl font-bold text-ink">
-                  {formatYuan(plan.amount_cents)}
-                </span>
-                <span className="text-[12.5px] text-text-mid">{plan.description}</span>
+            <div key={plan.id} className="flex flex-col gap-3 px-8 py-7 first:pl-2 last:pr-2 max-sm:px-2">
+              <span className="text-[15px] text-ink">{plan.name}</span>
+              <span className="text-[28px] leading-none text-accent">
+                {formatYuan(plan.amount_cents)}
+              </span>
+              <span className="text-[12.5px] leading-relaxed text-quiet">{plan.description}</span>
+              <div className="mt-auto pt-2">
                 <Button
-                  className="w-full"
                   size="sm"
                   onClick={() => orderMutation.mutate(plan.id)}
                   disabled={orderMutation.isPending}
                 >
                   {membership?.active ? '续费' : '立即开通'}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}
 
       <div>
-        <h2 className="mb-3 font-serif text-[15px] font-bold text-foreground">权益对比</h2>
-        <div className="overflow-hidden rounded-md border border-line bg-sheet">
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr className="border-b border-line bg-ink-wash/60 text-text-mid">
-                <th className="px-4 py-2.5 text-left font-normal">功能</th>
-                <th className="w-28 px-4 py-2.5 text-center font-normal">免费</th>
-                <th className="w-28 px-4 py-2.5 text-center font-bold text-ink">会员</th>
+        <h2 className="mb-4 text-[19px] text-ink">权益对比</h2>
+        <table className="w-full text-[13.5px]">
+          <thead>
+            <tr className="border-b border-ink-20 text-left">
+              <th className="py-2.5 pr-4 text-[11px] font-bold tracking-[0.1em] text-quiet">
+                功能
+              </th>
+              <th className="w-28 py-2.5 text-center text-[11px] font-bold tracking-[0.1em] text-quiet">
+                免费
+              </th>
+              <th className="w-28 py-2.5 text-center text-[11px] font-bold tracking-[0.1em] text-accent">
+                会员
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {BENEFITS.map((b) => (
+              <tr key={b.feature} className="border-b border-hairline transition-colors hover:bg-tint">
+                <td className="py-2.5 pr-4 text-ink">{b.feature}</td>
+                <td className="py-2.5 text-center text-muted-ink">{b.free}</td>
+                <td className="py-2.5 text-center text-ink">{b.member}</td>
               </tr>
-            </thead>
-            <tbody>
-              {BENEFITS.map((b) => (
-                <tr key={b.feature} className="border-b border-line last:border-0">
-                  <td className="px-4 py-2.5 text-foreground">{b.feature}</td>
-                  <td className="px-4 py-2.5 text-center text-text-mid">{b.free}</td>
-                  <td className="px-4 py-2.5 text-center font-medium text-ink">{b.member}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <p className="text-[12px] text-muted-foreground">
+      <p className="text-[12px] text-quiet">
         {healthQuery.data?.mock_pay
-          ? '当前为离线模拟支付模式,不会产生真实扣款。'
-          : '本页为支付宝沙盒环境的模拟支付,不会产生真实扣款。'}
+          ? '当前为离线模拟支付模式，不会产生真实扣款。'
+          : '本页为支付宝沙盒环境的模拟支付，不会产生真实扣款。'}
       </p>
 
       <PayQrDialog

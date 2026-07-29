@@ -1,0 +1,56 @@
+/* ── Base ───────────────────────────────────────────────────────────────
+   Sensible page defaults for consumers: the paper ground, the reading serif,
+   the wide reading line-height, and the terracotta <mark> wash. Cards and UI
+   kits may override the body surface locally; this is the floor.
+   ──────────────────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: var(--weight-regular);
+  background: var(--surface-page);
+  color: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* <mark> — a soft terracotta wash, never the harsh browser yellow.
+   color:inherit keeps the ink (and fixes dark mode). */
+mark {
+  background-color: var(--accent-wash);
+  color: inherit;
+  padding: 0 0.12em;
+  border-radius: 0.15em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+::selection {
+  background-color: var(--accent-wash);
+}
+
+/* The room has almost no motion; honor a request for none. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
