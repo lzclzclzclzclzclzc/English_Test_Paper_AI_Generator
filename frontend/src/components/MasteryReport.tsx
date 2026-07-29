@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { MasteryProfile } from '@/types/api'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
+import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils'
 const WEAK_THRESHOLD = 0.4
 
 export function MasteryReport({ profile }: { profile: MasteryProfile }) {
+  useKnowledgePoints() // 确保目录到达后重渲染，考点显示为中文名
   if (profile.total_attempts_considered === 0) {
     return (
       <div className="flex flex-col items-start gap-4 border-t border-hairline pt-8">
@@ -56,7 +58,7 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
           return (
             <div
               key={kp.knowledge_point_id}
-              className="grid grid-cols-[minmax(0,1fr)_88px_200px_64px] items-center gap-4 border-b border-hairline py-[14px] max-sm:grid-cols-[minmax(0,1fr)_64px]"
+              className="grid grid-cols-[minmax(0,1fr)_200px_64px] items-center gap-4 border-b border-hairline py-[14px] max-sm:grid-cols-[minmax(0,1fr)_64px]"
             >
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate text-[14.5px] text-ink" title={kp.knowledge_point_id}>
@@ -66,9 +68,6 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
                   {kp.knowledge_point_id} · {kp.attempts} 次作答
                 </span>
               </div>
-              <span className="text-[13px] text-muted-ink max-sm:hidden">
-                答对 {Math.round(kp.correct_rate * 100)}%
-              </span>
               <div className="h-[6px] overflow-hidden bg-ink-10 max-sm:hidden">
                 <div
                   className={cn('h-full bg-accent', !weak && 'opacity-45')}

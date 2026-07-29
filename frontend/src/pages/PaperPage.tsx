@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { usePaper } from '@/hooks/usePaper'
 import { useAuth } from '@/hooks/useAuth'
 import { useMembership } from '@/hooks/useMembership'
 import { recordGrade } from '@/lib/wrongBook'
-import { revisePaper } from '@/api/papers'
-import { submitAttempt } from '@/api/attempts'
+import { revisePaper, generatePaper } from '@/api/papers'
+import { submitAttempt, getAttemptByPaper } from '@/api/attempts'
 import { ApiError } from '@/api/client'
 import { toastApiError } from '@/lib/errors'
 import { queryClient } from '@/lib/queryClient'
@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import type { GradeSubmissionResponse } from '@/types/api'
 
 /**
  * 薄壳：以 key=paperId 强制重挂载内层——revise 换 id 导航后
@@ -50,17 +51,38 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   const [reviseOpen, setReviseOpen] = useState(false)
   const [reviseInstruction, setReviseInstruction] = useState('')
   const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
+  // 点「再做一遍」后置 true，强制忽略历史结果、回到答题态
+  const [redoing, setRedoing] = useState(false)
 
   const { locked } = useMembership()
   const { data: user } = useAuth()
   const userId = user?.id ?? 'anon'
 
-  // D4：成绩只活在 mutation state（后端无历史成绩端点，刷新即回到答题态）
+  // 错题巩固：用当前试卷答错的题定向组卷。不自动跳转——完成后由按钮点击跳转
+  const remediation = useMutation({
+    mutationFn: generatePaper,
+    onSuccess: (newPaper) => {
+      queryClient.setQueryData(['paper', newPaper.paper_id], newPaper)
+      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+    },
+    onError: toastApiError,
+  })
+
+  // 打开时拉取上次答题结果（未交卷返回 null），用于复盘展示
+  const history = useQuery({
+    queryKey: ['attempt', 'by-paper', paperId],
+    queryFn: () => getAttemptByPaper(paperId),
+    staleTime: 30_000,
+  })
+
+  // D4：本次交卷成绩活在 mutation state
   const grade = useMutation({
     mutationFn: submitAttempt,
     onSuccess: (result) => {
       // 列表页的 submitted 标记随交卷改变
       queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+      // 更新历史结果缓存，重新打开可直接复盘
+      queryClient.setQueryData(['attempt', 'by-paper', paperId], result)
       // 错题本记账：答错的收进来、答对的清账（仅真实用户，避免串号）
       if (paper && user?.id) {
         recordGrade(user.id, paper, result.items)
@@ -68,7 +90,11 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     },
     onError: toastApiError,
   })
-  const phase = grade.isPending ? 'submitting' : grade.data ? 'submitted' : 'answering'
+
+  // 展示用结果：本次交卷优先，否则用历史结果（正在重做时忽略历史）
+  const shownResult: GradeSubmissionResponse | null | undefined =
+    grade.data ?? (redoing ? null : history.data)
+  const phase = grade.isPending ? 'submitting' : shownResult ? 'submitted' : 'answering'
 
   const revise = useMutation({
     mutationFn: revisePaper,
@@ -81,11 +107,11 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   })
 
   const resultByIndex = useMemo(
-    () => new Map((grade.data?.items ?? []).map((r) => [r.index, r])),
-    [grade.data],
+    () => new Map((shownResult?.items ?? []).map((r) => [r.index, r])),
+    [shownResult],
   )
 
-  if (isLoading) {
+  if (isLoading || history.isLoading) {
     return (
       <div className="flex max-w-[52rem] flex-col gap-4">
         <Skeleton className="h-9 w-2/3" />
@@ -120,9 +146,6 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   }
 
   const submitted = phase === 'submitted'
-  const earned = paper.items
-    .filter((item) => resultByIndex.get(item.index)?.is_correct)
-    .reduce((sum, item) => sum + item.score, 0)
   const correctCount = paper.items.filter(
     (item) => resultByIndex.get(item.index)?.is_correct,
   ).length
@@ -143,8 +166,25 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     }
   }
 
-  // 错题已在判分时写入错题本，这里直接去错题本页
-  const handleRemediate = () => navigate('/review')
+  // 错题巩固：用当前试卷答错的题（考点+题型）定向生成一份新的巩固卷
+  const handleRemediate = () => {
+    const wrongItems = paper.items
+      .filter((item) => resultByIndex.get(item.index)?.is_correct === false)
+      .map((item) => ({
+        knowledge_point_ids: item.question.knowledge_point_ids,
+        question_type: item.question.question_type,
+      }))
+    if (wrongItems.length === 0) return
+    if (locked) {
+      setUpgradeReason('错题巩固是会员功能：AI 会围绕你这份卷做错的题定向组卷。')
+      return
+    }
+    remediation.mutate({
+      user_query: '针对我这份试卷里做错的题目，出一份针对性的巩固练习',
+      mode: 'remediation',
+      wrong_items: wrongItems,
+    })
+  }
 
   const unanswered = listUnanswered(paper, answers)
   const answeredCount = paper.items.length - unanswered.length
@@ -168,10 +208,13 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         </p>
         <h1 className="mt-3 text-[30px] font-normal leading-snug text-ink">{paper.title}</h1>
         <p className="mt-2 text-[13px] text-quiet">
-          {generatedAt} · 共 {paper.items.length} 题 · 满分 {paper.total_score} 分
+          {generatedAt} · 共 {paper.items.length} 题
         </p>
 
         <div className="mt-5 flex items-center gap-2.5 border-b border-hairline pb-6">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/papers">← 历史试卷</Link>
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -232,16 +275,21 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         {submitted && (
           <div className="mt-6">
             <GradeBanner
-              earned={earned}
-              total={paper.total_score}
               correctCount={correctCount}
               totalCount={paper.items.length}
               wrongCount={wrongCount}
               onRetry={() => {
                 grade.reset()
+                remediation.reset()
                 setAnswers({})
+                setRedoing(true)
               }}
               onRemediate={handleRemediate}
+              remediating={remediation.isPending}
+              remediatedPaperId={remediation.data?.paper_id ?? null}
+              onOpenRemediation={() => {
+                if (remediation.data) navigate(`/papers/${remediation.data.paper_id}`)
+              }}
             />
           </div>
         )}
@@ -287,6 +335,11 @@ function PaperPageInner({ paperId }: { paperId: string }) {
                     cacheKey={['solution', paper.paper_id, item.index]}
                     locked={locked}
                     userId={userId}
+                    userAnswer={(() => {
+                      const r = resultByIndex.get(item.index)
+                      if (!r || r.is_correct) return null
+                      return r.user_answer ?? null
+                    })()}
                   />
                 ) : undefined
               }

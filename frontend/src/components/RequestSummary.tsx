@@ -1,5 +1,6 @@
 import type { GenerateRequest } from '@/types/api'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
+import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 
 const MODE_LABELS: Record<GenerateRequest['mode'], string> = {
   fresh: '新生成',
@@ -18,6 +19,7 @@ const INTENSITY_LABELS: Record<GenerateRequest['revision_intensity'], string> = 
  * 只陈述事实、不提供操作（与生成说明同一视觉语言）。
  */
 export function RequestSummary({ request }: { request: GenerateRequest }) {
+  useKnowledgePoints()  // 确保目录到达后重渲染，考点显示为中文名
   const parts: string[] = [MODE_LABELS[request.mode] ?? request.mode]
 
   parts.push(`${request.total_questions} 题`)

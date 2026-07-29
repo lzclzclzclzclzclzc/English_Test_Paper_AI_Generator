@@ -78,9 +78,7 @@ function PaperRow({ paper }: { paper: PaperListItem }) {
       <span className="font-mono text-[12.5px] text-quiet max-sm:hidden">{date}</span>
       <div className="flex min-w-0 flex-col gap-1">
         <span className="truncate text-[15.5px] text-ink">{paper.title}</span>
-        <span className="text-[12.5px] text-quiet">
-          {paper.total_questions} 题 · 满分 {paper.total_score} 分
-        </span>
+        <span className="text-[12.5px] text-quiet">{paper.total_questions} 题</span>
       </div>
       <span
         className={cn(

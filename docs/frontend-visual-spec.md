@@ -127,6 +127,8 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 | 11 | 题库摄入控制台 | — | ⏸ 未做：管理员向功能，需 ingestion 状态端点，分阶段上线（handoff 允许） |
 | 12 | 设置 | `/settings` | ✅ 细线行式列表：账号 / 阅读外观（纸色 Ink · 深墨地 Deep Ink 切换 `.dark`，持久化 `localStorage['theme']`）/ 速率限制说明 |
 | — | 会员（本仓库特有，不在 handoff 内） | `/membership` | ✅ 按同一语言重做：细线分栏套餐、赤陶价格、细线表格权益对比 |
+| — | 学习助手（dev agent 功能，不在 handoff 内） | `/assistant` | ✅ 对话式：用户消息 = wash 底右对齐，助手回复 = 无框正文 + 底部细线，markdown 用 `.chat-md`（细线表格），思考中 = 赤陶脉冲点 |
+| — | 学习计划（dev agent 功能，不在 handoff 内） | `/study-plan` | ✅ DAY 序号 + 细线行式打卡列表，考点中文名 chips，「开始练习 →」次按钮 |
 
 **管线进度（第 4 屏）**：后端同步返回、无 SSE（Spec C 明确），采用 handoff
 落地方式 (a)——固定时间轴演示四步（Parser 0.8s / Retriever 1.2s / Reviser 2.6s /

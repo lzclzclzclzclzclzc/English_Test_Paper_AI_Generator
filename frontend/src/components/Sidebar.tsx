@@ -3,7 +3,9 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   BadgeCheck,
   BarChart3,
+  CalendarCheck,
   List,
+  MessageCircle,
   PanelLeft,
   Pen,
   Settings,
@@ -21,6 +23,7 @@ const GROUPS = [
     label: '出卷',
     items: [
       { to: '/', label: '生成试卷', icon: Pen, end: true },
+      { to: '/assistant', label: '学习助手', icon: MessageCircle, end: true },
       { to: '/papers', label: '历史试卷', icon: List, end: false },
     ],
   },
@@ -29,6 +32,7 @@ const GROUPS = [
     items: [
       { to: '/review', label: '错题本', icon: XCircle, end: true },
       { to: '/mastery', label: '掌握度', icon: BarChart3, end: true },
+      { to: '/study-plan', label: '学习计划', icon: CalendarCheck, end: true },
     ],
   },
   {

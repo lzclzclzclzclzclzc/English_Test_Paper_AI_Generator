@@ -23,7 +23,6 @@ export interface WrongBookEntry {
   question: RevisedQuestion
   /** 请求解析（POST /solutions）时需要 */
   revisionMode: RevisionMode
-  score: number
   paperId: string
   paperTitle: string
   /** ISO 时间戳（判分时刻） */
@@ -97,7 +96,6 @@ export function recordGrade(userId: string, paper: Paper, results: GradeResultIt
         sourceQuestionId: item.source_question_id,
         question: item.question,
         revisionMode: item.revision_mode,
-        score: item.score,
         paperId: paper.paper_id,
         paperTitle: paper.title,
         gradedAt,

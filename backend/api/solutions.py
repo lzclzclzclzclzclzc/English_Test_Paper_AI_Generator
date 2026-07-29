@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends
+
+from backend.deps import rate_limiter
+from backend.schemas import SolutionRequest, SolutionResponse, User
+from backend.services import ai_gateway
+
+router = APIRouter(prefix="/solutions", tags=["solutions"])
+
+
+@router.post("", response_model=SolutionResponse)
+async def generate_solution(
+    body: SolutionRequest,
+    user: User = Depends(rate_limiter("solutions", "rate_limit_solutions_per_min")),
+) -> SolutionResponse:
+    solution = ai_gateway.generate_solution(
+        body.question,
+        source_question_id=body.source_question_id,
+        revision_mode=body.revision_mode,
+        user_answer=body.user_answer,
+    )
+    return SolutionResponse(solution=solution)

@@ -44,17 +44,17 @@ AI Engine 采用**纯 pipeline 架构**（无反馈回路，无 agent 编排）�
 
 **独立入口**（不在主 pipeline 内）：
 
-- **Solutioner**：按需生成单题解析（用户点"生成解析"按钮时调用）
+- **Solutioner**：按需生成单题解析（用户点"查看解析"按钮时调用）
 - **Analyzer**：查用户答题历史 → 掌握度画像；供 `review` 模式的 Parser 使用，也可独立被前端调用展示"薄弱点面板"
 
 **取消 Verifier 的依据**：答案唯一无歧义（Spec A § 1.6），改题后 LLM 直接产出新答案，无需二次验证。判对错由未来 FastAPI 后端做规范化字符串比较。
 
 ### 1.2 无状态原则
 
-- **AI Engine 本身无状态**：`generate_paper` / `revise_paper` 每次都返回全新对象；AI Engine 不写任何 SQL 表（除下方 Solutioner 例外）
+- **AI Engine 完全无状态、只读**：`generate_paper` / `revise_paper` / `generate_solution` / `build_profile` 每次都返回全新对象；AI Engine **不写任何 SQL 表**——五个模块全部只读题库/答题记录或只产返回值
 - `revise_paper` 接受**完整 `Paper`** 和用户指令 → 返回**完整新 `Paper`**（`paper_id` 换新）
 - **持久化职责在后端层**：由 [Spec C](./2026-07-07-backend-design.md) 定义。FastAPI 拿到 `Paper` 后写入 `papers` 表；`revise_paper` 时后端从表里读出完整 `Paper` 喂给 AI Engine——**边界依然清晰：AI Engine 是纯函数，后端负责持久化**
-- **唯一的写入侧信道**：Solutioner 在特定条件下把生成的解析写回 `questions.solution`（Spec A § 2.7 不变量 6）
+- **Solutioner 无写回缓存**：`generate_solution` 每次调用都直接问 LLM，不读也不写 `questions.solution`（历史上曾设计"命中缓存则跳过 LLM + 原题解析写回"，现已移除，理由见 § 6）
 
 ### 1.3 模块依赖图
 
@@ -79,6 +79,13 @@ AI Engine 采用**纯 pipeline 架构**（无反馈回路，无 agent 编排）�
 - 所有存储访问统一走 `shared/storage.py`（Spec A § 3.7 / § 3.8 定义的结构）
 - 所有 embedding 统一走 `shared/embedding.py`
 - Prompt 模板全部在 `ai_engine/prompts/`（见 § 6）
+
+> **实现现状注记**（2026-07-16）：上图是**目标态**（`shared/` 完全抽出）。当前 Retriever 已实现，但存储/embedding 尚未抽到 `shared/`：
+> - SQLite 读取在 `ai_engine/question_repo.py`（`QuestionRepo`，只读）
+> - embedding 复用 `ingestion/chromadb/embedder.py::QwenEmbedder`
+> - ChromaDB 访问直接在 `ai_engine/retriever.py` 内
+>
+> 待 Parser / Reviser / Solutioner / Analyzer 都落地、需要共享这些设施时，再统一抽到 `shared/storage.py` + `shared/embedding.py`。届时 Retriever 改为依赖 `shared/`，接口不变。
 
 ---
 
@@ -105,6 +112,7 @@ def generate_solution(
     *,
     source_question_id: str | None = None,
     revision_mode: Literal["fresh", "light", "original"] | None = None,
+    user_answer: str | list[str] | dict[str, str] | None = None,
 ) -> str: ...
 
 
@@ -135,6 +143,9 @@ def generate_paper(user_query, mode="fresh", *, wrong_items=None,
         wrong_items=wrong_items,
         mastery=profile,
     )
+    # Parser 只填题目相关字段；调用上下文由 pipeline 补
+    req.user_id = user_id
+    req.review_window_days = review_window_days
 
     # 3. Retriever：GenerateRequest → 候选题
     retrieval = retriever.retrieve(req)
@@ -174,20 +185,19 @@ def parse(
    - `fresh`：只解析 `user_query`
    - `remediation`：`user_query` + "用户刚做完试卷的错题分布：单选/时态 × 3, 词性转换/动词变名词 × 2, ..."
    - `review`：`user_query` + `mastery.weak_kps` 前 N 条（默认 8 条）作为薄弱知识点提示
-3. **LLM 调用**：走 `shared/llm/deepseek.py::DeepSeekClient.structured()`，`response_model=ParserLLMResponse`（Parser 专用响应模型，见 § 3.5），`max_retries=3`
+3. **LLM 调用**：走 `shared/llm/deepseek.py::DeepSeekClient.structured()`，**`response_model=GenerateRequest`（直接以对外契约作为响应模型）**，`max_retries=3`，`temperature=0.2`
 4. **本地二次校验**（在 pydantic 之外）：
    - `knowledge_points` 里的每个 id 必须存在于 SQLite；不存在则丢弃并记入 `warnings`
    - `total_questions` ≤ 上限（默认 30）；超限截断
-   - `type_distribution` 累加 ≤ `total_questions`；超出按比例缩放
-   - `difficulty_distribution` 同理
-   - **`revision_intensity` 不做二次校验**：其值由 pydantic `Literal["fresh","light","original"]` 必填约束保证——若 LLM 省略或输出非法值，`instructor` 会自动把校验错误反馈回 LLM 重试
-5. **构造 `GenerateRequest`**：把 `ParserLLMResponse` 的字段（含 LLM 决定的 `revision_intensity`）转填到 `GenerateRequest`；补 `mode`、`wrong_items`、`user_id`、`review_window_days`、`free_text=user_query`
+   - `type_distribution` 的 key 必须是合法 `question_type`（非法丢弃）；累加 ≤ `total_questions`，超出按比例缩放
+   - **`revision_intensity` 不做二次校验**：`Literal["fresh","light","original"]` 由 pydantic 约束值域（`GenerateRequest` 里默认 `"light"`）；LLM 省略即落默认，输出非法值则由 `instructor` 反馈回 LLM 重试
+5. **补全上下文字段**：LLM 已直接产出 `GenerateRequest` 的核心字段（含 `revision_intensity`）；本地代码补 `mode`、`wrong_items`（`user_id`、`review_window_days` 由 pipeline 在 `parse()` 返回后补——见 § 2.2）。**`free_text` 只填"结构化字段无法表达的情境/主题诉求"**（如"关于环保"、"结合校园场景"），由 LLM 在 `GenerateRequest.free_text` 中输出；纯配额/纯 KP 请求（如"5 道单选 5 道改写"）此字段为空串。**不要把整句 user_query 塞进 free_text**——否则每个请求都会触发 Retriever 的向量检索（见 § 3.4 规则 + Spec A `GenerateRequest.free_text` 契约）
 6. **兜底**：若 LLM 3 次仍无法产出合法 JSON → 抛 `ParserError`
 
 ### 3.3 关键决策
 
 - **LLM 只负责意图理解和结构映射**，一致性检查由本地代码做（规则确定的事情不劳烦模型）
-- **不允许 LLM 造 KP id**：清单在 prompt 里显式给出，若用户提到清单外的概念（如生僻语法点），LLM 应写入 `free_text`，本地代码丢弃非法 id
+- **不允许 LLM 造 KP id**：清单在 prompt 里显式给出，本地代码丢弃非法 id。若用户提到清单外的**情境/主题**（如"环保""校园生活"），写入 `free_text` 供 Retriever 做语义检索；若是清单外的生僻语法点且无对应 KP，则只能丢弃
 - **`total_questions` 上限**：常量，第一版 30；后续可放到 `AppConfig`
 - **`revision_intensity` 由 LLM 决定**：用户通常不会显式说"要原题/轻改/新出"，LLM 根据 prompt 语义推断（详细规则见 § 3.4）；兜底逻辑写在 prompt 里（默认选 `"light"`），不写在 Python 代码里
 
@@ -197,61 +207,72 @@ def parse(
 
 - 头部列出**所有合法 KP id + 三种 `question_type` 枚举**
 - Few-shot 覆盖：单一 KP 请求、多 KP 请求、`type_distribution` 显式指定、模糊请求（"随便出 10 道"）、`remediation` 附加错题、`review` 附加掌握度
-- 显式规则："若用户提到清单外的 KP，不要造 id，只写进 `free_text`"
-- **`revision_intensity` 推断规则**（关键新规则）：
+- **`free_text` 填写规则**（关键，影响 Retriever 走向量还是 SQL）：
 
   ```
-  必须选择恰好一个档位，不允许省略。
+  free_text 只填"结构化字段（knowledge_points / question_types /
+  type_distribution）无法表达的情境或主题诉求"，用于语义向量检索。
+
+  - 填入：用户描述的题目情境/主题，如"关于环保""结合校园生活场景"
+    "多用旅游购物的例子"——这些是题库没有显式标注、只能靠语义匹配的内容。
+  - 留空（""）：纯配额/纯知识点/纯题型请求，如"5 道单选 5 道改写"
+    "来 10 道时态题""随便出 10 道"——这些诉求已被结构化字段完整表达，
+    没有额外主题。
+  - 绝不把整句 user_query 原样塞进 free_text。
+  ```
+
+  配 few-shot：
+  - `"来 10 道关于环保的时态单选"` → `free_text="关于环保"`（时态/单选/数量进结构化字段）
+  - `"5 道单选 5 道改写"` → `free_text=""`
+  - `"结合校园生活多出几道介词题"` → `free_text="结合校园生活"`
+  - `"随便来 10 道"` → `free_text=""`
+
+- **`revision_intensity` 推断规则**（关键规则）：prompt 用严格的**判定流程**，按优先级顺序逐条匹配，命中即定：
+
+  ```
+  1. 有 "original" 触发词 → original（最高优先级）
+  2. 有 "light" 触发词   → light（第二优先级）
+  3. 有 "fresh" 触发词或明确情境描述 → fresh
+  4. 其他所有情况 → light（默认档位）
+
+  注意：light 优先级高于 fresh——若同时命中 light 与 fresh 触发词，选 light。
 
   - "original"（直接用原题）：
-    · 用户明确要求"用原题"、"别改"、"照原题出"、"真题"、"考试原题"
-    · 或强调"真题模拟"这类需要保持原貌的场景
-
-  - "fresh"（完全按知识点新出题）：
-    · 用户明确要求"重新出"、"全新的"、"别用现成的"、"原创"
-    · 或用户描述了具体的题目情境需求（如"多出关于日常生活的题"、
-      "结合校园场景"），这类具体情境要求原题很难匹配，需要新出
+    · 触发词："原题"、"真题"、"一模"、"二模"、"考试原题"、"中考真题"、
+      "别改"、"照原题出"、"保持原样"……
+    · 有 original 触发词时忽略情境描述（如"来十道单选原题，关于校园生活" → original）
 
   - "light"（保留原题结构，改数值/词汇/情境）—— 默认档位：
-    · 用户没明确说改题尺度，只关心"练习"、"巩固"、"多做几道"
-    · 这是最常见的默认选择
-    · 若用户诉求既涉及情境要求又强调"原题"，以"原题"优先
+    · 触发词："练习"、"巩固"、"复习"、"来几道"、"出几道"，以及任何
+      知识点名称（"动词时态""不定代词""介词"……）或题型名称
+    · 知识点名称不算情境描述——纯 KP/题型请求一律 light
+
+  - "fresh"（完全按知识点新出题）：
+    · 没有 original 触发词，且有 "重新出"、"全新的"、"别用现成的"、"原创" 等词
+    · 或有明确的生活情境/主题描述（"场景""主题""情境""关于""结合""围绕"）
   ```
 
   配 few-shot（各 1-2 条）：
   - `"来 10 道现在完成时的中考真题"` → `"original"`
-  - `"帮我按被动语态出一份练习，多用校园场景"` → `"fresh"`
-  - `"多练几道时态"` → `"light"`
-  - `"复习一下我上周的错题"` → `"light"`（无特殊指示，走默认）
+  - `"帮我重新出十道单选题"` / `"帮我按被动语态出一份练习，多用校园场景"` → `"fresh"`
+  - `"多练几道时态"` / `"复习一下我上周的错题"` → `"light"`（无特殊指示，走默认）
 
-- 提示 LLM 先在响应模型内输出 `reasoning: str` 字段（`instructor` 支持在响应模型加附加字段而不返回给调用方）——实测能提升结构化 JSON 质量
+### 3.5 响应模型：直接用 `GenerateRequest`
 
-### 3.5 Parser 专用响应模型
+Parser **不用单独的内部响应模型**——`structured()` 的 `response_model` 就是对外契约 `GenerateRequest`（`shared/schemas.py`）本身。LLM 直接产出 `GenerateRequest` 的字段，Parser 随后做本地二次校验（丢非法 KP id、截断题数、清洗 `type_distribution`、缩放分布）并补 `mode` / `wrong_items`。
 
-Parser 用一个**内部响应模型**承接 LLM 输出，与最终对外的 `GenerateRequest` 分离：
+> **契约对齐**（2026-07-14/15）：`GenerateRequest` 已删除 `knowledge_points_exclude`、`difficulty`、`difficulty_distribution`、`per_kp_min`（均已从契约移除），新增 `free_text`（语义主题，供 Retriever 判断走向量还是 SQL）。
 
-```python
-# ai_engine/parser.py
-class ParserLLMResponse(BaseModel):
-    """Parser 从 LLM 拿到的直接响应；由 Parser 转换为 GenerateRequest。"""
-    reasoning: str = ""                    # LLM 内推理，不透传给下游
-    knowledge_points: list[str] = []
-    knowledge_points_exclude: list[str] = []
-    question_types: list[Literal["single_choice", "word_form",
-                                 "sentence_rewriting"]] = []
-    difficulty: list[Literal["easy", "medium", "hard"]] = []
-    total_questions: int
-    type_distribution: dict[str, int] = {}
-    difficulty_distribution: dict[str, int] = {}
-    per_kp_min: int = 0
-    revision_intensity: Literal["fresh", "light", "original"]   # 必填，无默认
-```
+**关于 `revision_intensity`**：
 
-**为什么与 `GenerateRequest` 分开**：
+- 契约里 `revision_intensity` 有默认值 `"light"`（`shared/schemas.py`）——LLM 省略时不会触发 pydantic 报错，而是落到默认 `"light"`。这与 prompt 里的兜底规则（无明确改题信号一律选 `light`，见 § 3.4）一致，两处默认互为保险
+- 本地代码**不对 `revision_intensity` 做二次校验**：`Literal["fresh","light","original"]` 由 pydantic 约束值域，非法值会被 instructor 反馈回 LLM 重试
 
-- `GenerateRequest` 是全系统契约（Spec A § 2.4），字段完整且经本地二次校验，下游可信
-- `ParserLLMResponse` 是 Parser 与 LLM 的私有协议；`reasoning` 只对 LLM 有用不该外泄；`knowledge_points` 里可能含非法 id 需在 Parser 层过滤
-- pydantic 必填约束（`revision_intensity` 无默认）保证：LLM 若省略此字段，instructor 触发 Layer 2 重试，把校验错误信息反馈回 LLM 重发——**不需要 Python 代码兜底**
+**为什么本地仍要二次校验**（而不是完全信任 LLM 产出的 `GenerateRequest`）：
+
+- `knowledge_points` 里可能含清单外的非法 id，需在 Parser 层丢弃并记 `warnings`
+- `type_distribution` 的 key 是 `dict[str,int]`，pydantic 不校验 key 值，需本地检查是否合法题型
+- `total_questions` 需按上限截断；`type_distribution` 之和超 `total_questions` 需按比例缩放
 
 ---
 
@@ -259,73 +280,76 @@ class ParserLLMResponse(BaseModel):
 
 **目标**：`GenerateRequest` → 覆盖需求的候选题集合，供 Reviser 挑选/改造。
 
-采用 **"属性硬过滤 + 语义向量检索"** 组合。
+采用 **"属性硬过滤（SQL）+ 语义向量检索（Chroma）"** 的混合检索。**已实现**（`ai_engine/retriever.py`，见 § 4.4 实现说明）。
 
 ### 4.1 接口
 
 ```python
 def retrieve(req: GenerateRequest) -> RetrievalResult: ...
 
+class RetrievedItem(BaseModel):
+    question: Question               # 完整题库题（Spec A § 2.2）
+    score: float                     # 语义相似度（cosine，越大越近；SQL 随机路径为 0）
+
 class RetrievalResult(BaseModel):
     items: list[RetrievedItem]
     warnings: list[str] = []
-
-class RetrievedItem(BaseModel):
-    question: Question               # 完整题库题（Spec A § 2.2）
-    score: float                     # 语义相似度分数
-    bucket: str                      # 命中桶标识，如 "type=single_choice|difficulty=medium|kp=..."
+    shortfall: dict[str, int] = {}   # 每个桶还缺几道，供 Reviser 决定是否 fresh 补
 ```
 
-`RetrievalResult` 与 `RetrievedItem` 是 Spec A § 2 数据契约的**扩展**（Spec A 未涵盖），新增到 `shared/schemas.py`。归入共享契约是因为未来 FastAPI 可能返回给前端做"候选池预览"。
+`RetrievalResult` 与 `RetrievedItem` 定义在 `shared/schemas.py`（Spec A 未涵盖，属 AI Engine 扩展契约）。`shortfall` 是关键——Retriever **只取不造**，取不够就在此结构化上报缺口，由 Reviser 决定补不补（且受 `revision_intensity` 约束：`original` 档不补）。
 
-### 4.2 内部流程
+### 4.2 两条路径（混合检索）
 
-1. **属性硬过滤（SQL）**：
-   - 从 `questions` join `question_knowledge_points` 过滤：
-     - `question_type ∈ req.question_types`（若非空）
-     - `difficulty ∈ req.difficulty`（若非空）
-     - `knowledge_point_id ∈ req.knowledge_points`（若非空）
-     - 排除 `knowledge_point_id ∈ req.knowledge_points_exclude`
-   - 得到候选 id 集 `S_hard`
-   - 若 `S_hard` 为空 → 抛 `RetrieverError("no candidate")`
+Retriever 按 `req.free_text` 是否有内容，走两条路径之一：
 
-2. **需求描述文本 embedding**：
-   - 拼接 `req.free_text` + include KP 的 `level2` 中文名 + `question_types` 中文名 + `difficulty` 中文名
-   - 按 Spec A § 2.6 的模板（`[题型]/[考点]/[难度]/[题干]`）拼装 query 文本
-   - 走 `shared/embedding.py::encode()` 得到 query 向量
+- **`free_text` 为空** → **SQL 随机路径**：纯配额/纯 KP 请求（如"5 道单选 5 道改写"）。属性硬过滤后随机取（带种子，测试可复现）。**不加载模型。**
+- **`free_text` 非空** → **向量语义路径**：有情境/主题诉求（如"关于环保的单选"）。属性硬过滤后，在硬过滤集内按语义相似度排序取前 N。
 
-3. **向量检索（Chroma）**：
+Parser 保证 `free_text` 只装"结构化字段无法表达的主题词"（见 § 3.4），所以这个开关简单可靠：`bool(free_text.strip())`。
 
-   Chroma 的 `where` 参数仅过滤 metadata、不能按 id 集合限制。因此**主路径**是"先向量取 Top-M，再和 `S_hard` 求交"：
+### 4.3 内部流程
 
-   ```python
-   qv = embedding.encode([query_text])[0]
-   # 向量检索：只按 metadata 硬过滤（题型、难度），先过 Chroma
-   hits = chroma.query(
-       query_embeddings=[qv],
-       n_results=M,
-       where=_metadata_filter(req),   # 例如 {"$and": [{"question_type": {"$in": [...]}}, {"difficulty": {"$in": [...]}}]}
-   )
-   # Python 端与 S_hard（含 KP 过滤的完整硬过滤集）求交
-   candidates = [h for h in hits if h.id in S_hard]
-   ```
+1. **分桶（`_plan_buckets`）**：
+   - `req.type_distribution` 非空 → 每个题型一个桶，各取指定数
+   - 否则 → 单桶，按 `req.question_types` 过滤后取 `total_questions`
 
-   - `K = req.total_questions * over_fetch_factor`，`over_fetch_factor` 默认 3
-   - `M = min(3*K, |S_hard|)` —— 若某些 hit 不在 `S_hard` 中会被丢弃，`M` 需要过取足够多才能保证最终 `≥ K` 个候选
-   - **为什么把 `kp` 过滤留在 Python 端**：Spec A § 3.8 说明 Chroma metadata 的 `kp_ids` 是逗号分隔字符串，`$contains` 支持因版本而异；用 SQL 做 KP 过滤（`question_knowledge_points` join）更可靠
+2. **每个桶填充（`_fill_bucket`）**：
+   - **属性硬过滤（SQL）**：`question_repo.filter_ids()` 按 `question_type` + `knowledge_points`（join `question_knowledge_points`）过滤，得该桶候选 id 集 `hard_ids`
+   - **排序**：
+     - SQL 路径 → `hard_ids` 随机打乱（种子）
+     - 向量路径 → 见 § 4.4，在 `hard_ids` 内按相似度排序
+   - 取前 `target` 个 id → `question_repo.get_by_ids()` 取完整 Question
+   - 若不足 `target` → 记 `shortfall[桶] += 缺口` + `warnings`
 
-4. **配额分配**：
-   - 若 `req.type_distribution` / `req.difficulty_distribution` / `req.per_kp_min` 显式指定 → 按分布桶挑选，各桶内按相似度排序取 Top-N
-   - 若未显式指定 → 按语义相似度 Top-N
-   - 若某分布桶配额不足 → 记入 `warnings`，其他桶不补足；Reviser 决定要不要 fresh 补齐（`revision_intensity="fresh"` 时可用其他候选替代）
+3. **产出 `RetrievalResult`**；`items` 全空则抛 `RetrieverError`
 
-5. **产出 `RetrievalResult`**
+### 4.4 向量路径实现（先 SQL 后向量）
 
-### 4.3 关键决策
+**关键设计：SQL 在前，向量在后**——在**已经 KP 过滤好的 `hard_ids` 集合内**做相似度排序，而不是"先全库向量取 Top-M 再和硬过滤集求交"。
 
-- **不做语义去重**：同 KP 的题彼此语义天然接近，去重会伤覆盖度。去重只按 `question.id`
-- **过取比例 3**：给 Reviser 3 倍余量做质量筛选，兼顾覆盖度和成本
-- **不同 mode 处理**：`remediation` / `review` 模式下，Parser 已经把错题 KP / 薄弱 KP 塞进 `req.knowledge_points` 和 `req.type_distribution`，Retriever 逻辑无需感知 mode
+```python
+# hard_ids 已是 SQL 过滤好的候选（如 52 道介词题）
+query_vec = embedder.embed([req.free_text])[0]
+stored = collection.get(ids=hard_ids, include=["embeddings"])   # 按 id 取这些题的向量
+scores = {qid: dot(query_vec, vec) for qid, vec in zip(...)}     # 本地 cosine（向量已归一化）
+ordered = sorted(hard_ids, key=lambda i: scores[i], reverse=True)
+```
+
+**为什么不用 `collection.query()`**：
+- Chroma 的 `query()` 只能按 metadata 过滤（`where`），**不能限定 id 集合**；且 `kp_ids` 在 metadata 里是逗号分隔字符串，KP 过滤不可靠（Spec A § 3.8）
+- 若用 `query()` 先取全库 Top-M 再和 `hard_ids` 求交，交集可能远小于 target（例："既是介词题、又语义接近旅游"的题很少）——曾导致"要 5 道介词题只匹配到 2 道，再拿无关介词题凑数"的 bug
+- 改用 `collection.get(ids=hard_ids)` 把该桶**全部**候选的向量取出、本地算 cosine 排序——保证排序范围就是目标 KP 集，取前 N 名副其实
+
+**向量归一化**：`build_vec` 阶段 `normalize_embeddings=True`（Spec A § 3.9），故点积即 cosine。
+
+### 4.5 关键决策
+
+- **只取不造**：Retriever 绝不生成新题；缺口通过 `shortfall` 上报，Reviser 负责（fresh 档）补齐
+- **不做语义去重**：同 KP 的题语义天然接近，去重伤覆盖度；去重只按 `question.id`（跨桶用 `exclude` 集）
+- **不感知 mode**：`remediation` / `review` 模式下，Parser 已把错题 KP / 薄弱 KP 塞进 `req.knowledge_points`，Retriever 无需感知 mode
+- **device 自适应**：`_auto_device()` 检测 CUDA，不可用则降级 CPU——同一代码在 GPU 建库机和 CPU 开发机都能跑
+- **懒加载模型**：仅向量路径加载 Qwen；纯配额请求不碰模型
 
 ---
 
@@ -337,9 +361,10 @@ class RetrievedItem(BaseModel):
 
 | 档位 | Reviser 做什么 |
 |---|---|
-| `original` | **不调 LLM**。字段拷贝，`revision_notes=None` |
-| `light` | LLM 逐题改写：保留题型/KP/难度；改数值/词汇/句式；同步更新 `answer` 和 `options`；不填 `solution` |
-| `fresh` | LLM 参考原题风格 + KP + 难度出**新题**：题干、选项、答案全新生成；不改 KP/题型/难度；不填 `solution` |
+| `original` | **不调 LLM**。字段拷贝 |
+| `light` | LLM 逐题改写：保留题型/KP；改数值/词汇/句式；同步更新 `answer` 和 `options`；不填 `solution` |
+| `fresh` | LLM 参考原题风格 + KP 出**新题**：题干、选项、答案全新生成；不改 KP/题型；不填 `solution` |
+
 
 ### 5.2 逐题 LLM 调用（`light` / `fresh`）
 
@@ -347,19 +372,19 @@ class RetrievedItem(BaseModel):
 - **Prompt 输入**：
   - 原题（`stem` + `options` + `answer`）
   - 目标 `knowledge_point_ids` 对应的 `level2` 中文名
-  - `question_type`、`difficulty`（不变约束）
-  - `req.free_text`（用户原话，控制情境倾向）
+  - `question_type`（不变约束）
+  - `req.free_text`（用户情境主题诉求，控制情境倾向）
   - 档位标识（`light` / `fresh`）
 - **输出**：`instructor` + `RevisedQuestion` pydantic 校验；`max_retries=2`
-- **兜底**：仍失败 → **fallback 到原题**（按 `original` 档拷贝），`revision_notes="revision failed, fallback to original"`
+- **兜底**：仍失败 → **fallback 到原题**（按 `original` 档拷贝），并把该题号记入 `Paper.metadata["revision_failures"]`
 
 ### 5.3 硬约束层（Reviser 自防御）
 
 因取消 Verifier，Reviser 必须自己保证输出正确性。三层防御：
 
-1. **Schema 层**：pydantic 校验 `question_type` / `knowledge_point_ids` / `difficulty` 字段类型和枚举
+1. **Schema 层**：pydantic 校验 `question_type` / `knowledge_point_ids` 字段类型和枚举
 2. **不变量层**（本地 Python 二次校验）：
-   - `question_type` / `knowledge_point_ids` / `difficulty` 必须与原题**完全一致**——检测到 LLM 修改这三个字段中的任一 → 视为 revision 失败，走 § 5.2 的 fallback 路径（不走 pydantic 层重试，因为这不是 Schema 违规而是业务不变量违规）
+   - `question_type` / `knowledge_point_ids` 必须与原题**完全一致**——检测到 LLM 修改这两个字段中的任一 → 视为 revision 失败，走 § 5.2 的 fallback 路径（不走 pydantic 层重试，因为这不是 Schema 违规而是业务不变量违规）
 3. **答案格式层**：
    - `single_choice`：`answer ∈ {"A","B","C","D"}`；`options` 长度为 4；`options[i].label` 为 `A/B/C/D` 无遗漏
    - `word_form` / `sentence_rewriting`：`answer.strip() != ""`
@@ -371,14 +396,12 @@ class RetrievedItem(BaseModel):
 def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
     items: list[PaperItem] = []
     for idx, retrieved in enumerate(retrieval.items[: req.total_questions], start=1):
-        rq, notes = _revise_one(retrieved.question, req.revision_intensity, req.free_text)
+        rq = _revise_one(retrieved.question, req.revision_intensity, req.free_text)
         items.append(PaperItem(
             index=idx,
             question=rq,
-            score=_default_score(rq.question_type),
             source_question_id=retrieved.question.id,
             revision_mode=req.revision_intensity,
-            revision_notes=notes,
         ))
     return Paper(
         paper_id=uuid4().hex,
@@ -386,9 +409,9 @@ def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
         generated_at=datetime.now(UTC),
         request=req,
         items=items,
-        total_score=sum(it.score for it in items),
         metadata={
             "retrieval_warnings": retrieval.warnings,
+            "shortfall": retrieval.shortfall,
             "revision_failures": [it.index for it in items
                                   if _is_fallback(it)],
             "llm_calls": _stats(),
@@ -396,15 +419,12 @@ def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
     )
 ```
 
-### 5.5 分值默认
+**契约同步说明**（2026-07-14）：`PaperItem` 已删除 `score` 与 `revision_notes` 字段，`Paper` 已删除 `total_score` 字段（见 `shared/schemas.py`）：
 
-- `single_choice`：2 分
-- `word_form`：1 分
-- `sentence_rewriting`：3 分
+- **分值删除**：不同请求题数不同 → 总分不可横向比较，分值无意义。衡量表现改用**正确率**（`Attempt.items` 里每题的 `is_correct`）。
+- **revision_notes 删除**：改题摘要属于调试信息，前端不展示；若需排查失败，`Paper.metadata["revision_failures"]` 已记录 fallback 的题号。
 
-写死为常量；未来若需前端可配，会在 `GenerateRequest` 加 `score_per_type` 字段（本 spec 不实现，见 § 12 开放问题）。
-
-### 5.6 并发
+### 5.5 并发
 
 Reviser 批量改题时并发调用 LLM，通过 `shared/llm/deepseek.py` 的内部信号量限流（默认 `max_concurrency=4`，见 Spec A § 6 `LLMConfig`）。
 
@@ -412,48 +432,50 @@ Reviser 批量改题时并发调用 LLM，通过 `shared/llm/deepseek.py` 的内
 
 ## 6. Solutioner（`ai_engine/solutioner.py`）
 
-**目标**：单题按需生成解析。用户在做题后点"生成解析"按钮时通过未来 FastAPI 调用。
+**目标**：单题按需生成解析。用户在做题后点"查看解析"按钮时通过未来 FastAPI 调用。
 
-### 6.1 接口（Spec A § 2 已引用，此处补内部逻辑）
+**无缓存、纯只读**：Solutioner **每次调用都直接问 LLM**——不读 `questions.solution`，也不写回。历史版本曾设计"原题命中缓存则跳过 LLM，并把生成的解析写回 `questions.solution`"，现已整体移除。这样 AI Engine 保持完全无状态/只读；且每次都实时生成，才能针对学生这一次的具体作答给出个性化解析（见 § 6.2 `user_answer`）。
+
+### 6.1 接口
 
 ```python
 def generate_solution(
     q: RevisedQuestion,
     *,
     source_question_id: str | None = None,
-    revision_mode: Literal["fresh", "light", "original"] | None = None,
+    revision_mode: RevisionMode | None = None,   # RevisionMode = Literal["fresh","light","original"]
+    user_answer: str | list[str] | dict[str, str] | None = None,
 ) -> str: ...
 ```
 
+- **`user_answer`**（学生的作答，通常是**错误答案**）：三种题型全支持——单选是裸标签 `str`（`"B"`）；填空是按空顺序的 `list[str]` 或 `{blankN: text}` 的 `dict`。传入后由 `_format_user_answer()` 渲染成可读文本（如 `"blank1: went  blank2: to"`）再进 prompt。**非空时**解析的第三段变为【错误原因】，针对该错误作答说明"错在哪、为什么错"；**为空时**是通用的【易错点】（见 § 6.3）。
+- **`source_question_id` / `revision_mode`**：现为**残留参数**——签名保留（向后兼容与未来可能的溯源用途），但缓存移除后**代码内不再使用**。
+
 ### 6.2 内部流程
 
-1. **缓存查询前置**：若 `source_question_id` 存在且 `revision_mode == "original"`：
-   ```sql
-   SELECT solution FROM questions WHERE id = ?
-   ```
-   非 NULL → 直接返回，**不调 LLM**
-2. **LLM 调用**：走 `shared/llm/deepseek.py::DeepSeekClient.text()`（唯一使用 `text()` 而非 `structured()` 的模块）
-   - Prompt 输入：`q.stem` + `q.options`（若有）+ `q.answer` + `q.question_type` + `q.knowledge_point_ids` 对应的 `level2` 中文名
+1. **组装 prompt 输入**：`q.stem` + `q.options`（若有，渲染为 `A. ... / B. ...` 文本）+ `_format_answer(q.answer)`（正确答案，单选裸标签、填空渲染为 `blank1: a / b` 形式）+ `q.question_type` + `q.knowledge_point_ids` 对应的 `level2` 中文名 + `_format_user_answer(user_answer)`（学生作答，可为空）
+2. **LLM 调用**：走 `shared/llm/deepseek.py::DeepSeekClient.text()`（唯一使用 `text()` 而非 `structured()` 的模块），`temperature=0.4`
    - 输出**纯文本**（不走 pydantic 校验；解析文本更自然）
-3. **写回条件**（Spec A § 2.7 不变量 6 的实现）：
-   ```
-   source_question_id 存在
-   AND revision_mode == "original"
-   AND questions.solution IS NULL
-   ```
-   全部满足 → `UPDATE questions SET solution = ? WHERE id = ? AND solution IS NULL`
-4. **返回 solution 文本**
-
-**并发写安全**：`WHERE solution IS NULL` 保证并发写只有第一个成功；后到者 UPDATE 匹配 0 行、静默丢弃。两个返回值内容近似，无所谓丢哪份。
+   - LLM 抛异常 → 包装为 `SolutionerError`
+3. **返回 solution 文本**：`strip()` 后为空则抛 `SolutionerError`
 
 ### 6.3 Prompt 结构约定
 
-`ai_engine/prompts/solutioner.md` 要求 LLM 三段式输出：
+`ai_engine/prompts/solutioner.md` 要求 LLM 三段式输出。前两段固定，第三段随 `user_answer` 切换：
 
 ```
 【关键考点】...
 【解题思路】...
-【易错点】...
+【易错点】...          ← user_answer 为空时
+```
+
+或
+
+```
+【关键考点】...
+【解题思路】...
+【错误原因】...        ← user_answer 非空时：针对该错误作答指出错在哪、为什么错；
+                        填空/改写题若有多空，指出具体哪个空错了、正确应是什么
 ```
 
 - 无 markdown 代码块包裹
@@ -473,16 +495,25 @@ def build_profile(user_id: str, window_days: int | None = None) -> MasteryProfil
 
 ### 7.2 内部流程
 
-1. **查询答题记录**（Spec A § 3.7 `attempts` + `attempt_items` 表）：
+1. **查询答题记录**（`attempts` + `attempt_items` 表，由后端写入）：
    ```sql
    SELECT ai.kps_json, ai.question_type, ai.is_correct
    FROM attempts a
    JOIN attempt_items ai ON a.id = ai.attempt_id
    WHERE a.user_id = ?
-     AND (? IS NULL OR a.answered_at >= datetime('now', ? || ' days'))
+     AND (? IS NULL OR a.answered_at >= datetime('now', '-' || ? || ' days'))
    ```
+   注：`attempt_items.kps_json` 列存的是对应 `AttemptItem.knowledge_point_ids` 的 JSON 数组，
+   实现时通过 `json.loads(row["kps_json"])` 还原为 `list[str]`。
+   `window_days` 传 `None` 则不过滤时间范围，查全部历史。
 
-2. **展开 `kps_json`**：一道题命中多个 KP → 每个 KP 都记一次（该题对错平均分摊到每个 KP 上，不按 KP 数量分摊比例——用户已确认）
+2. **展开 KP 列表**：一道题命中多个 KP → 每个 KP 都记一次（该题对错平摊到每个 KP，不按 KP 数量分比例——用户已确认）
+   ```python
+   for row in rows:
+       for kp_id in json.loads(row["kps_json"]):
+           kp_stats[kp_id]["attempts"] += 1
+           kp_stats[kp_id]["correct"] += int(row["is_correct"])
+   ```
 
 3. **按 `kp_id` 分组**统计 `attempts` 和 `correct`
 
@@ -499,10 +530,10 @@ def build_profile(user_id: str, window_days: int | None = None) -> MasteryProfil
    ```
    低样本降权，避免"只做过 1 道且错了"排在"做过 20 道正确率 60%"之前
 
-5. **产出 `MasteryProfile`**：
-   - `weak_kps`：按 `mastery` 升序取前 N（默认 8）
-   - `dominant_types`：从 `attempt_items.question_type` 中按错题数排序取前 3
-   - `total_attempts_considered`：查询到的 attempt_items 总数
+5. **产出 `MasteryProfile`**（对应 `shared/schemas.py::MasteryProfile`）：
+   - `weak_kps: list[KPMastery]`：按 `mastery` 升序取前 N（默认 8）
+   - `dominant_types: list[str]`：从 `attempt_items.question_type` 中按**错题数**降序取前 3，值为 `QuestionType` 字符串
+   - `total_attempts_considered: int`：查询到的 `attempt_items` 总行数
 
 ### 7.3 边界处理
 
@@ -517,40 +548,30 @@ Analyzer 只查表不写；不修改任何持久化状态。
 
 ## 8. `revise_paper`（review 迭代）
 
-**目标**：用户对已生成的试卷提修改意见 → 新版试卷。**面板按钮 + 自然语言混合**通过统一入口实现。
+**目标**：用户对已生成的试卷提修改意见 → 新版试卷。**在 `pipeline.py` 内编排**，复用主 pipeline 的模块（Parser → Retriever → Reviser），没有独立的 `reviser.revise_paper` 函数。
 
-### 8.1 内部流程
+### 8.1 内部流程（`pipeline.revise_paper`）
 
-1. **Parser 增强调用**：把 `user_instruction` + `current_paper` 一起给 LLM，输出**修改指令 JSON**：
+修改本质上就是"在原试卷已有的样子上再发一次请求"，所以直接复用 `generate_paper` 的三段式：
 
-   ```python
-   class ReviseInstruction(BaseModel):
-       action: Literal["regenerate_all", "regenerate_items", "swap_items",
-                       "adjust_difficulty", "adjust_distribution"]
-       target_indices: list[int] = []           # regenerate_items / swap_items 用
-       new_request_overrides: dict[str, Any] = {}  # 覆盖 GenerateRequest 部分字段
+1. **拼接上下文查询**：从 `current_paper.request` 提取原试卷的形状（题数、题型中文名、考点、`free_text` 主题），拼成一段中文说明 + `user_instruction`，作为新的 `user_query`：
+
+   ```
+   这是在一份已有试卷基础上的修改请求。
+   原试卷：共 N 题；题型：单项选择、词性转换；考点：...；主题：...。
+   用户的修改要求：{user_instruction}
+   请在原试卷基础上应用修改要求，输出修改后完整的出题需求。
    ```
 
-2. **调度**：
-   - `regenerate_all` → 用 `current_paper.request` 合并 overrides 后重跑 Retriever + Reviser
-   - `regenerate_items` → 只对 `target_indices` 里的题重生（Retriever 按剩余 KP 补，Reviser 重跑那几题）
-   - `swap_items` → 只 Retriever 换候选，Reviser 保持策略
-   - `adjust_difficulty` / `adjust_distribution` → 覆盖 request 后 `regenerate_all`
+2. **Parser**：`parser.parse(query, mode="fresh")` → 新的 `GenerateRequest`；从原 `request` 继承 `user_id` / `review_window_days`。改题尺度仍由 Parser 内的 LLM 从指令语义推断，不显式传入
+3. **Retriever → Reviser**：`retriever.retrieve(req)` → `reviser.build_paper(req, retrieval)`，与 `generate_paper` 完全一致
+4. **溯源**：新 `Paper` 的 `metadata["revised_from"]` 记录 `current_paper.paper_id`，供前端链接回原卷
 
-3. **无状态**：所有输入来自前端，返回全新 `Paper`；**`paper_id` 换新**（便于前端做版本管理）
+### 8.2 无状态、`paper_id` 换新
 
-### 8.2 为什么不做"面板按钮"的专用接口
-
-前端的"删除第 3 题"按钮实际调用还是 `revise_paper`，只是拼一个 `"删除第 3 题"` 的中文指令给 Parser——统一入口更好维护。前端可以**本地做"删题"**（直接从数组去掉），无需服务端参与。
-
-### 8.3 Prompt
-
-`ai_engine/prompts/revise_paper.md`：
-
-- 输入：`current_paper` 简化视图（每题只保留 `index / stem / kp_ids / difficulty`）+ `user_instruction`
-- 输出：`ReviseInstruction` JSON
-- Few-shot 覆盖典型场景：全部重生、指定题号重生、"把前三道换成简单的"、"多点选择题"
-- **不覆盖纯前端动作**（如"删掉最后一道"）——这类操作前端本地处理，不发起 `revise_paper` 请求。若不慎调到后端，LLM 应输出 `action="regenerate_items"` 且 `target_indices=[]` 表示"无需服务端动作"，前端收到后仅在本地删除对应索引即可
+- 所有输入来自参数（`current_paper` 由后端从 `papers` 表读出），返回全新 `Paper`；**`paper_id` 换新**（便于前端做版本管理）
+- **相对指令靠上下文解析**：把原试卷形状塞进查询头部，让"把选择题换成词形转换""多加 5 道时态题"这类相对指令能相对真实原卷解析，而不是凭空理解
+- 前端的"删除第 3 题"这类纯前端动作可**本地做**（直接从数组去掉），无需服务端参与——统一走 `revise_paper` 只用于需要重新出题/换题/调分布的语义修改
 
 ---
 
@@ -647,15 +668,14 @@ Spec A § 4.4 定义了 `LLMTrace` 结构和落地方式（JSONL 摘要 + 可选
 
 ```
 ai_engine/prompts/
+├── __init__.py                          # load() 加载器（见 § 10.3）
 ├── parser.md
 ├── reviser_light.md
 ├── reviser_fresh.md
-├── solutioner.md
-├── revise_paper.md
-└── _shared/
-    ├── kp_catalog_snippet.md.j2         # 知识点清单渲染片段（复用）
-    └── question_type_glossary.md         # 题型中文说明
+└── solutioner.md
 ```
+
+`revise_paper` **没有独立 prompt**——它复用 `parser.md`（§ 8 把原试卷上下文拼进 `user_query` 后走 Parser）。
 
 ### 10.2 模板约定
 
@@ -704,25 +724,27 @@ def load(name: str, **vars) -> tuple[str, str]:
 - 头部列出**所有合法 KP id + `question_type` 枚举**
 - Few-shot 覆盖：单一 KP / 多 KP / 显式分布 / 模糊请求 / remediation / review
 - 显式规则："不要造 KP id；清单外概念写进 `free_text`"
-- 输出模型可包含 `reasoning: str` 字段（LLM 内推理，不返回给调用方）
+- `revision_intensity` 判定流程（`original` > `light` > `fresh` > 默认 `light`，见 § 3.4）
+- vars：`user_query, mode, kp_catalog, kp_count, wrong_items?, mastery?, question_types`
+- 响应模型直接是 `GenerateRequest`（无 `reasoning` 等附加字段，见 § 3.5）
 
 **Reviser light** (`reviser_light.md`)：
-- 显式列出**不变字段**：`question_type / knowledge_point_ids / difficulty` 由系统透传，不需要 LLM 输出
+- 显式列出**不变字段**：`question_type / knowledge_point_ids` 由系统透传，不需要 LLM 输出
 - 显式约束："若为单选题，选项数量必须为 4，标签为 A/B/C/D"
 - 显式约束："`answer` 必须是 `options[i].label` 之一"
 - Few-shot 含反例：错的写法 `answer: "B) written"`（应为 `answer: "B"`）
 
 **Reviser fresh** (`reviser_fresh.md`)：
-- 明确"参考原题只用于把握**难度和风格**，不必与原题内容相关"
+- 明确"参考原题只用于把握**难易感和风格**，不必与原题内容相关"
 - 提供 2-3 道同 KP 的示例作为风格锚点（从候选池随机抽的其他题）
 
 **Solutioner** (`solutioner.md`)：
 - 输出**纯文本**，禁止 markdown 代码块包裹
-- 三段式：`【关键考点】/【解题思路】/【易错点】`
+- 三段式：`【关键考点】/【解题思路】/`——第三段随 `wrong_answer` 变量切换：为空 → `【易错点】`，非空 → `【错误原因】`（针对该错误作答）
 - 词性转换/改写句子必须解释语法根据
+- vars：`question, kp_names, options_text, answer, wrong_answer`
 
-**Revise paper** (`revise_paper.md`)：
-- 见 § 8.3
+**Revise paper**：无独立 prompt，复用 `parser.md`（见 § 8）。
 
 ---
 
@@ -754,7 +776,7 @@ tests/unit/ai_engine/
 - **Parser**：不同 mode 下 prompt 是否含预期上下文；LLM 假响应的 KP id 越界时是否被丢弃并记 warning
 - **Retriever**：属性硬过滤逻辑正确（空过滤 = 全库；多 KP OR/AND 语义）；`$in` 回退分支的正确性
 - **Reviser**：三档策略下 LLM 调用次数正确（original=0；light/fresh=题数）；答案格式违规时 fallback；不变字段被改时拒绝
-- **Solutioner**：命中缓存不调 LLM；未命中调一次；写回条件的三个 `AND` 分别测试
+- **Solutioner**：每次调用都调一次 LLM（无缓存）；`user_answer` 为空 → 解析含【易错点】、非空 → 含【错误原因】；三种题型的 `user_answer` 都能被 `_format_user_answer` 渲染成可读文本；LLM 返回空串时抛 `SolutionerError`
 - **Analyzer**：Wilson 公式在若干经典输入的正确值；空历史返回空 profile；多 KP 展开正确
 - **Pipeline**：三种 mode 端到端调用（全 mock LLM）
 
@@ -779,7 +801,7 @@ tests/golden/
 **Golden set 组成**：
 
 - **Parser 断言**：30 条典型自然语言请求 → 期望的 KP 命中率 ≥ 95%、`question_types` 命中率 ≥ 90%
-- **Reviser 断言**：Light 档改题后 `answer` 字段类型未变（单选仍是 `A-D`，填空仍非空）；`question_type` / `KP` / `difficulty` 严格未变
+- **Reviser 断言**：Light 档改题后 `answer` 字段类型未变（单选仍是 `A-D`，填空仍非空）；`question_type` / `KP` 严格未变
 - **Solutioner 断言**：解析文本非空、包含"关键考点"或类似标记
 
 **触发**：`pytest -m live` 显式触发，需真实 DeepSeek API key。默认 skip。CI 不跑；release 前或 prompt 大改后手动跑。
@@ -800,7 +822,7 @@ Spec C § 5.1 定义完整端点表，本节仅回顾"5 个 AI Engine 函数 ↔
 |---|---|---|
 | `generate_paper(user_query, mode, ...)` | `POST /api/papers/generate` | 生成试卷（三 mode） |
 | `revise_paper(current_paper, user_instruction)` | `POST /api/papers/revise` | Review 迭代（后端先按 paper_id 从库读出 current_paper） |
-| `generate_solution(q, source_question_id, revision_mode)` | `POST /api/solutions` | 单题按需解析 |
+| `generate_solution(q, user_answer, ...)` | `POST /api/solutions` | 单题按需解析（传入学生作答则解释错因） |
 | `build_profile(user_id, window_days)` | `GET /api/users/me/mastery` | 掌握度画像（user_id 由后端从 session 注入） |
 
 ### 12.2 请求/响应体
@@ -846,7 +868,7 @@ FastAPI 未来只做：请求验证 → 调这 5 个函数 → 序列化响应�
 ```bash
 # 生成一份试卷（fresh）
 python -m ai_engine.cli generate \
-    --query "来 10 道现在完成时的单项选择，中等难度"
+    --query "来 10 道现在完成时的单项选择"
 # revision_intensity 由 LLM 从 --query 内容推断（见 § 3.4）；不暴露 CLI 参数
 
 # 基于错题练习（remediation）
@@ -864,9 +886,8 @@ python -m ai_engine.cli generate \
 
 # 单题生成解析
 python -m ai_engine.cli solution \
-    --question-json ./tmp/q.json \
-    --source-question-id q_00042 \
-    --revision-mode original
+    --question-json ./tmp/q.json
+# 可选：传入学生作答 --user-answer B，解析改为解释该错误答案为何错
 
 # 快速看掌握度画像
 python -m ai_engine.cli profile --user-id u_demo --window-days 30
@@ -887,12 +908,12 @@ CLI 是**开发者友好接口**，未来前端不通过 CLI。
 
 前置：Spec A 的 M1 完成（题库已入库，`shared/` 基础设施可用）。
 
-1. `ai_engine/errors.py`（统一异常层次）
-2. `ai_engine/parser.py` + prompt + 单元测试
-3. `ai_engine/retriever.py` + 单元测试（关键：属性硬过滤 + 向量检索交集的正确性 + Chroma `$in` 回退）
-4. `ai_engine/reviser.py` + `reviser_light.md` / `reviser_fresh.md` + 单元测试（三档策略、失败 fallback、答案格式硬约束）
-5. `ai_engine/pipeline.py` 顶层编排 + 集成测试（mock LLM）
-6. `ai_engine/solutioner.py` + prompt + 单元测试（含缓存写回逻辑）
+1. ✅ `ai_engine/errors.py`（统一异常层次）
+2. `ai_engine/parser.py` + prompt + 单元测试（进行中）
+3. ✅ `ai_engine/retriever.py` + `question_repo.py` + 单元测试（混合检索：SQL 硬过滤 + 桶配额 + 先SQL后向量的本地相似度排序 + shortfall 兜底；15 个测试 + 10 样例 demo 报告）
+4. `ai_engine/reviser.py` + `reviser_light.md` / `reviser_fresh.md` + 单元测试（三档策略、失败 fallback、答案格式硬约束）（进行中）
+5. ✅ `ai_engine/pipeline.py` 顶层编排（懒 import；待 Parser/Reviser 落地后端到端集成测试）
+6. `ai_engine/solutioner.py` + prompt + 单元测试（每次调 LLM，无缓存；支持 `user_answer` 解释错因）
 7. `ai_engine/analyzer.py` + 单元测试（Wilson 公式验证、边界处理）
 8. `revise_paper` 分支 + prompt + 单元测试
 9. Golden set 骨架（10 条 request、10 道题）
@@ -913,7 +934,7 @@ CLI 是**开发者友好接口**，未来前端不通过 CLI。
 - `remediation` 基于错题生成
 - `review` 基于历史生成
 - `revise` 修改试卷
-- `solution` 单题解析（含缓存命中路径演示）
+- `solution` 单题解析（可选传入学生作答演示错因解析）
 
 **验收标准**：
 - 一本书完整入库（M1 里程碑）+ AI Engine 五路径全跑通
@@ -940,11 +961,12 @@ CLI 是**开发者友好接口**，未来前端不通过 CLI。
 
 1. **DeepSeek 具体模型选型**：`deepseek-chat` vs `deepseek-reasoner`——第一版用 `deepseek-chat`；Reviser fresh 档若质量不足可局部切 `deepseek-reasoner`
 2. **答题记录清理策略**：`attempts` 表长期增长；Analyzer 用 `review_window_days` 已限查询范围，但历史数据永不删——第一版不做清理，留给未来后端 spec
-3. **单题分值可配置化**：目前硬编码；若前端要让用户自定义分值，`GenerateRequest` 加 `score_per_type` 字段
-4. **`over_fetch_factor` 调优**：默认 3；实际候选池分布若很偏，可能需要调大；观测 `RetrievalResult.warnings` 频率决定
-5. **Golden set 阈值**：初始 95% / 100% / 100% 是猜测值；跑一次真实回归后按实际调整
-6. **Chroma metadata 过滤语法**：`$in` / `$and` 语法因 Chroma 版本而异，写代码时需验证；若某语法不支持则退化为"取 Top-M 再 Python 端过滤"
-7. **Wilson lower bound 的 z 值**：默认 95% (z=1.96)；若薄弱点选择太保守（低样本 KP 被压得太低），可降为 90% (z=1.645)——观测 `weak_kps` 稳定性后决定
+3. **向量路径低分阈值**：当前向量路径在 KP 集内按相似度取前 N，即使排名靠后的题相似度不高也照取（例："介词题里最像旅游的第 5 名"分数可能只有 0.42）。未来可加一个相似度阈值——低于阈值宁可报 `shortfall` 让 Reviser fresh 出更贴题的新题。阈值需实测分布后定，第一版不做
+4. **Golden set 阈值**：初始 95% / 100% / 100% 是猜测值；跑一次真实回归后按实际调整
+5. **Chroma metadata 过滤语法**：`$in` / `$and` 语法因 Chroma 版本而异，写代码时需验证；若某语法不支持则退化为"取 Top-M 再 Python 端过滤"
+6. **Wilson lower bound 的 z 值**：默认 95% (z=1.96)；若薄弱点选择太保守（低样本 KP 被压得太低），可降为 90% (z=1.645)——观测 `weak_kps` 稳定性后决定
+
+> **已移除的开放问题**：原"单题分值可配置化"（2026-07-14 删除）——分值字段整体废弃（题数不同总分不可比），改用正确率衡量表现，见 §5.4 契约同步说明。
 
 ---
 
@@ -954,13 +976,9 @@ Spec A § 12 定义了全局不变量。AI Engine 侧的补充：
 
 1. **Pipeline 无反馈回路**：Parser → Retriever → Reviser 严格单向
 2. **`revise_paper` 无状态、`paper_id` 换新**
-3. **Solutioner 写回条件**（Spec A § 2.7 不变量 6 的实现，`shared/storage.py::write_solution()` 强制）：
-   - `source_question_id` 存在
-   - `revision_mode == "original"`
-   - `questions.solution IS NULL`
-   - 三条 AND 缺一不可
-4. **Reviser 不变字段**：`question_type` / `knowledge_point_ids` / `difficulty` 在任何档位下都不被修改
-5. **Reviser 失败 fallback**：`revision_mode` 仍为原档位，但内容等同 `original`，`revision_notes` 记录 "revision failed"
-6. **Solutioner 是 AI Engine 唯一有副作用的模块**（写 `questions.solution`）；其他所有模块只读或只产返回值
+3. **Solutioner 无副作用、无缓存**：`generate_solution` 每次都调 LLM，既不读 `questions.solution` 也不写回（旧的"原题解析写回"机制已移除）。`source_question_id` / `revision_mode` 为残留参数，不再被使用
+4. **Reviser 不变字段**：`question_type` / `knowledge_point_ids` 在任何档位下都不被修改（`difficulty` 字段已废弃，不在契约中）
+5. **Reviser 失败 fallback**：`revision_mode` 仍为原档位，但内容等同 `original`，题号记入 `Paper.metadata["revision_failures"]`
+6. **AI Engine 全模块只读无副作用**：Parser / Retriever / Reviser / Solutioner / Analyzer 全部只读题库或答题记录、只产返回值，**不写任何持久化状态**（Solutioner 曾是唯一的写入侧信道，写回缓存移除后不再成立）
 7. **Analyzer 只读**：不修改任何持久化状态
-8. **`revision_intensity` 的填写者是 LLM，不是调用方**：`generate_paper` / `parse` 接口都不接受此参数；Parser 通过 `ParserLLMResponse.revision_intensity`（pydantic 必填）保证被填写；`GenerateRequest.revision_intensity` 一旦离开 Parser 就是完整的三值枚举之一
+8. **`revision_intensity` 的填写者是 LLM，不是调用方**：`generate_paper` / `parse` 接口都不接受此参数；LLM 直接在 `GenerateRequest.revision_intensity` 输出（省略则落契约默认 `"light"`）；一旦离开 Parser 就是完整的三值枚举之一

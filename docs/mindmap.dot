@@ -1,0 +1,97 @@
+// 墨卷 · English Test Paper AI Generator — 项目思维导图（汇报用）
+// 渲染：dot -Tsvg mindmap.dot -o mindmap.svg   （或 -Tpng -Gdpi=180）
+digraph mindmap {
+    rankdir=LR;
+    ranksep=0.9;
+    nodesep=0.28;
+    splines=curved;
+    graph [fontname="PingFang SC"];
+    node  [fontname="PingFang SC", shape=box, style="rounded,filled",
+           color=none, margin="0.22,0.12", fontsize=13];
+    edge  [color="#9aa0a6", arrowhead=none, penwidth=1.4];
+
+    // ── 中心 ──────────────────────────────────────────────
+    root [label="墨卷\n中考英语 AI 试卷生成系统\n自然语言一句话 → 一份可作答的卷子",
+          fillcolor="#1f3a5f", fontcolor=white, fontsize=17, penwidth=0];
+
+    // ── 1. 产品定位 ───────────────────────────────────────
+    node [fillcolor="#fde9d9"];
+    P  [label="产品定位", fontsize=15];
+    P1 [label="用户：备考中考的初中生（13–15 岁）"];
+    P2 [label="闭环：描述 → 做题 → 看解析 → 再练错题"];
+    P3 [label="分工：LLM 管理解与出题\n判分交给确定性代码"];
+    P4 [label="品牌：真实卷面仪式感 ×\n现代控件 × 鼓励不评判"];
+    root -> P; P -> P1; P -> P2; P -> P3; P -> P4;
+
+    // ── 2. 五大子系统（+ 支付）──────────────────────────────
+    node [fillcolor="#deebf7"];
+    S  [label="子系统", fontsize=15];
+    root -> S;
+
+    S1 [label="ingestion/ 题库摄入（离线）"];
+    S1a [label="EPUB → md → 章节树 → ★人工审核\n知识点树 → LLM 抽题 → 双写入库"];
+    S -> S1; S1 -> S1a;
+
+    S2 [label="ai_engine/ AI 引擎（纯函数·无状态）"];
+    S2a [label="Parser：自然语言 → 结构化请求"];
+    S2b [label="Retriever：SQL 硬过滤 + Chroma 向量检索"];
+    S2c [label="Reviser：三档改题（原题 / 轻改 / 新出）"];
+    S2d [label="Solutioner：按需生成解析"];
+    S2e [label="Analyzer：Wilson 掌握度画像"];
+    S -> S2; S2 -> S2a; S2 -> S2b; S2 -> S2c; S2 -> S2d; S2 -> S2e;
+
+    S3 [label="backend/ FastAPI 后端"];
+    S3a [label="11 端点：auth / papers / solutions\nattempts / mastery"];
+    S3b [label="bcrypt + Cookie Session 鉴权"];
+    S3c [label="判分 = 规范化字符串比较（不调 LLM）"];
+    S3d [label="统一错误体 error_code + trace_id"];
+    S -> S3; S3 -> S3a; S3 -> S3b; S3 -> S3c; S3 -> S3d;
+
+    S4 [label="frontend/ React + Vite 前端"];
+    S4a [label="页面：登录 / 生成主页 / 试卷列表\n掌握度 / 错题巩固 / 会员"];
+    S4b [label="shadcn/ui + TanStack Query + Zod"];
+    S4c [label="视觉：卷面语言（衬线卷头 / 装订线 / 分数章）"];
+    S -> S4; S4 -> S4a; S4 -> S4b; S4 -> S4c;
+
+    S5 [label="payment/ 模拟支付（独立服务 :8001）"];
+    S5a [label="支付宝沙盒：扫码 + 网页收银台\n轮询查单，无 notify_url"];
+    S5b [label="订单状态机 CREATED → PAID/EXPIRED/CLOSED\nCAS 幂等 · 会员顺延"];
+    S5c [label="MOCK_PAY 离线演示模式"];
+    S -> S5; S5 -> S5a; S5 -> S5b; S5 -> S5c;
+
+    S6 [label="tests_e2e/ 四层测试"];
+    S6a [label="L1 单元 → L2 后端集成 →\nL3 组件(msw) → L4 Playwright"];
+    S6b [label="ScriptedDeepSeekClient 复用\n每晚 live-smoke 探契约漂移"];
+    S -> S6; S6 -> S6a; S6 -> S6b;
+
+    // ── 3. 共享层与数据 ───────────────────────────────────
+    node [fillcolor="#e2f0d9"];
+    D  [label="共享层与数据", fontsize=15];
+    D1 [label="shared/：唯一跨子系统交汇点\npydantic 契约 · storage 门面 · config"];
+    D2 [label="SQLite：questions / users / papers\nattempts / knowledge_points"];
+    D3 [label="ChromaDB：本地持久化向量库"];
+    root -> D; D -> D1; D -> D2; D -> D3;
+
+    // ── 4. 技术选型 ───────────────────────────────────────
+    node [fillcolor="#fff2cc"];
+    T  [label="关键技术选型", fontsize=15];
+    T1 [label="LLM：DeepSeek + instructor\n（JSON Mode + pydantic 校验 + 重试）"];
+    T2 [label="Embedding：Qwen 4B（本地）"];
+    T3 [label="部署：FastAPI StaticFiles 挂 dist/\n单进程 · 单端口 · 零 CORS"];
+    root -> T; T -> T1; T -> T2; T -> T3;
+
+    // ── 5. 核心原则 ───────────────────────────────────────
+    node [fillcolor="#ead1dc"];
+    R  [label="核心原则", fontsize=15];
+    R1 [label="子系统间不互相 import，只经 shared/"];
+    R2 [label="AI Engine 无状态，持久化全在后端"];
+    R3 [label="契约 pydantic 定义一次，全体复用"];
+    R4 [label="改题不改题型 / 知识点 / 难度"];
+    root -> R; R -> R1; R -> R2; R -> R3; R -> R4;
+
+    // ── 6. 里程碑 ─────────────────────────────────────────
+    node [fillcolor="#d9e2f3"];
+    M  [label="里程碑", fontsize=15];
+    M1 [label="M1 题库入库 → M2–M4 AI Engine\n→ M5 后端 → M6 前端 → M7 e2e"];
+    root -> M; M -> M1;
+}

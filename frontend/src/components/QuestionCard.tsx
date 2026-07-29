@@ -6,6 +6,7 @@ import { SingleChoiceField } from '@/components/question-fields/SingleChoiceFiel
 import { WordFormField } from '@/components/question-fields/WordFormField'
 import { SentenceRewritingField } from '@/components/question-fields/SentenceRewritingField'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
+import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { cn } from '@/lib/utils'
 
 interface QuestionCardProps {
@@ -37,6 +38,7 @@ export function QuestionCard({
   result,
   solutionSlot,
 }: QuestionCardProps) {
+  useKnowledgePoints() // 目录到达后重渲染，考点标签显示为中文名
   const { question } = item
   const isReview = mode === 'review'
 
@@ -65,9 +67,7 @@ export function QuestionCard({
         <span className="font-mono text-[13px] text-quiet">
           {String(item.index).padStart(2, '0')}
         </span>
-        <span className="text-[11px] tracking-[0.1em] text-quiet">
-          {labels.join(' · ')} · {item.score} 分
-        </span>
+        <span className="text-[11px] tracking-[0.1em] text-quiet">{labels.join(' · ')}</span>
       </div>
 
       <div className="flex min-w-0 flex-col gap-3">
@@ -107,13 +107,6 @@ export function QuestionCard({
               正确答案：<b>{formatCorrectAnswer(result.correct_answer)}</b>
             </span>
           </div>
-        )}
-
-        {/* revision_notes 形态不保证：只认引擎的改写失败标记，其余（test fixture 等）不打扰 */}
-        {isReview && item.revision_notes?.toLowerCase().includes('revision failed') && (
-          <p className="text-[12px] text-quiet" title={item.revision_notes}>
-            本题 AI 改写未成功，使用了题库原题
-          </p>
         )}
 
         {solutionSlot}

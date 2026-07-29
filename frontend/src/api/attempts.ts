@@ -7,3 +7,7 @@ import type { GradeSubmissionRequest, GradeSubmissionResponse } from '@/types/ap
  */
 export const submitAttempt = (req: GradeSubmissionRequest) =>
   apiFetch<GradeSubmissionResponse>('/attempts', { method: 'POST', body: JSON.stringify(req) })
+
+/** 取该试卷最新一次答题结果（用于复盘展示），未提交过返回 null。 */
+export const getAttemptByPaper = (paperId: string) =>
+  apiFetch<GradeSubmissionResponse | null>(`/attempts/by-paper/${paperId}`)
