@@ -115,9 +115,8 @@ export function AssistantPage() {
 
   return (
     <div className="-mb-20 flex h-[calc(100svh-2.5rem)] max-w-[52rem] flex-col">
-      {/* 顶行：端点小标签 + 新对话 */}
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] tracking-[0.1em] text-quiet">POST /API/AGENT/CHAT</p>
+      {/* 顶行：新对话（有消息时显示） */}
+      <div className="flex min-h-5 items-center justify-end">
         {messages.length > 0 && (
           <button
             type="button"
@@ -134,9 +133,12 @@ export function AssistantPage() {
       <div className="min-h-0 flex-1 overflow-y-auto py-6">
         {messages.length === 0 && (
           <div className="flex flex-col gap-3 pt-10">
-            <h1 className="text-[30px] font-normal leading-snug text-ink">学习助手</h1>
+            <h1 className="text-[34px] font-normal leading-snug text-ink [font-family:var(--font-display)]">
+              学习助手
+            </h1>
             <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
-              用一句话告诉我你想做什么：出题、查例题、制定学习计划，做好的卷子会直接给你入口。
+              用一句话告诉我你想做什么：出题、查例题、制定学习计划，做好的卷子
+              <mark>直接给你入口</mark>。
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {SUGGESTIONS.map((s) => (

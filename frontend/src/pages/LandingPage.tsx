@@ -71,7 +71,7 @@ export function LandingPage() {
           <p className="text-[12px] tracking-[0.1em] text-accent">
             RAG + 大模型 · 中考英语 · 纯文字题型
           </p>
-          <h1 className="mt-6 max-w-[16em] text-[58px] font-normal leading-[1.32] text-ink max-md:text-[36px]">
+          <h1 className="mt-6 max-w-[16em] text-[58px] font-normal leading-[1.32] text-ink [font-family:var(--font-display)] max-md:text-[36px]">
             说一句你想练什么，<mark>出一份能直接做的卷子</mark>
           </h1>
           <p className="mt-8 max-w-[42rem] text-[16px] leading-[1.9] text-muted-ink">
@@ -114,7 +114,7 @@ export function LandingPage() {
         {/* #engine 模式与判分 */}
         <section id="engine" className="grid scroll-mt-20 grid-cols-2 gap-[72px] py-14 max-md:grid-cols-1">
           <div>
-            <h2 className="text-[24px] font-normal text-ink">三种模式</h2>
+            <h2 className="text-[24px] font-normal text-ink [font-family:var(--font-display)]">三种模式</h2>
             <div className="mt-4">
               {MODES.map((m) => (
                 <div key={m.code} className="flex gap-5 border-t border-hairline py-[22px] last:border-b">
@@ -130,7 +130,7 @@ export function LandingPage() {
             </div>
           </div>
           <div>
-            <h2 className="text-[24px] font-normal text-ink">判分规则</h2>
+            <h2 className="text-[24px] font-normal text-ink [font-family:var(--font-display)]">判分规则</h2>
             <p className="mt-4 max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
               客观题即交即判：单选对答案，填空与改写忽略大小写与句末标点，一题一空逐空比对。判分结果连同解析入口一起返回。
             </p>
@@ -145,7 +145,7 @@ grade("look",   "looked")       → false`}
 
         {/* #bank 题库 */}
         <section id="bank" className="scroll-mt-20 py-14">
-          <h2 className="text-[24px] font-normal text-ink">从真题书长出来的题库</h2>
+          <h2 className="text-[24px] font-normal text-ink [font-family:var(--font-display)]">从真题书长出来的题库</h2>
           <p className="mt-4 max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
             题库不是爬来的：真题书经过六道工序进库，知识点树由人工审核后才生效，每道题都带题源、考点与难度。
           </p>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { createOrder, getMembership, getPayHealth, getPlans } from '@/api/payment'
+import { PageHeader } from '@/components/PageHeader'
 import { PayQrDialog } from '@/components/PayQrDialog'
 import { formatYuan } from '@/lib/money'
 import { Button } from '@/components/ui/button'
@@ -48,15 +49,7 @@ export function MembershipPage() {
 
   return (
     <div className="flex max-w-[52rem] flex-col gap-10">
-      <div>
-        <p className="text-[11px] tracking-[0.1em] text-quiet">MEMBERSHIP</p>
-        <div className="mt-3 flex flex-col gap-3">
-          <h1 className="text-[30px] font-normal leading-snug text-ink">会员</h1>
-          <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
-            开通会员，解锁不限量组卷与全部功能
-          </p>
-        </div>
-      </div>
+      <PageHeader title="会员" intro="开通会员，解锁不限量组卷与全部功能。" />
 
       {membershipQuery.isLoading ? (
         <Skeleton className="h-10 w-full" />

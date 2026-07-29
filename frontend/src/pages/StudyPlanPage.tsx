@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getLatestStudyPlan } from '@/api/agent'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/PageHeader'
 import { TYPE_LABELS } from '@/lib/kp'
 import type { StudyPlanDay } from '@/types/api'
 
@@ -60,13 +61,10 @@ export function StudyPlanPage() {
 
   return (
     <div className="max-w-[52rem]">
-      <p className="text-[11px] tracking-[0.1em] text-quiet">GET /API/AGENT/STUDY-PLANS/LATEST</p>
-      <div className="mb-10 mt-3 flex flex-col gap-3">
-        <h1 className="text-[30px] font-normal leading-snug text-ink">学习计划</h1>
-        <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
-          在学习助手里说出你的目标，AI 会按天拆成打卡计划，每天一份针对性练习。
-        </p>
-      </div>
+      <PageHeader
+        title="学习计划"
+        intro="在学习助手里说出你的目标，AI 会按天拆成打卡计划，每天一份针对性练习。"
+      />
 
       {isLoading && (
         <div className="flex flex-col gap-3">

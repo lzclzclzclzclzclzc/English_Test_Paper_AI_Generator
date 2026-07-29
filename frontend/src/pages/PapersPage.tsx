@@ -3,6 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { listPapers } from '@/api/papers'
 import type { PaperListItem } from '@/types/api'
 import { cn } from '@/lib/utils'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -22,14 +23,10 @@ export function PapersPage() {
 
   return (
     <div className="max-w-[56rem]">
-      <p className="text-[11px] tracking-[0.1em] text-quiet">GET /API/PAPERS</p>
-      <div className="mb-10 mt-3 flex flex-col gap-3">
-        <h1 className="text-[30px] font-normal leading-snug text-ink">历史试卷</h1>
-        <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
-          生成过的卷都在这里，未交的随时开卷，交过的回来复盘。重新生成会产生新
-          paper_id，旧试卷保留。
-        </p>
-      </div>
+      <PageHeader
+        title="历史试卷"
+        intro="生成过的卷都在这里，未交的随时开卷，交过的回来复盘。重新生成会产生新 paper_id，旧试卷保留。"
+      />
 
       {query.isLoading ? (
         <PapersSkeleton />

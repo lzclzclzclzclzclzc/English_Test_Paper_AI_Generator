@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useMembership } from '@/hooks/useMembership'
+import { PageHeader } from '@/components/PageHeader'
 import { cn } from '@/lib/utils'
 
 type Theme = 'light' | 'dark'
@@ -24,10 +25,7 @@ export function SettingsPage() {
 
   return (
     <div className="max-w-[44rem]">
-      <p className="text-[11px] tracking-[0.1em] text-quiet">SETTINGS</p>
-      <div className="mb-10 mt-3 flex flex-col gap-3">
-        <h1 className="text-[30px] font-normal leading-snug text-ink">设置</h1>
-      </div>
+      <PageHeader title="设置" />
 
       <div className="flex flex-col">
         {/* 账号 */}

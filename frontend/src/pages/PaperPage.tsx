@@ -206,7 +206,9 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         <p className="text-[11px] tracking-[0.1em] text-quiet">
           PAPER · {paper.paper_id.slice(0, 8)}
         </p>
-        <h1 className="mt-3 text-[30px] font-normal leading-snug text-ink">{paper.title}</h1>
+        <h1 className="mt-3 text-[34px] font-normal leading-snug text-ink [font-family:var(--font-display)] [text-wrap:balance]">
+          {paper.title}
+        </h1>
         <p className="mt-2 text-[13px] text-quiet">
           {generatedAt} · 共 {paper.items.length} 题
         </p>

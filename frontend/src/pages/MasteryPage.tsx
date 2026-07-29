@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getMastery } from '@/api/mastery'
 import { MasteryReport } from '@/components/MasteryReport'
+import { PageHeader } from '@/components/PageHeader'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
@@ -25,14 +26,15 @@ export function MasteryPage() {
 
   return (
     <div className="max-w-[56rem]">
-      <p className="text-[11px] tracking-[0.1em] text-quiet">GET /API/USERS/ME/MASTERY</p>
-      <div className="mb-10 mt-3 flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-3">
-          <h1 className="text-[30px] font-normal leading-snug text-ink">掌握度</h1>
-          <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
-            根据你的答题记录计算（Wilson 下界）：分数越低的考点越值得优先练，薄弱点用赤陶标出。
-          </p>
-        </div>
+      <PageHeader
+        title="掌握度"
+        intro={
+          <>
+            根据你的答题记录计算（Wilson 下界）：分数越低的考点
+            <mark>越值得优先练</mark>，薄弱点用赤陶标出。
+          </>
+        }
+      >
         {/* 统计窗口：分段按钮（选中 = 赤陶边 + wash 底） */}
         <div className="flex gap-2">
           {WINDOWS.map((w) => (
@@ -52,7 +54,7 @@ export function MasteryPage() {
             </button>
           ))}
         </div>
-      </div>
+      </PageHeader>
 
       {isLoading ? (
         <div className="flex flex-col gap-3">

@@ -67,13 +67,19 @@ outline/secondary = 细线边透明底（hover 转赤陶边字 + tint 底）。
 
 - 全站衬线：正文 `--font-serif`（拉丁 Georgia、中文 Noto Serif SC，
   Google Fonts 只载 400/700 两个字重，见 `index.html`）。
-- 品牌（侧栏 / 落地页页眉 / 登录页左栏）用 `--font-display`（京华老宋体）。
-  子集 woff2 未随交接包提供，当前回退到正文衬线（handoff 允许，补上字体文件即生效）。
+- **display 字体已接入**（2026-07-29）：京华老宋体（KingHwa_OldSong，© TerryWang，
+  免费商用）经 ZeoSeven Fonts CDN 分片按需加载
+  （`https://fontsapi.zeoseven.com/309/main/result.css`，family `KingHwaOldSong`），
+  可覆盖动态文本（试卷标题）；CDN 不可达时回退正文衬线。用于：品牌
+  （侧栏 / 落地页页眉 / 登录页左栏）+ **所有页面 h1**（对 handoff「display 仅页眉品牌」
+  的一处有意扩展——补足「版刻 vs 书页」的对比，让 400 字重标题有存在感）+
+  落地页 h2。后续优化项：自托管子集替代 CDN。
 - 代码 / 题号 / 日期 / wilson 分数用 `--font-mono`（系统等宽）。
 - **只有 400 和 700 两个字重**。`index.css` 已把 Tailwind 的
   `font-medium → 400`、`font-semibold → 700`，不会出现中间字重。
 
-**字号 / 行高**（px）：落地页大标题 58/1.32；页面 h1 30/400；区块 h2 24/400；
+**字号 / 行高**（px）：落地页大标题 58/1.32；页面 h1 **34**/400（display 字体，
+`PageHeader` 组件统一；handoff 原值 30，2026-07-29 上调）；区块 h2 24/400；
 小节标题 17–19；正文 15–16，行高 1.9，正文宽度上限 42rem；表格与元信息 13–14；
 标签 10.5–12 / 700 / letter-spacing 0.1–0.14em（拉丁大写标签）。
 
@@ -105,8 +111,11 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 - 底部：30×30 头像方块（tint 底）+ 用户名（+ 会员小标）+「登出」小字链接。
 - 折叠状态持久化 `localStorage['sidebarCollapsed']`。
 
-每个应用内页面顶部保留一个 11px 大写弱色**端点小标签**（如
-`POST /API/PAPERS/GENERATE`），标注「这屏对应哪个接口」；上线可整体去掉。
+~~每个应用内页面顶部保留一个 11px 大写弱色端点小标签~~（2026-07-29 已整体撤下：
+千屏一律的调试标签削弱标题存在感，handoff 本就允许上线去掉。接口对应关系只留在
+本文 § 5 表格与 Spec D。）页头统一用 `PageHeader` 组件（display 字体 34px h1 +
+42rem 引导句，引导句可含 `<mark>` wash 高亮——全应用节制使用 2–3 处）。
+试卷页保留 `PAPER · id` 行（真实元数据，非调试标签）。
 
 ---
 
@@ -171,7 +180,8 @@ Assemble 0.3s，文案照抄 handoff），右上角 0.1s 精度真实计时；�
 3. **历史试卷右侧状态**只有「已交卷 / 未作答」，无「已交 45/60」分数——
    `GET /api/papers` 摘要无得分字段（后端缺口，见 Spec D § 11）。
 4. **题库浏览、摄入控制台**未做（端点缺失，见 § 5 表格）。
-5. **京华老宋体**字体文件未随包提供，display 字体暂回退正文衬线。
+5. ~~京华老宋体字体文件未随包提供，display 字体暂回退正文衬线。~~
+   （2026-07-29 已解决：经 ZeoSeven CDN 接入，并扩展用于页面 h1，见 § 3。）
 6. 会员/支付界面是本仓库特有功能，按喫茶去语言自行延展设计。
 
 ## 9. 禁用清单

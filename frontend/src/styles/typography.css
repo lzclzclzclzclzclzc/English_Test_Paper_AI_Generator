@@ -17,7 +17,10 @@
      serif   — everything you read (Latin → Georgia, CJK → Noto Serif SC)
      charter — Latin title-page epigraph + entrance splash (IM Fell English)
      mono    — code blocks only */
-  --font-display: "King Hwa Old Song", ui-serif, Georgia,
+  /* 京华老宋体(KingHwa_OldSong)© TerryWang(王廷瑞),免费商用。
+     经 ZeoSeven Fonts CDN 分片按需加载(index.html <link>),
+     family 名为 "KingHwaOldSong";CDN 不可达时回退到阅读衬线。 */
+  --font-display: "KingHwaOldSong", "King Hwa Old Song", ui-serif, Georgia,
     "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
   --font-serif: ui-serif, Georgia, "Times New Roman",
     "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun",

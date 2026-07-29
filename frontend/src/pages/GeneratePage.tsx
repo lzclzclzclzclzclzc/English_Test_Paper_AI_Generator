@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getReadiness } from '@/api/health'
 import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import { GenerateForm, type GenerateFormValues } from '@/components/GenerateForm'
+import { PageHeader } from '@/components/PageHeader'
 import { PipelineProgress } from '@/components/PipelineProgress'
 import { UpgradeDialog } from '@/components/UpgradeDialog'
 
@@ -34,14 +35,15 @@ export function GeneratePage() {
 
   return (
     <div className="max-w-[52rem]">
-      {/* 端点小标签（handoff：每屏标注对应接口，上线可去掉） */}
-      <p className="text-[11px] tracking-[0.1em] text-quiet">POST /API/PAPERS/GENERATE</p>
-      <div className="mb-10 mt-3 flex flex-col gap-3">
-        <h1 className="text-[30px] font-normal leading-snug text-ink">生成试卷</h1>
-        <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
-          用一句话说出你想练的题型或考点，AI 会解析你的要求，从真题库检索、按力度改题，组一份能直接做的卷。
-        </p>
-      </div>
+      <PageHeader
+        title="生成试卷"
+        intro={
+          <>
+            用一句话说出你想练的题型或考点，AI 会解析你的要求，从真题库检索、按力度改题，
+            <mark>组一份能直接做的卷</mark>。
+          </>
+        }
+      />
       {readiness.data?.status === 'not_ready' && (
         <div className="mb-6 max-w-[44rem] border-t border-accent pt-2.5 text-[13px] text-muted-ink">
           题库正在准备中，出卷可能暂时失败，可以稍后再试
