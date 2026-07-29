@@ -11,7 +11,10 @@ interface GradeBannerProps {
   onRemediate: () => void
 }
 
-/** 成绩条：得分摘要 + 「再做一遍」/「错题巩固」动作。分数章由 PaperSheet 的 stamp 承载。 */
+/**
+ * 成绩统计行（handoff 第 6 屏）：总分大字 + 答对 / 错题（赤陶），
+ * 右侧「按错题生成巩固卷」（主）+「再做一遍」/「查看掌握度」（次）。
+ */
 export function GradeBanner({
   earned,
   total,
@@ -22,24 +25,37 @@ export function GradeBanner({
   onRemediate,
 }: GradeBannerProps) {
   return (
-    <div className="flex items-center justify-between rounded-md border border-[#d8e0ea] bg-ink-wash px-5 py-3.5">
-      <div className="flex items-baseline gap-4">
-        <span className="text-[15px] font-bold text-ink">
-          得分 {earned} / {total}
-        </span>
-        <span className="text-[13px] text-text-mid">
-          {wrongCount === 0
-            ? '全部答对，可以挑战新的考点'
-            : `答对 ${correctCount} / ${totalCount} 题，错题已标出`}
-        </span>
+    <div className="kk-rise flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-hairline pb-6">
+      <div className="flex items-end gap-8">
+        <div className="flex flex-col gap-1">
+          <span className="text-[11px] tracking-[0.1em] text-quiet">总分</span>
+          <span className="text-[44px] leading-none text-ink">
+            {earned}
+            <span className="text-[18px] text-quiet"> / {total}</span>
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 pb-1">
+          <span className="text-[11px] tracking-[0.1em] text-quiet">答对</span>
+          <span className="text-[24px] leading-none text-ink">
+            {correctCount}
+            <span className="text-[14px] text-quiet"> / {totalCount}</span>
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 pb-1">
+          <span className="text-[11px] tracking-[0.1em] text-quiet">错题</span>
+          <span className="text-[24px] leading-none text-accent">{wrongCount}</span>
+        </div>
       </div>
       <div className="flex items-center gap-2.5">
         <Button variant="outline" size="sm" onClick={onRetry}>
           再做一遍
         </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/mastery">查看掌握度</Link>
+        </Button>
         {wrongCount > 0 ? (
           <Button size="sm" onClick={onRemediate}>
-            错题巩固（{wrongCount} 题）
+            按错题生成巩固卷（{wrongCount} 题）
           </Button>
         ) : (
           <Button size="sm" asChild>
@@ -47,18 +63,6 @@ export function GradeBanner({
           </Button>
         )}
       </div>
-    </div>
-  )
-}
-
-/** 分数章（Spec F § 4.5）：右上角旋转红章，只出现在成绩视图的卷面上。 */
-export function ScoreStamp({ earned }: { earned: number }) {
-  return (
-    <div
-      aria-hidden
-      className="absolute right-8 top-6 flex rotate-[8deg] items-center justify-center border-[3px] border-wrong px-3 py-1 font-serif text-2xl font-black text-wrong opacity-90"
-    >
-      {earned} 分
     </div>
   )
 }

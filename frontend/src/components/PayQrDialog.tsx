@@ -86,7 +86,7 @@ export function PayQrDialog({ order: initialOrder, onClose, onReorder, reorderPe
     <Dialog open={!!initialOrder} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-[340px]">
         <DialogHeader>
-          <DialogTitle className="font-serif">
+          <DialogTitle>
             {order?.channel === 'web' ? '支付宝支付' : '扫码支付'}
           </DialogTitle>
           {order && (
@@ -111,7 +111,7 @@ export function PayQrDialog({ order: initialOrder, onClose, onReorder, reorderPe
               <ExternalLink className="size-3.5" />
               重新打开收银台
             </Button>
-            <p className="flex items-center gap-1.5 text-[13px] text-text-mid">
+            <p className="flex items-center gap-1.5 text-[13px] text-muted-ink">
               <Clock className="size-3.5" />
               {countdown} 内有效，支付完成后本页自动刷新
             </p>
@@ -120,10 +120,10 @@ export function PayQrDialog({ order: initialOrder, onClose, onReorder, reorderPe
 
         {order && status === 'CREATED' && order.channel === 'qr' && (
           <div className="flex flex-col items-center gap-3 py-2">
-            <div className="rounded-md border border-line bg-white p-3">
+            <div className="rounded-md border border-hairline bg-white p-3">
               <QRCodeSVG value={order.qr_code ?? ''} size={200} />
             </div>
-            <p className="flex items-center gap-1.5 text-[13px] text-text-mid">
+            <p className="flex items-center gap-1.5 text-[13px] text-muted-ink">
               <Clock className="size-3.5" />
               {countdown} 内使用沙箱版支付宝扫码支付
             </p>
@@ -143,8 +143,8 @@ export function PayQrDialog({ order: initialOrder, onClose, onReorder, reorderPe
         {status === 'PAID' && (
           <div className="flex flex-col items-center gap-2 py-8">
             <CheckCircle2 className="size-10 text-ink" strokeWidth={1.5} />
-            <p className="text-[15px] font-medium text-foreground">支付成功</p>
-            <p className="text-[13px] text-text-mid">会员权益已生效</p>
+            <p className="text-[15px] text-ink">支付成功</p>
+            <p className="text-[13px] text-muted-ink">会员权益已生效</p>
           </div>
         )}
 

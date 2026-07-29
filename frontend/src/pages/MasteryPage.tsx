@@ -2,40 +2,18 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getMastery } from '@/api/mastery'
 import { MasteryReport } from '@/components/MasteryReport'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 
 const WINDOWS = [
   { value: 'all', label: '全部记录', days: undefined },
-  { value: '90', label: '最近 90 天', days: 90 },
-  { value: '30', label: '最近 30 天', days: 30 },
-  { value: '7', label: '最近 7 天', days: 7 },
+  { value: '90', label: '近 90 天', days: 90 },
+  { value: '30', label: '近 30 天', days: 30 },
+  { value: '7', label: '近 7 天', days: 7 },
 ] as const
 
-/** 图例（Spec F § 5 掌握度页：固定在页头右侧）。 */
-function Legend() {
-  return (
-    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-      <span className="flex items-center gap-1">
-        <i className="size-2 rounded-full bg-ink" /> ≥70%
-      </span>
-      <span className="flex items-center gap-1">
-        <i className="size-2 rounded-full bg-mid-score" /> 40-70%
-      </span>
-      <span className="flex items-center gap-1">
-        <i className="size-2 rounded-full bg-wrong" /> &lt;40%
-      </span>
-    </div>
-  )
-}
-
+/** 掌握度（handoff 第 7 屏）：GET /api/users/me/mastery，赤陶不透明度分级。 */
 export function MasteryPage() {
   const [windowKey, setWindowKey] = useState<string>('all')
   const windowDays = WINDOWS.find((w) => w.value === windowKey)?.days
@@ -46,28 +24,33 @@ export function MasteryPage() {
   })
 
   return (
-    <div className="mx-auto flex max-w-[760px] flex-col gap-6 px-6 pt-12">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-serif text-2xl font-bold text-foreground">掌握度报告</h1>
-          <p className="text-[13.5px] text-text-mid">
-            根据你的答题记录计算：分数越低的考点，越值得优先练
+    <div className="max-w-[56rem]">
+      <p className="text-[11px] tracking-[0.1em] text-quiet">GET /API/USERS/ME/MASTERY</p>
+      <div className="mb-10 mt-3 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-3">
+          <h1 className="text-[30px] font-normal leading-snug text-ink">掌握度</h1>
+          <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
+            根据你的答题记录计算（Wilson 下界）：分数越低的考点越值得优先练，薄弱点用赤陶标出。
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <Legend />
-          <Select value={windowKey} onValueChange={setWindowKey}>
-            <SelectTrigger className="w-[130px]" size="sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {WINDOWS.map((w) => (
-                <SelectItem key={w.value} value={w.value}>
-                  {w.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* 统计窗口：分段按钮（选中 = 赤陶边 + wash 底） */}
+        <div className="flex gap-2">
+          {WINDOWS.map((w) => (
+            <button
+              key={w.value}
+              type="button"
+              aria-pressed={windowKey === w.value}
+              onClick={() => setWindowKey(w.value)}
+              className={cn(
+                'rounded-sm border px-3 py-1.5 text-[13px] transition-colors',
+                windowKey === w.value
+                  ? 'border-accent bg-wash text-ink'
+                  : 'border-hairline text-muted-ink hover:bg-tint hover:text-ink',
+              )}
+            >
+              {w.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -77,8 +60,8 @@ export function MasteryPage() {
           <Skeleton className="h-48 w-full" />
         </div>
       ) : isError || !data ? (
-        <div className="flex flex-col items-center gap-3 py-16">
-          <p className="text-[13.5px] text-muted-foreground">掌握度数据加载失败</p>
+        <div className="flex flex-col items-start gap-3 border-t border-hairline pt-8">
+          <p className="text-[13.5px] text-muted-ink">掌握度数据加载失败</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             重试
           </Button>

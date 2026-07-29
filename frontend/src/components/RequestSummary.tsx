@@ -42,8 +42,8 @@ export function RequestSummary({ request }: { request: GenerateRequest }) {
   }
 
   return (
-    <p className="text-[12.5px] leading-relaxed text-text-mid" title={request.free_text || undefined}>
-      <span className="font-bold text-ink">AI 对本卷的理解：</span>
+    <p className="text-[12.5px] leading-relaxed text-muted-ink" title={request.free_text || undefined}>
+      <span className="text-ink">AI 对本卷的理解：</span>
       {parts.join(' · ')}
     </p>
   )

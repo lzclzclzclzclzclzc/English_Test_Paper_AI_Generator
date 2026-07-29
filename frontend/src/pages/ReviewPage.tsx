@@ -92,16 +92,19 @@ export function ReviewPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[880px] flex-col gap-6 px-6 pt-12">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-serif text-2xl font-bold text-foreground">错题复习</h1>
-        <p className="text-[13.5px] text-text-mid">
-          答错的题都收在错题本里，可以定向巩固，也可以让 AI 按薄弱考点出复习卷
-        </p>
+    <div className="flex max-w-[56rem] flex-col gap-8">
+      <div>
+        <p className="text-[11px] tracking-[0.1em] text-quiet">POST /API/PAPERS/GENERATE · mode=remediation | review</p>
+        <div className="mt-3 flex flex-col gap-3">
+          <h1 className="text-[30px] font-normal leading-snug text-ink">错题本</h1>
+          <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
+            答错的题都收在错题本里，可以定向巩固，也可以让 AI 按薄弱考点出复习卷
+          </p>
+        </div>
       </div>
 
       {readiness.data?.status === 'not_ready' && (
-        <div className="rounded-md border border-line bg-[#faf8f3] px-4 py-2.5 text-[13px] text-text-mid">
+        <div className="max-w-[44rem] border-t border-accent pt-2.5 text-[13px] text-muted-ink">
           题库正在准备中，出卷可能暂时失败，可以稍后再试
         </div>
       )}

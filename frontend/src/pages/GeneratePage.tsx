@@ -3,9 +3,10 @@ import { useQuery } from '@tanstack/react-query'
 import { getReadiness } from '@/api/health'
 import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import { GenerateForm, type GenerateFormValues } from '@/components/GenerateForm'
+import { PipelineProgress } from '@/components/PipelineProgress'
 import { UpgradeDialog } from '@/components/UpgradeDialog'
 
-/** 首页：只做新生成（fresh）。错题巩固 / 综合复习在「错题复习」页。 */
+/** 生成试卷（handoff 第 4 屏）：只做新生成（fresh）。错题巩固 / 综合复习在「错题本」页。 */
 export function GeneratePage() {
   const [serverError, setServerError] = useState<string | null>(null)
   const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
@@ -32,15 +33,17 @@ export function GeneratePage() {
   }
 
   return (
-    <div className="mx-auto max-w-[880px] px-6 pt-12">
-      <div className="mb-8 flex flex-col gap-1">
-        <h1 className="font-serif text-2xl font-bold text-foreground">生成试卷</h1>
-        <p className="text-[13.5px] text-text-mid">
-          用一句话说出你想练的题型或考点，AI 会从真题库为你组一份卷
+    <div className="max-w-[52rem]">
+      {/* 端点小标签（handoff：每屏标注对应接口，上线可去掉） */}
+      <p className="text-[11px] tracking-[0.1em] text-quiet">POST /API/PAPERS/GENERATE</p>
+      <div className="mb-10 mt-3 flex flex-col gap-3">
+        <h1 className="text-[30px] font-normal leading-snug text-ink">生成试卷</h1>
+        <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
+          用一句话说出你想练的题型或考点，AI 会解析你的要求，从真题库检索、按力度改题，组一份能直接做的卷。
         </p>
       </div>
       {readiness.data?.status === 'not_ready' && (
-        <div className="mb-4 rounded-md border border-line bg-[#faf8f3] px-4 py-2.5 text-[13px] text-text-mid">
+        <div className="mb-6 max-w-[44rem] border-t border-accent pt-2.5 text-[13px] text-muted-ink">
           题库正在准备中，出卷可能暂时失败，可以稍后再试
         </div>
       )}
@@ -50,6 +53,7 @@ export function GeneratePage() {
         serverError={serverError}
         quotaNotice={locked ? `今日免费出卷剩 ${freeRemaining} 次，开通会员不限次数` : null}
       />
+      {isPending && <PipelineProgress />}
       <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
     </div>
   )

@@ -18,9 +18,10 @@ interface SolutionBlockProps {
 }
 
 /**
- * 单题解析区：question.solution 有值直接展示（不请求、不计配额）；
- * 否则按需 POST /api/solutions，用 enabled:false 的 query 缓存住——
- * 反复展开/收起不重复请求（解析限流 60/min）。
+ * 单题解析（handoff 第 6 屏）：「查看解析」下划线文字按钮 → kk-rise 展开
+ * 细线圆角框，顶部小标签 `POST /API/SOLUTIONS · 按需生成`。
+ * question.solution 有值直接展示（不请求、不计配额）；否则按需 POST /api/solutions，
+ * enabled:false 的 query 缓存住——反复展开/收起不重复请求（解析限流 60/min）。
  * 非会员每天限 FREE_SOLUTION_PER_DAY 次 AI 解析。
  */
 export function SolutionBlock({
@@ -64,9 +65,9 @@ export function SolutionBlock({
 
   if (exhausted) {
     return (
-      <div className="rounded-md border border-[#ece7d9] bg-[#faf8f3] px-4 py-3 text-[13px] text-text-mid">
+      <div className="rounded-md border border-hairline px-4 py-3 text-[13px] text-muted-ink">
         今日 {FREE_SOLUTION_PER_DAY} 次免费 AI 解析已用完，
-        <Link to="/membership" className="text-ink underline underline-offset-2">
+        <Link to="/membership" className="text-accent underline underline-offset-2">
           开通会员
         </Link>
         后不限量查看。
@@ -79,7 +80,7 @@ export function SolutionBlock({
       <button
         type="button"
         onClick={handleOpen}
-        className="self-start rounded-full border border-line-strong bg-sheet px-3 py-1 text-xs text-text-mid transition-colors hover:border-muted-foreground hover:text-foreground"
+        className="self-start text-[13px] text-muted-ink underline decoration-ink-30 underline-offset-4 transition-colors hover:text-accent hover:decoration-accent"
       >
         查看解析
       </button>
@@ -87,21 +88,23 @@ export function SolutionBlock({
   }
 
   return (
-    <div className="rounded-md border border-[#ece7d9] bg-[#faf8f3] px-4 py-3">
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-xs font-bold text-ink">解析</span>
+    <div className="kk-rise rounded-md border border-hairline px-5 py-4">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[10.5px] font-bold tracking-[0.14em] text-quiet">
+          POST /API/SOLUTIONS · 按需生成
+        </span>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="text-[12px] text-quiet transition-colors hover:text-accent"
         >
-          收起
+          收起解析
         </button>
       </div>
       {text ? (
-        <p className="text-[13.5px] leading-relaxed text-text-mid">{text}</p>
+        <p className="text-[15px] leading-[1.95] text-muted-ink">{text}</p>
       ) : solutionQuery.isError ? (
-        <p className="text-[13px] text-wrong">
+        <p className="text-[13px] text-accent">
           解析获取失败。
           <button
             type="button"
@@ -113,7 +116,7 @@ export function SolutionBlock({
         </p>
       ) : (
         <div className="flex flex-col gap-1.5">
-          <p className="text-xs text-text-mid">AI 正在撰写解析…</p>
+          <p className="text-[12px] text-muted-ink">AI 正在撰写解析…</p>
           <Skeleton className="h-4 w-3/4" />
         </div>
       )}

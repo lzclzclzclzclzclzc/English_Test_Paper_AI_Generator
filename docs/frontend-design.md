@@ -3,6 +3,9 @@
 > 面向对象：中考英语试卷生成器的 Web 前端。
 > 依赖：[Spec A（题库摄入）](./2026-07-07-question-bank-ingestion-design.md)、[Spec B（AI Engine）](./2026-07-07-ai-engine-design.md)、[Spec C（后端）](./2026-07-07-backend-design.md)。
 > 后置：[Spec E（跨系统测试）](./2026-07-07-testing-design.md)（待写）。
+> 2026-07-27 改版：视觉与信息架构按设计交接包「喫茶去」重构（左侧可折叠导航 +
+> 多屏结构 + 落地页/设置页），视觉规则全部移至 [Spec F v2（frontend-visual-spec）](./frontend-visual-spec.md)；
+> 本文中与其冲突的旧描述以带删除线的修订标注为准。
 
 ---
 
@@ -107,13 +110,22 @@ frontend/
 
 ## 3. 页面与路由
 
-### 3.1 路由表
+### 3.1 路由表（2026-07-27 随喫茶去改版更新）
 | 路径 | 页面 | 是否需登录 | 说明 |
 |------|------|-----------|------|
-| `/login` | LoginPage | 否 | 登录 + 注册（切换 tab） |
-| `/` | HomePage | 是 | 生成试卷 + 做题 + 提交 |
+| `/welcome` | LandingPage | 否 | 对外落地页（产品介绍，CTA 指向 `/login`） |
+| `/login` | LoginPage | 否 | 登录 + 注册（切换 tab），左右两栏布局 |
+| `/` | GeneratePage | 是 | 生成试卷（fresh 模式 + 管线进度演示） |
+| `/papers` | PapersPage | 是 | 历史试卷列表 |
+| `/papers/:paperId` | PaperPage | 是 | 作答 / 交卷判分 / 解析（同屏两态） |
+| `/review` | ReviewPage | 是 | 错题本 + 错题巩固 / 综合复习出卷入口 |
 | `/mastery` | MasteryPage | 是 | 用户掌握度报告 |
+| `/membership` | MembershipPage | 是 | 会员开通 / 续费（支付子系统） |
+| `/settings` | SettingsPage | 是 | 账号信息 · 阅读外观（深色切换）· 速率限制说明 |
 | `*` | 重定向到 `/` | — | 未匹配的 URL |
+
+受保护路由共享 `AppLayout`：左侧可折叠导航（232/66px，三组：出卷 / 复习 / 资料），
+见 Spec F v2 § 4。
 
 ### 3.2 路由守卫
 - 使用 `<RequireAuth>` 高阶组件包裹需要登录的路由：
@@ -168,7 +180,10 @@ frontend/
 - 主体：`MasteryTree` 组件
   - 按知识点树层级折叠。
   - 每个叶子节点显示：`accuracy`（百分比）+ `attempts` + `wilson_lower` 条形。
-  - 颜色标记：wilson_lower ≥ 0.7 绿；0.4-0.7 黄；< 0.4 红。
+  - ~~颜色标记：wilson_lower ≥ 0.7 绿；0.4-0.7 黄；< 0.4 红。~~
+    **2026-07-27 改**：随喫茶去设计系统的 One Chroma Rule，不再用绿/黄/红。
+    进度条一律赤陶：wilson_lower < 0.4 全饱和（薄弱点更醒目），≥ 0.4 降到
+    0.45 不透明度；分数用等宽字，薄弱点赤陶（Spec F v2 § 6）。
 - 数据来源：`GET /api/users/me/mastery`，TanStack Query key: `['mastery', 'me']`。
 
 ### 3.7 PapersPage（`/papers`，2026-07-11 补）
@@ -281,7 +296,7 @@ export const generatePaper = (req: GeneratePaperRequest) =>
 4. `useAuth` 拿到用户对象 → RequireAuth 放行 → 跳转 `from` 或 `/`。
 
 ### 6.3 登出流程
-- 顶部导航栏一个 "登出" 按钮 → `POST /api/auth/logout` → `queryClient.clear()` → `navigate('/login')`。
+- 侧栏底部（用户名下方）"登出" 链接 → `POST /api/auth/logout` → `queryClient.clear()` → `navigate('/login')`。
 
 ### 6.4 全局 401 处理
 `queryClient` 的 `defaultOptions.queries.onError` 与 `mutations.onError` 中：
@@ -306,12 +321,17 @@ if (error instanceof ApiError && error.status === 401) {
 - Skeleton（加载态）
 
 ### 7.2 自定义组件
-- `PaperView`, `QuestionCard`, `GenerateForm`, `MasteryTree`, `RequireAuth`, `AppNav`。
+- `Sidebar` / `AppLayout`（左侧可折叠导航外壳）、`GenerateForm`、`PipelineProgress`、
+  `QuestionCard`（+ `question-fields/*`）、`AnswerCard`（粘顶答题卡）、`GradeBanner`、
+  `SolutionBlock`、`MasteryReport`、`RequestSummary`、`RequireAuth`、
+  `review/WrongBookList`、`review/ReviewGeneratePanel`、`UpgradeDialog`、`PayQrDialog`。
 - 所有自定义组件禁止直接调用 `fetch`，只通过 hooks 消费 `api/` 层。
 
-### 7.3 样式
-- Tailwind 原子类，`tailwind.config.js` 用 shadcn/ui 默认主题。
-- 不引入额外 CSS 框架。
+### 7.3 样式（2026-07-27 随喫茶去改版更新）
+- Tailwind v4 原子类；设计 tokens 来自设计交接包，原样拷入
+  `src/styles/{colors,typography,spacing,base}.css`，由 `index.css` 的
+  `@theme inline` 映射为语义类并接管 shadcn 变量（见 Spec F v2 § 2）。
+- 不引入额外 CSS 框架；组件里禁止写死颜色，只用语义类 / token。
 
 ---
 
@@ -381,7 +401,7 @@ export default defineConfig({
 
 1. 移动端适配（只保证 1280×720 以上桌面浏览器）。
 2. 国际化（中文硬编码）。
-3. 深色模式。
+3. ~~深色模式~~（2026-07-27 已随喫茶去 token 低成本实现：设置页「阅读外观」切换 `.dark`，持久化 localStorage）。
 4. 试卷 PDF 导出。
 5. ~~试卷列表页~~（2026-07-11 已实现，见 § 3.7）。
 6. 草稿保存（刷新页面丢失中间答题状态）。
@@ -396,6 +416,13 @@ export default defineConfig({
 1. **未提交试卷刷新丢失答案**：MVP 接受。若用户反馈强烈，后续加 `sessionStorage` 草稿保存。
 2. **试卷长度上限**：题目 > 100 时前端渲染性能是否 OK？后端已有硬上限（Spec C），前端等真实测量。
 3. **移动端**：等看是否有实际需求。
+4. **（2026-07-27，设计交接包指出的后端缺口）错题聚合端点缺失**：spec C 没有
+   「按用户聚合错题」的端点，当前错题本是前端 localStorage 记账（仅本设备）。
+   建议后端新增 `GET /api/users/me/wrong-items?window_days=`，前端即可换成服务端错题本。
+5. **（同上）题库只读检索端点缺失**：handoff 第 10 屏「题库浏览」需要
+   `GET /api/questions?…`（搜索 + 题型/难度筛选），端点就绪后按 Spec F v2 § 5 表格补屏。
+6. **（同上）`GET /api/papers` 摘要无得分字段**：历史试卷列表只能显示
+   「已交卷 / 未作答」，无法显示「已交 45/60」。
 
 ---
 

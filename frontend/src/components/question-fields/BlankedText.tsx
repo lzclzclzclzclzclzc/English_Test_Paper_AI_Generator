@@ -11,7 +11,7 @@ interface BlankedTextProps {
   onChange?: (next: BlankMap) => void
 }
 
-/** 填空线输入框（Spec F § 4.4）：只有底边线的内联输入。 */
+/** 填空线输入框（handoff 第 5 屏）：无边框、只有 1px 底线，focus 转赤陶。 */
 function BlankInput({
   value,
   onChange,
@@ -27,7 +27,7 @@ function BlankInput({
       aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange?.(e.target.value)}
-      className="mx-1 inline-block min-w-[150px] border-0 border-b-[1.5px] border-ink bg-transparent px-2 text-center font-semibold text-ink outline-none focus:border-b-2"
+      className="mx-1 inline-block min-w-[10rem] border-0 border-b border-ink-30 bg-transparent px-2 text-center text-ink outline-none transition-colors focus:border-accent"
     />
   )
 }
@@ -35,8 +35,8 @@ function BlankInput({
 /** review 态的已填答案展示：填空线上的静态文字。 */
 function BlankValue({ text }: { text: string }) {
   return (
-    <span className="mx-1 inline-block min-w-[100px] border-b-[1.5px] border-ink px-2 text-center font-semibold text-ink">
-      {text.trim() === '' ? ' ' : text}
+    <span className="mx-1 inline-block min-w-[6rem] border-b border-ink-30 px-2 text-center text-ink">
+      {text.trim() === '' ? ' ' : text}
     </span>
   )
 }
@@ -53,7 +53,7 @@ export function BlankedText({ text, blankKeys, mode, value, onChange }: BlankedT
 
   if (segments) {
     return (
-      <p className="font-question text-[15px] leading-[1.9] text-foreground">
+      <p className="text-[17px] leading-[1.9] text-ink">
         {segments.map((seg, i) => {
           const key = blankKeys[i]
           return (
@@ -80,10 +80,10 @@ export function BlankedText({ text, blankKeys, mode, value, onChange }: BlankedT
   // 兜底：空位标记与空数不符 → 原文 + 标签输入框
   return (
     <div className="flex flex-col gap-2.5">
-      <p className="font-question text-[15px] leading-[1.7] text-foreground">{text}</p>
+      <p className="text-[17px] leading-[1.9] text-ink">{text}</p>
       <div className="flex flex-wrap gap-x-6 gap-y-2">
         {blankKeys.map((key) => (
-          <span key={key} className="flex items-baseline gap-1.5 text-[13px] text-text-mid">
+          <span key={key} className="flex items-baseline gap-1.5 text-[13px] text-muted-ink">
             {blankLabel(key)}：
             {mode === 'answering' ? (
               <BlankInput
@@ -100,4 +100,3 @@ export function BlankedText({ text, blankKeys, mode, value, onChange }: BlankedT
     </div>
   )
 }
-
