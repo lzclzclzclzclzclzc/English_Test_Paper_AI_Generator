@@ -24,6 +24,9 @@ const SUGGESTIONS = [
 // 仅缓存展示用的消息列表；真正的对话上下文由后端 SQLiteSession 按用户维护。
 const SESSION_KEY = 'agent.chat'
 
+/** 后端 agent 偶尔把内部信令标记（<paper_ready …/>）留在回复文本里，展示前滤掉。 */
+const stripInternalTags = (text: string) => text.replace(/<paper_ready[^>]*\/?>/g, '').trim()
+
 function loadMessages(): ChatMessage[] {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY)
@@ -164,7 +167,9 @@ export function AssistantPage() {
                   <p className="text-[13.5px] text-accent">{msg.content}</p>
                 ) : (
                   <div className="chat-md text-[14.5px] leading-[1.9] text-ink">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {stripInternalTags(msg.content)}
+                    </ReactMarkdown>
                   </div>
                 )}
                 {msg.action?.type === 'open_paper' && (
