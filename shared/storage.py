@@ -25,6 +25,7 @@ from shared.schemas import (
 DB_PATH_OVERRIDE: Path | None = None
 MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX = "20260709_001_attempt_items_item_index"
 MIGRATION_USERS_ROLE = "20260801_001_users_role"
+MIGRATION_USERS_STATUS = "20260801_002_users_status"
 CHROMA_COLLECTION_NAME = "questions"
 CHROMA_REQUIRED_METADATA_KEYS = {
     "book",
@@ -159,6 +160,7 @@ def _row_to_user_record(row: sqlite3.Row | None) -> UserRecord | None:
         password_hash=row["password_hash"],
         created_at=_dt(row["created_at"]),
         role=row["role"] if "role" in row.keys() else "user",
+        status=row["status"] if "status" in row.keys() else "active",
     )
 
 
@@ -174,7 +176,7 @@ def get_user_by_id(user_id: str) -> User | None:
     with connect() as conn:
         row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     record = _row_to_user_record(row)
-    return User(id=record.id, username=record.username, created_at=record.created_at, role=record.role) if record else None
+    return User(id=record.id, username=record.username, created_at=record.created_at, role=record.role, status=record.status) if record else None
 
 
 def create_session(user_id: str, ttl_days: int = 30) -> str:
@@ -585,6 +587,14 @@ def _migrate_users_role(conn: sqlite3.Connection) -> None:
     conn.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'")
 
 
+def _migrate_users_status(conn: sqlite3.Connection) -> None:
+    if not _table_exists(conn, "users"):
+        return
+    if "status" in _table_columns(conn, "users"):
+        return
+    conn.execute("ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'active'")
+
+
 def _migrate_attempt_items_item_index(conn: sqlite3.Connection) -> None:
     if not _table_exists(conn, "attempt_items"):
         return
@@ -649,6 +659,7 @@ def _apply_migrations(conn: sqlite3.Connection) -> None:
     migrations = [
         (MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX, _migrate_attempt_items_item_index),
         (MIGRATION_USERS_ROLE, _migrate_users_role),
+        (MIGRATION_USERS_STATUS, _migrate_users_status),
     ]
     for migration_id, migration in migrations:
         if _migration_applied(conn, migration_id):

@@ -144,6 +144,7 @@ def test_init_db_records_applied_migrations(client):
     assert [row["id"] for row in rows] == [
         storage.MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX,
         storage.MIGRATION_USERS_ROLE,
+        storage.MIGRATION_USERS_STATUS,
     ]
 
 

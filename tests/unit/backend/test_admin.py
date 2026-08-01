@@ -29,3 +29,10 @@ def test_init_db_is_idempotent(db):
     db.init_db()
     db.init_db()
     assert "role" in _columns("users")
+
+
+def test_users_has_status_column_default_active(db):
+    assert "status" in _columns("users")
+    user = db.create_user("bob", "hash")
+    fetched = db.get_user_by_id(user.id)
+    assert fetched.status == "active"

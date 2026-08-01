@@ -16,6 +16,7 @@ class User(BaseModel):
     username: str
     created_at: datetime
     role: Literal["user", "admin"] = "user"
+    status: Literal["active", "banned"] = "active"
 
 
 class UserRecord(User):
