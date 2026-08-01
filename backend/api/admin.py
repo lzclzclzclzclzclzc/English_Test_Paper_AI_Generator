@@ -7,6 +7,8 @@ from backend.auth.password import hash_password
 from backend.deps import require_admin
 from backend.errors import AdminOperationError, ResourceNotFoundError
 from backend.schemas import (
+    AdminOverview,
+    AdminTimeseries,
     AdminUserDetail,
     AdminUserList,
     ResetPasswordRequest,
@@ -84,6 +86,33 @@ async def unban(user_id: str, _: User = Depends(require_admin)) -> User:
 
 def _payment_base() -> str:
     return "http://localhost:8001"
+
+
+@router.get("/stats/overview", response_model=AdminOverview)
+async def stats_overview(_: User = Depends(require_admin)) -> AdminOverview:
+    counts = storage.admin_counts()
+    return AdminOverview(**counts, active_members=_fetch_active_members())
+
+
+@router.get("/stats/timeseries", response_model=AdminTimeseries)
+async def stats_timeseries(days: int = 30, _: User = Depends(require_admin)) -> AdminTimeseries:
+    return AdminTimeseries(
+        users_by_day=storage.users_created_by_day(days),
+        papers_by_day=storage.papers_created_by_day(days),
+    )
+
+
+def _fetch_active_members() -> int | None:
+    # Best-effort cross-service read; payment down → None (non-blocking).
+    # Task C3 upgrades this to forward the admin's session cookie.
+    try:
+        resp = httpx.get(f"{_payment_base()}/payapi/admin/memberships?limit=100000", timeout=3.0)
+        if resp.status_code == 200:
+            items = resp.json().get("items", [])
+            return sum(1 for m in items if m.get("active"))
+    except httpx.HTTPError:
+        return None
+    return None
 
 
 def _fetch_membership_expiry(user_id: str) -> str | None:

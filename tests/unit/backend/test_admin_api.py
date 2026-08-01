@@ -85,3 +85,22 @@ def test_cannot_ban_self(client):
     boss = _mk(client, "boss", admin=True)
     _as(client, boss)
     assert client.post(f"/api/admin/users/{boss.id}/ban").status_code == 400
+
+
+def test_stats_overview_and_timeseries(client):
+    boss = _mk(client, "boss", admin=True)
+    _mk(client, "u1")
+    _as(client, boss)
+    ov = client.get("/api/admin/stats/overview")
+    assert ov.status_code == 200
+    assert ov.json()["total_users"] == 2
+    ts = client.get("/api/admin/stats/timeseries?days=7")
+    assert ts.status_code == 200
+    body = ts.json()
+    assert "users_by_day" in body and "papers_by_day" in body
+
+
+def test_stats_requires_admin(client):
+    normie = _mk(client, "normie2")
+    _as(client, normie)
+    assert client.get("/api/admin/stats/overview").status_code == 403
