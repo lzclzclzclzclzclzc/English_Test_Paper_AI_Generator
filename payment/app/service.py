@@ -92,6 +92,28 @@ def sync_order_status(user_id: str, out_trade_no: str) -> dict:
     return get_order(user_id, out_trade_no)
 
 
+def extend_membership(user_id: str, days: int, now=None) -> str:
+    """Push a user's membership expiry forward by `days`. Reused by both
+    payment-success (mark_order_paid) and admin manual grant. Returns the new
+    expiry ISO string."""
+    now = now or utcnow()
+    with get_conn() as conn:
+        current = conn.execute(
+            "SELECT expires_at FROM memberships WHERE user_id=?", (user_id,)
+        ).fetchone()
+        base = now
+        if current is not None:
+            base = max(parse_iso(current["expires_at"]), now)
+        new_expiry = format_iso(base + timedelta(days=days))
+        conn.execute(
+            "INSERT INTO memberships(user_id, expires_at, updated_at) VALUES(?,?,?)"
+            " ON CONFLICT(user_id) DO UPDATE SET"
+            " expires_at=excluded.expires_at, updated_at=excluded.updated_at",
+            (user_id, new_expiry, format_iso(now)),
+        )
+    return new_expiry
+
+
 def mark_order_paid(out_trade_no: str, alipay_trade_no: str | None = None) -> None:
     """标记支付成功并顺延会员,幂等:CAS 只允许 CREATED→PAID 成功一次,
     只有赢得这次转移的调用才执行会员顺延,重复通知不会重复加时长。"""
@@ -108,21 +130,8 @@ def mark_order_paid(out_trade_no: str, alipay_trade_no: str | None = None) -> No
             "SELECT user_id, plan_id FROM orders WHERE out_trade_no=?",
             (out_trade_no,),
         ).fetchone()
-        plan = get_plan(row["plan_id"])
-        current = conn.execute(
-            "SELECT expires_at FROM memberships WHERE user_id=?",
-            (row["user_id"],),
-        ).fetchone()
-        base = now
-        if current is not None:
-            base = max(parse_iso(current["expires_at"]), now)
-        new_expiry = format_iso(base + timedelta(days=plan.duration_days))
-        conn.execute(
-            "INSERT INTO memberships(user_id, expires_at, updated_at) VALUES(?,?,?)"
-            " ON CONFLICT(user_id) DO UPDATE SET"
-            " expires_at=excluded.expires_at, updated_at=excluded.updated_at",
-            (row["user_id"], new_expiry, format_iso(now)),
-        )
+    plan = get_plan(row["plan_id"])
+    extend_membership(row["user_id"], plan.duration_days, now)
 
 
 def cancel_order(user_id: str, out_trade_no: str) -> dict:
@@ -154,8 +163,43 @@ def get_membership(user_id: str) -> dict:
 
 
 def list_memberships(q: str = "", limit: int = 50, offset: int = 0) -> list[dict]:
-    return []
+    like = f"%{q}%"
+    now = utcnow_iso()
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT user_id, expires_at FROM memberships WHERE user_id LIKE ?"
+            " ORDER BY expires_at DESC LIMIT ? OFFSET ?",
+            (like, limit, offset),
+        ).fetchall()
+    return [{"user_id": r["user_id"], "expires_at": r["expires_at"], "active": r["expires_at"] > now} for r in rows]
 
 
 def count_memberships(q: str = "") -> int:
-    return 0
+    with get_conn() as conn:
+        return conn.execute("SELECT COUNT(*) FROM memberships WHERE user_id LIKE ?", (f"%{q}%",)).fetchone()[0]
+
+
+def revoke_membership(user_id: str) -> dict:
+    now = utcnow()
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO memberships(user_id, expires_at, updated_at) VALUES(?,?,?)"
+            " ON CONFLICT(user_id) DO UPDATE SET expires_at=excluded.expires_at, updated_at=excluded.updated_at",
+            (user_id, format_iso(now), format_iso(now)),
+        )
+    return get_membership(user_id)
+
+
+def list_orders(status: str | None = None, limit: int = 50, offset: int = 0) -> list[dict]:
+    with get_conn() as conn:
+        if status:
+            rows = conn.execute(
+                "SELECT * FROM orders WHERE status=? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                (status, limit, offset),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM orders ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                (limit, offset),
+            ).fetchall()
+    return [dict(r) for r in rows]

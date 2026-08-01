@@ -42,3 +42,8 @@ class OrderOut(BaseModel):
 class HealthOut(BaseModel):
     status: str
     mock_pay: bool
+
+
+class GrantMembershipIn(BaseModel):
+    days: int | None = None
+    plan_id: str | None = None
