@@ -9,6 +9,7 @@ import {
   PanelLeft,
   Pen,
   Settings,
+  ShieldCheck,
   XCircle,
 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
@@ -133,6 +134,33 @@ export function Sidebar() {
             ))}
           </div>
         ))}
+        {user?.role === 'admin' && (
+          <div className="flex flex-col gap-0.5">
+            {collapsed ? (
+              <div aria-hidden className="mx-1 my-2.5 border-t border-hairline" />
+            ) : (
+              <div className="px-3 pb-1 pt-4 text-[10.5px] font-bold tracking-[0.14em] text-quiet">
+                管理
+              </div>
+            )}
+            <NavLink
+              to="/admin"
+              title={collapsed ? '管理后台' : undefined}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 rounded-sm px-3 py-[9px] text-[14.5px] transition-colors',
+                  collapsed && 'justify-center px-0',
+                  isActive
+                    ? 'bg-wash text-accent'
+                    : 'text-muted-ink hover:bg-tint hover:text-ink',
+                )
+              }
+            >
+              <ShieldCheck className="size-[18px] shrink-0" strokeWidth={1.5} />
+              {!collapsed && <span className="whitespace-nowrap">管理后台</span>}
+            </NavLink>
+          </div>
+        )}
       </nav>
 
       {/* 底部：头像方块 + 用户名 + 登出 */}
