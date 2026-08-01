@@ -218,6 +218,51 @@ def count_users(q: str = "") -> int:
         ).fetchone()[0]
 
 
+def admin_counts() -> dict:
+    init_db()
+    today = datetime.now(timezone.utc).date().isoformat()
+    with connect() as conn:
+        total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        new_today = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE substr(created_at, 1, 10) = ?", (today,)
+        ).fetchone()[0]
+        total_papers = conn.execute("SELECT COUNT(*) FROM papers").fetchone()[0]
+        total_attempts = conn.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]
+    return {
+        "total_users": total_users,
+        "new_users_today": new_today,
+        "total_papers": total_papers,
+        "total_attempts": total_attempts,
+    }
+
+
+def _by_day(conn: sqlite3.Connection, table: str, ts_col: str, days: int) -> list[dict]:
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    rows = conn.execute(
+        f"""
+        SELECT substr({ts_col}, 1, 10) AS day, COUNT(*) AS count
+        FROM {table}
+        WHERE {ts_col} >= ?
+        GROUP BY day
+        ORDER BY day
+        """,
+        (since,),
+    ).fetchall()
+    return [{"day": r["day"], "count": r["count"]} for r in rows]
+
+
+def users_created_by_day(days: int = 30) -> list[dict]:
+    init_db()
+    with connect() as conn:
+        return _by_day(conn, "users", "created_at", days)
+
+
+def papers_created_by_day(days: int = 30) -> list[dict]:
+    init_db()
+    with connect() as conn:
+        return _by_day(conn, "papers", "generated_at", days)
+
+
 def update_password_hash(user_id: str, password_hash: str) -> None:
     init_db()
     with connect() as conn:

@@ -47,3 +47,20 @@ def test_delete_sessions_by_user(db):
     sid = db.create_session(u.id)
     db.delete_sessions_by_user(u.id)
     assert db.get_session(sid) is None
+
+
+def test_stats_counts(db):
+    a = db.create_user("s1", "h")
+    db.create_user("s2", "h")
+    total = db.admin_counts()
+    assert total["total_users"] == 2
+    assert total["total_papers"] == 0
+    assert total["total_attempts"] == 0
+    assert total["new_users_today"] == 2  # both created just now
+
+
+def test_users_timeseries_buckets_by_day(db):
+    db.create_user("t1", "h")
+    series = db.users_created_by_day(days=7)
+    assert any(point["count"] >= 1 for point in series)
+    assert all(set(point.keys()) == {"day", "count"} for point in series)
