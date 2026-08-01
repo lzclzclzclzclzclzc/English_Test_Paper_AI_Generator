@@ -126,3 +126,59 @@ class ErrorResponse(BaseModel):
     message: str
     detail: object | None = None
     trace_id: str
+
+
+# ---- Admin ----
+
+
+class AdminUserListItem(BaseModel):
+    id: str
+    username: str
+    created_at: datetime
+    role: Literal["user", "admin"]
+    status: Literal["active", "banned"]
+    paper_count: int
+    attempt_count: int
+
+
+class AdminUserList(BaseModel):
+    items: list[AdminUserListItem]
+    total: int
+
+
+class AdminUserDetail(BaseModel):
+    id: str
+    username: str
+    created_at: datetime
+    role: Literal["user", "admin"]
+    status: Literal["active", "banned"]
+    paper_count: int
+    attempt_count: int
+    correct_rate: float | None
+    membership_expires_at: str | None
+
+
+class SetRoleRequest(BaseModel):
+    role: Literal["user", "admin"]
+
+
+class ResetPasswordRequest(BaseModel):
+    new_password: str = Field(min_length=6, max_length=128)
+
+
+class AdminOverview(BaseModel):
+    total_users: int
+    new_users_today: int
+    total_papers: int
+    total_attempts: int
+    active_members: int | None
+
+
+class TimeseriesPoint(BaseModel):
+    day: str
+    count: int
+
+
+class AdminTimeseries(BaseModel):
+    users_by_day: list[TimeseriesPoint]
+    papers_by_day: list[TimeseriesPoint]
