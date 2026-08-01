@@ -36,6 +36,12 @@ class AuthenticationError(BackendError):
     message = "未登录或会话已过期"
 
 
+class AuthorizationError(BackendError):
+    error_code = "auth.forbidden"
+    http_status = 403
+    message = "无权访问"
+
+
 class UsernameConflictError(BackendError):
     error_code = "auth.username_conflict"
     http_status = 409
