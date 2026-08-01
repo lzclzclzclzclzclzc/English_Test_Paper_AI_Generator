@@ -179,6 +179,18 @@ def get_user_by_id(user_id: str) -> User | None:
     return User(id=record.id, username=record.username, created_at=record.created_at, role=record.role, status=record.status) if record else None
 
 
+def set_user_role(user_id: str, role: str) -> None:
+    init_db()
+    with connect() as conn:
+        conn.execute("UPDATE users SET role = ? WHERE id = ?", (role, user_id))
+
+
+def set_user_status(user_id: str, status: str) -> None:
+    init_db()
+    with connect() as conn:
+        conn.execute("UPDATE users SET status = ? WHERE id = ?", (status, user_id))
+
+
 def create_session(user_id: str, ttl_days: int = 30) -> str:
     init_db()
     now = datetime.now(timezone.utc)
