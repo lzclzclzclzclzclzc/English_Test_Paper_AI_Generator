@@ -275,6 +275,22 @@ def delete_sessions_by_user(user_id: str) -> None:
         conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
 
 
+def user_correct_rate(user_id: str) -> float | None:
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n, SUM(ai.is_correct) AS c
+            FROM attempts a JOIN attempt_items ai ON ai.attempt_id = a.id
+            WHERE a.user_id = ?
+            """,
+            (user_id,),
+        ).fetchone()
+    if not row or not row["n"]:
+        return None
+    return round((row["c"] or 0) / row["n"], 4)
+
+
 def create_session(user_id: str, ttl_days: int = 30) -> str:
     init_db()
     now = datetime.now(timezone.utc)

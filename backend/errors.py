@@ -66,6 +66,12 @@ class ValidationError(BackendError):
     message = "请求参数错误"
 
 
+class AdminOperationError(BackendError):
+    error_code = "admin.invalid_operation"
+    http_status = 400
+    message = "非法的管理操作"
+
+
 class RateLimitError(BackendError):
     error_code = "rate.exceeded"
     http_status = 429
