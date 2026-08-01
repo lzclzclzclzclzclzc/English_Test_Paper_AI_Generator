@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import type { GradeResultItem, RevisedQuestion } from '@/types/api'
 import { cn } from '@/lib/utils'
-import { speakStem } from '@/lib/tts'
+import { speakStem, subscribePlayingState, isGloballyPlaying } from '@/lib/tts'
 
 interface ListeningSingleChoiceFieldProps {
   question: RevisedQuestion
@@ -27,6 +27,7 @@ export function ListeningSingleChoiceField({
   result,
 }: ListeningSingleChoiceFieldProps) {
   const [isPlaying, setIsPlaying] = useState(false)
+  const globallyPlaying = useSyncExternalStore(subscribePlayingState, isGloballyPlaying)
   const options = question.options ?? []
   const userLabel =
     mode === 'review' && typeof result?.user_answer === 'string'
@@ -52,10 +53,10 @@ export function ListeningSingleChoiceField({
       {/* 播放控件 */}
       <button
         onClick={handlePlay}
-        disabled={isPlaying}
+        disabled={isPlaying || globallyPlaying}
         className={cn(
           'flex w-fit items-center gap-2 rounded-sm border px-4 py-2 text-[14px] transition-colors',
-          isPlaying
+          isPlaying || globallyPlaying
             ? 'cursor-not-allowed border-ink-15 text-quiet'
             : 'border-accent bg-wash text-accent hover:bg-accent hover:text-paper',
         )}
@@ -86,8 +87,8 @@ export function ListeningSingleChoiceField({
         <span>{isPlaying ? '播放中...' : '播放听力'}</span>
       </button>
 
-      {/* 听力原文：M/W 用 text-quiet 标签，正文用 text-muted-ink */}
-      {question.stem && (
+      {/* 听力原文：做题态隐藏（仅靠听），交卷后 review 态才呈现 */}
+      {mode === 'review' && question.stem && (
         <div className="flex flex-col gap-1 text-[15px] leading-[1.9]">
           {question.stem.split('\n').map((line, index) => {
             const speakerMatch = line.match(/^(M|W):\s*(.*)$/)

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { usePaper } from '@/hooks/usePaper'
@@ -10,6 +10,7 @@ import { submitAttempt, getAttemptByPaper } from '@/api/attempts'
 import { ApiError } from '@/api/client'
 import { toastApiError } from '@/lib/errors'
 import { queryClient } from '@/lib/queryClient'
+import { stopAll as stopTTS } from '@/lib/tts'
 import type { AnswerDraft } from '@/lib/answers'
 import { buildSubmission, listUnanswered } from '@/lib/answers'
 import { buildPaperNotices } from '@/lib/paperNotices'
@@ -44,6 +45,9 @@ export function PaperPageRoute() {
 function PaperPageInner({ paperId }: { paperId: string }) {
   const navigate = useNavigate()
   const { data: paper, isLoading, error, refetch } = usePaper(paperId)
+
+  // 离开试卷页面时停止所有 TTS 播放
+  useEffect(() => () => stopTTS(), [])
 
   // D3：答题草稿。单选存 label；填空/改写存 blankN 字典
   const [answers, setAnswers] = useState<Record<number, AnswerDraft>>({})
@@ -155,6 +159,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
 
   const doSubmit = () => {
     setConfirmOpen(false)
+    stopTTS()
     grade.mutate({ paper_id: paper.paper_id, items: buildSubmission(paper, answers) })
   }
 

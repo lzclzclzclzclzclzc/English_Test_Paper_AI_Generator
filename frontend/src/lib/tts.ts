@@ -88,57 +88,100 @@ function getFemaleVoice(): SpeechSynthesisVoice | undefined {
 }
 
 /**
- * TTS 播放听力原文
- * @param stem 听力原文，格式：M: xxx\nW: xxx\nQuestion: xxx
+ * 全局播放锁：同一时间只允许一段听力播放
+ * 通过 useSyncExternalStore 让所有听力组件订阅播放状态
  */
-export async function speakStem(stem: string): Promise<void> {
-  // 停止之前的播放
-  window.speechSynthesis.cancel();
+let _playing = false;
+let _cancelToken = 0;
+const _listeners = new Set<() => void>();
 
-  const lines = stem.split("\n");
-  const utterances: SpeechSynthesisUtterance[] = [];
+export function isGloballyPlaying(): boolean {
+  return _playing;
+}
 
-  // 预获取语音
-  const maleVoice = getMaleVoice();
-  const femaleVoice = getFemaleVoice();
+export function subscribePlayingState(callback: () => void): () => void {
+  _listeners.add(callback);
+  return () => { _listeners.delete(callback); };
+}
 
-  for (const line of lines) {
-    const speakerMatch = line.match(/^(M|W):\s*(.*)$/);
-    if (speakerMatch) {
-      const [, speaker, text] = speakerMatch;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      utterance.rate = 0.85;
+function _setPlaying(v: boolean): void {
+  _playing = v;
+  _listeners.forEach((fn) => fn());
+}
 
-      // 根据说话者设置不同的 voice
-      if (speaker === "M") {
-        if (maleVoice) {
-          utterance.voice = maleVoice;
+/**
+ * TTS 播放听力原文
+ * 如果已有播放进行中，直接返回不播放。
+ * @returns true=已开始播放，false=被阻止（已有播放中）
+ */
+export async function speakStem(stem: string): Promise<boolean> {
+  if (_playing) return false;
+  _setPlaying(true);
+  const myToken = ++_cancelToken;
+
+  try {
+    window.speechSynthesis.cancel();
+
+    const lines = stem.split("\n");
+    const utterances: SpeechSynthesisUtterance[] = [];
+
+    const maleVoice = getMaleVoice();
+    const femaleVoice = getFemaleVoice();
+
+    for (const line of lines) {
+      const speakerMatch = line.match(/^(M|W):\s*(.*)$/);
+      if (speakerMatch) {
+        const [, speaker, text] = speakerMatch;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "en-US";
+        utterance.rate = 0.85;
+
+        if (speaker === "M") {
+          if (maleVoice) {
+            utterance.voice = maleVoice;
+          }
+        } else {
+          if (femaleVoice) {
+            utterance.voice = femaleVoice;
+          }
         }
+
+        utterances.push(utterance);
       } else {
-        if (femaleVoice) {
-          utterance.voice = femaleVoice;
-        }
+        const utterance = new SpeechSynthesisUtterance(line);
+        utterance.lang = "en-US";
+        utterance.rate = 0.9;
+        utterances.push(utterance);
       }
+    }
 
-      utterances.push(utterance);
-    } else {
-      // Question: 或其他内容，用默认 voice
-      const utterance = new SpeechSynthesisUtterance(line);
-      utterance.lang = "en-US";
-      utterance.rate = 0.9;
-      utterances.push(utterance);
+    for (const utterance of utterances) {
+      // 被取消（stopAll 调用后 token 变化），立即退出循环
+      if (myToken !== _cancelToken) break;
+      await new Promise<void>((resolve) => {
+        utterance.onend = () => resolve();
+        utterance.onerror = () => resolve();
+        window.speechSynthesis.speak(utterance);
+      });
+    }
+  } finally {
+    // 只有未被外部取消时才重置 playing 状态
+    if (myToken === _cancelToken) {
+      _setPlaying(false);
     }
   }
+  return true;
+}
 
-  // 串行播放所有语句
-  for (const utterance of utterances) {
-    await new Promise<void>((resolve) => {
-      utterance.onend = () => resolve();
-      utterance.onerror = () => resolve(); // 出错时继续下一句
-      window.speechSynthesis.speak(utterance);
-    });
-  }
+/**
+ * 停止所有播放并重置全局锁
+ * 通过递增 _cancelToken 使正在运行的 speakStem 循环中断，
+ * 不再播放后续语句。
+ */
+export function stopAll(): void {
+  _cancelToken++;
+  window.speechSynthesis.cancel();
+  _setPlaying(false);
 }
 
 /**

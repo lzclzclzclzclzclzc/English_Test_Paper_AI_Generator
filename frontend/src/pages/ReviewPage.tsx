@@ -4,6 +4,7 @@ import { getReadiness } from '@/api/health'
 import { useAuth } from '@/hooks/useAuth'
 import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import { loadWrongBook, removeEntry, toWrongItemRefs, type WrongBookEntry } from '@/lib/wrongBook'
+import { stopAll as stopTTS } from '@/lib/tts'
 import { PageHeader } from '@/components/PageHeader'
 import { ReviewGeneratePanel } from '@/components/review/ReviewGeneratePanel'
 import { WrongBookList } from '@/components/review/WrongBookList'
@@ -26,6 +27,9 @@ export function ReviewPage() {
     setEntries(loaded)
     setSelected(new Set(loaded.map((e) => e.sourceQuestionId)))
   }, [user?.id])
+
+  // 离开错题本页面时停止所有 TTS 播放
+  useEffect(() => () => stopTTS(), [])
 
   const { generate, guard, isPending, locked } = useGeneratePaper(setServerError)
 
