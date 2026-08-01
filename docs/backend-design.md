@@ -41,6 +41,8 @@
 
 **关键澄清**：**AI Engine 的无状态原则不变**。持久化的责任在**后端层**——FastAPI 拿到 AI Engine 返回的 `Paper` 后写库；`revise_paper` 时后端从库读出完整 `Paper` 喂给 AI Engine。边界依然清晰：**AI Engine 是纯函数，后端负责持久化**。
 
+**后续撤销（Spec G）**：Spec G（`admin-design.md`）进一步撤销本 spec § 12 的"不实现权限系统"这条非目标——新增 `users.role`/`users.status` 两列、`require_admin` 守卫、`AuthorizationError`（403）、`/api/admin/*` 端点与 `promote-admin` CLI。相关端点与数据模型变更详见 Spec G。
+
 ---
 
 ## 1. 整体架构与请求生命周期
@@ -1100,7 +1102,7 @@ python -m backend.cli serve --port 8000 --env production
 
 - ❌ 不实现 OAuth / SSO / 第三方登录
 - ❌ 不实现密码找回 / 邮箱验证（无邮箱字段）
-- ❌ 不实现权限系统（用户之间无差异，除资源归属）
+- ~~❌ 不实现权限系统（用户之间无差异，除资源归属）~~ —— **已被 Spec G（`admin-design.md`）撤销**：引入 `users.role`（user/admin）+ `require_admin` 守卫 + 管理后台，用户之间自此有权限差异。详见 Spec G。
 - ❌ 不实现多语言（错误消息只有中文）
 - ❌ 不实现 API 版本化（`/api/v1/*`）——未来若真需要版本再引入
 - ❌ 不实现分页（历史试卷若真的爆到 >1000 份，加简单 limit/offset）

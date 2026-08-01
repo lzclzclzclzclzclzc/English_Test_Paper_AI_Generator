@@ -171,6 +171,7 @@ frontend/
   - 无用户对象（`useQuery` data 为 `null`） → `navigate('/login', { state: { from: location } })`。
   - loading 中 → 渲染 `<Skeleton />`，不做跳转。
 - **只有一处发起跳转**：`useQuery(['auth','me'])` 若返回 401，全局 `onError` 钩子（§ 6.4）负责把 `['auth','me']` 缓存置 `null`；然后 `RequireAuth` 感知到 `null` 后跳转。**RequireAuth 自身不再直接触发新的 `GET /api/auth/me`**——统一由 `useAuth` hook 承担，避免"守卫也发一次、useAuth 也发一次"的重复请求与跳转竞态。
+- **管理员路由**：`/admin/*` 在 `<RequireAuth>` 之内再套一层 `<RequireAdmin>`（`user.role === 'admin'` 才放行，否则重定向首页），侧栏「管理后台」入口亦按 role 显隐。前端 role 判断仅控制可见性，真正鉴权由后端 `require_admin` 兜底。管理后台页面（概览/用户/会员/订单）与接口详见 **Spec G（`admin-design.md`）**。
 
 ### 3.3 LoginPage（`/login`）
 - 左右两栏（Spec F v2 § 5 第 2 屏）：左栏品牌 + 说明句 + 会话策略小字，右栏 24rem 表单。
