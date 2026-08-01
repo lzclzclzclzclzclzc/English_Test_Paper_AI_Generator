@@ -28,6 +28,16 @@
   - options 必须为 2 个，label 分别为 "T" 和 "F"
   - stem 为小题判断句（全新生成，如 "The boy enjoyed his summer holiday."），不含听力原文
   - passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
+- 阅读理解（reading_longtext_single_choice）：
+  - answer 必须是 A/B/C/D 之一
+  - options 必须为 4 个，label 分别为 A/B/C/D
+  - stem 为小题题干（全新生成），不含阅读原文
+  - passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
+- 完形填空（cloze_single_choice）：
+  - answer 必须是 A/B/C/D 之一
+  - options 必须为 4 个，label 分别为 A/B/C/D
+  - stem 通常为空（空格编号在 passage 中标记）
+  - passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
 
 # 输出格式
 （instructor 会自动附加 JSON Schema）

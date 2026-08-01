@@ -344,20 +344,17 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         </div>
 
         <div className="mt-4 divide-y divide-ink-10">
-          {groupByPassage(paper.items).map((group) => (
-            <div key={group.key} className="py-2 first:pt-0">
-              {group.passageId && group.items[0].question.passage_json && (
-                <PassageBlock
-                  passage={group.items[0].question.passage_json}
-                  mode={submitted ? 'review' : 'answering'}
-                />
-              )}
-              <div className="divide-y divide-ink-10">
+          {groupByPassage(paper.items).map((group) => {
+            const passage = group.passageId ? group.items[0].question.passage_json : null
+            const isReading = passage?.kind === 'reading'
+            const mode = submitted ? 'review' : 'answering'
+            const questionList = (
+              <div className={isReading ? 'flex flex-col gap-3' : 'divide-y divide-ink-10'}>
                 {group.items.map((item) => (
                   <QuestionCard
                     key={item.index}
                     item={item}
-                    mode={submitted ? 'review' : 'answering'}
+                    mode={mode}
                     value={answers[item.index]}
                     onChange={(v) => setAnswers((prev) => ({ ...prev, [item.index]: v }))}
                     result={resultByIndex.get(item.index)}
@@ -381,8 +378,28 @@ function PaperPageInner({ paperId }: { paperId: string }) {
                   />
                 ))}
               </div>
-            </div>
-          ))}
+            )
+            // 阅读理解：左右分栏（左 sticky 文章，右题目）
+            if (isReading && passage) {
+              return (
+                <div key={group.key} className="py-2 first:pt-0">
+                  <div className="lg:grid lg:grid-cols-[5fr_4fr] lg:gap-6">
+                    <div className="lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-y-auto">
+                      <PassageBlock passage={passage} mode={mode} />
+                    </div>
+                    {questionList}
+                  </div>
+                </div>
+              )
+            }
+            // 听力 / 无材料：上下垂直布局
+            return (
+              <div key={group.key} className="py-2 first:pt-0">
+                {passage && <PassageBlock passage={passage} mode={mode} />}
+                {questionList}
+              </div>
+            )
+          })}
         </div>
 
         {!submitted && (

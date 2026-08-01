@@ -73,7 +73,7 @@ export function QuestionCard({
       </div>
 
       <div className="flex min-w-0 flex-col gap-3">
-        {question.question_type === 'single_choice' ? (
+        {question.question_type === 'single_choice' || question.question_type === 'reading_longtext_single_choice' || question.question_type === 'cloze_single_choice' ? (
           <SingleChoiceField
             question={question}
             mode={mode}
@@ -115,8 +115,8 @@ export function QuestionCard({
           />
         )}
 
-        {/* review 态：答错时的答案比对（单选/听力/判断已在选项上标注，不重复） */}
-        {isReview && result && !result.is_correct && question.question_type !== 'single_choice' && question.question_type !== 'listening_single_choice' && question.question_type !== 'listening_true_false' && (
+        {/* review 态：答错时的答案比对（单选/听力/判断/阅读已在选项上标注，不重复） */}
+        {isReview && result && !result.is_correct && question.question_type !== 'single_choice' && question.question_type !== 'listening_single_choice' && question.question_type !== 'listening_true_false' && question.question_type !== 'reading_longtext_single_choice' && question.question_type !== 'cloze_single_choice' && (
           <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-[13px]">
             <span className="text-accent">
               你的答案：{formatUserAnswer(result.user_answer)}

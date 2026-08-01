@@ -326,6 +326,18 @@
       "level1": "listening_true_false",
       "level2": "听力篇章理解",
       "aliases": ["听力长文", "听力短文", "听力篇章", "判断正误"]
+    },
+    {
+      "id": "kp_reading_passage",
+      "level1": "reading_longtext_single_choice",
+      "level2": "阅读理解",
+      "aliases": ["阅读", "阅读篇章", "阅读短文", "阅读理解"]
+    },
+    {
+      "id": "kp_cloze_passage",
+      "level1": "cloze_single_choice",
+      "level2": "完形填空",
+      "aliases": ["完形", "完形填空", "cloze"]
     }
   ],
   "chapter_to_kp": {
@@ -517,6 +529,12 @@
     ],
     "listening_true_false / 1 听力选择 / None": [
       "kp_listening_passage"
+    ],
+    "reading_longtext_single_choice / 3 阅读理解 / None": [
+      "kp_reading_passage"
+    ],
+    "cloze_single_choice / 4 完形填空 / None": [
+      "kp_cloze_passage"
     ]
   }
 }

@@ -38,6 +38,8 @@ def _infer_title(req: GenerateRequest) -> str:
             "sentence_rewriting": "改写句子",
             "listening_single_choice": "听力选择",
             "listening_true_false": "听力判断",
+            "reading_longtext_single_choice": "阅读理解",
+            "cloze_single_choice": "完形填空",
         }
         parts.append("、".join(type_names.get(t, t) for t in req.question_types))
     if req.revision_intensity == "original":
@@ -81,7 +83,7 @@ def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
         return False
 
     qt = original.question_type
-    if qt in ("single_choice", "listening_single_choice"):
+    if qt in ("single_choice", "listening_single_choice", "reading_longtext_single_choice", "cloze_single_choice"):
         if revised.answer not in {"A", "B", "C", "D"}:
             return False
         if not revised.options or len(revised.options) != 4:
@@ -150,13 +152,13 @@ def _revise_one(
         )
 
         if _validate_revision(question, revised):
-            # Force-preserve passage fields for listening_true_false — the
+            # Force-preserve passage fields for passage-based types — the
             # passage is shared across a group of questions and must stay
             # identical across all of them. The Reviser processes questions
             # independently (and in parallel), so any per-question passage
             # edit would break group consistency. Passage integrity trumps
             # the revision_intensity passage rule from the design doc.
-            if question.question_type == "listening_true_false":
+            if question.question_type in ("listening_true_false", "reading_longtext_single_choice", "cloze_single_choice"):
                 revised.passage_id = question.passage_id
                 revised.passage_json = question.passage_json
             return revised, False

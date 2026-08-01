@@ -98,6 +98,12 @@
 - knowledge_points 中的每个 id 必须是清单中存在的
 - total_questions 不能超过 30
 - question_types 必须从枚举中选择
+- **阅读理解 / 完形填空按"篇"出题（每篇固定 6 题）**：
+  - 当用户用"篇"为单位（如"来 3 篇阅读理解"、"出 2 篇完形填空"），题目数 = 篇数 × 6
+    - n 篇 → total_questions = 6n，type_distribution 中对应题型 = 6n
+  - 当用户用"道/题"为单位（如"来 6 道阅读理解"），按用户说的数量
+  - 当用户未指定数量（如"来几篇阅读理解"），默认 1 篇 = 6 题
+  - total_questions 上限 30 仍然适用（最多 5 篇）
 
 # 输入
 用户请求：{{ user_query }}
@@ -383,6 +389,54 @@
   "question_types": ["listening_true_false"],
   "total_questions": 5,
   "type_distribution": {"listening_true_false": 5},
+  "revision_intensity": "light",
+  "free_text": ""
+}
+
+## 示例 18：阅读理解请求（按篇）
+输入："来 1 篇阅读理解"
+输出：
+{
+  "knowledge_points": [],
+  "question_types": ["reading_longtext_single_choice"],
+  "total_questions": 6,
+  "type_distribution": {"reading_longtext_single_choice": 6},
+  "revision_intensity": "light",
+  "free_text": ""
+}
+
+## 示例 19：完形填空请求（按篇）
+输入："来 2 篇完形填空"
+输出：
+{
+  "knowledge_points": [],
+  "question_types": ["cloze_single_choice"],
+  "total_questions": 12,
+  "type_distribution": {"cloze_single_choice": 12},
+  "revision_intensity": "light",
+  "free_text": ""
+}
+
+## 示例 20：阅读理解 + 完形填空混合（多篇）
+输入："来 2 篇阅读理解和 1 篇完形填空"
+输出：
+{
+  "knowledge_points": [],
+  "question_types": ["reading_longtext_single_choice", "cloze_single_choice"],
+  "total_questions": 18,
+  "type_distribution": {"reading_longtext_single_choice": 12, "cloze_single_choice": 6},
+  "revision_intensity": "light",
+  "free_text": ""
+}
+
+## 示例 21：阅读理解按题数（不按篇）
+输入："来 6 道阅读理解"
+输出：
+{
+  "knowledge_points": [],
+  "question_types": ["reading_longtext_single_choice"],
+  "total_questions": 6,
+  "type_distribution": {"reading_longtext_single_choice": 6},
   "revision_intensity": "light",
   "free_text": ""
 }

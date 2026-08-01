@@ -39,6 +39,8 @@ from pydantic import BaseModel, Field
 QuestionType = Literal[
     "single_choice", "word_form", "sentence_rewriting", "listening_single_choice",
     "listening_true_false",
+    "reading_longtext_single_choice",
+    "cloze_single_choice",
 ]
 RevisionMode = Literal["fresh", "light", "original"]
 GenerateMode = Literal["fresh", "remediation", "review"]
@@ -86,10 +88,11 @@ class KnowledgePoint(BaseModel):
 
 
 class Passage(BaseModel):
-    """Shared material for long-text questions (listening_true_false).
+    """Shared material for long-text questions (listening_true_false /
+    reading_longtext_single_choice).
 
     `content` for listening uses `M:`/`W:` prefixes per line (reuses TTS);
-    for reading (future) it is plain prose."""
+    for reading it is plain prose with `\\n`-separated paragraphs."""
     kind: Literal["listening", "reading"]
     title: str | None = None
     content: str

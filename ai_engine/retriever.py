@@ -48,7 +48,7 @@ COLLECTION_NAME = "questions"
 
 # Question types that share a passage and must be retrieved as a whole group
 # (never enter the vector store — SQL-only, grouped by passage_id).
-PASSAGE_TYPES = {"listening_true_false"}
+PASSAGE_TYPES = {"listening_true_false", "reading_longtext_single_choice", "cloze_single_choice"}
 
 
 def _dot(a, b) -> float:

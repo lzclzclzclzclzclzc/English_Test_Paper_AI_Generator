@@ -70,6 +70,8 @@ def _build_prompt(
         "- sentence_rewriting: 改写句子",
         "- listening_single_choice: 听力选择",
         "- listening_true_false: 听力判断题（一段长文本/对话后跟多道 True/False 判断题）",
+        "- reading_longtext_single_choice: 阅读理解（一段短文后跟多道 4 选项单选题）",
+        "- cloze_single_choice: 完形填空（一段短文含多处空格，每空 4 选项单选）",
     ])
     
     wrong_items_text = ""
