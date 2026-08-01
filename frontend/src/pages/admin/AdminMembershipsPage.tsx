@@ -1,3 +1,274 @@
+import { useState, type ReactNode } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { grantMembership, listMemberships, revokeMembership } from '@/api/admin'
+import { queryClient } from '@/lib/queryClient'
+import { toastApiError } from '@/lib/errors'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+
+/** 校验是否为正整数天数。 */
+function isValidDays(v: string): boolean {
+  return /^\d+$/.test(v.trim()) && Number(v) > 0
+}
+
+/** 开通天数弹窗：输入天数（正整数，默认 30）。 */
+function GrantDialog({
+  userId,
+  onConfirm,
+  pending,
+}: {
+  userId: string
+  onConfirm: (days: number) => void
+  pending: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [days, setDays] = useState('30')
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next)
+        if (!next) setDays('30')
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          开通
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>开通会员</DialogTitle>
+          <DialogDescription>为用户 {userId} 开通指定天数的会员。</DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="grant-days">天数</Label>
+          <Input
+            id="grant-days"
+            type="number"
+            min={1}
+            value={days}
+            onChange={(e) => setDays(e.target.value)}
+            placeholder="30"
+          />
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" size="sm">
+              取消
+            </Button>
+          </DialogClose>
+          <Button
+            size="sm"
+            disabled={!isValidDays(days) || pending}
+            onClick={() => {
+              onConfirm(Number(days))
+              setOpen(false)
+            }}
+          >
+            确认
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/** 确认弹窗：触发按钮 + 确认动作。确认后自动关闭。 */
+function ConfirmDialog({
+  trigger,
+  title,
+  description,
+  confirmLabel,
+  onConfirm,
+  pending,
+}: {
+  trigger: ReactNode
+  title: string
+  description: string
+  confirmLabel: string
+  onConfirm: () => void
+  pending: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" size="sm">
+              取消
+            </Button>
+          </DialogClose>
+          <Button
+            size="sm"
+            disabled={pending}
+            onClick={() => {
+              onConfirm()
+              setOpen(false)
+            }}
+          >
+            {confirmLabel}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function AdminMembershipsPage() {
-  return <div className="text-[14px] text-muted-ink">会员（待实现）</div>
+  const [q, setQ] = useState('')
+  const memberships = useQuery({
+    queryKey: ['admin', 'memberships', q],
+    queryFn: () => listMemberships(q),
+  })
+
+  // 顶部直开表单：向任意 user_id 授予会员（可能尚无会员行）。
+  const [grantId, setGrantId] = useState('')
+  const [grantDays, setGrantDays] = useState('30')
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin'] })
+
+  const grantMutation = useMutation({
+    mutationFn: ({ id, days }: { id: string; days: number }) => grantMembership(id, { days }),
+    onSuccess: () => {
+      invalidate()
+      toast.success('会员已开通')
+    },
+    onError: toastApiError,
+  })
+
+  const revokeMutation = useMutation({
+    mutationFn: (id: string) => revokeMembership(id),
+    onSuccess: () => {
+      invalidate()
+      toast.success('会员已取消')
+    },
+    onError: toastApiError,
+  })
+
+  const topGrantValid = grantId.trim().length > 0 && isValidDays(grantDays)
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h1 className="text-[20px] text-ink [font-family:var(--font-display)]">会员</h1>
+
+      <div className="flex flex-wrap items-end gap-2 rounded-md border border-hairline bg-wash/40 p-3">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="top-grant-id" className="text-quiet">
+            用户 ID
+          </Label>
+          <Input
+            id="top-grant-id"
+            value={grantId}
+            onChange={(e) => setGrantId(e.target.value)}
+            placeholder="用户 ID"
+            className="w-[220px]"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="top-grant-days" className="text-quiet">
+            天数
+          </Label>
+          <Input
+            id="top-grant-days"
+            type="number"
+            min={1}
+            value={grantDays}
+            onChange={(e) => setGrantDays(e.target.value)}
+            placeholder="30"
+            className="w-[100px]"
+          />
+        </div>
+        <Button
+          size="sm"
+          disabled={!topGrantValid || grantMutation.isPending}
+          onClick={() =>
+            grantMutation.mutate(
+              { id: grantId.trim(), days: Number(grantDays) },
+              { onSuccess: () => setGrantId('') },
+            )
+          }
+        >
+          开通
+        </Button>
+      </div>
+
+      <Input
+        placeholder="搜索用户 ID…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        className="max-w-[280px]"
+      />
+
+      <div className="overflow-hidden rounded-md border border-hairline">
+        <table className="w-full text-[13px]">
+          <thead className="bg-wash/60 text-left text-muted-ink">
+            <tr>
+              <th className="px-3 py-2 font-medium">用户</th>
+              <th className="px-3 py-2 font-medium">到期时间</th>
+              <th className="px-3 py-2 font-medium">状态</th>
+              <th className="px-3 py-2 font-medium">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(memberships.data?.items ?? []).map((m) => (
+              <tr key={m.user_id} className="border-t border-hairline hover:bg-tint/40">
+                <td className="px-3 py-2 text-ink">{m.user_id}</td>
+                <td className="px-3 py-2 text-muted-ink">
+                  {m.expires_at ? m.expires_at.slice(0, 10) : '—'}
+                </td>
+                <td className="px-3 py-2 text-muted-ink">{m.active ? '有效' : '已过期/无'}</td>
+                <td className="px-3 py-2">
+                  <div className="flex gap-2">
+                    <GrantDialog
+                      userId={m.user_id}
+                      pending={grantMutation.isPending}
+                      onConfirm={(days) => grantMutation.mutate({ id: m.user_id, days })}
+                    />
+                    <ConfirmDialog
+                      trigger={
+                        <Button variant="outline" size="sm">
+                          取消
+                        </Button>
+                      }
+                      title="取消会员"
+                      description={`确认取消用户 ${m.user_id} 的会员？`}
+                      confirmLabel="确认"
+                      pending={revokeMutation.isPending}
+                      onConfirm={() => revokeMutation.mutate(m.user_id)}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {memberships.data && memberships.data.items.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-3 py-6 text-center text-quiet">
+                  暂无会员记录
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
 }
