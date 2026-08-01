@@ -17,7 +17,7 @@ def compare(user_answer: UserAnswerValue, correct_answer: Answer, question_type:
     """Compare a submitted answer with the stored answer_json-compatible value."""
     if isinstance(correct_answer, list):
         return _compare_blank_answers(user_answer, correct_answer)
-    if question_type in {"single_choice", "listening_single_choice"}:
+    if question_type in {"single_choice", "listening_single_choice", "listening_true_false"}:
         return isinstance(user_answer, str) and user_answer.strip().upper() == correct_answer.strip().upper()
     return normalize(str(user_answer)) == normalize(correct_answer)
 

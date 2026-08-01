@@ -37,6 +37,7 @@ def _infer_title(req: GenerateRequest) -> str:
             "word_form": "词性转换",
             "sentence_rewriting": "改写句子",
             "listening_single_choice": "听力选择",
+            "listening_true_false": "听力判断",
         }
         parts.append("、".join(type_names.get(t, t) for t in req.question_types))
     if req.revision_intensity == "original":
@@ -61,6 +62,8 @@ def _copy_question(q: Question) -> RevisedQuestion:
         original_sentence=q.original_sentence,
         instruction=q.instruction,
         template=q.template,
+        passage_id=q.passage_id,
+        passage_json=q.passage_json,
         answer=q.answer,
     )
 
@@ -85,6 +88,14 @@ def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
             return False
         labels = {opt.label for opt in revised.options}
         if labels != {"A", "B", "C", "D"}:
+            return False
+    elif qt == "listening_true_false":
+        if revised.answer not in {"T", "F"}:
+            return False
+        if not revised.options or len(revised.options) != 2:
+            return False
+        labels = {opt.label for opt in revised.options}
+        if labels != {"T", "F"}:
             return False
     elif qt in ("word_form", "sentence_rewriting"):
         if not revised.answer or not str(revised.answer).strip():
@@ -139,6 +150,15 @@ def _revise_one(
         )
 
         if _validate_revision(question, revised):
+            # Force-preserve passage fields for listening_true_false — the
+            # passage is shared across a group of questions and must stay
+            # identical across all of them. The Reviser processes questions
+            # independently (and in parallel), so any per-question passage
+            # edit would break group consistency. Passage integrity trumps
+            # the revision_intensity passage rule from the design doc.
+            if question.question_type == "listening_true_false":
+                revised.passage_id = question.passage_id
+                revised.passage_json = question.passage_json
             return revised, False
         else:
             return _copy_question(question), True

@@ -1,0 +1,1478 @@
+[
+  {
+    "id": "q_12001",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "7",
+    "passage_id": "psg_2026_c_001",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 杨浦区",
+      "content": "Sarah was a talented violinist who performed in concerts around the world. Music was her life. But everything changed one winter evening when her car hit a patch of ice on the highway. The accident was serious. Sarah survived, but she suffered a severe head injury. When she woke up in the hospital 3 weeks later, she couldn’t remember anything from her past. She didn’t recognize her husband, Mark, whom she had married 4 years earlier. She had forgotten all the concerts, the travels and even how to play her beloved violin. Mark was heartbroken, but he never gave up hope. Every day, he visited Sarah in the hospital with her violin and old concert videos. He played recordings of her performances and told her stories about their life together. At first, Sarah showed no response. The violin felt strange in her hands, and Mark seemed like a stranger. Months passed slowly. Then one afternoon while Mark was playing a recording, Sarah’s fingers began to move slightly, following the music. Tears rolled down her face. “I don’t remember learning this,” she whispered, “but somehow my hands remember.” It was a small step, but it gave them hope. Sarah began practicing again, guided by her muscle memory. Though she might never fully get back her lost memories, she was building new ones with Mark by her side, supporting her every step of the way.",
+      "audio_url": null
+    },
+    "stem": "Sarah, a talented violinist, had a terrible car accident on a winter evening.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12002",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "8",
+    "passage_id": "psg_2026_c_001",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 杨浦区",
+      "content": "Sarah was a talented violinist who performed in concerts around the world. Music was her life. But everything changed one winter evening when her car hit a patch of ice on the highway. The accident was serious. Sarah survived, but she suffered a severe head injury. When she woke up in the hospital 3 weeks later, she couldn’t remember anything from her past. She didn’t recognize her husband, Mark, whom she had married 4 years earlier. She had forgotten all the concerts, the travels and even how to play her beloved violin. Mark was heartbroken, but he never gave up hope. Every day, he visited Sarah in the hospital with her violin and old concert videos. He played recordings of her performances and told her stories about their life together. At first, Sarah showed no response. The violin felt strange in her hands, and Mark seemed like a stranger. Months passed slowly. Then one afternoon while Mark was playing a recording, Sarah’s fingers began to move slightly, following the music. Tears rolled down her face. “I don’t remember learning this,” she whispered, “but somehow my hands remember.” It was a small step, but it gave them hope. Sarah began practicing again, guided by her muscle memory. Though she might never fully get back her lost memories, she was building new ones with Mark by her side, supporting her every step of the way.",
+      "audio_url": null
+    },
+    "stem": "Sarah forgot everything but could remember her husband, Mark.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12003",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "9",
+    "passage_id": "psg_2026_c_001",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 杨浦区",
+      "content": "Sarah was a talented violinist who performed in concerts around the world. Music was her life. But everything changed one winter evening when her car hit a patch of ice on the highway. The accident was serious. Sarah survived, but she suffered a severe head injury. When she woke up in the hospital 3 weeks later, she couldn’t remember anything from her past. She didn’t recognize her husband, Mark, whom she had married 4 years earlier. She had forgotten all the concerts, the travels and even how to play her beloved violin. Mark was heartbroken, but he never gave up hope. Every day, he visited Sarah in the hospital with her violin and old concert videos. He played recordings of her performances and told her stories about their life together. At first, Sarah showed no response. The violin felt strange in her hands, and Mark seemed like a stranger. Months passed slowly. Then one afternoon while Mark was playing a recording, Sarah’s fingers began to move slightly, following the music. Tears rolled down her face. “I don’t remember learning this,” she whispered, “but somehow my hands remember.” It was a small step, but it gave them hope. Sarah began practicing again, guided by her muscle memory. Though she might never fully get back her lost memories, she was building new ones with Mark by her side, supporting her every step of the way.",
+      "audio_url": null
+    },
+    "stem": "Sarah’s husband visited her every day and played her concert videos.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12004",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "10",
+    "passage_id": "psg_2026_c_001",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 杨浦区",
+      "content": "Sarah was a talented violinist who performed in concerts around the world. Music was her life. But everything changed one winter evening when her car hit a patch of ice on the highway. The accident was serious. Sarah survived, but she suffered a severe head injury. When she woke up in the hospital 3 weeks later, she couldn’t remember anything from her past. She didn’t recognize her husband, Mark, whom she had married 4 years earlier. She had forgotten all the concerts, the travels and even how to play her beloved violin. Mark was heartbroken, but he never gave up hope. Every day, he visited Sarah in the hospital with her violin and old concert videos. He played recordings of her performances and told her stories about their life together. At first, Sarah showed no response. The violin felt strange in her hands, and Mark seemed like a stranger. Months passed slowly. Then one afternoon while Mark was playing a recording, Sarah’s fingers began to move slightly, following the music. Tears rolled down her face. “I don’t remember learning this,” she whispered, “but somehow my hands remember.” It was a small step, but it gave them hope. Sarah began practicing again, guided by her muscle memory. Though she might never fully get back her lost memories, she was building new ones with Mark by her side, supporting her every step of the way.",
+      "audio_url": null
+    },
+    "stem": "After months of practice, Sarah could finally remember her music.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12005",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "11",
+    "passage_id": "psg_2026_c_001",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 杨浦区",
+      "content": "Sarah was a talented violinist who performed in concerts around the world. Music was her life. But everything changed one winter evening when her car hit a patch of ice on the highway. The accident was serious. Sarah survived, but she suffered a severe head injury. When she woke up in the hospital 3 weeks later, she couldn’t remember anything from her past. She didn’t recognize her husband, Mark, whom she had married 4 years earlier. She had forgotten all the concerts, the travels and even how to play her beloved violin. Mark was heartbroken, but he never gave up hope. Every day, he visited Sarah in the hospital with her violin and old concert videos. He played recordings of her performances and told her stories about their life together. At first, Sarah showed no response. The violin felt strange in her hands, and Mark seemed like a stranger. Months passed slowly. Then one afternoon while Mark was playing a recording, Sarah’s fingers began to move slightly, following the music. Tears rolled down her face. “I don’t remember learning this,” she whispered, “but somehow my hands remember.” It was a small step, but it gave them hope. Sarah began practicing again, guided by her muscle memory. Though she might never fully get back her lost memories, she was building new ones with Mark by her side, supporting her every step of the way.",
+      "audio_url": null
+    },
+    "stem": "With her love for music and her husband’s support, Sarah got back her lost memories.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12006",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "11",
+    "passage_id": "psg_2026_c_002",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 徐汇区",
+      "content": "It happened one spring morning. I woke up early and went downstairs to the kitchen. My mum was preparing breakfast. She asked me if I wanted some orange juice.\n“Yes, thanks,” I replied, but my voice had changed. It sounded very deep, almost like someone else was speaking. I was quite surprised and so was the dog. But my mum just smiled and said, “Oh, that’s just your voice breaking.”\n“Breaking?” That did not sound good. I wondered if something was wrong with me. So at school that day I decided to ask my biology teacher, Mrs. Johnson, what was happening. She was always kind and explained things clearly.\n“Don’t worry, it’s completely normal,” she said with a smile. “Sound is made by the mouth as air is pushed through the voice box, which is in the neck. As we grow older, the voice box grows larger and thicker. When you are a teenager there can be a sudden change, especially for boys.”\n“But my sister is older than me and her voice is still the same,” I said, a little confused. I thought maybe it was something only happening to me. Mrs. Johnson nodded and explained, “The change is much bigger in boys, so you notice it more. Girls’ voices only change a little, so it is hard to tell the difference. It’s all part of growing up.”\nNow I like my new voice. It makes me feel more grown up and confident. But the dog is still not sure. Every time I speak, he tilts his head and looks at me as if he is trying to figure out where the old voice went. It’s funny, but I guess he will get used to it eventually. After all, change is a part of life.",
+      "audio_url": null
+    },
+    "stem": "One spring morning, I suddenly noticed that my voice had changed.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12007",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "12",
+    "passage_id": "psg_2026_c_002",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 徐汇区",
+      "content": "It happened one spring morning. I woke up early and went downstairs to the kitchen. My mum was preparing breakfast. She asked me if I wanted some orange juice.\n“Yes, thanks,” I replied, but my voice had changed. It sounded very deep, almost like someone else was speaking. I was quite surprised and so was the dog. But my mum just smiled and said, “Oh, that’s just your voice breaking.”\n“Breaking?” That did not sound good. I wondered if something was wrong with me. So at school that day I decided to ask my biology teacher, Mrs. Johnson, what was happening. She was always kind and explained things clearly.\n“Don’t worry, it’s completely normal,” she said with a smile. “Sound is made by the mouth as air is pushed through the voice box, which is in the neck. As we grow older, the voice box grows larger and thicker. When you are a teenager there can be a sudden change, especially for boys.”\n“But my sister is older than me and her voice is still the same,” I said, a little confused. I thought maybe it was something only happening to me. Mrs. Johnson nodded and explained, “The change is much bigger in boys, so you notice it more. Girls’ voices only change a little, so it is hard to tell the difference. It’s all part of growing up.”\nNow I like my new voice. It makes me feel more grown up and confident. But the dog is still not sure. Every time I speak, he tilts his head and looks at me as if he is trying to figure out where the old voice went. It’s funny, but I guess he will get used to it eventually. After all, change is a part of life.",
+      "audio_url": null
+    },
+    "stem": "Everyone in my family was surprised by the change happening to me.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12008",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "13",
+    "passage_id": "psg_2026_c_002",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 徐汇区",
+      "content": "It happened one spring morning. I woke up early and went downstairs to the kitchen. My mum was preparing breakfast. She asked me if I wanted some orange juice.\n“Yes, thanks,” I replied, but my voice had changed. It sounded very deep, almost like someone else was speaking. I was quite surprised and so was the dog. But my mum just smiled and said, “Oh, that’s just your voice breaking.”\n“Breaking?” That did not sound good. I wondered if something was wrong with me. So at school that day I decided to ask my biology teacher, Mrs. Johnson, what was happening. She was always kind and explained things clearly.\n“Don’t worry, it’s completely normal,” she said with a smile. “Sound is made by the mouth as air is pushed through the voice box, which is in the neck. As we grow older, the voice box grows larger and thicker. When you are a teenager there can be a sudden change, especially for boys.”\n“But my sister is older than me and her voice is still the same,” I said, a little confused. I thought maybe it was something only happening to me. Mrs. Johnson nodded and explained, “The change is much bigger in boys, so you notice it more. Girls’ voices only change a little, so it is hard to tell the difference. It’s all part of growing up.”\nNow I like my new voice. It makes me feel more grown up and confident. But the dog is still not sure. Every time I speak, he tilts his head and looks at me as if he is trying to figure out where the old voice went. It’s funny, but I guess he will get used to it eventually. After all, change is a part of life.",
+      "audio_url": null
+    },
+    "stem": "At school, my friend patiently explained the reason for the voice change to me.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12009",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "14",
+    "passage_id": "psg_2026_c_002",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 徐汇区",
+      "content": "It happened one spring morning. I woke up early and went downstairs to the kitchen. My mum was preparing breakfast. She asked me if I wanted some orange juice.\n“Yes, thanks,” I replied, but my voice had changed. It sounded very deep, almost like someone else was speaking. I was quite surprised and so was the dog. But my mum just smiled and said, “Oh, that’s just your voice breaking.”\n“Breaking?” That did not sound good. I wondered if something was wrong with me. So at school that day I decided to ask my biology teacher, Mrs. Johnson, what was happening. She was always kind and explained things clearly.\n“Don’t worry, it’s completely normal,” she said with a smile. “Sound is made by the mouth as air is pushed through the voice box, which is in the neck. As we grow older, the voice box grows larger and thicker. When you are a teenager there can be a sudden change, especially for boys.”\n“But my sister is older than me and her voice is still the same,” I said, a little confused. I thought maybe it was something only happening to me. Mrs. Johnson nodded and explained, “The change is much bigger in boys, so you notice it more. Girls’ voices only change a little, so it is hard to tell the difference. It’s all part of growing up.”\nNow I like my new voice. It makes me feel more grown up and confident. But the dog is still not sure. Every time I speak, he tilts his head and looks at me as if he is trying to figure out where the old voice went. It’s funny, but I guess he will get used to it eventually. After all, change is a part of life.",
+      "audio_url": null
+    },
+    "stem": "Now I know that both boys and girls experience voice changes during puberty (青春期).",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12010",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "15",
+    "passage_id": "psg_2026_c_002",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 徐汇区",
+      "content": "It happened one spring morning. I woke up early and went downstairs to the kitchen. My mum was preparing breakfast. She asked me if I wanted some orange juice.\n“Yes, thanks,” I replied, but my voice had changed. It sounded very deep, almost like someone else was speaking. I was quite surprised and so was the dog. But my mum just smiled and said, “Oh, that’s just your voice breaking.”\n“Breaking?” That did not sound good. I wondered if something was wrong with me. So at school that day I decided to ask my biology teacher, Mrs. Johnson, what was happening. She was always kind and explained things clearly.\n“Don’t worry, it’s completely normal,” she said with a smile. “Sound is made by the mouth as air is pushed through the voice box, which is in the neck. As we grow older, the voice box grows larger and thicker. When you are a teenager there can be a sudden change, especially for boys.”\n“But my sister is older than me and her voice is still the same,” I said, a little confused. I thought maybe it was something only happening to me. Mrs. Johnson nodded and explained, “The change is much bigger in boys, so you notice it more. Girls’ voices only change a little, so it is hard to tell the difference. It’s all part of growing up.”\nNow I like my new voice. It makes me feel more grown up and confident. But the dog is still not sure. Every time I speak, he tilts his head and looks at me as if he is trying to figure out where the old voice went. It’s funny, but I guess he will get used to it eventually. After all, change is a part of life.",
+      "audio_url": null
+    },
+    "stem": "I’m no longer worried and have started to look forward to growing up.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12011",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "11",
+    "passage_id": "psg_2026_c_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 黄浦区",
+      "content": "In 2019, Henry joined a charity troupe in India. The goal was to raise money to help people in need. About 30 teams took part and each team drove an old car across the east of India. Henry was very excited because it was his first time taking part in this kind of event. He used the website to share his experience and collect donations. Every day he posted photos and happy moments from the trip. At night, he checked the website to see the progress. At the end of the trip, his team raised about 4,000 dollars. The trip was very special. They drove for many hours every day and visited many beautiful places. One day, their car broke down, but a kind local man helped them fix it. They were very thankful. They also played football with some local children during a break in the journey. The children were very kind. This trip made a big difference for Henry. He learned a lot about teamwork and different cultures. Henry is happy that the money they raised helped poor people in India.",
+      "audio_url": null
+    },
+    "stem": "Henry joined a charity trip in India to raise money for people in need.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12012",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "12",
+    "passage_id": "psg_2026_c_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 黄浦区",
+      "content": "In 2019, Henry joined a charity troupe in India. The goal was to raise money to help people in need. About 30 teams took part and each team drove an old car across the east of India. Henry was very excited because it was his first time taking part in this kind of event. He used the website to share his experience and collect donations. Every day he posted photos and happy moments from the trip. At night, he checked the website to see the progress. At the end of the trip, his team raised about 4,000 dollars. The trip was very special. They drove for many hours every day and visited many beautiful places. One day, their car broke down, but a kind local man helped them fix it. They were very thankful. They also played football with some local children during a break in the journey. The children were very kind. This trip made a big difference for Henry. He learned a lot about teamwork and different cultures. Henry is happy that the money they raised helped poor people in India.",
+      "audio_url": null
+    },
+    "stem": "Henry and his team drove across the east of India in about thirty days.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12013",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "13",
+    "passage_id": "psg_2026_c_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 黄浦区",
+      "content": "In 2019, Henry joined a charity troupe in India. The goal was to raise money to help people in need. About 30 teams took part and each team drove an old car across the east of India. Henry was very excited because it was his first time taking part in this kind of event. He used the website to share his experience and collect donations. Every day he posted photos and happy moments from the trip. At night, he checked the website to see the progress. At the end of the trip, his team raised about 4,000 dollars. The trip was very special. They drove for many hours every day and visited many beautiful places. One day, their car broke down, but a kind local man helped them fix it. They were very thankful. They also played football with some local children during a break in the journey. The children were very kind. This trip made a big difference for Henry. He learned a lot about teamwork and different cultures. Henry is happy that the money they raised helped poor people in India.",
+      "audio_url": null
+    },
+    "stem": "Every night, Henry and his friends shared their experiences with each other.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12014",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "14",
+    "passage_id": "psg_2026_c_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 黄浦区",
+      "content": "In 2019, Henry joined a charity troupe in India. The goal was to raise money to help people in need. About 30 teams took part and each team drove an old car across the east of India. Henry was very excited because it was his first time taking part in this kind of event. He used the website to share his experience and collect donations. Every day he posted photos and happy moments from the trip. At night, he checked the website to see the progress. At the end of the trip, his team raised about 4,000 dollars. The trip was very special. They drove for many hours every day and visited many beautiful places. One day, their car broke down, but a kind local man helped them fix it. They were very thankful. They also played football with some local children during a break in the journey. The children were very kind. This trip made a big difference for Henry. He learned a lot about teamwork and different cultures. Henry is happy that the money they raised helped poor people in India.",
+      "audio_url": null
+    },
+    "stem": "Henry was thankful because the local people were friendly during the trip.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12015",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "15",
+    "passage_id": "psg_2026_c_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 黄浦区",
+      "content": "In 2019, Henry joined a charity troupe in India. The goal was to raise money to help people in need. About 30 teams took part and each team drove an old car across the east of India. Henry was very excited because it was his first time taking part in this kind of event. He used the website to share his experience and collect donations. Every day he posted photos and happy moments from the trip. At night, he checked the website to see the progress. At the end of the trip, his team raised about 4,000 dollars. The trip was very special. They drove for many hours every day and visited many beautiful places. One day, their car broke down, but a kind local man helped them fix it. They were very thankful. They also played football with some local children during a break in the journey. The children were very kind. This trip made a big difference for Henry. He learned a lot about teamwork and different cultures. Henry is happy that the money they raised helped poor people in India.",
+      "audio_url": null
+    },
+    "stem": "From the trip, Henry learned about teamwork and how to communicate well.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12016",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "11",
+    "passage_id": "psg_2026_c_004",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 闵行区",
+      "content": "A survey on video game news was recently reported by the social services club. The aim of the survey was to find out the amount of time students spend on video gaming and its effects on them. Boys spend more time playing video games than girls. On average, boys spend 13 hours per week while girls spend five hours. Only 5% of the students said that they never played video games. Most of them said role playing games were the best and action adventure games were the second most popular. According to the survey, video gaming did affect students, studies and personal lives. 12% of the students said they stayed up late because of these games. This affected the attention in class.8% said that they would spend more time on homework if they did not play video games. 40% admitted that they had argued with their parents over their video game use. 30% said that they would like to stay alone playing video games instead of hanging out with friends face to face. The social services club should let everyone know about the bad effects of playing too many games. They can make posters to put around the schools and give talks to students and parents about managing time better.",
+      "audio_url": null
+    },
+    "stem": "The Social Services Club did a survey on video game use among students.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12017",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "12",
+    "passage_id": "psg_2026_c_004",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 闵行区",
+      "content": "A survey on video game news was recently reported by the social services club. The aim of the survey was to find out the amount of time students spend on video gaming and its effects on them. Boys spend more time playing video games than girls. On average, boys spend 13 hours per week while girls spend five hours. Only 5% of the students said that they never played video games. Most of them said role playing games were the best and action adventure games were the second most popular. According to the survey, video gaming did affect students, studies and personal lives. 12% of the students said they stayed up late because of these games. This affected the attention in class.8% said that they would spend more time on homework if they did not play video games. 40% admitted that they had argued with their parents over their video game use. 30% said that they would like to stay alone playing video games instead of hanging out with friends face to face. The social services club should let everyone know about the bad effects of playing too many games. They can make posters to put around the schools and give talks to students and parents about managing time better.",
+      "audio_url": null
+    },
+    "stem": "Boys spent 8 more hours a week playing video games than girls.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12018",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "13",
+    "passage_id": "psg_2026_c_004",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 闵行区",
+      "content": "A survey on video game news was recently reported by the social services club. The aim of the survey was to find out the amount of time students spend on video gaming and its effects on them. Boys spend more time playing video games than girls. On average, boys spend 13 hours per week while girls spend five hours. Only 5% of the students said that they never played video games. Most of them said role playing games were the best and action adventure games were the second most popular. According to the survey, video gaming did affect students, studies and personal lives. 12% of the students said they stayed up late because of these games. This affected the attention in class.8% said that they would spend more time on homework if they did not play video games. 40% admitted that they had argued with their parents over their video game use. 30% said that they would like to stay alone playing video games instead of hanging out with friends face to face. The social services club should let everyone know about the bad effects of playing too many games. They can make posters to put around the schools and give talks to students and parents about managing time better.",
+      "audio_url": null
+    },
+    "stem": "Students said they liked playing action-adventure games best.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12019",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "14",
+    "passage_id": "psg_2026_c_004",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 闵行区",
+      "content": "A survey on video game news was recently reported by the social services club. The aim of the survey was to find out the amount of time students spend on video gaming and its effects on them. Boys spend more time playing video games than girls. On average, boys spend 13 hours per week while girls spend five hours. Only 5% of the students said that they never played video games. Most of them said role playing games were the best and action adventure games were the second most popular. According to the survey, video gaming did affect students, studies and personal lives. 12% of the students said they stayed up late because of these games. This affected the attention in class.8% said that they would spend more time on homework if they did not play video games. 40% admitted that they had argued with their parents over their video game use. 30% said that they would like to stay alone playing video games instead of hanging out with friends face to face. The social services club should let everyone know about the bad effects of playing too many games. They can make posters to put around the schools and give talks to students and parents about managing time better.",
+      "audio_url": null
+    },
+    "stem": "Thirty percent students preferred to stay alone playing video games.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12020",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "15",
+    "passage_id": "psg_2026_c_004",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 闵行区",
+      "content": "A survey on video game news was recently reported by the social services club. The aim of the survey was to find out the amount of time students spend on video gaming and its effects on them. Boys spend more time playing video games than girls. On average, boys spend 13 hours per week while girls spend five hours. Only 5% of the students said that they never played video games. Most of them said role playing games were the best and action adventure games were the second most popular. According to the survey, video gaming did affect students, studies and personal lives. 12% of the students said they stayed up late because of these games. This affected the attention in class.8% said that they would spend more time on homework if they did not play video games. 40% admitted that they had argued with their parents over their video game use. 30% said that they would like to stay alone playing video games instead of hanging out with friends face to face. The social services club should let everyone know about the bad effects of playing too many games. They can make posters to put around the schools and give talks to students and parents about managing time better.",
+      "audio_url": null
+    },
+    "stem": "The passage gives some tips on how to balance study and video gaming.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12021",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "11",
+    "passage_id": "psg_2026_c_005",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 浦东新区",
+      "content": "Mr. Clark is talking with Lisa, chief editor of the school newspaper.\nM: Lisa, we need a new secretary for our newspaper this term.\nW: Well, Mark is quite eager about it. He’s creative and gets on well with others, but he always forgot to pass on teachers’ messages last term.\nM: Did he admit his mistakes?\nW: He said nothing at first, but he apologized later. Since then, he’s been much more careful and often checked his notes.\nM: Any other choices?\nW: Anna is interested, too. She told me quietly last week. Though she’s quite shy, she has a sharp eye for details, perfect for keeping records and planning activities.\nM: Who do you prefer?\nW: It’s difficult. Anna might do the job better, but Mark would be very upset if he doesn’t get the job. Maybe you should make the final call.\nM: All right. I’ll think about it.\nA few days later...\nM: I’ve made the final decision.\nW: Is it Mark or Anna?\nM: Actually, they will both be secretaries. Mark will deal with communication, and Anna will manage records and plans. They can work together.\nW: Great idea.",
+      "audio_url": null
+    },
+    "stem": "Mark always passed on teachers’ messages last term.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12022",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "12",
+    "passage_id": "psg_2026_c_005",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 浦东新区",
+      "content": "Mr. Clark is talking with Lisa, chief editor of the school newspaper.\nM: Lisa, we need a new secretary for our newspaper this term.\nW: Well, Mark is quite eager about it. He’s creative and gets on well with others, but he always forgot to pass on teachers’ messages last term.\nM: Did he admit his mistakes?\nW: He said nothing at first, but he apologized later. Since then, he’s been much more careful and often checked his notes.\nM: Any other choices?\nW: Anna is interested, too. She told me quietly last week. Though she’s quite shy, she has a sharp eye for details, perfect for keeping records and planning activities.\nM: Who do you prefer?\nW: It’s difficult. Anna might do the job better, but Mark would be very upset if he doesn’t get the job. Maybe you should make the final call.\nM: All right. I’ll think about it.\nA few days later...\nM: I’ve made the final decision.\nW: Is it Mark or Anna?\nM: Actually, they will both be secretaries. Mark will deal with communication, and Anna will manage records and plans. They can work together.\nW: Great idea.",
+      "audio_url": null
+    },
+    "stem": "Lisa thinks Mark’s work has improved since last term.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12023",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "13",
+    "passage_id": "psg_2026_c_005",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 浦东新区",
+      "content": "Mr. Clark is talking with Lisa, chief editor of the school newspaper.\nM: Lisa, we need a new secretary for our newspaper this term.\nW: Well, Mark is quite eager about it. He’s creative and gets on well with others, but he always forgot to pass on teachers’ messages last term.\nM: Did he admit his mistakes?\nW: He said nothing at first, but he apologized later. Since then, he’s been much more careful and often checked his notes.\nM: Any other choices?\nW: Anna is interested, too. She told me quietly last week. Though she’s quite shy, she has a sharp eye for details, perfect for keeping records and planning activities.\nM: Who do you prefer?\nW: It’s difficult. Anna might do the job better, but Mark would be very upset if he doesn’t get the job. Maybe you should make the final call.\nM: All right. I’ll think about it.\nA few days later...\nM: I’ve made the final decision.\nW: Is it Mark or Anna?\nM: Actually, they will both be secretaries. Mark will deal with communication, and Anna will manage records and plans. They can work together.\nW: Great idea.",
+      "audio_url": null
+    },
+    "stem": "Neither Mark nor Anna wants to be the secretary of the school newspaper.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12024",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "14",
+    "passage_id": "psg_2026_c_005",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 浦东新区",
+      "content": "Mr. Clark is talking with Lisa, chief editor of the school newspaper.\nM: Lisa, we need a new secretary for our newspaper this term.\nW: Well, Mark is quite eager about it. He’s creative and gets on well with others, but he always forgot to pass on teachers’ messages last term.\nM: Did he admit his mistakes?\nW: He said nothing at first, but he apologized later. Since then, he’s been much more careful and often checked his notes.\nM: Any other choices?\nW: Anna is interested, too. She told me quietly last week. Though she’s quite shy, she has a sharp eye for details, perfect for keeping records and planning activities.\nM: Who do you prefer?\nW: It’s difficult. Anna might do the job better, but Mark would be very upset if he doesn’t get the job. Maybe you should make the final call.\nM: All right. I’ll think about it.\nA few days later...\nM: I’ve made the final decision.\nW: Is it Mark or Anna?\nM: Actually, they will both be secretaries. Mark will deal with communication, and Anna will manage records and plans. They can work together.\nW: Great idea.",
+      "audio_url": null
+    },
+    "stem": "Lisa thinks Anna’s personality is the main reason for her to get the job.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12025",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "15",
+    "passage_id": "psg_2026_c_005",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 浦东新区",
+      "content": "Mr. Clark is talking with Lisa, chief editor of the school newspaper.\nM: Lisa, we need a new secretary for our newspaper this term.\nW: Well, Mark is quite eager about it. He’s creative and gets on well with others, but he always forgot to pass on teachers’ messages last term.\nM: Did he admit his mistakes?\nW: He said nothing at first, but he apologized later. Since then, he’s been much more careful and often checked his notes.\nM: Any other choices?\nW: Anna is interested, too. She told me quietly last week. Though she’s quite shy, she has a sharp eye for details, perfect for keeping records and planning activities.\nM: Who do you prefer?\nW: It’s difficult. Anna might do the job better, but Mark would be very upset if he doesn’t get the job. Maybe you should make the final call.\nM: All right. I’ll think about it.\nA few days later...\nM: I’ve made the final decision.\nW: Is it Mark or Anna?\nM: Actually, they will both be secretaries. Mark will deal with communication, and Anna will manage records and plans. They can work together.\nW: Great idea.",
+      "audio_url": null
+    },
+    "stem": "The dialogue mainly talks about choosing the new secretary for the newspaper.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12026",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "11",
+    "passage_id": "psg_2026_c_006",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 松江区",
+      "content": "W: Good morning, Mr. Miller. I’m Detective Sarah Brown. I need to ask you about what happened last night.\nM: Sure.\nW: Why did you go to that coffee shop?\nM: To meet my childhood friend Bob. Twenty years ago, we made a promise to meet there.\nW: What does he look like?\nM: Tall, pale face with sharp eyes. He looked nothing like he did as a child, but I was sure I had seen this face somewhere before.\nW: What did he say during your meeting?\nM: He kept talking about how successful he was and showed off his gold watch.\nW: When did you realize he was the guy that we wanted?\nM: When he laughed and showed his gold teeth. The teeth reminded me of the description on the wanted notice.\nW: How did you deal with the situation then?\nM: I pretended nothing was wrong. Excuse myself to the washroom and called police.\nW: Smart move, sir. Last question. Did he say anything when he was arrested?\nM: No, he just stared at me angrily. I felt sorry for that, but I couldn’t let a criminal work free.",
+      "audio_url": null
+    },
+    "stem": "Miller and Bob were childhood friends.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12027",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "12",
+    "passage_id": "psg_2026_c_006",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 松江区",
+      "content": "W: Good morning, Mr. Miller. I’m Detective Sarah Brown. I need to ask you about what happened last night.\nM: Sure.\nW: Why did you go to that coffee shop?\nM: To meet my childhood friend Bob. Twenty years ago, we made a promise to meet there.\nW: What does he look like?\nM: Tall, pale face with sharp eyes. He looked nothing like he did as a child, but I was sure I had seen this face somewhere before.\nW: What did he say during your meeting?\nM: He kept talking about how successful he was and showed off his gold watch.\nW: When did you realize he was the guy that we wanted?\nM: When he laughed and showed his gold teeth. The teeth reminded me of the description on the wanted notice.\nW: How did you deal with the situation then?\nM: I pretended nothing was wrong. Excuse myself to the washroom and called police.\nW: Smart move, sir. Last question. Did he say anything when he was arrested?\nM: No, he just stared at me angrily. I felt sorry for that, but I couldn’t let a criminal work free.",
+      "audio_url": null
+    },
+    "stem": "Miller met Bob in the coffee shop twenty years ago.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12028",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "13",
+    "passage_id": "psg_2026_c_006",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 松江区",
+      "content": "W: Good morning, Mr. Miller. I’m Detective Sarah Brown. I need to ask you about what happened last night.\nM: Sure.\nW: Why did you go to that coffee shop?\nM: To meet my childhood friend Bob. Twenty years ago, we made a promise to meet there.\nW: What does he look like?\nM: Tall, pale face with sharp eyes. He looked nothing like he did as a child, but I was sure I had seen this face somewhere before.\nW: What did he say during your meeting?\nM: He kept talking about how successful he was and showed off his gold watch.\nW: When did you realize he was the guy that we wanted?\nM: When he laughed and showed his gold teeth. The teeth reminded me of the description on the wanted notice.\nW: How did you deal with the situation then?\nM: I pretended nothing was wrong. Excuse myself to the washroom and called police.\nW: Smart move, sir. Last question. Did he say anything when he was arrested?\nM: No, he just stared at me angrily. I felt sorry for that, but I couldn’t let a criminal work free.",
+      "audio_url": null
+    },
+    "stem": "Miller recognized Bob as the thief through the gold watch.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12029",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "14",
+    "passage_id": "psg_2026_c_006",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 松江区",
+      "content": "W: Good morning, Mr. Miller. I’m Detective Sarah Brown. I need to ask you about what happened last night.\nM: Sure.\nW: Why did you go to that coffee shop?\nM: To meet my childhood friend Bob. Twenty years ago, we made a promise to meet there.\nW: What does he look like?\nM: Tall, pale face with sharp eyes. He looked nothing like he did as a child, but I was sure I had seen this face somewhere before.\nW: What did he say during your meeting?\nM: He kept talking about how successful he was and showed off his gold watch.\nW: When did you realize he was the guy that we wanted?\nM: When he laughed and showed his gold teeth. The teeth reminded me of the description on the wanted notice.\nW: How did you deal with the situation then?\nM: I pretended nothing was wrong. Excuse myself to the washroom and called police.\nW: Smart move, sir. Last question. Did he say anything when he was arrested?\nM: No, he just stared at me angrily. I felt sorry for that, but I couldn’t let a criminal work free.",
+      "audio_url": null
+    },
+    "stem": "Miller managed to help the police arrest Bob.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12030",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "15",
+    "passage_id": "psg_2026_c_006",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 松江区",
+      "content": "W: Good morning, Mr. Miller. I’m Detective Sarah Brown. I need to ask you about what happened last night.\nM: Sure.\nW: Why did you go to that coffee shop?\nM: To meet my childhood friend Bob. Twenty years ago, we made a promise to meet there.\nW: What does he look like?\nM: Tall, pale face with sharp eyes. He looked nothing like he did as a child, but I was sure I had seen this face somewhere before.\nW: What did he say during your meeting?\nM: He kept talking about how successful he was and showed off his gold watch.\nW: When did you realize he was the guy that we wanted?\nM: When he laughed and showed his gold teeth. The teeth reminded me of the description on the wanted notice.\nW: How did you deal with the situation then?\nM: I pretended nothing was wrong. Excuse myself to the washroom and called police.\nW: Smart move, sir. Last question. Did he say anything when he was arrested?\nM: No, he just stared at me angrily. I felt sorry for that, but I couldn’t let a criminal work free.",
+      "audio_url": null
+    },
+    "stem": "Miller felt sorry because he didn’t catch Bob earlier.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12031",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "15",
+    "passage_id": "psg_2026_c_007",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 静安区",
+      "content": "What comes to mind when you think of an Internet cafe? In many cities, Internet cafes are popular places for playing games or chatting online. But in Sunflower Town, the local internet cafe serves a very different purpose—it helps people learn new skills. The owner, Mr. Tan, used to be a computer engineer. When he opened the cafe, he noticed many people didn’t know how to use the internet safely. Teenagers shared too much personal information, and older adults struggled with basic skills like sending emails. So Mr. Tan created the “Skill Hour” program. Every evening from six to seven, customers can take free lessons. Teenagers learn about online safety, fake news, and smart searching. Adults learn how to type, make online payments, or attend video meetings. One grandmother, Mrs. Wong, joined every Tuesday. She learned how to video call her grandchildren who lived abroad. “Before, I felt far away,” she said. “Now they feel close again.” Teenagers like the program too. A boy named Leo learned how to edit videos and soon started making short films for school projects. Another student, Lily, learned to create posters for school clubs. The cafe becomes more than a place to play games—it becomes a center for learning and helping everyone use the internet wisely and confidently. It’s really amazing what a difference a place like this can make.",
+      "audio_url": null
+    },
+    "stem": "The Internet cafe used to be a place for playing games and chatting online.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12032",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "16",
+    "passage_id": "psg_2026_c_007",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 静安区",
+      "content": "What comes to mind when you think of an Internet cafe? In many cities, Internet cafes are popular places for playing games or chatting online. But in Sunflower Town, the local internet cafe serves a very different purpose—it helps people learn new skills. The owner, Mr. Tan, used to be a computer engineer. When he opened the cafe, he noticed many people didn’t know how to use the internet safely. Teenagers shared too much personal information, and older adults struggled with basic skills like sending emails. So Mr. Tan created the “Skill Hour” program. Every evening from six to seven, customers can take free lessons. Teenagers learn about online safety, fake news, and smart searching. Adults learn how to type, make online payments, or attend video meetings. One grandmother, Mrs. Wong, joined every Tuesday. She learned how to video call her grandchildren who lived abroad. “Before, I felt far away,” she said. “Now they feel close again.” Teenagers like the program too. A boy named Leo learned how to edit videos and soon started making short films for school projects. Another student, Lily, learned to create posters for school clubs. The cafe becomes more than a place to play games—it becomes a center for learning and helping everyone use the internet wisely and confidently. It’s really amazing what a difference a place like this can make.",
+      "audio_url": null
+    },
+    "stem": "Mr. Tan, the owner of the cafe, was once a computer teacher.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12033",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "17",
+    "passage_id": "psg_2026_c_007",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 静安区",
+      "content": "What comes to mind when you think of an Internet cafe? In many cities, Internet cafes are popular places for playing games or chatting online. But in Sunflower Town, the local internet cafe serves a very different purpose—it helps people learn new skills. The owner, Mr. Tan, used to be a computer engineer. When he opened the cafe, he noticed many people didn’t know how to use the internet safely. Teenagers shared too much personal information, and older adults struggled with basic skills like sending emails. So Mr. Tan created the “Skill Hour” program. Every evening from six to seven, customers can take free lessons. Teenagers learn about online safety, fake news, and smart searching. Adults learn how to type, make online payments, or attend video meetings. One grandmother, Mrs. Wong, joined every Tuesday. She learned how to video call her grandchildren who lived abroad. “Before, I felt far away,” she said. “Now they feel close again.” Teenagers like the program too. A boy named Leo learned how to edit videos and soon started making short films for school projects. Another student, Lily, learned to create posters for school clubs. The cafe becomes more than a place to play games—it becomes a center for learning and helping everyone use the internet wisely and confidently. It’s really amazing what a difference a place like this can make.",
+      "audio_url": null
+    },
+    "stem": "The cafe offers free lessons every evening from 6 to 7.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12034",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "18",
+    "passage_id": "psg_2026_c_007",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 静安区",
+      "content": "What comes to mind when you think of an Internet cafe? In many cities, Internet cafes are popular places for playing games or chatting online. But in Sunflower Town, the local internet cafe serves a very different purpose—it helps people learn new skills. The owner, Mr. Tan, used to be a computer engineer. When he opened the cafe, he noticed many people didn’t know how to use the internet safely. Teenagers shared too much personal information, and older adults struggled with basic skills like sending emails. So Mr. Tan created the “Skill Hour” program. Every evening from six to seven, customers can take free lessons. Teenagers learn about online safety, fake news, and smart searching. Adults learn how to type, make online payments, or attend video meetings. One grandmother, Mrs. Wong, joined every Tuesday. She learned how to video call her grandchildren who lived abroad. “Before, I felt far away,” she said. “Now they feel close again.” Teenagers like the program too. A boy named Leo learned how to edit videos and soon started making short films for school projects. Another student, Lily, learned to create posters for school clubs. The cafe becomes more than a place to play games—it becomes a center for learning and helping everyone use the internet wisely and confidently. It’s really amazing what a difference a place like this can make.",
+      "audio_url": null
+    },
+    "stem": "Mrs. Wong joined the program to learn how to video-call her grandchildren.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12035",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "19",
+    "passage_id": "psg_2026_c_007",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 静安区",
+      "content": "What comes to mind when you think of an Internet cafe? In many cities, Internet cafes are popular places for playing games or chatting online. But in Sunflower Town, the local internet cafe serves a very different purpose—it helps people learn new skills. The owner, Mr. Tan, used to be a computer engineer. When he opened the cafe, he noticed many people didn’t know how to use the internet safely. Teenagers shared too much personal information, and older adults struggled with basic skills like sending emails. So Mr. Tan created the “Skill Hour” program. Every evening from six to seven, customers can take free lessons. Teenagers learn about online safety, fake news, and smart searching. Adults learn how to type, make online payments, or attend video meetings. One grandmother, Mrs. Wong, joined every Tuesday. She learned how to video call her grandchildren who lived abroad. “Before, I felt far away,” she said. “Now they feel close again.” Teenagers like the program too. A boy named Leo learned how to edit videos and soon started making short films for school projects. Another student, Lily, learned to create posters for school clubs. The cafe becomes more than a place to play games—it becomes a center for learning and helping everyone use the internet wisely and confidently. It’s really amazing what a difference a place like this can make.",
+      "audio_url": null
+    },
+    "stem": "Leo, a teenager, learned how to create posters for school projects.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12036",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "20",
+    "passage_id": "psg_2026_c_007",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - 静安区",
+      "content": "What comes to mind when you think of an Internet cafe? In many cities, Internet cafes are popular places for playing games or chatting online. But in Sunflower Town, the local internet cafe serves a very different purpose—it helps people learn new skills. The owner, Mr. Tan, used to be a computer engineer. When he opened the cafe, he noticed many people didn’t know how to use the internet safely. Teenagers shared too much personal information, and older adults struggled with basic skills like sending emails. So Mr. Tan created the “Skill Hour” program. Every evening from six to seven, customers can take free lessons. Teenagers learn about online safety, fake news, and smart searching. Adults learn how to type, make online payments, or attend video meetings. One grandmother, Mrs. Wong, joined every Tuesday. She learned how to video call her grandchildren who lived abroad. “Before, I felt far away,” she said. “Now they feel close again.” Teenagers like the program too. A boy named Leo learned how to edit videos and soon started making short films for school projects. Another student, Lily, learned to create posters for school clubs. The cafe becomes more than a place to play games—it becomes a center for learning and helping everyone use the internet wisely and confidently. It’s really amazing what a difference a place like this can make.",
+      "audio_url": null
+    },
+    "stem": "The cafe is mainly described as a learning and helping community.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12037",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "11",
+    "passage_id": "psg_2026_c_008",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 嘉定区",
+      "content": "M: Hello Kate, I’m Alex, a reporter from Teen’s Business Journal. These days, your lemonade floating stand is so popular. Everyone seems to love it. How did you first get the idea?\nW: Um, we used to have a lemonade stand at the end of our street. Then we moved to our houseboat when I was nine years old. We still wanted to have a lemonade stand, but there was nowhere to do it. So my dad started building us a floating one. He spent weekends building it, and we painted it yellow like a giant lemon.\nM: Such a clever idea. What do you do with the money you earn from the stand?\nW: I don’t keep any of it. I donated every dollar to the Green World Home, which helps to protect the environment.\nM: Many kids want to help support environmental protection causes. What’s your advice for them?\nW: I would say start small. You don’t need a floating stand or a big plan. Recycle and reuse in your daily life. If you like gardening, plant flowers and sell them at a charity sale. The hardest part is just starting. Once you do, it gets easier, and it feels amazing.\nM: Do you have any future plans for your floating stand?\nW: Someday I want to build a few more stands and give them away, maybe to other kids who live on houseboats or near lakes, or even to community centers. I want more people to have fun while helping others.\nM: Thank you so much for telling us about your work to protect the environment today. Thank you for your advice to the young people. Every small act matters.",
+      "audio_url": null
+    },
+    "stem": "Kate’s lemonade floating stand (浮动摊位) is very popular these days.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12038",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "12",
+    "passage_id": "psg_2026_c_008",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 嘉定区",
+      "content": "M: Hello Kate, I’m Alex, a reporter from Teen’s Business Journal. These days, your lemonade floating stand is so popular. Everyone seems to love it. How did you first get the idea?\nW: Um, we used to have a lemonade stand at the end of our street. Then we moved to our houseboat when I was nine years old. We still wanted to have a lemonade stand, but there was nowhere to do it. So my dad started building us a floating one. He spent weekends building it, and we painted it yellow like a giant lemon.\nM: Such a clever idea. What do you do with the money you earn from the stand?\nW: I don’t keep any of it. I donated every dollar to the Green World Home, which helps to protect the environment.\nM: Many kids want to help support environmental protection causes. What’s your advice for them?\nW: I would say start small. You don’t need a floating stand or a big plan. Recycle and reuse in your daily life. If you like gardening, plant flowers and sell them at a charity sale. The hardest part is just starting. Once you do, it gets easier, and it feels amazing.\nM: Do you have any future plans for your floating stand?\nW: Someday I want to build a few more stands and give them away, maybe to other kids who live on houseboats or near lakes, or even to community centers. I want more people to have fun while helping others.\nM: Thank you so much for telling us about your work to protect the environment today. Thank you for your advice to the young people. Every small act matters.",
+      "audio_url": null
+    },
+    "stem": "Father painted the floating stand yellow to match the color of their houseboat.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12039",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "13",
+    "passage_id": "psg_2026_c_008",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 嘉定区",
+      "content": "M: Hello Kate, I’m Alex, a reporter from Teen’s Business Journal. These days, your lemonade floating stand is so popular. Everyone seems to love it. How did you first get the idea?\nW: Um, we used to have a lemonade stand at the end of our street. Then we moved to our houseboat when I was nine years old. We still wanted to have a lemonade stand, but there was nowhere to do it. So my dad started building us a floating one. He spent weekends building it, and we painted it yellow like a giant lemon.\nM: Such a clever idea. What do you do with the money you earn from the stand?\nW: I don’t keep any of it. I donated every dollar to the Green World Home, which helps to protect the environment.\nM: Many kids want to help support environmental protection causes. What’s your advice for them?\nW: I would say start small. You don’t need a floating stand or a big plan. Recycle and reuse in your daily life. If you like gardening, plant flowers and sell them at a charity sale. The hardest part is just starting. Once you do, it gets easier, and it feels amazing.\nM: Do you have any future plans for your floating stand?\nW: Someday I want to build a few more stands and give them away, maybe to other kids who live on houseboats or near lakes, or even to community centers. I want more people to have fun while helping others.\nM: Thank you so much for telling us about your work to protect the environment today. Thank you for your advice to the young people. Every small act matters.",
+      "audio_url": null
+    },
+    "stem": "Kate donated all the money from the stand to help protect the environment.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12040",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "14",
+    "passage_id": "psg_2026_c_008",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 嘉定区",
+      "content": "M: Hello Kate, I’m Alex, a reporter from Teen’s Business Journal. These days, your lemonade floating stand is so popular. Everyone seems to love it. How did you first get the idea?\nW: Um, we used to have a lemonade stand at the end of our street. Then we moved to our houseboat when I was nine years old. We still wanted to have a lemonade stand, but there was nowhere to do it. So my dad started building us a floating one. He spent weekends building it, and we painted it yellow like a giant lemon.\nM: Such a clever idea. What do you do with the money you earn from the stand?\nW: I don’t keep any of it. I donated every dollar to the Green World Home, which helps to protect the environment.\nM: Many kids want to help support environmental protection causes. What’s your advice for them?\nW: I would say start small. You don’t need a floating stand or a big plan. Recycle and reuse in your daily life. If you like gardening, plant flowers and sell them at a charity sale. The hardest part is just starting. Once you do, it gets easier, and it feels amazing.\nM: Do you have any future plans for your floating stand?\nW: Someday I want to build a few more stands and give them away, maybe to other kids who live on houseboats or near lakes, or even to community centers. I want more people to have fun while helping others.\nM: Thank you so much for telling us about your work to protect the environment today. Thank you for your advice to the young people. Every small act matters.",
+      "audio_url": null
+    },
+    "stem": "Building a few more floating stands was Kate’s future plan.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "T",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  },
+  {
+    "id": "q_12041",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_true_false",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "15",
+    "passage_id": "psg_2026_c_008",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - 嘉定区",
+      "content": "M: Hello Kate, I’m Alex, a reporter from Teen’s Business Journal. These days, your lemonade floating stand is so popular. Everyone seems to love it. How did you first get the idea?\nW: Um, we used to have a lemonade stand at the end of our street. Then we moved to our houseboat when I was nine years old. We still wanted to have a lemonade stand, but there was nowhere to do it. So my dad started building us a floating one. He spent weekends building it, and we painted it yellow like a giant lemon.\nM: Such a clever idea. What do you do with the money you earn from the stand?\nW: I don’t keep any of it. I donated every dollar to the Green World Home, which helps to protect the environment.\nM: Many kids want to help support environmental protection causes. What’s your advice for them?\nW: I would say start small. You don’t need a floating stand or a big plan. Recycle and reuse in your daily life. If you like gardening, plant flowers and sell them at a charity sale. The hardest part is just starting. Once you do, it gets easier, and it feels amazing.\nM: Do you have any future plans for your floating stand?\nW: Someday I want to build a few more stands and give them away, maybe to other kids who live on houseboats or near lakes, or even to community centers. I want more people to have fun while helping others.\nM: Thank you so much for telling us about your work to protect the environment today. Thank you for your advice to the young people. Every small act matters.",
+      "audio_url": null
+    },
+    "stem": "In the interview, Kate taught kids how to make a plan to protect the environment.",
+    "options": [
+      {
+        "label": "T",
+        "text": ""
+      },
+      {
+        "label": "F",
+        "text": ""
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "F",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_passage"
+    ]
+  }
+]

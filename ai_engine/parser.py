@@ -69,6 +69,7 @@ def _build_prompt(
         "- word_form: 词性转换",
         "- sentence_rewriting: 改写句子",
         "- listening_single_choice: 听力选择",
+        "- listening_true_false: 听力判断题（一段长文本/对话后跟多道 True/False 判断题）",
     ])
     
     wrong_items_text = ""
@@ -102,7 +103,7 @@ def _local_validate(
     """
     warnings = []
     valid_kp_ids = {kp.id for kp in kps}
-    valid_question_types = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice"}
+    valid_question_types = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice", "listening_true_false"}
 
     # Filter invalid KP ids
     valid_kps = []

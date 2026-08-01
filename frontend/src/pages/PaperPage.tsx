@@ -15,6 +15,7 @@ import type { AnswerDraft } from '@/lib/answers'
 import { buildSubmission, listUnanswered } from '@/lib/answers'
 import { buildPaperNotices } from '@/lib/paperNotices'
 import { AnswerCard } from '@/components/AnswerCard'
+import { PassageBlock } from '@/components/PassageBlock'
 import { QuestionCard } from '@/components/QuestionCard'
 import { GradeBanner } from '@/components/GradeBanner'
 import { MemberPill, UpgradeDialog } from '@/components/UpgradeDialog'
@@ -30,7 +31,25 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { GradeSubmissionResponse } from '@/types/api'
+import type { GradeSubmissionResponse, PaperItem } from '@/types/api'
+
+/** 按 passage_id 分组：同组小题共享一段材料，PassageBlock 只渲染一次。 */
+function groupByPassage(items: PaperItem[]): Array<{ key: string; passageId: string | null; items: PaperItem[] }> {
+  const groups: Array<{ key: string; passageId: string | null; items: PaperItem[] }> = []
+  const seen = new Map<string, number>()
+  for (const item of items) {
+    const pid = item.question.passage_id ?? null
+    const key = pid ?? `solo-${item.index}`
+    const idx = seen.get(key)
+    if (idx !== undefined) {
+      groups[idx].items.push(item)
+    } else {
+      seen.set(key, groups.length)
+      groups.push({ key, passageId: pid, items: [item] })
+    }
+  }
+  return groups
+}
 
 /**
  * 薄壳：以 key=paperId 强制重挂载内层——revise 换 id 导航后
@@ -325,32 +344,44 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         </div>
 
         <div className="mt-4 divide-y divide-ink-10">
-          {paper.items.map((item) => (
-            <QuestionCard
-              key={item.index}
-              item={item}
-              mode={submitted ? 'review' : 'answering'}
-              value={answers[item.index]}
-              onChange={(v) => setAnswers((prev) => ({ ...prev, [item.index]: v }))}
-              result={resultByIndex.get(item.index)}
-              solutionSlot={
-                submitted ? (
-                  <SolutionBlock
-                    question={item.question}
-                    sourceQuestionId={item.source_question_id}
-                    revisionMode={item.revision_mode}
-                    cacheKey={['solution', paper.paper_id, item.index]}
-                    locked={locked}
-                    userId={userId}
-                    userAnswer={(() => {
-                      const r = resultByIndex.get(item.index)
-                      if (!r || r.is_correct) return null
-                      return r.user_answer ?? null
-                    })()}
+          {groupByPassage(paper.items).map((group) => (
+            <div key={group.key} className="py-2 first:pt-0">
+              {group.passageId && group.items[0].question.passage_json && (
+                <PassageBlock
+                  passage={group.items[0].question.passage_json}
+                  mode={submitted ? 'review' : 'answering'}
+                />
+              )}
+              <div className="divide-y divide-ink-10">
+                {group.items.map((item) => (
+                  <QuestionCard
+                    key={item.index}
+                    item={item}
+                    mode={submitted ? 'review' : 'answering'}
+                    value={answers[item.index]}
+                    onChange={(v) => setAnswers((prev) => ({ ...prev, [item.index]: v }))}
+                    result={resultByIndex.get(item.index)}
+                    solutionSlot={
+                      submitted ? (
+                        <SolutionBlock
+                          question={item.question}
+                          sourceQuestionId={item.source_question_id}
+                          revisionMode={item.revision_mode}
+                          cacheKey={['solution', paper.paper_id, item.index]}
+                          locked={locked}
+                          userId={userId}
+                          userAnswer={(() => {
+                            const r = resultByIndex.get(item.index)
+                            if (!r || r.is_correct) return null
+                            return r.user_answer ?? null
+                          })()}
+                        />
+                      ) : undefined
+                    }
                   />
-                ) : undefined
-              }
-            />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
 

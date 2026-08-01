@@ -4,6 +4,7 @@ export const TYPE_LABELS: Record<string, string> = {
   word_form: '词形转换',
   sentence_rewriting: '句子改写',
   listening_single_choice: '听力选择',
+  listening_true_false: '听力判断',
 }
 
 /**

@@ -181,7 +181,11 @@ def load(
     stats = LoadStats(total_in_sqlite=len(all_qs))
     stats.skipped = sum(1 for q in all_qs if q["id"] in already_have)
 
-    to_embed = [q for q in all_qs if q["id"] not in already_have]
+    to_embed = [
+        q for q in all_qs
+        if q["id"] not in already_have
+        and q["question_type"] != "listening_true_false"   # TF passage 题不做向量库
+    ]
     if not to_embed:
         log.info("nothing to do — all %d questions already embedded", stats.total_in_sqlite)
         return stats

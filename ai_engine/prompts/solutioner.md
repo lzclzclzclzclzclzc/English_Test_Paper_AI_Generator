@@ -23,6 +23,10 @@
 {% if question.template %}
 模板：{{ question.template }}
 {% endif %}
+{% if question.passage_json %}
+听力/阅读材料（{{ question.passage_json.title or "无标题" }}）：
+{{ question.passage_json.content }}
+{% endif %}
 {% if question.hint %}
 提示词：{{ question.hint }}
 {% endif %}
@@ -56,4 +60,5 @@
 - 改写句子题（sentence_rewriting）：必须解释"为什么用这个句式"的语法根据（如宾语从句语序、被动语态构成、感叹句结构等）。
 - 单项选择题（single_choice）：解释正确选项成立的原因，并简要说明其他干扰项为何错误。
 - 听力选择题（listening_single_choice）：必须解释对话中的关键信息、语气或语境如何帮助确定答案，并指出干扰项为何不符合对话内容。
+- 听力判断题（listening_true_false）：必须引用听力材料中的关键语句说明判断依据，指出题干中的关键信息与材料哪一部分对应，说明为何选 T 或 F。
 - 全程使用中文，语言简洁，面向初中学生。

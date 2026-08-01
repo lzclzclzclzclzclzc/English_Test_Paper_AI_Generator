@@ -374,3 +374,15 @@
   "revision_intensity": "light",
   "free_text": ""
 }
+
+## 示例 17：听力判断题请求
+输入："来 5 道听力判断题"
+输出：
+{
+  "knowledge_points": [],
+  "question_types": ["listening_true_false"],
+  "total_questions": 5,
+  "type_distribution": {"listening_true_false": 5},
+  "revision_intensity": "light",
+  "free_text": ""
+}

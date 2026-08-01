@@ -22,7 +22,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS knowledge_points (
     id            TEXT PRIMARY KEY,
     level1        TEXT NOT NULL
-                    CHECK (level1 IN ('single_choice', 'word_form', 'sentence_rewriting', 'listening_single_choice')),
+                    CHECK (level1 IN ('single_choice', 'word_form', 'sentence_rewriting', 'listening_single_choice', 'listening_true_false')),
     level2        TEXT NOT NULL,
     aliases_json  TEXT NOT NULL DEFAULT '[]'
 );
@@ -32,18 +32,22 @@ CREATE TABLE IF NOT EXISTS questions (
     id                  TEXT PRIMARY KEY,       -- q_00001
     book                TEXT NOT NULL,
     question_type       TEXT NOT NULL
-                          CHECK (question_type IN ('single_choice', 'word_form', 'sentence_rewriting', 'listening_single_choice')),
+                          CHECK (question_type IN ('single_choice', 'word_form', 'sentence_rewriting', 'listening_single_choice', 'listening_true_false')),
     chapter_l1          TEXT NOT NULL,          -- "1 单项选择"
     chapter_l2          TEXT NOT NULL,          -- "1.4 不定代词"
     number              TEXT NOT NULL,          -- "1" or "1-3"
 
     -- Content — populated conditionally per question_type.
     stem                TEXT,                   -- single_choice / word_form
-    options_json        TEXT,                   -- single_choice only; JSON list
+    options_json        TEXT,                   -- single_choice / listening_true_false; JSON list
     hint                TEXT,                   -- word_form only
     original_sentence   TEXT,                   -- sentence_rewriting; may embed <u>...</u>
     instruction         TEXT,                   -- sentence_rewriting
     template            TEXT,                   -- sentence_rewriting; null for 连词成句
+
+    -- Shared material for listening_true_false (null for non-passage types)
+    passage_id          TEXT,                   -- passage group id (e.g. psg_2026_c_001)
+    passage_json        TEXT,                   -- JSON Passage object {kind,title,content,audio_url}
 
     answer_json         TEXT NOT NULL,          -- single_choice: JSON string "\"B\""
                                                  -- fill-in: JSON list-of-dict
@@ -61,6 +65,7 @@ CREATE INDEX IF NOT EXISTS idx_q_type       ON questions(question_type);
 CREATE INDEX IF NOT EXISTS idx_q_book       ON questions(book);
 CREATE INDEX IF NOT EXISTS idx_q_chapter_l2 ON questions(chapter_l2);
 CREATE INDEX IF NOT EXISTS idx_q_stem_hash  ON questions(stem_hash);
+CREATE INDEX IF NOT EXISTS idx_q_passage    ON questions(passage_id);
 
 -- ─── question ↔ knowledge_point (many-to-many) ───────────────────
 CREATE TABLE IF NOT EXISTS question_knowledge_points (

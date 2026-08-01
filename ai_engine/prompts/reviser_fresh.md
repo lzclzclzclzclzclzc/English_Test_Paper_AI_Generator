@@ -23,6 +23,11 @@
 - 改写句子题必须包含 instruction 字段说明改写要求
 - 听力选择题（listening_single_choice）的 stem 必须包含说话者标识（M: 男声 / W: 女声）和问题（Question:），示例格式：
   M: Good morning.\nW: Hello.\nQuestion: What time is it?
+- 听力判断题（listening_true_false）：
+  - answer 必须是 "T" 或 "F"（大写）
+  - options 必须为 2 个，label 分别为 "T" 和 "F"
+  - stem 为小题判断句（全新生成，如 "The boy enjoyed his summer holiday."），不含听力原文
+  - passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
 
 # 输出格式
 （instructor 会自动附加 JSON Schema）
