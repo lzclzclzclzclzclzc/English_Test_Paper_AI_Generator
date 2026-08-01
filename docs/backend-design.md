@@ -1,7 +1,6 @@
 # Spec C：FastAPI 后端设计
 
 **创建日期**：2026-07-07
-**项目根目录**：`C:\Users\I779318\Desktop\CSS\English_Test_Paper_AI_Generator`
 **范围**：FastAPI 后端子系统（`backend/`）—— 用 HTTP 把 AI Engine + 题库封装成前端可用的接口；含鉴权、试卷持久化、答题记录、判对错
 **依赖**：
 - [`./2026-07-07-question-bank-ingestion-design.md`](./2026-07-07-question-bank-ingestion-design.md)（Spec A：数据契约、SQLite、`shared/`）

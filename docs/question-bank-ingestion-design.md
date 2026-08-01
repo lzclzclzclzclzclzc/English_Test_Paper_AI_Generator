@@ -2,7 +2,6 @@
 
 **创建日期**：2026-07-07
 **最后更新**：2026-07-09（对齐实际实现，含 ChromaDB 向量库）
-**项目根目录**：`C:\Users\I779318\Desktop\CSS\English_Test_Paper_AI_Generator`
 **范围**：从原始 EPUB 教辅书到"结构化、可检索、可生成"题库的完整入库管线
 **状态**：SQLite 入库 + ChromaDB 向量库**均已完成**；题库进入可检索稳态
 
