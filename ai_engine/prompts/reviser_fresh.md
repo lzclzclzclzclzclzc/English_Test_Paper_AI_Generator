@@ -21,6 +21,8 @@
 - answer 必须是 options 中某个选项的 label
 - 词性转换题必须包含 hint 字段提示词形变化
 - 改写句子题必须包含 instruction 字段说明改写要求
+- 听力选择题（listening_single_choice）的 stem 必须包含说话者标识（M: 男声 / W: 女声）和问题（Question:），示例格式：
+  M: Good morning.\nW: Hello.\nQuestion: What time is it?
 
 # 输出格式
 （instructor 会自动附加 JSON Schema）

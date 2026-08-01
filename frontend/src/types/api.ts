@@ -11,7 +11,7 @@
 
 // ---- 字面量联合（schemas.py 顶部 Literal） ----
 
-export type QuestionType = 'single_choice' | 'word_form' | 'sentence_rewriting'
+export type QuestionType = 'single_choice' | 'word_form' | 'sentence_rewriting' | 'listening_single_choice'
 export type GenerationMode = 'fresh' | 'remediation' | 'review'
 export type RevisionMode = 'fresh' | 'light' | 'original'
 

@@ -1,0 +1,1371 @@
+[
+  {
+    "id": "q_10001",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "7",
+    "stem": "M: Good afternoon. What can I do for you?\nW: I’d like to report a theft, please. Someone has stolen my mobile phone.\nM: All right, let’s start with what happened.\nQuestion: Where does the dialogue take place?",
+    "options": [
+      {
+        "label": "A",
+        "text": "At a store."
+      },
+      {
+        "label": "B",
+        "text": "At a cinema."
+      },
+      {
+        "label": "C",
+        "text": "At a hotel."
+      },
+      {
+        "label": "D",
+        "text": "At a police office."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "D",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10002",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "8",
+    "stem": "W: Sorry, I’m late, Mr. Lee. The bus was delayed.\nM: That’s all right. Please take your seat.\nQuestion: Why was the girl late?",
+    "options": [
+      {
+        "label": "A",
+        "text": "She missed the bus."
+      },
+      {
+        "label": "B",
+        "text": "The bus didn’t come on time."
+      },
+      {
+        "label": "C",
+        "text": "The bus broke down."
+      },
+      {
+        "label": "D",
+        "text": "She forgot to check the time."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "B",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10003",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "9",
+    "stem": "M: You look quiet today.\nW: I stayed up late finishing my animation project.\nM: No wonder.\nQuestion: How does the woman probably feel?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Tired."
+      },
+      {
+        "label": "B",
+        "text": "Worried."
+      },
+      {
+        "label": "C",
+        "text": "Nervous."
+      },
+      {
+        "label": "D",
+        "text": "Confused."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "A",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10004",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "10",
+    "stem": "M: I broke the man’s sunglasses and he wanted me to pay him 500 yuan.\nW: That sounds too much for such an old pair.\nQuestion: What does the woman mean?",
+    "options": [
+      {
+        "label": "A",
+        "text": "The man is very poor."
+      },
+      {
+        "label": "B",
+        "text": "The sunglasses are expensive."
+      },
+      {
+        "label": "C",
+        "text": "The price is unfair."
+      },
+      {
+        "label": "D",
+        "text": "The boy should pay at once."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "C",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10005",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "6",
+    "stem": "W: Hi, Bob, did you know that the club leader has changed the time from 3:30 PM to 4:30 PM and it’s permanent, not just for this week.\nM: Oh, that’s better for me. I have a class until four o’clock PM.\nQ: When should the boy attend the club?",
+    "options": [
+      {
+        "label": "A",
+        "text": "3:00."
+      },
+      {
+        "label": "B",
+        "text": "3:30."
+      },
+      {
+        "label": "C",
+        "text": "4:00."
+      },
+      {
+        "label": "D",
+        "text": "4:30."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "D",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10006",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "7",
+    "stem": "W: Do you visit your grandparents very often?\nM: Not very often, usually just once a month. But I call them every week.\nQ: How often does the boy go to see his grandparents?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Once a month."
+      },
+      {
+        "label": "B",
+        "text": "Once a week."
+      },
+      {
+        "label": "C",
+        "text": "Every day."
+      },
+      {
+        "label": "D",
+        "text": "Never."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "A",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10007",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "8",
+    "stem": "M: Come and take a look at the robot I designed. It can do many things, like singing for you, exercising with you and helping with housework.\nW: That sounds impressive. So what can’t it do?\nM: I’m afraid it can’t help you with your homework.\nQ: What can’t the robot designed by the boy do?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Do housework."
+      },
+      {
+        "label": "B",
+        "text": "Do homework."
+      },
+      {
+        "label": "C",
+        "text": "Do exercise."
+      },
+      {
+        "label": "D",
+        "text": "Sing songs."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "B",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10008",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "9",
+    "stem": "M: Madam, I have a package for Mrs. White. Could I get the pickup code?\nM: Just a moment. Let me check. It’s 35277. Oh, sorry, it’s 352177.\nW: That’s correct. Here is your package.\nQ: What is the pickup code for the woman’s package?",
+    "options": [
+      {
+        "label": "A",
+        "text": "355277."
+      },
+      {
+        "label": "B",
+        "text": "352777."
+      },
+      {
+        "label": "C",
+        "text": "353771."
+      },
+      {
+        "label": "D",
+        "text": "352177."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "D",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10009",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "10",
+    "stem": "W: Hey, you finished the math homework. I’m stuck on the last problem.\nM: Well, the last problem was pretty tricky, but I managed to figure it out at last. Do you want me to explain it to you?\nW: That would be great. I’ve been staring at it for an hour and still can’t get it.\nM: No worries, I felt the same way at first. Let’s go through it step by step.\nQ: How did the girl feel about the math homework?",
+    "options": [
+      {
+        "label": "A",
+        "text": "She felt confident because she could solve the problem on her own."
+      },
+      {
+        "label": "B",
+        "text": "She found the math problem very difficult and felt frustrated."
+      },
+      {
+        "label": "C",
+        "text": "She felt bored and had no interest in the math homework."
+      },
+      {
+        "label": "D",
+        "text": "She felt excited to have such a challenging problem."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "B",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10010",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "6",
+    "stem": "M: Finally, we are at the top of the mountain. What a nice view!\nW: Yes. look down there, a small boat is passing under that ancient bridge.\nQuestion: Where are the two speakers?",
+    "options": [
+      {
+        "label": "A",
+        "text": "In a boat."
+      },
+      {
+        "label": "B",
+        "text": "At a village."
+      },
+      {
+        "label": "C",
+        "text": "Under a bridge."
+      },
+      {
+        "label": "D",
+        "text": "On a mountain."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "D",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10011",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "7",
+    "stem": "M: What’s going on? It’s May and we still have to wear warm clothes.\nW: Well, there is some good news on the radio. You probably can wear shorts tomorrow.\nQuestion: What are the two speakers talking about?",
+    "options": [
+      {
+        "label": "A",
+        "text": "News."
+      },
+      {
+        "label": "B",
+        "text": "Weather."
+      },
+      {
+        "label": "C",
+        "text": "Clothes."
+      },
+      {
+        "label": "D",
+        "text": "Future."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "B",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10012",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "8",
+    "stem": "M: Now, what seems to be the trouble, Mrs. Smith?\nW: I’m feeling sick in my stomach and last night I had some chest pain.\nM: Don’t worry. let me have a look.\nQuestion: What is the possible relationship between the two speakers?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Doctor and patient."
+      },
+      {
+        "label": "B",
+        "text": "Teacher and student."
+      },
+      {
+        "label": "C",
+        "text": "Husband and wife."
+      },
+      {
+        "label": "D",
+        "text": "Customer and servant."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "A",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10013",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "9",
+    "stem": "M: Hello, room service, what can I do for you?\nW: Yes, this is Room 369. The air-conditioner is out of service. Can you send someone to check it?\nM: Sorry, Madam, I will have it fixed right away.\nQuestion: Why does the lady make a phone call?",
+    "options": [
+      {
+        "label": "A",
+        "text": "To order food."
+      },
+      {
+        "label": "B",
+        "text": "To check out."
+      },
+      {
+        "label": "C",
+        "text": "To complain."
+      },
+      {
+        "label": "D",
+        "text": "To book a room."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "C",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10014",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "10",
+    "stem": "M: Look, we have time for a hamburger from the fast food restaurant.\nW: Forget that. I know a new restaurant on Nanjing Road, not far from our company. Is that okay with you?\nM: Sounds good. Let’s go.\nQuestion: What are the two speakers going to do?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Take a walk."
+      },
+      {
+        "label": "B",
+        "text": "Go shopping."
+      },
+      {
+        "label": "C",
+        "text": "Buy a hamburger."
+      },
+      {
+        "label": "D",
+        "text": "Eat in a restaurant."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "D",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10015",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "6",
+    "stem": "W: It’s so hot today. Let’s get some ice cream.\nM: Good idea. I’ll have a chocolate one. What about you?\nW: I’d like a strawberry one.\nQuestion: What Ice cream will the girl choose?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Chocolate."
+      },
+      {
+        "label": "B",
+        "text": "Banana."
+      },
+      {
+        "label": "C",
+        "text": "Strawberry."
+      },
+      {
+        "label": "D",
+        "text": "Lemon."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "C",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10016",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "7",
+    "stem": "M: The new cartoon movie is two hours long. It starts at 6:10 p.m..\nW: Great. That means we can still catch the 8:30 a.m bus home.\nQuestion: What time will the movie end?",
+    "options": [
+      {
+        "label": "A",
+        "text": "At 6:10 p.m."
+      },
+      {
+        "label": "B",
+        "text": "At 8:30 p.m."
+      },
+      {
+        "label": "C",
+        "text": "At 8:20 p.m."
+      },
+      {
+        "label": "D",
+        "text": "At 8:10 p.m."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "A",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10017",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "8",
+    "stem": "W: Jack, your work looks great. How did you prepare it?\nM: Thanks. My parents introduced a new AI tool to me. I used it to draw pictures for me.\nQuestion: How did Jack prepare his work?",
+    "options": [
+      {
+        "label": "A",
+        "text": "He worked with his parents."
+      },
+      {
+        "label": "B",
+        "text": "He used a new AI tool."
+      },
+      {
+        "label": "C",
+        "text": "He asked his teacher for help."
+      },
+      {
+        "label": "D",
+        "text": "He drew pictures on his own."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "B",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10018",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "9",
+    "stem": "M: Good afternoon. I’d like to have my hair cut, please.\nW: Of course, please take a seat here. Would you like it shorter on the sides?\nM: Yes, but please leave the top as it is.\nQuestion: What is the probable relationship between the two speakers?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hairdresser and customer."
+      },
+      {
+        "label": "B",
+        "text": "Teacher and student."
+      },
+      {
+        "label": "C",
+        "text": "Doctor and patient."
+      },
+      {
+        "label": "D",
+        "text": "Shop assistant and customer."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "A",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10019",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "10",
+    "stem": "M: Did you ask Mr. Lee if we could hand in the project next Monday?\nW: I did. He said we must hand it in this Friday. He won’t change it.\nM: Oh no. I thought he might agree because of the school concert this week.\nW: He said we should plan our time better. We’d better speed up.\nQuestion: What can we learn from the dialogue?",
+    "options": [
+      {
+        "label": "A",
+        "text": "The project can be handed in next Monday."
+      },
+      {
+        "label": "B",
+        "text": "The boy will not hand in the project on time."
+      },
+      {
+        "label": "C",
+        "text": "Mr. Lee is unhappy about the school concert."
+      },
+      {
+        "label": "D",
+        "text": "The students must finish the project by Friday."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "D",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10020",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "6",
+    "stem": "M: It is raining heavily. Will you go home by bike as usual?\nW: No. My mom called and told me to wait, she will drive me home.\nQ: How will the girl go home?",
+    "options": [
+      {
+        "label": "A",
+        "text": "By bike."
+      },
+      {
+        "label": "B",
+        "text": "By bus."
+      },
+      {
+        "label": "C",
+        "text": "On foot."
+      },
+      {
+        "label": "D",
+        "text": "By car."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "D",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10021",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "7",
+    "stem": "M: Linda, I don’t know how to shop online. Can you help me?\nW: Sure, Grandpa. I will as soon as I finish my homework.\nQ: What will the girl do?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Go to a department store."
+      },
+      {
+        "label": "B",
+        "text": "Do homework."
+      },
+      {
+        "label": "C",
+        "text": "Help Grandpa shop online."
+      },
+      {
+        "label": "D",
+        "text": "Help Grandpa with housework."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "C",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10022",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "8",
+    "stem": "W: I heard you have moved to the city.\nM: Yes. My new home is near my office. It takes only five minutes to get there.\nW: Well. I still prefer living in the country because of the fresh air.\nQ: Why did the man move to the city?",
+    "options": [
+      {
+        "label": "A",
+        "text": "To live near his office."
+      },
+      {
+        "label": "B",
+        "text": "To find a new job."
+      },
+      {
+        "label": "C",
+        "text": "To breathe the fresh air."
+      },
+      {
+        "label": "D",
+        "text": "To live a busy life."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "A",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10023",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "9",
+    "stem": "M: Excuse me, do you have a tie with blue stripes like this?\nW: Sorry. We’ve sold out. Please leave your phone number, we’ll contact you as soon as it’s available.\nQ: Where does the dialogue probably take place?",
+    "options": [
+      {
+        "label": "A",
+        "text": "In a library."
+      },
+      {
+        "label": "B",
+        "text": "In a restaurant."
+      },
+      {
+        "label": "C",
+        "text": "In a clothes shop."
+      },
+      {
+        "label": "D",
+        "text": "In a meeting room."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "C",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10024",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "10",
+    "stem": "W: Dad, I can’t find my notebook. Have you seen it anywhere?\nM: Sorry, I haven’t. Why not ask your mother?\nQ: What does the man mean?",
+    "options": [
+      {
+        "label": "A",
+        "text": "The notebook is nowhere to be found."
+      },
+      {
+        "label": "B",
+        "text": "He doesn’t know where Jane’s mother is."
+      },
+      {
+        "label": "C",
+        "text": "He will probably help Jane look for her notebook."
+      },
+      {
+        "label": "D",
+        "text": "The mother probably knows where the notebook is."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "D",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10025",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "7",
+    "stem": "W: Grandma, can I fly a kite in the park?\nM: Not today, dear. The wind is too strong.\nQuestion: What is the weather like today?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Sunny."
+      },
+      {
+        "label": "B",
+        "text": "Rainy."
+      },
+      {
+        "label": "C",
+        "text": "Windy."
+      },
+      {
+        "label": "D",
+        "text": "Cloudy."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "C",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10026",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "8",
+    "stem": "W: Jack, have you finished your book report?\nM: Not yet. I’m going to the city library to work on it. They have all the books I need.\nW: Come home early for dinner.\nQuestion: Where is Jack going?",
+    "options": [
+      {
+        "label": "A",
+        "text": "To a library."
+      },
+      {
+        "label": "B",
+        "text": "To a bookstore."
+      },
+      {
+        "label": "C",
+        "text": "To his home."
+      },
+      {
+        "label": "D",
+        "text": "To a restaurant."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "A",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10027",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "9",
+    "stem": "M: Hi, I’d like to book a table for tomorrow evening. Is 7:30 available?\nW: I’m sorry, that time is full. We have 6:45 or 8:15.\nM: Hmm, 8:15 is a bit late. Let’s take 6:45 for four people.\nQuestion: What time did the man finally book the table for?",
+    "options": [
+      {
+        "label": "A",
+        "text": "6:15."
+      },
+      {
+        "label": "B",
+        "text": "6:45."
+      },
+      {
+        "label": "C",
+        "text": "7:30."
+      },
+      {
+        "label": "D",
+        "text": "8:15."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "B",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10028",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "10",
+    "stem": "M: Hello, could you tell me the ticket prices?\nW: Sure. A ticket for an adult is $8, and a ticket for a child is just half the price.\nM: Alright, I’d like to have one adult ticket and two for my children.\nQuestion: How much should the man pay for the tickets?",
+    "options": [
+      {
+        "label": "A",
+        "text": "$12."
+      },
+      {
+        "label": "B",
+        "text": "$16."
+      },
+      {
+        "label": "C",
+        "text": "$20."
+      },
+      {
+        "label": "D",
+        "text": "$24."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "B",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10029",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "11",
+    "stem": "W: Excuse me, your music is a bit loud. My baby just fell asleep.\nM: Oh, I’m sorry. I’ll turn it down right away.\nQuestion: What is the man apologizing for?",
+    "options": [
+      {
+        "label": "A",
+        "text": "For taking away her baby’s toy."
+      },
+      {
+        "label": "B",
+        "text": "For visiting her too late."
+      },
+      {
+        "label": "C",
+        "text": "For playing the music too loud."
+      },
+      {
+        "label": "D",
+        "text": "For breaking the window."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "C",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10030",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "12",
+    "stem": "M: Good morning, Airport Information Desk. Can I assist you?\nW: Hello, I need help. I can’t find my friend.\nM: Can you describe him for me?\nW: Yes, he’s quite tall—about six feet. He’s wearing a blue jacket and a white baseball cap.\nQuestion: Why does the woman describe her friend’s appearance?",
+    "options": [
+      {
+        "label": "A",
+        "text": "To report a lost item."
+      },
+      {
+        "label": "B",
+        "text": "To buy clothes for her friend."
+      },
+      {
+        "label": "C",
+        "text": "To introduce her friend to the man."
+      },
+      {
+        "label": "D",
+        "text": "To ask the man to help find her friend."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "D",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10031",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "13",
+    "stem": "M: You look tired, Jane. Is everything okay?\nW: The physics test is tomorrow. I still have three chapters to review. What if I can’t finish?\nQuestion: What is Jane worried about?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Catching a cold at night."
+      },
+      {
+        "label": "B",
+        "text": "Not having enough time to study."
+      },
+      {
+        "label": "C",
+        "text": "Getting too tired to go to school."
+      },
+      {
+        "label": "D",
+        "text": "Not being able to finish the test."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "B",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10032",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "14",
+    "stem": "M: Hello, Jasmine. You look so busy. I can do some AI searching for you.\nW: Great! I didn’t know you are good at it. Thanks a lot.\nQuestion: What can we learn from the dialogue?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Jasmine accepts John’s help."
+      },
+      {
+        "label": "B",
+        "text": "Jasmine is confident about her work."
+      },
+      {
+        "label": "C",
+        "text": "Jasmine offers to help John."
+      },
+      {
+        "label": "D",
+        "text": "Jasmine is good at AI searching."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "A",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10033",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "6",
+    "stem": "W: What would you like, tea or juice?\nM: Well, thank you. I’m not thirsty. I’ve just drunk a bottle of water.\nQuestion: What has the man just drunk?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Tea."
+      },
+      {
+        "label": "B",
+        "text": "Juice."
+      },
+      {
+        "label": "C",
+        "text": "Water."
+      },
+      {
+        "label": "D",
+        "text": "Milk."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "C",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10034",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "7",
+    "stem": "W: Hey, Adam. Who do you think dances better, Brian or Dan?\nM: Well, Brian and Dan are both good dancers, but I think Michael is better than them.\nQuestion: Who is the best dancer?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Adam."
+      },
+      {
+        "label": "B",
+        "text": "Brian."
+      },
+      {
+        "label": "C",
+        "text": "Dan."
+      },
+      {
+        "label": "D",
+        "text": "Michael."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "D",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10035",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "8",
+    "stem": "W: Excuse me, I just arrived on the flight from Bangkok, and my suitcase is missing.\nM: Oh, sorry, madam. Could you put down your information on this form? We will do everything we can to find your suitcase.\nW: Okay, I will fill it out right away. Thank you.\nQuestion: Where does the conversation probably take place?",
+    "options": [
+      {
+        "label": "A",
+        "text": "In the hospital."
+      },
+      {
+        "label": "B",
+        "text": "In the hotel."
+      },
+      {
+        "label": "C",
+        "text": "At the airport."
+      },
+      {
+        "label": "D",
+        "text": "At the bus stop."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "C",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10036",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "9",
+    "stem": "W: I borrowed this camera from Laura. I dropped it and it doesn’t work now.\nM: Oh, I think you should tell her about it first, and then find someone to repair it.\nW: Okay, I will.\nQuestion: What does the man suggest the woman do first?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Repair it by herself."
+      },
+      {
+        "label": "B",
+        "text": "Tell Laura about it."
+      },
+      {
+        "label": "C",
+        "text": "Change it for a new one."
+      },
+      {
+        "label": "D",
+        "text": "Find someone to repair it."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "B",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  },
+  {
+    "id": "q_10037",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_single_choice",
+    "chapter_l1": "1 听力选择",
+    "chapter_l2": null,
+    "number": "10",
+    "stem": "W: Shall we go cycling in the country park this afternoon?\nM: Well, um, if you really want to go, I will go with you. But I’ve just got over my cold and I’m still a bit weak.\nQuestion: What does the man mean?",
+    "options": [
+      {
+        "label": "A",
+        "text": "He wants to have a rest in the afternoon."
+      },
+      {
+        "label": "B",
+        "text": "He would like to go out with the woman."
+      },
+      {
+        "label": "C",
+        "text": "He will go to see a doctor."
+      },
+      {
+        "label": "D",
+        "text": "He hopes to go cycling right now."
+      }
+    ],
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": "A",
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_dialogue"
+    ]
+  }
+]

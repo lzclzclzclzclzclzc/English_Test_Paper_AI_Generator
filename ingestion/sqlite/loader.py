@@ -74,7 +74,7 @@ def _stem_hash(q: dict) -> str:
     content across reruns produces identical hashes."""
     payload: dict[str, Any] = {"qt": q["question_type"], "answer": q["answer"]}
     qt = q["question_type"]
-    if qt == "single_choice":
+    if qt == "single_choice" or qt == "listening_single_choice":
         payload["stem"]    = q.get("stem")
         payload["options"] = q.get("options")
     elif qt == "word_form":
@@ -155,12 +155,12 @@ def _load_questions(
             """,
             (
                 q["id"], q["book"], q["question_type"],
-                q["chapter_l1"], q["chapter_l2"], q["number"],
+                q["chapter_l1"], q["chapter_l2"] or "", q["number"],
                 q.get("stem"), options_json,
                 q.get("hint"),
                 q.get("original_sentence"), q.get("instruction"), q.get("template"),
                 answer_json, None,             # solution is None on ingestion (§1.5)
-                q["source_md"], q["source_line"], _stem_hash(q),
+                q["source_md"] or "", q["source_line"], _stem_hash(q),
                 now, 1,
             ),
         )

@@ -24,6 +24,7 @@ QTYPE_LABEL = {
     "single_choice":       "单项选择",
     "word_form":           "词性转换",
     "sentence_rewriting":  "改写句子",
+    "listening_single_choice": "听力选择",
 }
 
 # The <u>...</u> tags are inserted by us in stage 3 (see §3.11); strip them
@@ -65,7 +66,7 @@ def build_embedding_text(question: dict, kp_index: dict[str, dict]) -> str:
             continue          # dangling reference; skip silently (rare)
         lines.append(f"[考点] {kp['level2']}")
 
-    if qt == "single_choice":
+    if qt == "single_choice" or qt == "listening_single_choice":
         lines.append(f"[题干] {_clean(question.get('stem'))}")
         options = question.get("options") or []
         options_str = "  ".join(

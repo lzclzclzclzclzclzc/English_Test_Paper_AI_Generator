@@ -36,6 +36,7 @@ def _infer_title(req: GenerateRequest) -> str:
             "single_choice": "单选",
             "word_form": "词性转换",
             "sentence_rewriting": "改写句子",
+            "listening_single_choice": "听力选择",
         }
         parts.append("、".join(type_names.get(t, t) for t in req.question_types))
     if req.revision_intensity == "original":
@@ -77,7 +78,7 @@ def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
         return False
 
     qt = original.question_type
-    if qt == "single_choice":
+    if qt in ("single_choice", "listening_single_choice"):
         if revised.answer not in {"A", "B", "C", "D"}:
             return False
         if not revised.options or len(revised.options) != 4:
