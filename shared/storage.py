@@ -218,6 +218,19 @@ def count_users(q: str = "") -> int:
         ).fetchone()[0]
 
 
+def get_user_counts(user_id: str) -> dict:
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT (SELECT COUNT(*) FROM papers p WHERE p.user_id = ?) AS paper_count,
+                   (SELECT COUNT(*) FROM attempts a WHERE a.user_id = ?) AS attempt_count
+            """,
+            (user_id, user_id),
+        ).fetchone()
+    return {"paper_count": row["paper_count"], "attempt_count": row["attempt_count"]}
+
+
 def admin_counts() -> dict:
     init_db()
     today = datetime.now(timezone.utc).date().isoformat()

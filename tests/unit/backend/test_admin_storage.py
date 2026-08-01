@@ -64,3 +64,11 @@ def test_users_timeseries_buckets_by_day(db):
     series = db.users_created_by_day(days=7)
     assert any(point["count"] >= 1 for point in series)
     assert all(set(point.keys()) == {"day", "count"} for point in series)
+
+
+def test_get_user_counts(db):
+    u = db.create_user("countme", "h")
+    counts = db.get_user_counts(u.id)
+    assert counts == {"paper_count": 0, "attempt_count": 0}
+    # a missing user yields zeros too (defensive)
+    assert db.get_user_counts("nonexistent") == {"paper_count": 0, "attempt_count": 0}

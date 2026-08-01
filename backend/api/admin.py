@@ -34,8 +34,7 @@ async def list_users(q: str = "", limit: int = 50, offset: int = 0, _: User = De
 @router.get("/users/{user_id}", response_model=AdminUserDetail)
 async def user_detail(user_id: str, _: User = Depends(require_admin)) -> AdminUserDetail:
     target = _require_target(user_id)
-    rows = storage.list_users(q=target.username, limit=100, offset=0)
-    counts = next((r for r in rows if r["id"] == user_id), {"paper_count": 0, "attempt_count": 0})
+    counts = storage.get_user_counts(user_id)
     return AdminUserDetail(
         id=target.id,
         username=target.username,
