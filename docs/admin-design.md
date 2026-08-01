@@ -1,7 +1,6 @@
 # Spec G：管理后台设计
 
 **创建日期**：2026-08-01
-**项目根目录**：`C:\Users\I779318\Desktop\CSS\English_Test_Paper_AI_Generator`
 **范围**：管理员后台（管理员管理其他用户）——用户列表/详情、统计看板与数据可视化、手动会员管理、用户操作（封禁/重置密码/设为管理员）。不单开服务：主后端加一组 `/api/admin/*` 接口，payment 服务加一组 `/payapi/admin/*` 接口，前端在同一个 React 应用里加 `/admin` 路由。
 **依赖**：
 - [`./backend-design.md`](./backend-design.md)（Spec C：后端结构、鉴权、`shared/storage`、错误体、CLI）
