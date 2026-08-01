@@ -151,3 +151,11 @@ def get_membership(user_id: str) -> dict:
         "expires_at": expires_at,
         "active": expires_at > utcnow_iso(),
     }
+
+
+def list_memberships(q: str = "", limit: int = 50, offset: int = 0) -> list[dict]:
+    return []
+
+
+def count_memberships(q: str = "") -> int:
+    return 0
