@@ -104,3 +104,19 @@ def test_stats_requires_admin(client):
     normie = _mk(client, "normie2")
     _as(client, normie)
     assert client.get("/api/admin/stats/overview").status_code == 403
+
+
+def test_user_detail_includes_membership_when_payment_ok(client, monkeypatch):
+    boss = _mk(client, "boss", admin=True)
+    victim = _mk(client, "victim")
+    _as(client, boss)
+
+    import backend.api.admin as admin_mod
+
+    def fake_fetch(user_id, cookie):
+        return "2099-01-01T00:00:00Z"
+
+    monkeypatch.setattr(admin_mod, "_fetch_membership_expiry", fake_fetch)
+    r = client.get(f"/api/admin/users/{victim.id}")
+    assert r.status_code == 200
+    assert r.json()["membership_expires_at"] == "2099-01-01T00:00:00Z"
