@@ -15,6 +15,7 @@ class User(BaseModel):
     id: str
     username: str
     created_at: datetime
+    role: Literal["user", "admin"] = "user"
 
 
 class UserRecord(User):
