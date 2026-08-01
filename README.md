@@ -168,6 +168,70 @@ npm run dev
 
 ---
 
+## 生产环境运行
+
+生产形态是**前后端合并、单进程单端口**：前端构建成静态文件由 FastAPI 后端挂在 `/` 提供（`config.backend.static_dir`，默认 `backend/static`），支付服务仍是独立进程（`:8001`）。与本地开发的区别：`BACKEND_ENV=production`（启用 httpOnly+Secure+SameSite=strict Cookie、关闭 CORS、不挂测试端点）、不带 `--reload`、前端跑 `build` 而非 `dev`。
+
+> ⚠️ **上线前务必先读下方「生产部署注意事项」**：会员校验默认 fail-open、演示账号、限流等几处必须调整，否则有安全/计费风险。
+
+### 1. `.env`（生产）
+
+```env
+LLM_API_KEY=your_deepseek_api_key
+LLM_BASE_URL=https://api.deepseek.com
+LLM_MODEL=deepseek-v4-flash
+BACKEND_ENV=production
+# 前端构建产物目录（后端挂到 /）。默认 backend/static，下面示例用 frontend/dist
+BACKEND_STATIC_DIR=frontend/dist
+```
+
+payment 的 `.env` 另见 [`payment/README.md`](./payment/README.md)（真实收单需 `MOCK_PAY=false` + 沙盒/正式密钥）。
+
+### 2. 构建前端
+
+```bash
+cd frontend
+npm ci
+npm run build          # 产物在 frontend/dist（对应上面的 BACKEND_STATIC_DIR）
+cd ..
+```
+
+### 3. 初始化 & 首个管理员（新库只需一次）
+
+```bash
+# 表结构（含 role/status 列的迁移会自动应用）
+PYTHONIOENCODING=utf-8 python -m backend.cli init-db
+
+# 创建你的账号，并提升为管理员（管理后台 /admin 的唯一入口）
+PYTHONIOENCODING=utf-8 python -m backend.cli create-user --username <admin_user> --password <strong_password>
+PYTHONIOENCODING=utf-8 python -m backend.cli promote-admin --username <admin_user>
+
+# 部署就绪自检（校验 production 模式、LLM key、静态产物、题库/向量库）
+PYTHONIOENCODING=utf-8 python -m backend.cli deploy-check
+```
+
+`deploy-check` 返回 `status: ready` 且退出码 0 才算就绪。
+
+### 4. 启动服务（两个进程）
+
+**主后端 + 前端（端口 8000，同源提供 SPA）**
+```bash
+PYTHONIOENCODING=utf-8 BACKEND_ENV=production \
+  python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+```
+
+**支付服务（端口 8001，独立进程）**
+```bash
+cd payment
+PYTHONIOENCODING=utf-8 python -m uvicorn app.main:app --host 0.0.0.0 --port 8001
+```
+
+对外用一台反向代理（Nginx/Caddy）把 `/payapi/*` 转发到 `:8001`、其余转发到 `:8000`，即可做到浏览器同源、无 CORS。多核可加 `--workers N`（session 存 SQLite，多 worker 单机共享同一库文件即可；跨机部署不在本项目范围）。
+
+浏览器打开站点根地址，用上面创建的管理员账号登录——侧栏会出现「管理后台」入口（`/admin`）。
+
+---
+
 ## 生产部署注意事项
 
 本项目当前为本地开发 / 演示配置，部署到生产环境前**必须**调整以下几处，否则存在安全或计费风险：
