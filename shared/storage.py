@@ -191,6 +191,45 @@ def set_user_status(user_id: str, status: str) -> None:
         conn.execute("UPDATE users SET status = ? WHERE id = ?", (status, user_id))
 
 
+def list_users(q: str = "", limit: int = 50, offset: int = 0) -> list[dict]:
+    init_db()
+    like = f"%{q}%"
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT u.id, u.username, u.created_at, u.role, u.status,
+                   (SELECT COUNT(*) FROM papers p WHERE p.user_id = u.id) AS paper_count,
+                   (SELECT COUNT(*) FROM attempts a WHERE a.user_id = u.id) AS attempt_count
+            FROM users u
+            WHERE u.username LIKE ?
+            ORDER BY u.created_at DESC
+            LIMIT ? OFFSET ?
+            """,
+            (like, limit, offset),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def count_users(q: str = "") -> int:
+    init_db()
+    with connect() as conn:
+        return conn.execute(
+            "SELECT COUNT(*) FROM users WHERE username LIKE ?", (f"%{q}%",)
+        ).fetchone()[0]
+
+
+def update_password_hash(user_id: str, password_hash: str) -> None:
+    init_db()
+    with connect() as conn:
+        conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user_id))
+
+
+def delete_sessions_by_user(user_id: str) -> None:
+    init_db()
+    with connect() as conn:
+        conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+
+
 def create_session(user_id: str, ttl_days: int = 30) -> str:
     init_db()
     now = datetime.now(timezone.utc)
