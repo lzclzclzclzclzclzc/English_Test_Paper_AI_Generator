@@ -13,9 +13,9 @@ import { queryClient } from '@/lib/queryClient'
 import type { AnswerDraft } from '@/lib/answers'
 import { buildSubmission, listUnanswered } from '@/lib/answers'
 import { buildPaperNotices } from '@/lib/paperNotices'
-import { PaperSheet } from '@/components/PaperSheet'
+import { AnswerCard } from '@/components/AnswerCard'
 import { QuestionCard } from '@/components/QuestionCard'
-import { GradeBanner, ScoreStamp } from '@/components/GradeBanner'
+import { GradeBanner } from '@/components/GradeBanner'
 import { MemberPill, UpgradeDialog } from '@/components/UpgradeDialog'
 import { RequestSummary } from '@/components/RequestSummary'
 import { SolutionBlock } from '@/components/SolutionBlock'
@@ -29,12 +29,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Textarea } from '@/components/ui/textarea'
 import type { GradeSubmissionResponse } from '@/types/api'
 
 /**
  * 薄壳：以 key=paperId 强制重挂载内层——revise 换 id 导航后
- * 本地 state（答案、成绩、对话框）随之清空（计划 D 路由结构）。
+ * 本地 state（答案、成绩、面板）随之清空（计划 D 路由结构）。
  */
 export function PaperPageRoute() {
   const { paperId } = useParams<{ paperId: string }>()
@@ -52,7 +51,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   const [reviseOpen, setReviseOpen] = useState(false)
   const [reviseInstruction, setReviseInstruction] = useState('')
   const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
-  // 点「重做」后置 true，强制忽略历史结果、回到答题态
+  // 点「再做一遍」后置 true，强制忽略历史结果、回到答题态
   const [redoing, setRedoing] = useState(false)
 
   const { locked } = useMembership()
@@ -114,8 +113,8 @@ function PaperPageInner({ paperId }: { paperId: string }) {
 
   if (isLoading || history.isLoading) {
     return (
-      <div className="mx-auto flex max-w-[880px] flex-col gap-4 px-6 pt-10">
-        <Skeleton className="mx-auto h-9 w-2/3" />
+      <div className="flex max-w-[52rem] flex-col gap-4">
+        <Skeleton className="h-9 w-2/3" />
         <Skeleton className="h-72 w-full" />
       </div>
     )
@@ -124,12 +123,12 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   if (error || !paper) {
     const notFound = error instanceof ApiError && error.status === 404
     return (
-      <div className="mx-auto flex max-w-[880px] flex-col items-center gap-4 px-6 pt-20 text-center">
-        <p className="font-serif text-lg font-bold text-foreground">
+      <div className="flex max-w-[52rem] flex-col items-start gap-4 pt-10">
+        <p className="text-[18px] text-ink">
           {notFound ? '没有找到这份试卷' : '试卷加载失败'}
         </p>
         {notFound && (
-          <p className="-mt-2 text-[13px] text-text-mid">
+          <p className="-mt-2 text-[13px] text-muted-ink">
             链接可能已失效，或这份卷不在当前账号下
           </p>
         )}
@@ -188,6 +187,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   }
 
   const unanswered = listUnanswered(paper, answers)
+  const answeredCount = paper.items.length - unanswered.length
   const notices = buildPaperNotices(paper.metadata)
   // metadata.revised_from：改卷生成的卷可回看原卷（宽容解析，缺失即不显示）
   const revisedFrom =
@@ -200,73 +200,126 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   })
 
   return (
-    <div className="mx-auto flex max-w-[880px] flex-col gap-4 px-6 pt-8">
-      {/* 卷面之上的现代控件区（Spec F：纸上的东西不发光、控件不仿古） */}
-      <div className="flex items-center justify-between">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/papers">← 我的试卷</Link>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            locked
-              ? setUpgradeReason(
+    <div className="flex gap-12">
+      {/* 左：52rem 长卷 */}
+      <div className="min-w-0 max-w-[52rem] flex-1">
+        <p className="text-[11px] tracking-[0.1em] text-quiet">
+          PAPER · {paper.paper_id.slice(0, 8)}
+        </p>
+        <h1 className="mt-3 text-[34px] font-normal leading-snug text-ink [font-family:var(--font-display)] [text-wrap:balance]">
+          {paper.title}
+        </h1>
+        <p className="mt-2 text-[13px] text-quiet">
+          {generatedAt} · 共 {paper.items.length} 题
+        </p>
+
+        <div className="mt-5 flex items-center gap-2.5 border-b border-hairline pb-6">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/papers">← 历史试卷</Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (locked) {
+                setUpgradeReason(
                   '重新出卷是会员功能：用一句话让 AI 调整整卷（换题型、换考点、增减题量）。',
                 )
-              : setReviseOpen(true)
-          }
-        >
-          重新出卷
-          {locked && <MemberPill className="ml-1.5" />}
-        </Button>
-      </div>
+              } else {
+                setReviseOpen((v) => !v)
+              }
+            }}
+          >
+            重新生成
+            {locked && <MemberPill className="ml-1.5" />}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
+            打印 / 导出
+          </Button>
+        </div>
 
-      {submitted && (
-        <GradeBanner
-          wrongCount={wrongCount}
-          onRetry={() => {
-            grade.reset()
-            remediation.reset()
-            setAnswers({})
-            setRedoing(true)
-          }}
-          onRemediate={handleRemediate}
-          remediating={remediation.isPending}
-          remediatedPaperId={remediation.data?.paper_id ?? null}
-          onOpenRemediation={() => {
-            if (remediation.data) navigate(`/papers/${remediation.data.paper_id}`)
-          }}
-        />
-      )}
-
-      {revisedFrom && (
-        <p className="text-[12.5px] text-text-mid">
-          本卷由另一份试卷修改而来 ·{' '}
-          <Link to={`/papers/${revisedFrom}`} className="text-ink underline underline-offset-2">
-            查看原卷
-          </Link>
-        </p>
-      )}
-
-      {/* 生成说明（request 回显 + metadata 里的检索/改写降级提示）：只陈述事实，不打断做题 */}
-      <div className="flex flex-col gap-1.5 rounded-md border border-[#d8e0ea] bg-ink-wash px-5 py-3">
-        <RequestSummary request={paper.request} />
-        {notices.length > 0 && (
-          <ul className="flex flex-col gap-0.5 text-[13px] leading-relaxed text-text-mid">
-            {notices.map((n) => (
-              <li key={n}>{n}</li>
-            ))}
-          </ul>
+        {/* 重新生成面板（handoff 第 5 屏）：细线圆角框，POST /api/papers/revise */}
+        {reviseOpen && (
+          <div className="kk-rise mt-6 flex max-w-[44rem] flex-col gap-3 rounded-md border border-hairline p-5">
+            <span className="text-[10.5px] font-bold tracking-[0.14em] text-quiet">
+              POST /API/PAPERS/REVISE
+            </span>
+            <textarea
+              rows={2}
+              placeholder="告诉 AI 想怎么改：换题型、换考点、增减题量……会生成一份新试卷"
+              value={reviseInstruction}
+              onChange={(e) => setReviseInstruction(e.target.value)}
+              className="w-full resize-none rounded-[3px] border border-ink-20 bg-transparent px-3 py-2.5 text-[15px] leading-[1.8] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent"
+            />
+            {!submitted && Object.keys(answers).length > 0 && (
+              <p className="text-[12px] text-quiet">当前已填的答案不会保留</p>
+            )}
+            <div className="flex items-center gap-2.5">
+              <Button
+                size="sm"
+                disabled={reviseInstruction.trim() === '' || revise.isPending}
+                onClick={() =>
+                  revise.mutate({
+                    paper_id: paper.paper_id,
+                    user_instruction: reviseInstruction.trim(),
+                  })
+                }
+              >
+                {revise.isPending ? '正在组卷…' : '重新生成（新 paper_id）'}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setReviseOpen(false)}>
+                取消
+              </Button>
+            </div>
+          </div>
         )}
-      </div>
 
-      <PaperSheet
-        title={paper.title}
-        meta={`共 ${paper.items.length} 题 · ${generatedAt}`}
-        stamp={submitted ? <ScoreStamp correctCount={correctCount} totalCount={paper.items.length} /> : undefined}
-      >
-        <div className="divide-y divide-dashed divide-line">
+        {submitted && (
+          <div className="mt-6">
+            <GradeBanner
+              correctCount={correctCount}
+              totalCount={paper.items.length}
+              wrongCount={wrongCount}
+              onRetry={() => {
+                grade.reset()
+                remediation.reset()
+                setAnswers({})
+                setRedoing(true)
+              }}
+              onRemediate={handleRemediate}
+              remediating={remediation.isPending}
+              remediatedPaperId={remediation.data?.paper_id ?? null}
+              onOpenRemediation={() => {
+                if (remediation.data) navigate(`/papers/${remediation.data.paper_id}`)
+              }}
+            />
+          </div>
+        )}
+
+        {/* 生成说明（request 回显 + metadata 里的检索/改写降级提示）：只陈述事实，不打断做题 */}
+        <div className="mt-5 flex flex-col gap-1.5">
+          <RequestSummary request={paper.request} />
+          {revisedFrom && (
+            <p className="text-[12.5px] text-quiet">
+              本卷由另一份试卷修改而来 ·{' '}
+              <Link
+                to={`/papers/${revisedFrom}`}
+                className="text-accent underline underline-offset-2"
+              >
+                查看原卷
+              </Link>
+            </p>
+          )}
+          {notices.length > 0 && (
+            <ul className="flex flex-col gap-0.5 text-[12.5px] leading-relaxed text-quiet">
+              {notices.map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="mt-4 divide-y divide-ink-10">
           {paper.items.map((item) => (
             <QuestionCard
               key={item.index}
@@ -284,13 +337,11 @@ function PaperPageInner({ paperId }: { paperId: string }) {
                     cacheKey={['solution', paper.paper_id, item.index]}
                     locked={locked}
                     userId={userId}
-                    userAnswer={
-                      (() => {
-                        const r = resultByIndex.get(item.index)
-                        if (!r || r.is_correct) return null
-                        return r.user_answer ?? null
-                      })()
-                    }
+                    userAnswer={(() => {
+                      const r = resultByIndex.get(item.index)
+                      if (!r || r.is_correct) return null
+                      return r.user_answer ?? null
+                    })()}
                   />
                 ) : undefined
               }
@@ -299,18 +350,24 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         </div>
 
         {!submitted && (
-          <div className="mt-8 flex justify-center">
-            <Button
-              size="lg"
-              className="px-8 font-bold tracking-[4px]"
+          <div className="mt-4 flex items-center gap-4 border-t border-hairline pt-8">
+            <button
+              type="button"
               disabled={phase === 'submitting'}
               onClick={handleSubmitClick}
+              className="rounded-sm border border-accent bg-wash px-7 py-3 text-[15px] tracking-[0.06em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
             >
-              {phase === 'submitting' ? '判分中…' : '交 卷'}
-            </Button>
+              {phase === 'submitting' ? '判分中…' : '提交判分'}
+            </button>
+            <span className="text-[13px] text-quiet">
+              已答 {answeredCount} 题，未答 {unanswered.length} 题
+            </span>
           </div>
         )}
-      </PaperSheet>
+      </div>
+
+      {/* 右：280px 粘顶答题卡（作答态） */}
+      {!submitted && <AnswerCard paper={paper} answers={answers} />}
 
       {/* 漏答确认 */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -331,42 +388,6 @@ function PaperPageInner({ paperId }: { paperId: string }) {
       </Dialog>
 
       <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
-
-      {/* 重新出 */}
-      <Dialog open={reviseOpen} onOpenChange={setReviseOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>重新出卷</DialogTitle>
-            <DialogDescription>
-              告诉 AI 想怎么改（换题型、换考点、增减题量……），会生成一份新试卷
-              {!submitted && Object.keys(answers).length > 0 && '；当前已填的答案不会保留'}
-              。
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            rows={3}
-            placeholder="例如：把选择题换成词形转换"
-            value={reviseInstruction}
-            onChange={(e) => setReviseInstruction(e.target.value)}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReviseOpen(false)}>
-              保留这份卷
-            </Button>
-            <Button
-              disabled={reviseInstruction.trim() === '' || revise.isPending}
-              onClick={() =>
-                revise.mutate({
-                  paper_id: paper.paper_id,
-                  user_instruction: reviseInstruction.trim(),
-                })
-              }
-            >
-              {revise.isPending ? '正在组卷…' : '重新出卷'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

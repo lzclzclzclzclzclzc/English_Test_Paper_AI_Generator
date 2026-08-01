@@ -30,7 +30,7 @@ export function WordFormField({ question, mode, value, onChange, result }: WordF
         onChange={onChange}
       />
       {showHint && (
-        <p className="text-xs text-text-mid">（用 {question.hint} 的适当形式填空）</p>
+        <p className="text-[13px] text-muted-ink">（用 {question.hint} 的适当形式填空）</p>
       )}
     </div>
   )

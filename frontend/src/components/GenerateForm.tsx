@@ -2,8 +2,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 
 const generateSchema = z.object({
   user_query: z
@@ -30,8 +28,9 @@ interface GenerateFormProps {
 }
 
 /**
- * 生成输入条（Spec F § 5）：ink 描边输入区 + 内嵌按钮 + 建议 chips。
- * 首页只做新生成（fresh）；错题巩固 / 综合复习入口在「错题复习」页。
+ * 生成表单（handoff 第 4 屏）：44rem textarea（focus 边框转赤陶）+
+ * 建议 chips + 主按钮「生成试卷」+ 右侧状态小字。
+ * 首页只做新生成（fresh）；错题巩固 / 综合复习入口在「错题本」页。
  */
 export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: GenerateFormProps) {
   const form = useForm<GenerateFormValues>({
@@ -40,36 +39,25 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
   })
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
-      {/* 输入条：1.5px ink 边框、内嵌按钮 */}
-      <div className="flex items-end gap-2 rounded-lg border-[1.5px] border-ink bg-sheet p-2 shadow-[0_2px_8px_rgba(30,58,95,.08)]">
-        <Textarea
-          rows={3}
-          placeholder="例如：给我出 20 道八年级下册被动语态的选择题"
-          className="min-h-16 flex-1 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
-          {...form.register('user_query')}
-        />
-        <Button
-          type="submit"
-          disabled={isPending}
-          className="mb-1 shrink-0 px-6 font-bold tracking-[4px]"
-        >
-          {isPending ? '正在组卷…' : '出 卷'}
-        </Button>
-      </div>
+    <form className="flex max-w-[44rem] flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+      <textarea
+        rows={4}
+        placeholder="来 12 道现在完成时的单项选择，中等难度，最好带点时间状语的辨析"
+        className="w-full resize-none rounded-[3px] border border-ink-20 bg-transparent px-4 py-3 text-[16px] leading-[1.8] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent"
+        {...form.register('user_query')}
+      />
       {form.formState.errors.user_query && (
-        <p className="-mt-2 text-xs text-wrong">{form.formState.errors.user_query.message}</p>
+        <p className="-mt-3 text-[12px] text-accent">{form.formState.errors.user_query.message}</p>
       )}
-      {serverError && <p className="-mt-2 text-xs text-wrong">{serverError}</p>}
-      {quotaNotice && <p className="-mt-2 text-xs text-text-mid">{quotaNotice}</p>}
+      {serverError && <p className="-mt-3 text-[12px] text-accent">{serverError}</p>}
 
-      {/* 建议 chips */}
+      {/* 建议 chips：细线边小方角，hover 转赤陶 */}
       <div className="flex flex-wrap gap-2">
         {SUGGESTIONS.map((s) => (
           <button
             key={s}
             type="button"
-            className="rounded-full border border-line-strong bg-sheet px-3 py-1 text-xs text-text-mid transition-colors hover:border-muted-foreground hover:text-foreground"
+            className="rounded-sm border border-hairline px-3 py-1 text-[12.5px] text-muted-ink transition-colors hover:border-accent hover:bg-tint hover:text-accent"
             onClick={() => form.setValue('user_query', s, { shouldValidate: true })}
           >
             {s}
@@ -77,10 +65,25 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
         ))}
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <div className="flex items-center gap-4">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="rounded-sm border border-accent bg-wash px-8 py-3 text-[16px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
+        >
+          {isPending ? '生成中…' : '生成试卷'}
+        </button>
+        <span className="text-[12.5px] text-quiet">
+          {isPending ? '生成中，请勿关闭页面' : '通常 4–6 秒'}
+        </span>
+      </div>
+
+      {quotaNotice && <p className="text-[12px] text-quiet">{quotaNotice}</p>}
+
+      <p className="text-[12.5px] text-quiet">
         想练错题或综合复习？去{' '}
-        <Link to="/review" className="text-ink underline underline-offset-2">
-          错题复习
+        <Link to="/review" className="text-accent underline underline-offset-2">
+          错题本
         </Link>
       </p>
     </form>

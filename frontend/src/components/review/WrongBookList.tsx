@@ -20,7 +20,34 @@ interface WrongBookListProps {
   userId: string
 }
 
-/** 错题本：交卷时自动收集的错题（仅本设备），可勾选、展开复看、请求解析、移出。 */
+/** 勾选方块（handoff 第 9 屏）：选中 = 赤陶边 + wash 底 + ✓。 */
+function CheckSquare({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean
+  onChange: () => void
+  label: string
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+      className={cn(
+        'flex size-[18px] shrink-0 items-center justify-center rounded-sm border text-[11px] leading-none transition-colors',
+        checked ? 'border-accent bg-wash text-accent' : 'border-ink-20 text-transparent hover:border-ink-30',
+      )}
+    >
+      ✓
+    </button>
+  )
+}
+
+/** 错题本（handoff 第 9 屏）：行式列表，交卷时自动收集（仅本设备），可勾选、展开复看、请求解析、移出。 */
 export function WrongBookList({
   entries,
   selected,
@@ -32,12 +59,12 @@ export function WrongBookList({
 }: WrongBookListProps) {
   if (entries.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-line-strong px-6 py-20 text-center">
-        <p className="font-serif text-lg font-bold text-foreground">错题本还是空的</p>
-        <p className="text-[13.5px] text-text-mid">
+      <div className="flex flex-col items-start gap-2 border-t border-hairline pt-8">
+        <p className="text-[17px] text-ink">错题本还是空的</p>
+        <p className="text-[13.5px] text-muted-ink">
           交卷后答错的题会自动收进来，随时回来复练
         </p>
-        <Button asChild className="mt-3 px-6">
+        <Button asChild className="mt-3">
           <Link to="/">去出一份卷</Link>
         </Button>
       </div>
@@ -50,23 +77,18 @@ export function WrongBookList({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="flex items-baseline gap-3">
-          <h2 className="font-serif text-[15px] font-bold text-foreground">
-            错题本 <span className="font-sans text-[13px] font-normal">（{entries.length} 题）</span>
+          <h2 className="text-[17px] text-ink">
+            错题本 <span className="text-[13px] text-quiet">（{entries.length} 题）</span>
           </h2>
-          <span className="text-xs text-muted-foreground">仅保存在本设备，重做答对会自动移出</span>
+          <span className="text-[12px] text-quiet">仅保存在本设备，重做答对会自动移出</span>
         </div>
-        <label className="flex cursor-pointer items-center gap-1.5 text-[13px] text-text-mid">
-          <input
-            type="checkbox"
-            className="size-3.5 accent-ink"
-            checked={allSelected}
-            onChange={onToggleAll}
-          />
+        <label className="flex cursor-pointer items-center gap-2 text-[13px] text-muted-ink">
+          <CheckSquare checked={allSelected} onChange={onToggleAll} label="全选" />
           全选
         </label>
       </div>
 
-      <ul className="divide-y divide-line-soft rounded-md border border-line bg-sheet">
+      <ul className="border-t border-hairline">
         {entries.map((entry, i) => (
           <WrongBookRow
             key={`${entry.sourceQuestionId}-${entry.gradedAt}`}
@@ -124,57 +146,51 @@ function WrongBookRow({
   }
 
   return (
-    <li className="px-4 py-3">
+    <li className="border-b border-hairline py-[14px]">
       <div className="flex items-center gap-3">
-        <input
-          type="checkbox"
-          className="size-3.5 shrink-0 accent-ink"
-          checked={checked}
-          onChange={onToggle}
-          aria-label={`选中第 ${ordinal} 条错题`}
-        />
+        <CheckSquare checked={checked} onChange={onToggle} label={`选中第 ${ordinal} 条错题`} />
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
           onClick={() => setExpanded((v) => !v)}
         >
-          <span className="shrink-0 rounded-full border border-line-strong px-2 py-0.5 text-xs text-text-mid">
-            {TYPE_LABELS[question.question_type] ?? question.question_type}
+          <span className="shrink-0 text-[11px] tracking-[0.1em] text-quiet">
+            {(TYPE_LABELS[question.question_type] ?? question.question_type).toUpperCase()}
           </span>
-          <span className="min-w-0 flex-1 truncate font-question text-[14px] text-foreground">
-            {preview}
-          </span>
+          <span className="min-w-0 flex-1 truncate text-[15px] text-ink">{preview}</span>
           {entry.timesWrong > 1 && (
-            <span className="shrink-0 rounded-full bg-[#f6e8e4] px-2 py-0.5 text-xs font-medium text-wrong">
-              错过 {entry.timesWrong} 次
-            </span>
+            <span className="shrink-0 text-[12px] text-accent">错 {entry.timesWrong} 次</span>
           )}
           <ChevronDown
+            strokeWidth={1.5}
             className={cn(
-              'size-4 shrink-0 text-muted-foreground transition-transform',
+              'size-4 shrink-0 text-quiet transition-transform',
               expanded && 'rotate-180',
             )}
           />
         </button>
         <button
           type="button"
-          className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
+          className="shrink-0 text-[12px] text-quiet transition-colors hover:text-accent"
           onClick={onRemove}
         >
           移出
         </button>
       </div>
 
-      <p className="mt-1 pl-[26px] text-[12.5px] text-text-mid">
+      <p className="mt-1 pl-[30px] text-[12.5px] text-quiet">
         来自{' '}
-        <Link to={`/papers/${entry.paperId}`} className="underline-offset-2 hover:underline">
+        <Link
+          to={`/papers/${entry.paperId}`}
+          className="underline-offset-2 transition-colors hover:text-accent hover:underline"
+        >
           〈{entry.paperTitle}〉
         </Link>{' '}
         · {gradedAt}
       </p>
 
       {expanded && (
-        <div className="mt-1 border-t border-dashed border-line pl-[26px]">
+        <div className="kk-rise mt-1 pl-[30px]">
           <QuestionCard
             item={item}
             mode="review"

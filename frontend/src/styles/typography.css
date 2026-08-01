@@ -1,0 +1,64 @@
+/* ── Typography ─────────────────────────────────────────────────────────
+   Serif throughout — book-like, literary, sized for a printed page.
+
+   THE TWO-WEIGHT RULE — the serif ships only at 400 and 700. For Chinese,
+   font-medium/normal both render 400 and font-semibold/bold both render 700.
+   Weight is binary. Build hierarchy from SIZE and COLOR, never an imaginary
+   mid-weight.
+
+   THE MASTHEAD-ANCHOR RULE — the bold 喫茶去 masthead (display font) is the
+   heaviest text in the chrome. Content titles sit one size step up but stay
+   regular weight, so they never out-shout it.
+   ──────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Families ──
+     display — header masthead + nav only (京华老宋体, falls back to serif)
+     serif   — everything you read (Latin → Georgia, CJK → Noto Serif SC)
+     charter — Latin title-page epigraph + entrance splash (IM Fell English)
+     mono    — code blocks only */
+  /* 京华老宋体(KingHwa_OldSong)© TerryWang(王廷瑞),免费商用。
+     经 ZeoSeven Fonts CDN 分片按需加载(index.html <link>),
+     family 名为 "KingHwaOldSong";CDN 不可达时回退到阅读衬线。 */
+  --font-display: "KingHwaOldSong", "King Hwa Old Song", ui-serif, Georgia,
+    "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+  --font-serif: ui-serif, Georgia, "Times New Roman",
+    "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun",
+    serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+  --font-charter: "IM Fell English", Georgia, ui-serif, serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  /* ── The only two weights ── */
+  --weight-regular: 400;
+  --weight-bold: 700;
+
+  /* ── Type scale ──
+     display    — the one big element on a page (post title h1)
+     title-lg   — centered featured-feed title (regular weight, > masthead size)
+     title      — compact list title (archive, tags)
+     headline   — bold structural section labels (近期文章, 联系)
+     body       — prose
+     label      — quiet kickers (目录, dates) — tracked + --text-quiet
+     sm         — secondary text (excerpts, compact dates) */
+  --size-display: 1.875rem;   /* 30px */
+  --size-title-lg: 1.5rem;    /* 24px — featured title */
+  --size-title: 1.125rem;     /* 18px — compact title */
+  --size-headline: 1rem;      /* 16px */
+  --size-body: 1rem;          /* 16px */
+  --size-label: 0.75rem;      /* 12px */
+  --size-sm: 0.875rem;        /* 14px */
+
+  /* ── Line-heights ── */
+  --leading-tight: 1.2;       /* display */
+  --leading-snug: 1.35;       /* titles */
+  --leading-body: 1.9;        /* prose — wide for Chinese readability */
+
+  /* ── Editorial tracking ── */
+  --tracking-masthead: 0.06em;/* CJK masthead 喫茶去 */
+  --tracking-nav: 0.08em;     /* header nav links */
+  --tracking-label: 0.1em;    /* kicker labels */
+
+  /* ── Reading measure ── */
+  --measure-read: 42rem;      /* prose column cap for Chinese readability */
+  --measure-featured: 36rem;  /* centered featured-feed measure */
+}

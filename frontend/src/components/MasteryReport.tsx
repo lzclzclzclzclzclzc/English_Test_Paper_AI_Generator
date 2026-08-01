@@ -6,22 +6,19 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 /**
- * 掌握度颜色阈值（Spec F § 2.2）：≥0.7 用主色藏青（绿只表"答对"），
- * 0.4-0.7 用 --mid-score，<0.4 用 --wrong。
+ * 掌握度分级（handoff 第 7 屏，One Chroma Rule）：不用绿/黄/红，
+ * 进度条一律赤陶——mastery ≥ 0.4 降到 0.45 不透明度，< 0.4 全饱和，
+ * 即薄弱点更醒目。
  */
-function masteryColor(m: number): { bar: string; text: string } {
-  if (m >= 0.7) return { bar: 'bg-ink', text: 'text-ink' }
-  if (m >= 0.4) return { bar: 'bg-mid-score', text: 'text-mid-score' }
-  return { bar: 'bg-wrong', text: 'text-wrong' }
-}
+const WEAK_THRESHOLD = 0.4
 
 export function MasteryReport({ profile }: { profile: MasteryProfile }) {
-  useKnowledgePoints()  // 确保目录到达后重渲染，考点显示为中文名
+  useKnowledgePoints() // 确保目录到达后重渲染，考点显示为中文名
   if (profile.total_attempts_considered === 0) {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-md border border-line bg-sheet px-6 py-16 text-center">
-        <p className="font-serif text-base font-bold text-foreground">还没有答题记录</p>
-        <p className="text-[13px] text-text-mid">
+      <div className="flex flex-col items-start gap-4 border-t border-hairline pt-8">
+        <p className="text-[16px] text-ink">还没有答题记录</p>
+        <p className="text-[13px] text-muted-ink">
           做几份试卷之后，这里会标出你最需要巩固的考点
         </p>
         <Button asChild>
@@ -33,75 +30,95 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
 
   const sorted = [...profile.weak_kps].sort((a, b) => a.mastery - b.mastery)
   const weakest = sorted[0]
+  const weakCount = sorted.filter((kp) => kp.mastery < WEAK_THRESHOLD).length
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* 概览 */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13.5px] text-text-mid">
-        <span>
-          纳入统计 <b className="text-foreground">{profile.total_attempts_considered}</b> 次作答
-        </span>
+    <div className="flex flex-col gap-8">
+      {/* 顶部统计 */}
+      <div className="flex flex-wrap items-end gap-x-10 gap-y-4 border-b border-hairline pb-6">
+        <Stat label="纳入统计" value={String(profile.total_attempts_considered)} unit="次作答" />
+        <Stat label="覆盖考点" value={String(sorted.length)} unit="个" />
+        <Stat
+          label="建议优先补的薄弱点"
+          value={String(weakCount)}
+          unit="个"
+          accent={weakCount > 0}
+        />
         {profile.dominant_types.length > 0 && (
-          <span className="flex items-center gap-1.5">
-            主要练习：
-            {profile.dominant_types.map((t) => (
-              <span
-                key={t}
-                className="rounded-full border border-line-strong bg-sheet px-2.5 py-0.5 text-xs"
-              >
-                {TYPE_LABELS[t] ?? t}
-              </span>
-            ))}
+          <span className="pb-1 text-[13px] text-quiet">
+            主要练习：{profile.dominant_types.map((t) => TYPE_LABELS[t] ?? t).join('、')}
           </span>
         )}
       </div>
 
-      {/* 考点条形列表 */}
-      <div className="flex flex-col divide-y divide-line-soft rounded-md border border-line bg-sheet px-5">
+      {/* 考点行：名称+次数 / 进度条 / 分数 */}
+      <div className="flex flex-col">
         {sorted.map((kp) => {
-          const color = masteryColor(kp.mastery)
+          const weak = kp.mastery < WEAK_THRESHOLD
           return (
             <div
               key={kp.knowledge_point_id}
-              className="grid grid-cols-[170px_1fr_150px] items-center gap-4 py-3 max-sm:grid-cols-1 max-sm:gap-1.5"
+              className="grid grid-cols-[minmax(0,1fr)_200px_64px] items-center gap-4 border-b border-hairline py-[14px] max-sm:grid-cols-[minmax(0,1fr)_64px]"
             >
-              <span className="truncate text-[13.5px] text-foreground" title={kp.knowledge_point_id}>
-                {prettifyKp(kp.knowledge_point_id)}
-              </span>
-              <div className="h-2 overflow-hidden rounded-full bg-line-soft">
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <span className="truncate text-[14.5px] text-ink" title={kp.knowledge_point_id}>
+                  {prettifyKp(kp.knowledge_point_id)}
+                </span>
+                <span className="truncate font-mono text-[11px] text-quiet">
+                  {kp.knowledge_point_id} · {kp.attempts} 次作答
+                </span>
+              </div>
+              <div className="h-[6px] overflow-hidden bg-ink-10 max-sm:hidden">
                 <div
-                  className={cn('h-full rounded-full', color.bar)}
+                  className={cn('h-full bg-accent', !weak && 'opacity-45')}
                   style={{ width: `${Math.round(kp.mastery * 100)}%` }}
                 />
               </div>
-              <span className="text-right text-[13px]">
-                <b
-                  className={cn('font-bold', color.text)}
-                  title="稳健掌握度（Wilson 下界）：答题次数越少估计越保守"
-                >
-                  {Math.round(kp.mastery * 100)}%
-                </b>
-                <span className="ml-1.5 text-muted-foreground">
-                  {kp.attempts} 次
-                </span>
+              <span
+                className={cn('text-right font-mono text-[13px]', weak ? 'text-accent' : 'text-muted-ink')}
+                title="稳健掌握度（Wilson 下界）：答题次数越少估计越保守"
+              >
+                {kp.mastery.toFixed(2)}
               </span>
             </div>
           )
         })}
       </div>
 
-      {/* 最薄弱提示条：指向错题复习页（综合复习就是按画像出卷） */}
+      {/* 底部：薄弱点总结 + 出卷入口 */}
       {weakest && weakest.mastery < 0.7 && (
-        <div className="flex items-center justify-between rounded-md border border-[#d8e0ea] bg-ink-wash px-5 py-3.5">
-          <span className="text-[13.5px] text-ink">
-            建议优先巩固：<b>{prettifyKp(weakest.knowledge_point_id)}</b>（当前{' '}
-            {Math.round(weakest.mastery * 100)}%）
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <span className="text-[13.5px] text-muted-ink">
+            当前最薄弱：<b className="text-ink">{prettifyKp(weakest.knowledge_point_id)}</b>
+            （掌握度 {weakest.mastery.toFixed(2)}），建议从它开始补
           </span>
           <Button asChild size="sm">
-            <Link to="/review">针对性练一份</Link>
+            <Link to="/review">按薄弱点生成试卷 →</Link>
           </Button>
         </div>
       )}
+    </div>
+  )
+}
+
+function Stat({
+  label,
+  value,
+  unit,
+  accent,
+}: {
+  label: string
+  value: string
+  unit?: string
+  accent?: boolean
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[11px] tracking-[0.1em] text-quiet">{label}</span>
+      <span className={cn('text-[28px] leading-none', accent ? 'text-accent' : 'text-ink')}>
+        {value}
+        {unit && <span className="ml-1 text-[13px] text-quiet">{unit}</span>}
+      </span>
     </div>
   )
 }

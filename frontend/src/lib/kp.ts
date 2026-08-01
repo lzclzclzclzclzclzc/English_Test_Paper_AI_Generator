@@ -3,6 +3,7 @@ export const TYPE_LABELS: Record<string, string> = {
   single_choice: '单项选择',
   word_form: '词形转换',
   sentence_rewriting: '句子改写',
+  listening_single_choice: '听力选择',
 }
 
 /**

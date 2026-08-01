@@ -12,7 +12,13 @@ interface ListeningSingleChoiceFieldProps {
   result?: GradeResultItem
 }
 
-/** 听力选择题：播放控件 + 男女声标注的听力原文 + 双列选项 */
+/**
+ * 听力选择题（handoff 第 5 屏）：播放控件 + 男女声标注的听力原文 +
+ * 纵向选项列表（与 SingleChoiceField 一致）。
+ *
+ * Kissaten 设计系统：terracotta 是唯一彩色，M/W 仅用文字标签区分，
+ * 不使用 blue/pink（违反 one chroma rule）。
+ */
 export function ListeningSingleChoiceField({
   question,
   mode,
@@ -42,16 +48,16 @@ export function ListeningSingleChoiceField({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3.5">
       {/* 播放控件 */}
       <button
         onClick={handlePlay}
         disabled={isPlaying}
         className={cn(
-          'flex w-fit items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all',
+          'flex w-fit items-center gap-2 rounded-sm border px-4 py-2 text-[14px] transition-colors',
           isPlaying
-            ? 'bg-muted text-muted-foreground cursor-not-allowed'
-            : 'bg-ink text-paper hover:bg-ink/90',
+            ? 'cursor-not-allowed border-ink-15 text-quiet'
+            : 'border-accent bg-wash text-accent hover:bg-accent hover:text-paper',
         )}
       >
         <svg
@@ -80,29 +86,24 @@ export function ListeningSingleChoiceField({
         <span>{isPlaying ? '播放中...' : '播放听力'}</span>
       </button>
 
-      {/* 听力原文 */}
+      {/* 听力原文：M/W 用 text-quiet 标签，正文用 text-muted-ink */}
       {question.stem && (
-        <div className="space-y-1 text-sm text-text-mid">
+        <div className="flex flex-col gap-1 text-[15px] leading-[1.9]">
           {question.stem.split('\n').map((line, index) => {
             const speakerMatch = line.match(/^(M|W):\s*(.*)$/)
             if (speakerMatch) {
               const [, speaker, text] = speakerMatch
               return (
-                <p key={index}>
-                  <span
-                    className={cn(
-                      'font-medium',
-                      speaker === 'M' ? 'text-blue-600' : 'text-pink-600',
-                    )}
-                  >
-                    {speaker === 'M' ? '男' : '女'}:
+                <p key={index} className="text-muted-ink">
+                  <span className="mr-2 font-mono text-[13px] text-quiet">
+                    {speaker === 'M' ? '♂ M' : '♀ W'}
                   </span>
-                  <span className="ml-2 font-question">{text}</span>
+                  <span>{text}</span>
                 </p>
               )
             }
             return (
-              <p key={index} className="font-medium font-question">
+              <p key={index} className="font-bold text-ink">
                 {line}
               </p>
             )
@@ -110,12 +111,12 @@ export function ListeningSingleChoiceField({
         </div>
       )}
 
-      {/* 选项（参考单项选择题） */}
+      {/* 选项（与 SingleChoiceField 一致的纵向布局 + Kissaten 样式） */}
       {mode === 'answering' ? (
         <RadioGroup
           value={value ?? ''}
           onValueChange={(v) => onChange?.(v)}
-          className="grid grid-cols-2 gap-2 max-sm:grid-cols-1"
+          className="flex max-w-[34rem] flex-col gap-2"
         >
           {options.map((opt) => {
             const selected = value === opt.label
@@ -123,30 +124,21 @@ export function ListeningSingleChoiceField({
               <label
                 key={opt.label}
                 className={cn(
-                  'flex cursor-pointer items-center gap-2.5 rounded-md px-3.5 py-2 text-sm transition-colors',
+                  'flex cursor-pointer items-baseline rounded-sm border px-4 py-[11px] text-[15px] transition-colors',
                   selected
-                    ? 'border-[1.5px] border-ink bg-ink-wash font-medium'
-                    : 'border border-line-strong bg-sheet hover:border-muted-foreground',
+                    ? 'border-accent bg-wash text-ink'
+                    : 'border-ink-15 text-muted-ink hover:bg-tint',
                 )}
               >
                 <RadioGroupItem value={opt.label} className="sr-only" />
-                <span
-                  className={cn(
-                    'flex size-5 shrink-0 items-center justify-center rounded-full text-xs',
-                    selected
-                      ? 'bg-ink font-bold text-paper'
-                      : 'border-[1.5px] border-line-strong text-text-mid',
-                  )}
-                >
-                  {opt.label}
-                </span>
-                <span className="font-question">{opt.text}</span>
+                <span className="mr-4 shrink-0 font-mono text-[13px] opacity-70">{opt.label}</span>
+                <span>{opt.text}</span>
               </label>
             )
           })}
         </RadioGroup>
       ) : (
-        <div className="grid grid-cols-2 gap-2 max-sm:grid-cols-1">
+        <div className="flex max-w-[34rem] flex-col gap-2">
           {options.map((opt) => {
             const isUser = userLabel === opt.label
             const isCorrect = correctLabel === opt.label
@@ -154,36 +146,19 @@ export function ListeningSingleChoiceField({
               <div
                 key={opt.label}
                 className={cn(
-                  'flex items-center gap-2.5 rounded-md px-3.5 py-2 text-sm',
+                  'flex items-baseline rounded-sm border px-4 py-[11px] text-[15px]',
                   isCorrect
-                    ? 'border-[1.5px] border-correct'
+                    ? 'border-accent bg-wash text-ink'
                     : isUser
-                      ? 'border-[1.5px] border-wrong'
-                      : 'border border-line-strong bg-sheet opacity-70',
+                      ? 'border-ink-30 text-muted-ink'
+                      : 'border-ink-15 text-quiet',
                 )}
               >
-                <span
-                  className={cn(
-                    'flex size-5 shrink-0 items-center justify-center rounded-full text-xs',
-                    isCorrect
-                      ? 'bg-correct font-bold text-paper'
-                      : isUser
-                        ? 'bg-wrong font-bold text-paper'
-                        : 'border-[1.5px] border-line-strong text-text-mid',
-                  )}
-                >
-                  {opt.label}
-                </span>
-                <span className="font-question">{opt.text}</span>
-                {isCorrect && (
-                  <span className="ml-auto font-question font-black text-correct">
-                    ✓
-                  </span>
-                )}
+                <span className="mr-4 shrink-0 font-mono text-[13px] opacity-70">{opt.label}</span>
+                <span>{opt.text}</span>
+                {isCorrect && <span className="ml-auto pl-3 font-bold text-accent">✓</span>}
                 {isUser && !isCorrect && (
-                  <span className="ml-auto font-question font-black text-wrong">
-                    ✗
-                  </span>
+                  <span className="ml-auto pl-3 font-bold text-accent">✕</span>
                 )}
               </div>
             )

@@ -10,12 +10,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-/** 「会员」小标：标注会员专属功能（暖金色，与卷面米黄同族）。 */
+/** 「会员」小标：标注会员专属功能（赤陶细边，One Chroma）。 */
 export function MemberPill({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        'rounded-full border border-[#b08d3e]/45 bg-[#faf6ec] px-1.5 py-px text-[10px] font-medium leading-none text-[#8a6d2f]',
+        'rounded-sm border border-accent/40 px-1.5 py-px text-[10px] leading-none text-accent',
         className,
       )}
     >
@@ -37,7 +37,7 @@ export function UpgradeDialog({ reason, onClose }: UpgradeDialogProps) {
     <Dialog open={reason !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[380px]">
         <DialogHeader>
-          <DialogTitle className="font-serif">会员功能</DialogTitle>
+          <DialogTitle>会员功能</DialogTitle>
           <DialogDescription>{reason}</DialogDescription>
         </DialogHeader>
         <DialogFooter>

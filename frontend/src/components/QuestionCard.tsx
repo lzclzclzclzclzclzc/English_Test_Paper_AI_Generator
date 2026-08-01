@@ -6,7 +6,7 @@ import { SingleChoiceField } from '@/components/question-fields/SingleChoiceFiel
 import { ListeningSingleChoiceField } from '@/components/question-fields/ListeningSingleChoiceField'
 import { WordFormField } from '@/components/question-fields/WordFormField'
 import { SentenceRewritingField } from '@/components/question-fields/SentenceRewritingField'
-import { prettifyKp } from '@/lib/kp'
+import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { cn } from '@/lib/utils'
 
@@ -21,7 +21,16 @@ interface QuestionCardProps {
   solutionSlot?: ReactNode
 }
 
-/** 单题渲染：题号行 + 题型分派 + review 态的答案比对/解析。 */
+const REVISION_LABELS: Record<PaperItem['revision_mode'], string> = {
+  fresh: 'FRESH 新出',
+  light: 'LIGHT 轻改',
+  original: 'ORIGINAL 原题',
+}
+
+/**
+ * 单题（handoff 第 5 屏）：`<article>` + 底部细线；题号等宽弱色 +
+ * 题型/知识点/改题档位 11px 大写标签；review 态状态圆 ✓ 墨色边 / ✕ 赤陶。
+ */
 export function QuestionCard({
   item,
   mode,
@@ -30,28 +39,39 @@ export function QuestionCard({
   result,
   solutionSlot,
 }: QuestionCardProps) {
-  useKnowledgePoints()  // 目录到达后重渲染，考点标签显示为中文名
+  useKnowledgePoints() // 目录到达后重渲染，考点标签显示为中文名
   const { question } = item
   const isReview = mode === 'review'
 
+  const labels: string[] = [
+    (TYPE_LABELS[question.question_type] ?? question.question_type).toUpperCase(),
+  ]
+  // 答题态不展示考点标签（避免提示答案），review 态补上
+  if (isReview) {
+    labels.push(...question.knowledge_point_ids.map(prettifyKp))
+  }
+  labels.push(REVISION_LABELS[item.revision_mode] ?? item.revision_mode)
+
   return (
-    <div className="flex gap-3 py-6">
-      {/* 题号列：review 态前缀 ✓/✗ */}
-      <div className="flex w-10 shrink-0 flex-col items-end gap-0.5 pt-0.5">
+    <article id={`q-${item.index}`} className="flex scroll-mt-10 flex-col gap-3 py-10 first:pt-6">
+      <div className="flex items-center gap-3">
         {isReview && result && (
           <span
             className={cn(
-              'font-question text-base font-black leading-none',
-              result.is_correct ? 'text-correct' : 'text-wrong',
+              'flex size-[22px] shrink-0 items-center justify-center rounded-full border text-[12px] leading-none',
+              result.is_correct ? 'border-ink-30 text-ink' : 'border-accent text-accent',
             )}
           >
-            {result.is_correct ? '✓' : '✗'}
+            {result.is_correct ? '✓' : '✕'}
           </span>
         )}
-        <span className="text-sm font-medium text-text-mid">{item.index}.</span>
+        <span className="font-mono text-[13px] text-quiet">
+          {String(item.index).padStart(2, '0')}
+        </span>
+        <span className="text-[11px] tracking-[0.1em] text-quiet">{labels.join(' · ')}</span>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-3">
+      <div className="flex min-w-0 flex-col gap-3">
         {question.question_type === 'single_choice' ? (
           <SingleChoiceField
             question={question}
@@ -86,35 +106,20 @@ export function QuestionCard({
           />
         )}
 
-        {/* review 态：答错时的答案比对（单选已在选项上高亮，不重复） */}
+        {/* review 态：答错时的答案比对（单选/听力已在选项上标注，不重复） */}
         {isReview && result && !result.is_correct && question.question_type !== 'single_choice' && question.question_type !== 'listening_single_choice' && (
-          <div className="flex flex-col gap-0.5 text-[13px]">
-            <p className="text-wrong">
-              你的答案：<span className="line-through">{formatUserAnswer(result.user_answer)}</span>
-            </p>
-            <p className="font-bold text-correct">
-              正确答案：{formatCorrectAnswer(result.correct_answer)}
-            </p>
-          </div>
-        )}
-
-        {/* review 态附注：考点标签（答题态不显示，避免提示答案）+ AI 改写降级说明 */}
-        {isReview && question.knowledge_point_ids.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {question.knowledge_point_ids.map((kp) => (
-              <span
-                key={kp}
-                title={kp}
-                className="rounded-full border border-line-strong px-2 py-0.5 text-[11px] text-text-mid"
-              >
-                {prettifyKp(kp)}
-              </span>
-            ))}
+          <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-[13px]">
+            <span className="text-accent">
+              你的答案：{formatUserAnswer(result.user_answer)}
+            </span>
+            <span className="text-ink">
+              正确答案：<b>{formatCorrectAnswer(result.correct_answer)}</b>
+            </span>
           </div>
         )}
 
         {solutionSlot}
       </div>
-    </div>
+    </article>
   )
 }

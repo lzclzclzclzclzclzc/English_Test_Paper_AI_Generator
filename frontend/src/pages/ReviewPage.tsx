@@ -4,6 +4,7 @@ import { getReadiness } from '@/api/health'
 import { useAuth } from '@/hooks/useAuth'
 import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import { loadWrongBook, removeEntry, toWrongItemRefs, type WrongBookEntry } from '@/lib/wrongBook'
+import { PageHeader } from '@/components/PageHeader'
 import { ReviewGeneratePanel } from '@/components/review/ReviewGeneratePanel'
 import { WrongBookList } from '@/components/review/WrongBookList'
 import { UpgradeDialog } from '@/components/UpgradeDialog'
@@ -92,16 +93,14 @@ export function ReviewPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[880px] flex-col gap-6 px-6 pt-12">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-serif text-2xl font-bold text-foreground">错题复习</h1>
-        <p className="text-[13.5px] text-text-mid">
-          答错的题都收在错题本里，可以定向巩固，也可以让 AI 按薄弱考点出复习卷
-        </p>
-      </div>
+    <div className="flex max-w-[56rem] flex-col gap-8">
+      <PageHeader
+        title="错题本"
+        intro="答错的题都收在错题本里，可以定向巩固，也可以让 AI 按薄弱考点出复习卷。"
+      />
 
       {readiness.data?.status === 'not_ready' && (
-        <div className="rounded-md border border-line bg-[#faf8f3] px-4 py-2.5 text-[13px] text-text-mid">
+        <div className="max-w-[44rem] border-t border-accent pt-2.5 text-[13px] text-muted-ink">
           题库正在准备中，出卷可能暂时失败，可以稍后再试
         </div>
       )}

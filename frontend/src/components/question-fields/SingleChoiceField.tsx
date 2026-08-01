@@ -10,7 +10,11 @@ interface SingleChoiceFieldProps {
   result?: GradeResultItem
 }
 
-/** 单选题（Spec F § 5 选择题选项）：双列选项 grid，字母圆圈 + 选中实心。 */
+/**
+ * 单选题（handoff 第 5 屏）：34rem 宽纵向选项列表，选项字母等宽 13px，
+ * 选中 = 赤陶边 + accent-wash 底。review 态：正确项赤陶实边 + ✓，
+ * 错选项 ✕ 赤陶字。
+ */
 export function SingleChoiceField({
   question,
   mode,
@@ -28,18 +32,16 @@ export function SingleChoiceField({
       : undefined
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3.5">
       {question.stem && (
-        <p className="font-question text-[15px] leading-[1.7] text-foreground">
-          {question.stem}
-        </p>
+        <p className="text-[17px] leading-[1.9] text-ink">{question.stem}</p>
       )}
 
       {mode === 'answering' ? (
         <RadioGroup
           value={value ?? ''}
           onValueChange={(v) => onChange?.(v)}
-          className="grid grid-cols-2 gap-2 max-sm:grid-cols-1"
+          className="flex max-w-[34rem] flex-col gap-2"
         >
           {options.map((opt) => {
             const selected = value === opt.label
@@ -47,30 +49,21 @@ export function SingleChoiceField({
               <label
                 key={opt.label}
                 className={cn(
-                  'flex cursor-pointer items-center gap-2.5 rounded-md px-3.5 py-2 text-sm transition-colors',
+                  'flex cursor-pointer items-baseline rounded-sm border px-4 py-[11px] text-[15px] transition-colors',
                   selected
-                    ? 'border-[1.5px] border-ink bg-ink-wash font-medium'
-                    : 'border border-line-strong bg-sheet hover:border-muted-foreground',
+                    ? 'border-accent bg-wash text-ink'
+                    : 'border-ink-15 text-muted-ink hover:bg-tint',
                 )}
               >
                 <RadioGroupItem value={opt.label} className="sr-only" />
-                <span
-                  className={cn(
-                    'flex size-5 shrink-0 items-center justify-center rounded-full text-xs',
-                    selected
-                      ? 'bg-ink font-bold text-paper'
-                      : 'border-[1.5px] border-line-strong text-text-mid',
-                  )}
-                >
-                  {opt.label}
-                </span>
-                <span className="font-question">{opt.text}</span>
+                <span className="mr-4 shrink-0 font-mono text-[13px] opacity-70">{opt.label}</span>
+                <span>{opt.text}</span>
               </label>
             )
           })}
         </RadioGroup>
       ) : (
-        <div className="grid grid-cols-2 gap-2 max-sm:grid-cols-1">
+        <div className="flex max-w-[34rem] flex-col gap-2">
           {options.map((opt) => {
             const isUser = userLabel === opt.label
             const isCorrect = correctLabel === opt.label
@@ -78,30 +71,19 @@ export function SingleChoiceField({
               <div
                 key={opt.label}
                 className={cn(
-                  'flex items-center gap-2.5 rounded-md px-3.5 py-2 text-sm',
+                  'flex items-baseline rounded-sm border px-4 py-[11px] text-[15px]',
                   isCorrect
-                    ? 'border-[1.5px] border-correct'
+                    ? 'border-accent bg-wash text-ink'
                     : isUser
-                      ? 'border-[1.5px] border-wrong'
-                      : 'border border-line-strong bg-sheet opacity-70',
+                      ? 'border-ink-30 text-muted-ink'
+                      : 'border-ink-15 text-quiet',
                 )}
               >
-                <span
-                  className={cn(
-                    'flex size-5 shrink-0 items-center justify-center rounded-full text-xs',
-                    isCorrect
-                      ? 'bg-correct font-bold text-paper'
-                      : isUser
-                        ? 'bg-wrong font-bold text-paper'
-                        : 'border-[1.5px] border-line-strong text-text-mid',
-                  )}
-                >
-                  {opt.label}
-                </span>
-                <span className="font-question">{opt.text}</span>
-                {isCorrect && <span className="ml-auto font-question font-black text-correct">✓</span>}
+                <span className="mr-4 shrink-0 font-mono text-[13px] opacity-70">{opt.label}</span>
+                <span>{opt.text}</span>
+                {isCorrect && <span className="ml-auto pl-3 font-bold text-accent">✓</span>}
                 {isUser && !isCorrect && (
-                  <span className="ml-auto font-question font-black text-wrong">✗</span>
+                  <span className="ml-auto pl-3 font-bold text-accent">✕</span>
                 )}
               </div>
             )

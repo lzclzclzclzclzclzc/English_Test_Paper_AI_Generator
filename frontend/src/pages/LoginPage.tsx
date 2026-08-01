@@ -1,17 +1,12 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { ScrollText } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { login, register } from '@/api/auth'
 import { ApiError } from '@/api/client'
 import { queryClient } from '@/lib/queryClient'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { cn } from '@/lib/utils'
 
 /** 与后端 UserCredentials 严格对齐（backend-api.md）：边界改动必须两处同步。 */
 const credentialsSchema = z.object({
@@ -26,6 +21,10 @@ const credentialsSchema = z.object({
 type Credentials = z.infer<typeof credentialsSchema>
 type Mode = 'login' | 'register'
 
+const inputClass =
+  'w-full rounded-[3px] border border-ink-20 bg-transparent px-3 py-2.5 text-[15px] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent'
+
+/** 登录 / 注册（handoff 第 2 屏）：左右两栏，中间竖细线，右栏 24rem 表单。 */
 export function LoginPage() {
   const [mode, setMode] = useState<Mode>('login')
   const navigate = useNavigate()
@@ -57,79 +56,113 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-8 bg-background px-4">
-      {/* 品牌 + slogan 在卡片外（Spec F § 5 登录页） */}
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-[4px] bg-ink text-paper">
-            <ScrollText className="size-6" strokeWidth={2} />
-          </span>
-          <span className="font-serif text-2xl font-bold text-foreground">墨卷</span>
-        </div>
-        <p className="text-[13px] text-muted-foreground">用你的话，出你的卷</p>
+    <div className="grid min-h-svh grid-cols-[1.15fr_1fr] bg-background max-md:grid-cols-1">
+      {/* 左栏：品牌 / 说明 / 底部小字 */}
+      <div className="flex flex-col justify-between border-r border-hairline px-14 py-12 max-md:hidden">
+        <Link
+          to="/welcome"
+          className="self-start text-[21px] tracking-[0.06em] text-ink [font-family:var(--font-display)]"
+        >
+          中考英语 AI 试卷生成器
+        </Link>
+        <p className="max-w-[24em] text-[26px] leading-[1.6] text-ink">
+          说一句你想练什么，<mark>从真题库里出一份能直接做的卷子</mark>。
+        </p>
+        <p className="text-[12px] text-quiet">用户名 + 密码本地登录 · 会话 30 天滑动过期</p>
       </div>
 
-      <Card className="w-full max-w-[400px]">
-        <CardContent className="pt-6">
-          <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
-            <TabsList className="mb-5 grid w-full grid-cols-2">
-              <TabsTrigger value="login">登录</TabsTrigger>
-              <TabsTrigger value="register">注册</TabsTrigger>
-            </TabsList>
-          </Tabs>
+      {/* 右栏：表单 */}
+      <div className="flex items-center justify-center px-8 py-12">
+        <div className="w-full max-w-[24rem]">
+          {/* 登录 / 注册 tabs：选中项 2px 赤陶下边框 */}
+          <div className="mb-8 flex gap-6 border-b border-hairline">
+            {(
+              [
+                ['login', '登录'],
+                ['register', '注册'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setMode(value)}
+                className={cn(
+                  '-mb-px border-b-2 pb-2.5 text-[15px] transition-colors',
+                  mode === value
+                    ? 'border-accent text-ink'
+                    : 'border-transparent text-quiet hover:text-ink',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={form.handleSubmit(onSubmit)}
-            noValidate
-          >
+          <form className="flex flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="username">用户名</Label>
-              <Input
+              <label htmlFor="username" className="text-[13px] text-muted-ink">
+                用户名
+              </label>
+              <input
                 id="username"
                 autoComplete="username"
-                placeholder="3-32 位字母、数字或下划线"
+                className={inputClass}
                 {...form.register('username')}
               />
               {form.formState.errors.username && (
-                <p className="text-xs text-wrong">
+                <p className="text-[12px] text-accent">
                   {form.formState.errors.username.message}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">密码</Label>
-              <Input
+              <label htmlFor="password" className="text-[13px] text-muted-ink">
+                密码
+              </label>
+              <input
                 id="password"
                 type="password"
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                placeholder="至少 6 位"
+                className={inputClass}
                 {...form.register('password')}
               />
               {form.formState.errors.password && (
-                <p className="text-xs text-wrong">
+                <p className="text-[12px] text-accent">
                   {form.formState.errors.password.message}
                 </p>
               )}
             </div>
 
+            <p className="text-[12px] text-quiet">3–32 位字母数字下划线 · 密码 6–128 位</p>
+
             {form.formState.errors.root && (
-              <p className="text-xs text-wrong">{form.formState.errors.root.message}</p>
+              <p className="text-[12px] text-accent">{form.formState.errors.root.message}</p>
             )}
 
-            <Button type="submit" className="mt-1" disabled={form.formState.isSubmitting}>
+            <button
+              type="submit"
+              disabled={form.formState.isSubmitting}
+              className="rounded-sm border border-accent bg-wash py-2.5 text-[15px] tracking-[0.06em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-50"
+            >
               {form.formState.isSubmitting
                 ? mode === 'login'
                   ? '登录中…'
                   : '注册中…'
                 : mode === 'login'
-                  ? '登 录'
-                  : '注 册'}
-            </Button>
+                  ? '登录'
+                  : '注册'}
+            </button>
+
+            <Link
+              to="/welcome"
+              className="self-start text-[13px] text-quiet transition-colors hover:text-accent"
+            >
+              返回首页
+            </Link>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

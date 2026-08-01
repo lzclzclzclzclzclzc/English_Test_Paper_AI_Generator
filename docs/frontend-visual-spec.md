@@ -1,175 +1,192 @@
-# 前端视觉规范 —「墨卷」
+# 前端视觉规范 —「喫茶去」
 
-> Spec F · 2026-07-07 定稿。视觉来源：`视觉方向探索.dc.html` 中 1a / 2a / 2b / 2c。
+> Spec F v2 · 2026-07-27 改版。视觉来源：设计交接包 `design_handoff_test_paper_ui`
+> （`English Test Paper AI Generator.zip`，内含 hifi 原型 `试卷生成器.dc.html` + `tokens/*.css`）。
+> 取代 2026-07-07 的「墨卷」版（v1，藏青墨蓝 + 卷面拟物）；卷面语言（装订线、文武线、分数章）随 v1 一并废弃。
 > 配合 Spec D（frontend-design）使用：Spec D 定功能结构，本文定视觉表现。
 
 ---
 
 ## 1. 设计理念
 
-**卷面排版 + 现代交互控件。** 试卷本体像一张真实的中考卷（衬线卷头、双线分隔、装订线），
-但一切可交互元素（输入框、选项、按钮、进度条）是现代组件。
-仪式感来自"纸"，易用性来自"控件"，两者不混用：**纸上的东西不发光、控件不仿古。**
+**暖纸底 · 软炭墨字 · 单一赤陶强调。** 整个界面像一页安静的书：全站衬线字、
+1px 细线分层、大量留白；唯一的饱和色（赤陶 Terracotta Coral）只出现在
+可交互与需要强调的地方。没有卡片、没有阴影、没有拟物装饰。
+
+### 三条硬规则（实现必须守住）
+
+1. **One Chroma Rule** — 赤陶是全站唯一的饱和色，只用于交互与强调
+   （主按钮、选中态、当前导航项、进度条、错题标记、薄弱知识点）。
+   **不用绿/黄/红做语义色**：对错用「✓ 墨色边 / ✕ 赤陶」表达，
+   掌握度用赤陶不透明度分级表达（见 § 6 掌握度）。
+2. **Tinted Neutral Rule** — 禁止 `#000` / `#fff` 和无色阶灰。所有边框、
+   分隔线、hover 底色都是不透明度分级的墨色（`--ink-5/10/15/20/30`）。
+   唯一例外：支付二维码底必须纯白（扫码识别的功能性要求）。
+3. **Flat-Paper Rule** — 无静置阴影、无卡片盒子、无左边框强调条。
+   层次靠 1px 细线、色调底纹（`--hover-tint` / `--accent-wash`）和留白。
+   阴影只允许出现在真正悬浮的覆盖层（Dialog / Select 下拉）。
 
 ---
 
-## 2. 色板
+## 2. 设计 Tokens
 
-### 2.1 基础色
+**来源即真相**：交接包 `tokens/colors.css / typography.css / spacing.css / base.css`
+原样拷入 `frontend/src/styles/`，由 `index.css` 引入。改 token 值请改这些文件，
+不要在组件里写死颜色。核心值：
 
 | Token | 值 | 用途 |
 |---|---|---|
-| `--ink` | `#1e3a5f` | 主色（藏青墨蓝）：主按钮、选中态、激活 nav、掌握≥70% |
-| `--ink-wash` | `#eef2f7` | 主色淡底：选中选项背景、提示条背景 |
-| `--paper` | `#f7f5f0` | 页面背景（暖白，非纯白） |
-| `--sheet` | `#ffffff` | 卷面/卡片背景 |
-| `--text` | `#2c2a24` | 正文（暖黑，非纯黑） |
-| `--text-mid` | `#55524a` | 次级正文 |
-| `--muted` | `#8a8578` | 辅助文字、meta 信息 |
-| `--line` | `#e3ded2` | 卡片边框 |
-| `--line-soft` | `#f0ece2` | 内部分隔线、进度条底 |
-| `--line-strong` | `#ddd8cc` | 输入框默认边框 |
+| `--ink` | `oklch(38% 0.004 90)` ≈ `#353534` | 所有文字、边框的基色 |
+| `--rice-cream` / `--surface-page` | `oklch(96.8% 0.005 95)` ≈ `#f6f5f1` | 页面底色 |
+| `--accent` | `oklch(49% 0.155 33)` 赤陶 | 唯一强调色 |
+| `--accent-wash` | `color-mix(accent 18%, transparent)` | 主按钮底、选中底、`<mark>` 高亮底 |
+| `--ink-5 / 10 / 15 / 20 / 30` | 墨色 5%–30% | hover 底 / 弱线 / 默认细线 / 强线（输入框边） / 下划线 |
+| `--border-hairline` | `= --ink-15` | 默认 1px 分隔线 |
+| `--text-muted` / `--text-quiet` | 墨色 82% / 75% | 次要文字 / 标签与日期（对比度下限） |
+| 深色模式 | `.dark` 类 | 底 `oklch(24% 0.016 72)` 暖炭，字暖白，强调 `oklch(72% 0.13 35)` 亮赤陶 |
 
-### 2.2 语义色（判对错 / 掌握度）
+### Tailwind 语义类映射（`index.css` @theme）
 
-三色同一明度/彩度族，不引入第四种：
+| 类 | 指向 |
+|---|---|
+| `text-ink` / `text-muted-ink` / `text-quiet` | `--ink` / `--text-muted` / `--text-quiet` |
+| `text-accent` `border-accent` | `--accent` |
+| `bg-wash` | `--accent-wash` |
+| `bg-tint` | `--hover-tint`（hover 薄底） |
+| `border-hairline` | `--border-hairline` |
+| `border-ink-10/15/20/30`、`divide-ink-10` | 对应墨色阶 |
 
-| Token | 值 | 用途 |
-|---|---|---|
-| `--wrong` / `--weak` | `#a8503e` | 错题 ✗、薄弱 <40%、分数章 |
-| `--mid` | `#b98a3a` | 一般 40–70% |
-| `--right` | `#3e6e4e` | 答对 ✓、正确答案文字 |
-
-掌握 ≥70% 的进度条用 `--ink`（不是绿色）——绿色只标"对错"，藏青标"程度"。
-
-### 2.3 shadcn / Tailwind 映射
-
-```css
-:root {
-  --background: 45 26% 95%;      /* #f7f5f0 */
-  --foreground: 45 10% 16%;      /* #2c2a24 */
-  --card: 0 0% 100%;
-  --primary: 214 52% 25%;        /* #1e3a5f */
-  --primary-foreground: 45 26% 95%;
-  --secondary: 214 33% 95%;      /* #eef2f7 */
-  --muted: 43 18% 91%;           /* #f0ece2 */
-  --muted-foreground: 40 7% 50%; /* #8a8578 */
-  --border: 40 21% 86%;          /* #e3ded2 */
-  --input: 43 20% 83%;           /* #ddd8cc */
-  --ring: 214 52% 25%;
-  --destructive: 11 45% 45%;     /* #a8503e */
-  --radius: 0.375rem;            /* 6px —— 全站统一小圆角 */
-}
-```
-
-深色模式第一版不做；变量体系已就位，后续补一套 `.dark` 即可。
+shadcn 变量（`--background/--foreground/--border/--primary/--ring/--muted-foreground` 等）
+全部指向上述 token，shadcn 组件自动进入这套外观。
+Button 变体已重写：default = 赤陶边 + wash 底 + 墨字（hover 字转赤陶）；
+outline/secondary = 细线边透明底（hover 转赤陶边字 + tint 底）。
 
 ---
 
-## 3. 字体
+## 3. 字体与字重
 
-| 角色 | 字体 | 用法 |
-|---|---|---|
-| 卷头/标题 | `"Noto Serif SC", serif` | 试卷标题(900)、大题标题(700)、品牌字、页面 h1 |
-| 界面正文 | `"Noto Sans SC", system-ui, sans-serif` | 一切 UI 文字，400/500/700 |
-| 英文题干 | `Georgia, "Noto Serif SC", serif` | 题目内容（含填空句） |
+- 全站衬线：正文 `--font-serif`（拉丁 Georgia、中文 Noto Serif SC，
+  Google Fonts 只载 400/700 两个字重，见 `index.html`）。
+- **display 字体已接入**（2026-07-29）：京华老宋体（KingHwa_OldSong，© TerryWang，
+  免费商用）经 ZeoSeven Fonts CDN 分片按需加载
+  （`https://fontsapi.zeoseven.com/309/main/result.css`，family `KingHwaOldSong`），
+  可覆盖动态文本（试卷标题）；CDN 不可达时回退正文衬线。用于：品牌
+  （侧栏 / 落地页页眉 / 登录页左栏）+ **所有页面 h1**（对 handoff「display 仅页眉品牌」
+  的一处有意扩展——补足「版刻 vs 书页」的对比，让 400 字重标题有存在感）+
+  落地页 h2。后续优化项：自托管子集替代 CDN。
+- 代码 / 题号 / 日期 / wilson 分数用 `--font-mono`（系统等宽）。
+- **只有 400 和 700 两个字重**。`index.css` 已把 Tailwind 的
+  `font-medium → 400`、`font-semibold → 700`，不会出现中间字重。
 
-规则：
-- 衬线只出现在"纸"上（卷面、品牌），控件里一律 Sans。
-- 试卷标题 24px/900/字距 2px；大题标题 16px/700；题干 15px 行高 1.7；UI 正文 13–14.5px；meta 12–12.5px。**12px 是下限。**
-- 中文按钮字可加宽字距（"交 卷" letter-spacing 4px）制造卷面仪式感。
+**字号 / 行高**（px）：落地页大标题 58/1.32；页面 h1 **34**/400（display 字体，
+`PageHeader` 组件统一；handoff 原值 30，2026-07-29 上调）；区块 h2 24/400；
+小节标题 17–19；正文 15–16，行高 1.9，正文宽度上限 42rem；表格与元信息 13–14；
+标签 10.5–12 / 700 / letter-spacing 0.1–0.14em（拉丁大写标签）。
 
-字体引入：
+**圆角**：`0.25rem`（按钮、chip、格子）、`0.375rem`（代码块、解析框、头像）、
+`3px`（输入框）。**不要用胶囊圆角**（`rounded-full` 只保留在 review 状态圆点等
+功能性圆形上）。
 
-```html
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
-```
+**间距**：内容区左右 56px（`AppLayout` 的 `px-14`）；屏内区块间 40–56px；
+列表项上下 18–28px；网格 gap 8–20px。
 
----
-
-## 4. 卷面语言（试卷专属元素）
-
-这些只用于试卷卡片内部，是本设计的记忆点：
-
-1. **双线卷头**：标题下方 200px 宽 `border-top:2px solid` + `border-bottom:1px solid`（文武线）。
-2. **装订线**：卷面左侧 22px 处 1px 竖虚线（`dashed #c9c2b2`），竖排小字"装订线内不要答题"，10px、字距 6px。纯装饰，内容区从 56px 起。
-3. **大题编号**：中文序号"一、二、…"，衬线 700。
-4. **填空线**：`border-bottom: 1.5px solid var(--ink)`，最小宽 150px，居中文本；作答后文字用 `--ink` 600。
-5. **分数章**：成绩页右上角，`border:3px solid var(--wrong)`、旋转 8deg、衬线 900、opacity .9。
-6. **卷面阴影**：卷面卡片 `border:1px solid var(--line)` + `box-shadow:0 1px 4px rgba(44,42,36,.05)`，直角（radius 0）——纸是方的；其余卡片/控件 6–8px 圆角。
-
----
-
-## 5. 组件规则
-
-### 按钮
-- 主按钮：`--ink` 底 + `--paper` 字，700，radius 6px，padding 10px 22px（重要动作 32px）。
-- 次按钮：白底 + 1.5px `--ink` 边框 + `--ink` 字。
-- 快捷建议 chip：白底 1px `--line-strong` 边框，radius 999px，12px 字。
-
-### 生成输入条
-1.5px `--ink` 边框、radius 8px、白底、`box-shadow:0 2px 8px rgba(30,58,95,.08)`；按钮内嵌右侧。下方 3 个建议 chip（错题练习 / 综合复习 / 最近考点）。
-
-### 模式选择（出卷方式）
-文字下划线式，与导航栏当前页同一视觉语言，**不用带边框的盒子**：
-- 行首 12px `--text-mid` 标签"出卷方式"；行尾只显示当前选中项的说明文字（12px `--text-mid`，随选择切换）。
-- 选中：`--ink` 700 + 2px `--ink` 下划线；未选中：`--text-mid`，hover 加深；禁用：降透明度 + `title` 提示。
-- radio 控件视觉隐藏（sr-only）保留键盘/ARIA 语义；焦点用 outline 环显示在文字上。
-- 每项内置隐形加粗占位，选中加粗时整行不跳动。
-
-### 选择题选项
-- 双列 grid（`gap:8px`，窄屏单列），每项：radius 6px、padding 9px 14px、14px 字。
-- 默认：白底 1px `--line-strong` 边框，字母圆圈 1.5px 描边。
-- 选中：1.5px `--ink` 边框 + `--ink-wash` 底 + 字重 500，字母圈实心 `--ink`。
-- hover：边框加深为 `--muted`。
-
-### 进度条
-高 6–8px，底 `--line-soft`，填充 `--ink`，radius 999px。
-
-### 判对错（成绩视图）
-- 题号前 ✓（`--right`）/ ✗（`--wrong`），Georgia 900。
-- 错误答案：`--wrong` + 删除线；正确答案：`--right` 700。
-- 解析块：`#faf8f3` 底 + `#ece7d9` 边框，radius 6px；标题"解析" 12px/700/`--ink`。
-- 未展开的题给"查看解析"pill 按钮（按需调 `/api/solutions`）。
-
-### 生成说明条（做题页，卷面之上）
-- 与成绩条同一语言：`--ink-wash` 底 + `#d8e0ea` 边框、radius 6px、padding 12px 20px；**在卷面之外**，不污染纸面。
-- 标题「本卷生成说明」12px/700/`--ink`；条目 13px `--text-mid`，多条竖排。
-- 只陈述事实（改写失败题号、题库缺口、检索告警），无按钮无动作；metadata 无相关字段时整条不渲染、不占位。
-
-### 掌握度页
-- 一级（题型）：可折叠行，衬线 700 15px + meta；收起时行尾显示每个二级考点的 8px 色点摘要。
-- 二级（考点）：grid `170px 1fr 90px`，8px 条形 + 百分比（用对应语义色，700）。
-- 图例固定在页头右侧。
-- 页尾"最薄弱"提示条：`--ink-wash` 底 + `#d8e0ea` 边框 + "针对性练一份" 主按钮 —— 这是掌握度页通向生成页的唯一动作。
-
-### 试卷列表页
-- 整页 880px；衬线 h1「我的试卷」+ 13.5px 副标题。
-- 列表是**单个白底容器**（1px `--line` 边框、radius 6px、`--line-soft` 行分隔线），不做卡片网格。
-- 每行整行可点：左侧标题（衬线 600 15px，超长截断）+ meta 行（12.5px `--text-mid`：时间 · N 题 · 满分 M 分）；hover 行底 `#faf8f3`。
-- 状态章（右侧圆角 chip，12px）：已交卷 = `--ink-wash` 底 + `--ink` 字 500；未作答 = 1px `--line-strong` 描边 + `--text-mid` 字。
-- 分页：满页（20 条）即认为有下一页，底部居中 ghost「加载更多」。
-- 空态：虚线描边容器居中，衬线标题「还没有试卷」+ 一句引导 + 主按钮「去出卷」——唯一出口指向生成页。
-
-### 登录页
-`--paper` 满屏居中，品牌 + slogan 在卡片外；卡片内登录/注册双 Tab（激活 Tab 下 2px `--ink` 线，非激活底 `#faf8f3`）。输入框聚焦：1.5px `--ink` 边框 + `0 0 0 3px rgba(30,58,95,.1)` ring。错误文案 12px `--wrong`，置于输入框下方。
-
-### 导航栏
-白底 + 1px `--line` 下边框；品牌 = 方形卷轴图标 logo（`--ink` 底 radius 4px）+ 衬线品牌名；链接为 生成试卷 / 我的试卷 / 掌握度，当前页 700 + 2px 下划线（`/papers` 在详情页下保持高亮）；右侧头像圈 `#dfe6ee` 底 `--ink` 字。
+**动效**：只有两个，定义在 `index.css` ——
+`kk-rise`（opacity 0→1 + translateY 8px→0，0.3s ease-out，面板展开）、
+`kk-pulse`（opacity 0.35↔1，1.1s，管线当前步骤圆点）。宽度过渡 0.25–0.4s
+ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部关闭（base.css）。
 
 ---
 
-## 6. 布局与密度
+## 4. 应用外壳：左侧可折叠导航（`Sidebar.tsx`）
 
-- 内容最大宽度：主页/成绩 880px，掌握度 760px，登录卡 400px；居中。
-- 卡片外边距 32px，卷面内 padding 40px（左 56px 让装订线）。
-- 题目间隔：卷面内用 1px 虚线分隔（`dashed var(--line)`），不是每题一卡。
-- 兄弟元素一律 flex/grid + gap，禁止 margin 链。
+- 展开 232px / 收起 66px，`transition: width .25s ease-out`，粘顶全高，右侧 1px 细线。
+- 顶部 64px：品牌「试卷生成器」（display 字体，收起时隐藏）+ 30×30 折叠按钮（lucide `panel-left`）。
+- 三组导航，组标签 10.5px/700/0.14em 弱色：
+  **出卷**（生成试卷 `/`、历史试卷 `/papers`）、
+  **复习**（错题本 `/review`、掌握度 `/mastery`）、
+  **资料**（会员 `/membership`、设置 `/settings`）。
+  收起时组标签变成一条 1px 细线分隔符。
+- 导航项：lucide 图标 18px（strokeWidth 1.5）+ 14.5px 文字，padding 9/12，圆角
+  0.25rem。当前项 = `--accent-wash` 底 + 赤陶字；非当前 = 透明底 + `--text-muted`。
+- 底部：30×30 头像方块（tint 底）+ 用户名（+ 会员小标）+「登出」小字链接。
+- 折叠状态持久化 `localStorage['sidebarCollapsed']`。
 
-## 7. 禁用清单
+~~每个应用内页面顶部保留一个 11px 大写弱色端点小标签~~（2026-07-29 已整体撤下：
+千屏一律的调试标签削弱标题存在感，handoff 本就允许上线去掉。接口对应关系只留在
+本文 § 5 表格与 Spec D。）页头统一用 `PageHeader` 组件（display 字体 34px h1 +
+42rem 引导句，引导句可含 `<mark>` wash 高亮——全应用节制使用 2–3 处）。
+试卷页保留 `PAPER · id` 行（真实元数据，非调试标签）。
 
-- 纯白 `#fff` 做页面背景（页面永远 `--paper`）
-- 渐变、emoji、左边框强调色卡片
-- 绿色表示"掌握度高"（绿只表"答对"）
-- 卷面元素（文武线、装订线、分数章）出现在试卷卡片之外
-- 小于 12px 的文字；小于 44px 的移动端点击目标
+---
+
+## 5. 屏幕清单与实现状态
+
+| # | 屏幕 | 路由 | 状态 |
+|---|------|------|------|
+| 1 | 落地页（未登录） | `/welcome` | ✅ `LandingPage`：粘顶磨砂页眉 + hero（58px 标题、`<mark>` 高亮、唯一 CTA）+ 4 项赤陶数据条 + `#how` 四列流程 + `#engine` 模式/判分 + `#bank` 题库工序 chips |
+| 2 | 登录 / 注册 | `/login` | ✅ 左右两栏（1.15fr/1fr 竖细线）；左栏品牌/26px 说明句/底部小字，右栏 24rem 表单，tab 选中 2px 赤陶下边框 |
+| 3 | 应用外壳 | — | ✅ 见 § 4 |
+| 4 | 生成试卷 | `/` | ✅ 44rem textarea + 建议 chips + 主按钮 + 状态小字 + `PipelineProgress` 管线面板（见下） |
+| 5 | 当前试卷 / 作答 | `/papers/:id` | ✅ 两栏 `minmax(0,1fr) 280px`：左 52rem 长卷（PAPER·id 标签、题目 `<article>` 细线分隔、纵向选项列表、下划线填空），右粘顶答题卡（N/12 + 2px 进度条 + 4 列题号格） |
+| 6 | 成绩与解析 | 同上（交卷后） | ✅ 总分 44px / 答对 / 错题（赤陶）统计行 + ✓/✕ 状态圆 + 解析手风琴（kicker `POST /API/SOLUTIONS · 按需生成`） |
+| 7 | 掌握度 | `/mastery` | ✅ 统计行 + 考点行网格 `minmax(0,1fr) 88px 200px 64px`，6px 赤陶进度条按不透明度分级，底部薄弱点总结 + 出卷入口 |
+| 8 | 历史试卷 | `/papers` | ✅ 无卡片行式列表 `110px minmax(0,1fr) auto`，整行可点 hover tint |
+| 9 | 错题本 | `/review` | ✅ 勾选方块（选中 = 赤陶边 + wash + ✓）+ 行式列表 + 两个出卷入口（REMEDIATION / REVIEW 分栏），底部计数 `已选 N 道 · mode=remediation` |
+| 10 | 题库浏览 | — | ⏸ 未做：需后端只读检索端点（`GET /api/questions?…`），见 Spec D § 11 |
+| 11 | 题库摄入控制台 | — | ⏸ 未做：管理员向功能，需 ingestion 状态端点，分阶段上线（handoff 允许） |
+| 12 | 设置 | `/settings` | ✅ 细线行式列表：账号 / 阅读外观（纸色 Ink · 深墨地 Deep Ink 切换 `.dark`，持久化 `localStorage['theme']`）/ 速率限制说明 |
+| — | 会员（本仓库特有，不在 handoff 内） | `/membership` | ✅ 按同一语言重做：细线分栏套餐、赤陶价格、细线表格权益对比 |
+| — | 学习助手（dev agent 功能，不在 handoff 内） | `/assistant` | ✅ 对话式：用户消息 = wash 底右对齐，助手回复 = 无框正文 + 底部细线，markdown 用 `.chat-md`（细线表格），思考中 = 赤陶脉冲点 |
+| — | 学习计划（dev agent 功能，不在 handoff 内） | `/study-plan` | ✅ DAY 序号 + 细线行式打卡列表，考点中文名 chips，「开始练习 →」次按钮 |
+
+**管线进度（第 4 屏）**：后端同步返回、无 SSE（Spec C 明确），采用 handoff
+落地方式 (a)——固定时间轴演示四步（Parser 0.8s / Retriever 1.2s / Reviser 2.6s /
+Assemble 0.3s，文案照抄 handoff），右上角 0.1s 精度真实计时；请求完成即导航离开。
+若后端未来加 SSE，把 `PipelineProgress` 的时间轴换成真实事件即可。
+
+---
+
+## 6. 组件规则速查
+
+| 元素 | 规则 |
+|---|---|
+| 主按钮 | 1px 赤陶边 + `--accent-wash` 底 + 墨字，hover 字转赤陶；无填充色按钮 |
+| 次按钮 | 1px 细线边 + 透明底 + `--text-muted` 字，hover 赤陶边字 + tint 底 |
+| 分段按钮/chip 选中 | 赤陶边 + wash 底（统计窗口、主题切换、勾选方块、单选选项同语言） |
+| 输入框 | 3px 圆角、1px `--ink-20` 边，focus 边框转赤陶；填空题只有 1px 底线 |
+| 对错 | 对 = ✓ 墨色边圆圈；错 = ✕ 赤陶。**无绿色** |
+| 掌握度条 | 6px 高赤陶条：wilson < 0.4 全饱和（薄弱更醒目），≥ 0.4 opacity 0.45；分数等宽字，薄弱赤陶 |
+| 解析框/代码框 | 0.375rem 圆角 + 1px 细线，无底色或同纸底 |
+| hover | 统一 `--hover-tint` 薄底或文字转赤陶。**无位移、无阴影、无放大** |
+| 列表 | 一律细线分隔的行，不用卡片容器；表头 11px 大写弱色 + `--ink-20` 下边线 |
+| 空态 | 细线上起段：标题 + 一句引导 + 主按钮指向唯一下一步 |
+
+---
+
+## 7. 状态管理补充（相对 Spec D）
+
+- 新增 UI 状态：`sidebarCollapsed`（localStorage）、`theme`（localStorage，
+  `main.tsx` 渲染前应用避免闪屏）、`reviseOpen`（试卷页内联面板，替代 Dialog）。
+- 答题卡组件（`AnswerCard`）与试卷正文读同一份 `answers`，不复制第二份；
+  `answers` 只在内存，刷新丢失（Spec D § 4.3 已接受）。
+
+## 8. 与设计交接包的差异清单
+
+1. **生成页无「出卷模式 / 题量 / 知识点 chips」分段控件**：本仓库产品结构是
+   fresh 在生成页、remediation/review 在错题本页（配合会员门槛与本地错题本），
+   题量/考点由 AI 从自然语言解析。属有意保留的产品差异。
+2. **落地页路由为 `/welcome`**（handoff 为未登录的 `/`）：`/` 保留给应用内
+   生成页，未登录访问受保护路由仍跳 `/login`（登录页与落地页互链）。
+3. **历史试卷右侧状态**只有「已交卷 / 未作答」，无「已交 45/60」分数——
+   `GET /api/papers` 摘要无得分字段（后端缺口，见 Spec D § 11）。
+4. **题库浏览、摄入控制台**未做（端点缺失，见 § 5 表格）。
+5. ~~京华老宋体字体文件未随包提供，display 字体暂回退正文衬线。~~
+   （2026-07-29 已解决：经 ZeoSeven CDN 接入，并扩展用于页面 h1，见 § 3。）
+6. 会员/支付界面是本仓库特有功能，按喫茶去语言自行延展设计。
+
+## 9. 禁用清单
+
+- 纯白 `#fff` / 纯黑 `#000`（页面永远 `--surface-page`；例外仅支付二维码底）
+- 绿/黄/红语义色；渐变、emoji、左边框强调条、卡片盒子、静置阴影
+- 胶囊圆角；400/700 之外的字重；非 `kk-rise`/`kk-pulse` 的装饰动效
+- 小于 10.5px 的文字（10.5–12px 仅限大写字距标签，正文不低于 13px）
