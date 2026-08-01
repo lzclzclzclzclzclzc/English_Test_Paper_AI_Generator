@@ -68,3 +68,9 @@ def test_membership_list_reflects_grant(make_client):
     assert data["total"] == 1
     assert data["items"][0]["user_id"] == "u99"
     assert data["items"][0]["active"] is True
+
+
+def test_grant_requires_days_or_plan(make_client):
+    c = make_client("admin")
+    r = c.post("/payapi/admin/memberships/u1/grant", json={})
+    assert r.status_code == 422
