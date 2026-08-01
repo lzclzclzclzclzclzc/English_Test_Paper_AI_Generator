@@ -12,6 +12,13 @@ import { MembershipPage } from '@/pages/MembershipPage'
 import { ReviewPage } from '@/pages/ReviewPage'
 import { StudyPlanPage } from '@/pages/StudyPlanPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { RequireAdmin } from '@/components/RequireAdmin'
+import { AdminLayout } from '@/pages/admin/AdminLayout'
+import { AdminOverviewPage } from '@/pages/admin/AdminOverviewPage'
+import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
+import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
+import { AdminMembershipsPage } from '@/pages/admin/AdminMembershipsPage'
+import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
 
 export function AppRoutes() {
   return (
@@ -34,6 +41,20 @@ export function AppRoutes() {
         <Route path="/study-plan" element={<StudyPlanPage />} />
         <Route path="/membership" element={<MembershipPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <AdminLayout />
+            </RequireAdmin>
+          }
+        >
+          <Route index element={<AdminOverviewPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="users/:userId" element={<AdminUserDetailPage />} />
+          <Route path="memberships" element={<AdminMembershipsPage />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
