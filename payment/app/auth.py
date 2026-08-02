@@ -39,7 +39,11 @@ async def get_current_user(request: Request) -> AuthUser:
         return hit[0]
 
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
+        # This is a purely LOCAL call (payment -> main backend, e.g.
+        # http://localhost:8000). trust_env=False makes httpx ignore any
+        # ambient system/env proxy config; otherwise a machine with a system
+        # HTTP proxy would route localhost through the proxy and fail (503).
+        async with httpx.AsyncClient(timeout=3.0, trust_env=False) as client:
             resp = await client.get(
                 f"{settings.main_backend_url}/api/auth/me",
                 cookies={"session_id": sid},

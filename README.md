@@ -236,6 +236,8 @@ cd payment
 PYTHONIOENCODING=utf-8 python -m uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
+> 支付服务校验登录态是转发 cookie 到本地主后端（`payment→backend`，纯本地调用），已在 `payment/app/auth.py` 用 `trust_env=False` 显式绕过系统代理——否则装了系统 HTTP 代理的机器会把 localhost 请求也走代理导致会员套餐 503。
+
 **终端 3 — Caddy（仓库根目录，读 `Caddyfile`）**
 ```bash
 caddy trust     # 首次:安装本地 CA，让浏览器信任 localhost 证书
