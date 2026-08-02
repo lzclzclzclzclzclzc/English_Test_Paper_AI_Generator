@@ -4,12 +4,14 @@ import {
   BadgeCheck,
   BarChart3,
   CalendarCheck,
+  LayoutDashboard,
   List,
   MessageCircle,
   PanelLeft,
   Pen,
+  ScrollText,
   Settings,
-  ShieldCheck,
+  Users,
   XCircle,
 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
@@ -45,9 +47,22 @@ const GROUPS = [
   },
 ] as const
 
+const ADMIN_GROUPS = [
+  {
+    label: '管理后台',
+    items: [
+      { to: '/admin', label: '概览', icon: LayoutDashboard, end: true },
+      { to: '/admin/users', label: '用户', icon: Users, end: false },
+      { to: '/admin/memberships', label: '会员', icon: BadgeCheck, end: true },
+      { to: '/admin/orders', label: '订单', icon: ScrollText, end: true },
+    ],
+  },
+] as const
+
 /**
  * 左侧可折叠导航（handoff 第 3 屏）：展开 232px / 收起 66px，粘顶全高，
  * 右侧 1px 细线。当前项 = accent-wash 底 + 赤陶字；收起时组标签变细线。
+ * 管理员登录时主导航替换为管理后台菜单（不显示普通功能）。
  */
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(
@@ -56,6 +71,8 @@ export function Sidebar() {
   const { data: user } = useAuth()
   const { isMember, expiresAt } = useMembership()
   const navigate = useNavigate()
+
+  const groups = user?.role === 'admin' ? ADMIN_GROUPS : GROUPS
 
   const logoutMutation = useMutation({
     mutationFn: logout,
@@ -103,7 +120,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3.5 pb-4">
-        {GROUPS.map((group) => (
+        {groups.map((group) => (
           <div key={group.label} className="flex flex-col gap-0.5">
             {collapsed ? (
               <div aria-hidden className="mx-1 my-2.5 border-t border-hairline" />
@@ -134,33 +151,6 @@ export function Sidebar() {
             ))}
           </div>
         ))}
-        {user?.role === 'admin' && (
-          <div className="flex flex-col gap-0.5">
-            {collapsed ? (
-              <div aria-hidden className="mx-1 my-2.5 border-t border-hairline" />
-            ) : (
-              <div className="px-3 pb-1 pt-4 text-[10.5px] font-bold tracking-[0.14em] text-quiet">
-                管理
-              </div>
-            )}
-            <NavLink
-              to="/admin"
-              title={collapsed ? '管理后台' : undefined}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-sm px-3 py-[9px] text-[14.5px] transition-colors',
-                  collapsed && 'justify-center px-0',
-                  isActive
-                    ? 'bg-wash text-accent'
-                    : 'text-muted-ink hover:bg-tint hover:text-ink',
-                )
-              }
-            >
-              <ShieldCheck className="size-[18px] shrink-0" strokeWidth={1.5} />
-              {!collapsed && <span className="whitespace-nowrap">管理后台</span>}
-            </NavLink>
-          </div>
-        )}
       </nav>
 
       {/* 底部：头像方块 + 用户名 + 登出 */}
