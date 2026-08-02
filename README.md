@@ -170,31 +170,41 @@ npm run dev
 
 ## 生产环境运行
 
-生产形态是**前后端合并、单进程单端口**：前端构建成静态文件由 FastAPI 后端挂在 `/` 提供（`config.backend.static_dir`，默认 `backend/static`），支付服务仍是独立进程（`:8001`）。与本地开发的区别：`BACKEND_ENV=production`（启用 httpOnly+Secure+SameSite=strict Cookie、关闭 CORS、不挂测试端点）、不带 `--reload`、前端跑 `build` 而非 `dev`。
+生产形态用 **Caddy 反向代理**统一入口:Caddy 直接提供前端静态产物(`frontend/dist`,SPA 路由回退),并把 `/api/*` 转发到主后端(`:8000`)、`/payapi/*` 转发到支付服务(`:8001`)。浏览器只访问 Caddy,天然同源,无需 CORS。后端与支付都退化为纯 API 进程。与本地开发的区别:`BACKEND_ENV=production`(httpOnly + **Secure** + SameSite=strict Cookie、关闭 CORS、不挂测试端点)、不带 `--reload`、前端跑 `build` 而非 `dev`。
 
-> ⚠️ **上线前务必先读下方「生产部署注意事项」**：会员校验默认 fail-open、演示账号、限流等几处必须调整，否则有安全/计费风险。
+仓库根目录已提供 [`Caddyfile`](./Caddyfile)。
 
-### 1. `.env`（生产）
+> ⚠️ **必须走 HTTPS**:`BACKEND_ENV=production` 下 session cookie 带 `Secure` 标志(`backend/auth/session.py`),纯 HTTP 浏览器不会回传 → **登录后立刻掉登录态**。Caddy 站点地址用 `localhost` 会自动启用本地 HTTPS(见下),`https://localhost` 下 Secure cookie 正常工作。只想本机快速自测又不想装本地 CA,可改用上面「本地启动」的开发模式(`BACKEND_ENV=development` + Vite dev,走 http://localhost:5173)。
+
+> ⚠️ **上线前务必先读下方「生产部署注意事项」**:会员校验默认 fail-open、演示账号、限流等几处必须调整,否则有安全/计费风险。
+
+### 0. 安装 Caddy(Windows)
+
+```bash
+winget install CaddyServer.Caddy      # 或:choco install caddy
+caddy version                          # 验证(新装后需重开终端让 PATH 生效)
+```
+其他系统见 https://caddyserver.com/docs/install 。
+
+### 1. `.env`(生产)
 
 ```env
 LLM_API_KEY=your_deepseek_api_key
 LLM_BASE_URL=https://api.deepseek.com
 LLM_MODEL=deepseek-v4-flash
 BACKEND_ENV=production
-# 前端构建产物目录（后端挂到 /）。默认 backend/static，下面示例用 frontend/dist
-BACKEND_STATIC_DIR=frontend/dist
 ```
-
-payment 的 `.env` 另见 [`payment/README.md`](./payment/README.md)（真实收单需 `MOCK_PAY=false` + 沙盒/正式密钥）。
+Caddy 直接服务静态产物,因此**不需要** `BACKEND_STATIC_DIR`。payment 的 `.env` 另见 [`payment/README.md`](./payment/README.md)(真实收单需 `MOCK_PAY=false` + 沙盒/正式密钥)。
 
 ### 2. 构建前端
 
 ```bash
 cd frontend
 npm ci
-npm run build          # 产物在 frontend/dist（对应上面的 BACKEND_STATIC_DIR）
+npm run build          # 产物在 frontend/dist（Caddy 从这里提供）
 cd ..
 ```
+> 每次改前端都要重新 `npm run build`;Caddy 无需重启(直接读磁盘上的新文件),仅后端/支付改了才重启对应进程。**浏览器记得硬刷新(Ctrl+F5)**。
 
 ### 3. 初始化 & 首个管理员（新库只需一次）
 
@@ -206,29 +216,37 @@ PYTHONIOENCODING=utf-8 python -m backend.cli init-db
 PYTHONIOENCODING=utf-8 python -m backend.cli create-user --username <admin_user> --password <strong_password>
 PYTHONIOENCODING=utf-8 python -m backend.cli promote-admin --username <admin_user>
 
-# 部署就绪自检（校验 production 模式、LLM key、静态产物、题库/向量库）
+# 部署就绪自检（校验 production 模式、LLM key、题库/向量库）
 PYTHONIOENCODING=utf-8 python -m backend.cli deploy-check
 ```
 
-`deploy-check` 返回 `status: ready` 且退出码 0 才算就绪。
+> 注:`deploy-check` 仍会检查 `backend/static/index.html` 是否存在(它假设后端自挂静态)。用 Caddy 直服方案时这一项会是 `false`——静态由 Caddy 提供,可忽略该项,以能正常访问 `https://localhost/` 为准。
 
-### 4. 启动服务（两个进程）
+### 4. 启动服务（三个进程 / 三个终端）
 
-**主后端 + 前端（端口 8000，同源提供 SPA）**
+**终端 1 — 主后端（纯 API，:8000）**
 ```bash
 PYTHONIOENCODING=utf-8 BACKEND_ENV=production \
-  python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+  python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-**支付服务（端口 8001，独立进程）**
+**终端 2 — 支付服务（:8001）**
 ```bash
 cd payment
-PYTHONIOENCODING=utf-8 python -m uvicorn app.main:app --host 0.0.0.0 --port 8001
+PYTHONIOENCODING=utf-8 python -m uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
-对外用一台反向代理（Nginx/Caddy）把 `/payapi/*` 转发到 `:8001`、其余转发到 `:8000`，即可做到浏览器同源、无 CORS。多核可加 `--workers N`（session 存 SQLite，多 worker 单机共享同一库文件即可；跨机部署不在本项目范围）。
+**终端 3 — Caddy（仓库根目录，读 `Caddyfile`）**
+```bash
+caddy trust     # 首次:安装本地 CA，让浏览器信任 localhost 证书
+caddy run       # 前台运行
+```
 
-浏览器打开站点根地址，用上面创建的管理员账号登录——侧栏会出现「管理后台」入口（`/admin`）。
+浏览器打开 **https://localhost**,用上面创建的管理员账号登录——侧栏会出现「管理后台」入口（`/admin`）。
+
+> **局域网 / 其他设备访问**:Caddy 的本地 CA 只被本机信任,别的设备打开 `https://<你的IP>` 会提示证书不受信。要么在各设备导入/信任该 CA,要么直接上**公网域名**——把 `Caddyfile` 里的 `localhost` 换成你的域名,Caddy 会自动申请 Let's Encrypt 证书(需 80/443 可从公网访问)。
+>
+> **备选拓扑**:也可让后端自己挂静态(设 `BACKEND_STATIC_DIR=frontend/dist`,后端在 `/` 提供 SPA),Caddy 只把 `/payapi/*` 转发到 `:8001`、其余转发到 `:8000`。本项目默认推荐上面的「Caddy 直服静态」方案(少一层转发)。多核可给 uvicorn 加 `--workers N`(session 存 SQLite,单机多 worker 共享同一库文件即可;跨机部署不在本项目范围)。
 
 ---
 
