@@ -41,7 +41,7 @@ async def list_users(q: str = "", limit: int = 50, offset: int = 0, _: User = De
 
 
 @router.get("/users/{user_id}", response_model=AdminUserDetail)
-async def user_detail(user_id: str, request: Request, _: User = Depends(require_admin)) -> AdminUserDetail:
+def user_detail(user_id: str, request: Request, _: User = Depends(require_admin)) -> AdminUserDetail:
     target = _require_target(user_id)
     counts = storage.get_user_counts(user_id)
     cookie = request.cookies.get(COOKIE_NAME)
@@ -107,6 +107,7 @@ def _payment_get_json(path: str, cookie: str | None, params: dict | None = None)
             params=params,
             cookies={COOKIE_NAME: cookie} if cookie else None,
             timeout=5.0,
+            trust_env=False,  # local backend→payment call; never route via system proxy
         )
     except httpx.HTTPError as exc:
         raise PaymentUpstreamError(str(exc)) from exc
@@ -126,6 +127,7 @@ def _payment_post_json(path: str, cookie: str | None, json: dict | None = None) 
             json=json,
             cookies={COOKIE_NAME: cookie} if cookie else None,
             timeout=5.0,
+            trust_env=False,  # local backend→payment call; never route via system proxy
         )
     except httpx.HTTPError as exc:
         raise PaymentUpstreamError(str(exc)) from exc
@@ -135,7 +137,7 @@ def _payment_post_json(path: str, cookie: str | None, json: dict | None = None) 
 
 
 @router.get("/stats/overview", response_model=AdminOverview)
-async def stats_overview(request: Request, _: User = Depends(require_admin)) -> AdminOverview:
+def stats_overview(request: Request, _: User = Depends(require_admin)) -> AdminOverview:
     counts = storage.admin_counts()
     cookie = request.cookies.get(COOKIE_NAME)
     return AdminOverview(**counts, active_members=_fetch_active_members(cookie))
@@ -153,7 +155,7 @@ async def stats_timeseries(days: int = 30, _: User = Depends(require_admin)) -> 
 
 
 @router.get("/memberships", response_model=AdminMembershipListView)
-async def list_memberships(
+def list_memberships(
     request: Request,
     q: str = "",
     limit: int = 50,
@@ -186,7 +188,7 @@ async def list_memberships(
 
 
 @router.get("/orders", response_model=AdminOrderListView)
-async def list_orders(
+def list_orders(
     request: Request,
     status: str = "",
     limit: int = 50,
@@ -217,7 +219,7 @@ async def list_orders(
 
 
 @router.post("/memberships/grant")
-async def grant_membership_by_username(
+def grant_membership_by_username(
     body: GrantByUsernameRequest, request: Request, _: User = Depends(require_admin)
 ) -> dict:
     user = storage.get_user_by_username(body.username)
@@ -230,7 +232,7 @@ async def grant_membership_by_username(
 
 
 @router.post("/memberships/{user_id}/grant")
-async def grant_membership(
+def grant_membership(
     user_id: str, body: GrantDaysRequest, request: Request, _: User = Depends(require_admin)
 ) -> dict:
     cookie = request.cookies.get(COOKIE_NAME)
@@ -240,7 +242,7 @@ async def grant_membership(
 
 
 @router.post("/memberships/{user_id}/revoke")
-async def revoke_membership(
+def revoke_membership(
     user_id: str, request: Request, _: User = Depends(require_admin)
 ) -> dict:
     cookie = request.cookies.get(COOKIE_NAME)
