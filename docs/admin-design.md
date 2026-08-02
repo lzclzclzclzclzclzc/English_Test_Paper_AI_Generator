@@ -169,6 +169,20 @@ async def require_admin(user: User = Depends(current_user)) -> User:
 
 对应新增 `storage` 辅助：`list_users(q, limit, offset)`、`count_users(q)`、`get_user_admin_detail(user_id)`（或组合现有查询）、`set_user_role`、`set_user_status`、`update_password_hash`、`delete_sessions_by_user(user_id)`。
 
+### 4.1.1 会员/订单聚合视图（补 username）
+
+payment 的 `payment.db` **只存 `user_id`，没有 username**（见 § 5）。为让管理后台以**用户名**显示与搜索会员/订单，主后端新增聚合端点，内部转发 payment 并用 `users` 表补上 username（新增 `storage.usernames_by_ids(ids) -> dict[str,str]` 批量反查）：
+
+| 方法 | 路径 | 作用 |
+|---|---|---|
+| GET | `/api/admin/memberships?q=&limit=&offset=` | 拉 payment 全量会员 → 批量补 `username` → **按用户名 `q` 过滤**（大小写不敏感；user_id 查不到用户名的行在 `q` 非空时不匹配）→ Python 端分页。返回 `{items:[{user_id, username, expires_at, active}], total}` |
+| GET | `/api/admin/orders?status=&limit=&offset=` | 拉 payment 订单（转发 `status`）→ 批量补 `username`。返回 `{items:[{…order, username}]}` |
+| POST | `/api/admin/memberships/grant` | body `{username, days}`：主后端 `get_user_by_username` 解析 user_id（找不到 → 404 `resource.not_found`），再转发 payment grant |
+| POST | `/api/admin/memberships/{user_id}/grant` \| `/revoke` | 薄封装转发到 payment，使前端会员/订单调用统一走 `/api` |
+
+`username` 为 `str | None`（反查不到时 `null`，前端显示"(已删除/未知)"占位 + 小字 user_id）。**列表端点**在 payment 不可用/非 200 时抛 `PaymentUpstreamError`（502），交前端明确报错，不静默成空列表；而 § 4.2 的 `active_members` 与 § 4.1 用户详情的会员到期仍是"失败即 `null`、不阻塞"的降级读。
+
+
 ### 4.2 统计看板
 
 | 方法 | 路径 | 作用 |
@@ -223,6 +237,9 @@ def extend_membership(conn, user_id: str, days: int, now) -> str:
 主后端 `/api/admin/users/{id}` 与 `/api/admin/stats/overview` 需要会员信息：
 - 主后端内部以 httpx 调用 payment 的 `/payapi/admin/memberships/{id}`（或列表），**转发当前 admin 的 session cookie**（payment 侧 `require_admin` 会据此校验调用者也是 admin）。
 - payment 不可用时：详情页会员字段返回 `null`/"暂不可用"，`active_members` 返回 `null`，均不阻塞主流程（沿用 payment 既有的"上游不可用"降级风格）。
+
+> 会员/订单**列表**的用户名聚合见 § 4.1.1——同样经主后端转发 payment，但列表端点在 payment 不可用时抛 502（明确报错），与上面的降级读不同。payment 的 `/payapi/admin/*` 端点保持不变，现由主后端内部调用。
+
 
 ---
 
