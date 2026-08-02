@@ -34,7 +34,7 @@ async def login(credentials: UserCredentials, response: Response) -> User:
         raise InvalidCredentialsError()
     session_id = storage.create_session(record.id, get_config().backend.session_ttl_days)
     set_session_cookie(response, session_id)
-    return User(id=record.id, username=record.username, created_at=record.created_at)
+    return User(id=record.id, username=record.username, created_at=record.created_at, role=record.role, status=record.status)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

@@ -203,6 +203,8 @@ export interface User {
   id: string
   username: string
   created_at: string
+  role: 'user' | 'admin'
+  status: 'active' | 'banned'
 }
 
 /** register + login 的请求体。username 3-32 位 [a-zA-Z0-9_]；password 6-128 位 */
@@ -263,3 +265,41 @@ export interface ErrorResponse {
   detail: unknown
   trace_id: string
 }
+
+// ---- 管理后台 ----
+export interface AdminUserListItem {
+  id: string
+  username: string
+  created_at: string
+  role: 'user' | 'admin'
+  status: 'active' | 'banned'
+  paper_count: number
+  attempt_count: number
+}
+export interface AdminUserList { items: AdminUserListItem[]; total: number }
+export interface AdminUserDetail extends AdminUserListItem {
+  correct_rate: number | null
+  membership_expires_at: string | null
+}
+export interface AdminOverview {
+  total_users: number
+  new_users_today: number
+  total_papers: number
+  total_attempts: number
+  active_members: number | null
+}
+export interface TimeseriesPoint { day: string; count: number }
+export interface AdminTimeseries { users_by_day: TimeseriesPoint[]; papers_by_day: TimeseriesPoint[] }
+export interface AdminMembership { user_id: string; username: string | null; expires_at: string | null; active: boolean }
+export interface AdminMembershipList { items: AdminMembership[]; total: number }
+export interface AdminOrder {
+  out_trade_no: string
+  user_id: string
+  username: string | null
+  plan_id: string
+  amount_cents: number
+  status: string
+  created_at: string
+  paid_at: string | null
+}
+export interface AdminOrderList { items: AdminOrder[] }

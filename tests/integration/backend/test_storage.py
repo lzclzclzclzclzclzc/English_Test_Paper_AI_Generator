@@ -141,7 +141,11 @@ def test_init_db_records_applied_migrations(client):
     storage.init_db()
     with storage.connect() as conn:
         rows = conn.execute("SELECT id FROM schema_migrations ORDER BY id").fetchall()
-    assert [row["id"] for row in rows] == [storage.MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX]
+    assert [row["id"] for row in rows] == [
+        storage.MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX,
+        storage.MIGRATION_USERS_ROLE,
+        storage.MIGRATION_USERS_STATUS,
+    ]
 
 
 def test_init_db_migrates_legacy_attempt_items_difficulty_column(tmp_path):

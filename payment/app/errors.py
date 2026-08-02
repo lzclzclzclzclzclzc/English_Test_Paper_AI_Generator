@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -37,7 +38,7 @@ def register_error_handlers(app: FastAPI) -> None:
     async def validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
         return JSONResponse(
             status_code=422,
-            content=_envelope("request.invalid", "请求参数不合法", exc.errors()),
+            content=_envelope("request.invalid", "请求参数不合法", jsonable_encoder(exc.errors())),
         )
 
     @app.exception_handler(Exception)

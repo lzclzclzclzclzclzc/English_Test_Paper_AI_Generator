@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import Cookie, Depends
 
 from backend.auth.session import COOKIE_NAME
-from backend.errors import AuthenticationError, RateLimitError
+from backend.errors import AuthenticationError, AuthorizationError, RateLimitError
 from backend.schemas import User
 from shared import storage
 from shared.config import get_config
@@ -25,7 +25,15 @@ async def current_user(session_id: str | None = Cookie(default=None, alias=COOKI
     if not user:
         storage.delete_session(session_id)
         raise AuthenticationError("session user not found")
+    if user.status == "banned":
+        raise AuthorizationError("account banned")
     storage.slide_session(session_id, get_config().backend.session_ttl_days)
+    return user
+
+
+async def require_admin(user: User = Depends(current_user)) -> User:
+    if user.role != "admin":
+        raise AuthorizationError()
     return user
 
 

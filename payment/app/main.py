@@ -6,6 +6,7 @@ from .config import get_settings
 from .db import init_db
 from .errors import register_error_handlers
 from .routes import dev_router, router
+from .admin_routes import admin_router
 
 
 @asynccontextmanager
@@ -23,6 +24,7 @@ def create_app() -> FastAPI:
     )
     register_error_handlers(app)
     app.include_router(router)
+    app.include_router(admin_router)
     if get_settings().mock_pay:
         app.include_router(dev_router)
     return app

@@ -1,7 +1,6 @@
 # Spec C：FastAPI 后端设计
 
 **创建日期**：2026-07-07
-**项目根目录**：`C:\Users\I779318\Desktop\CSS\English_Test_Paper_AI_Generator`
 **范围**：FastAPI 后端子系统（`backend/`）—— 用 HTTP 把 AI Engine + 题库封装成前端可用的接口；含鉴权、试卷持久化、答题记录、判对错
 **依赖**：
 - [`./2026-07-07-question-bank-ingestion-design.md`](./2026-07-07-question-bank-ingestion-design.md)（Spec A：数据契约、SQLite、`shared/`）
@@ -41,6 +40,8 @@
 | Spec A § 1.6 / Spec B § 1.2 / § 15：**不实现试卷持久化** | 本 spec 新增 `papers` 表，后端持久化每次生成的试卷（AI Engine 内部依然无状态） |
 
 **关键澄清**：**AI Engine 的无状态原则不变**。持久化的责任在**后端层**——FastAPI 拿到 AI Engine 返回的 `Paper` 后写库；`revise_paper` 时后端从库读出完整 `Paper` 喂给 AI Engine。边界依然清晰：**AI Engine 是纯函数，后端负责持久化**。
+
+**后续撤销（Spec G）**：Spec G（`admin-design.md`）进一步撤销本 spec § 12 的"不实现权限系统"这条非目标——新增 `users.role`/`users.status` 两列、`require_admin` 守卫、`AuthorizationError`（403）、`/api/admin/*` 端点与 `promote-admin` CLI。相关端点与数据模型变更详见 Spec G。
 
 ---
 
@@ -1101,7 +1102,7 @@ python -m backend.cli serve --port 8000 --env production
 
 - ❌ 不实现 OAuth / SSO / 第三方登录
 - ❌ 不实现密码找回 / 邮箱验证（无邮箱字段）
-- ❌ 不实现权限系统（用户之间无差异，除资源归属）
+- ~~❌ 不实现权限系统（用户之间无差异，除资源归属）~~ —— **已被 Spec G（`admin-design.md`）撤销**：引入 `users.role`（user/admin）+ `require_admin` 守卫 + 管理后台，用户之间自此有权限差异。详见 Spec G。
 - ❌ 不实现多语言（错误消息只有中文）
 - ❌ 不实现 API 版本化（`/api/v1/*`）——未来若真需要版本再引入
 - ❌ 不实现分页（历史试卷若真的爆到 >1000 份，加简单 limit/offset）
