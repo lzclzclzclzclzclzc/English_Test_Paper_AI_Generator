@@ -182,3 +182,39 @@ class TimeseriesPoint(BaseModel):
 class AdminTimeseries(BaseModel):
     users_by_day: list[TimeseriesPoint]
     papers_by_day: list[TimeseriesPoint]
+
+
+class AdminMembershipItem(BaseModel):
+    user_id: str
+    username: str | None
+    expires_at: str | None
+    active: bool
+
+
+class AdminMembershipListView(BaseModel):
+    items: list[AdminMembershipItem]
+    total: int
+
+
+class AdminOrderItem(BaseModel):
+    out_trade_no: str
+    user_id: str
+    username: str | None
+    plan_id: str
+    amount_cents: int
+    status: str
+    created_at: str
+    paid_at: str | None = None
+
+
+class AdminOrderListView(BaseModel):
+    items: list[AdminOrderItem]
+
+
+class GrantByUsernameRequest(BaseModel):
+    username: str
+    days: int = Field(gt=0)
+
+
+class GrantDaysRequest(BaseModel):
+    days: int = Field(gt=0)

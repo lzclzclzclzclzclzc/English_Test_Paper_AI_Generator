@@ -72,3 +72,21 @@ def test_get_user_counts(db):
     assert counts == {"paper_count": 0, "attempt_count": 0}
     # a missing user yields zeros too (defensive)
     assert db.get_user_counts("nonexistent") == {"paper_count": 0, "attempt_count": 0}
+
+
+def test_usernames_by_ids_empty(db):
+    assert db.usernames_by_ids([]) == {}
+
+
+def test_usernames_by_ids_maps_existing(db):
+    a = db.create_user("mapa", "h")
+    b = db.create_user("mapb", "h")
+    result = db.usernames_by_ids([a.id, b.id])
+    assert result == {a.id: "mapa", b.id: "mapb"}
+
+
+def test_usernames_by_ids_unknown_absent(db):
+    a = db.create_user("mapc", "h")
+    result = db.usernames_by_ids([a.id, "ghost"])
+    assert result == {a.id: "mapc"}
+    assert "ghost" not in result

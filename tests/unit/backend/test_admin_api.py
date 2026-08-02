@@ -120,3 +120,195 @@ def test_user_detail_includes_membership_when_payment_ok(client, monkeypatch):
     r = client.get(f"/api/admin/users/{victim.id}")
     assert r.status_code == 200
     assert r.json()["membership_expires_at"] == "2099-01-01T00:00:00Z"
+
+
+# ---- membership/order aggregation (username enrichment) ----
+
+
+def test_memberships_list_attaches_usernames(client, monkeypatch):
+    boss = _mk(client, "boss", admin=True)
+    alice = _mk(client, "alice")
+    _as(client, boss)
+
+    import backend.api.admin as admin_mod
+
+    def fake_get(path, cookie, params=None):
+        return {
+            "items": [
+                {"user_id": alice.id, "expires_at": "2099-01-01T00:00:00Z", "active": True},
+                {"user_id": "ghost", "expires_at": None, "active": False},
+            ],
+            "total": 2,
+        }
+
+    monkeypatch.setattr(admin_mod, "_payment_get_json", fake_get)
+    r = client.get("/api/admin/memberships")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+    by_id = {m["user_id"]: m for m in data["items"]}
+    assert by_id[alice.id]["username"] == "alice"
+    assert by_id["ghost"]["username"] is None
+
+
+def test_memberships_list_filters_by_username(client, monkeypatch):
+    boss = _mk(client, "boss", admin=True)
+    alice = _mk(client, "alice")
+    bob = _mk(client, "bob")
+    _as(client, boss)
+
+    import backend.api.admin as admin_mod
+
+    def fake_get(path, cookie, params=None):
+        return {
+            "items": [
+                {"user_id": alice.id, "expires_at": None, "active": True},
+                {"user_id": bob.id, "expires_at": None, "active": True},
+                {"user_id": "ghost", "expires_at": None, "active": False},
+            ],
+            "total": 3,
+        }
+
+    monkeypatch.setattr(admin_mod, "_payment_get_json", fake_get)
+    r = client.get("/api/admin/memberships?q=alic")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    assert data["items"][0]["username"] == "alice"
+
+
+def test_memberships_list_upstream_error_is_502(client, monkeypatch):
+    boss = _mk(client, "boss", admin=True)
+    _as(client, boss)
+
+    import backend.api.admin as admin_mod
+    from backend.errors import PaymentUpstreamError
+
+    def fake_get(path, cookie, params=None):
+        raise PaymentUpstreamError("boom")
+
+    monkeypatch.setattr(admin_mod, "_payment_get_json", fake_get)
+    r = client.get("/api/admin/memberships")
+    assert r.status_code == 502
+
+
+def test_orders_list_attaches_usernames(client, monkeypatch):
+    boss = _mk(client, "boss", admin=True)
+    alice = _mk(client, "alice")
+    _as(client, boss)
+
+    import backend.api.admin as admin_mod
+
+    def fake_get(path, cookie, params=None):
+        return {
+            "items": [
+                {
+                    "out_trade_no": "T1",
+                    "user_id": alice.id,
+                    "plan_id": "monthly",
+                    "amount_cents": 990,
+                    "status": "paid",
+                    "created_at": "2026-01-01T00:00:00Z",
+                    "paid_at": "2026-01-01T00:05:00Z",
+                    # extras that must be ignored by the schema
+                    "channel": "alipay",
+                    "qr_code": "xxx",
+                },
+                {
+                    "out_trade_no": "T2",
+                    "user_id": "ghost",
+                    "plan_id": "yearly",
+                    "amount_cents": 9900,
+                    "status": "pending",
+                    "created_at": "2026-01-02T00:00:00Z",
+                },
+            ]
+        }
+
+    monkeypatch.setattr(admin_mod, "_payment_get_json", fake_get)
+    r = client.get("/api/admin/orders")
+    assert r.status_code == 200
+    items = r.json()["items"]
+    by_no = {o["out_trade_no"]: o for o in items}
+    assert by_no["T1"]["username"] == "alice"
+    assert by_no["T1"]["paid_at"] == "2026-01-01T00:05:00Z"
+    assert by_no["T2"]["username"] is None
+    assert by_no["T2"]["paid_at"] is None
+
+
+def test_grant_by_username_known_user(client, monkeypatch):
+    boss = _mk(client, "boss", admin=True)
+    alice = _mk(client, "alice")
+    _as(client, boss)
+
+    import backend.api.admin as admin_mod
+
+    captured = {}
+
+    def fake_post(path, cookie, json=None):
+        captured["path"] = path
+        captured["json"] = json
+        return {"user_id": alice.id, "expires_at": "2099-01-01T00:00:00Z", "active": True}
+
+    monkeypatch.setattr(admin_mod, "_payment_post_json", fake_post)
+    r = client.post("/api/admin/memberships/grant", json={"username": "alice", "days": 30})
+    assert r.status_code == 200
+    assert r.json()["user_id"] == alice.id
+    assert captured["path"] == f"/payapi/admin/memberships/{alice.id}/grant"
+    assert captured["json"] == {"days": 30}
+
+
+def test_grant_by_username_unknown_user_404(client, monkeypatch):
+    boss = _mk(client, "boss", admin=True)
+    _as(client, boss)
+
+    import backend.api.admin as admin_mod
+
+    def fake_post(path, cookie, json=None):
+        raise AssertionError("payment must not be called for unknown user")
+
+    monkeypatch.setattr(admin_mod, "_payment_post_json", fake_post)
+    r = client.post("/api/admin/memberships/grant", json={"username": "nobody", "days": 30})
+    assert r.status_code == 404
+
+
+def test_grant_by_user_id_forwarder(client, monkeypatch):
+    boss = _mk(client, "boss", admin=True)
+    alice = _mk(client, "alice")
+    _as(client, boss)
+
+    import backend.api.admin as admin_mod
+
+    def fake_post(path, cookie, json=None):
+        assert path == f"/payapi/admin/memberships/{alice.id}/grant"
+        assert json == {"days": 7}
+        return {"user_id": alice.id, "active": True}
+
+    monkeypatch.setattr(admin_mod, "_payment_post_json", fake_post)
+    r = client.post(f"/api/admin/memberships/{alice.id}/grant", json={"days": 7})
+    assert r.status_code == 200
+
+
+def test_revoke_forwarder(client, monkeypatch):
+    boss = _mk(client, "boss", admin=True)
+    alice = _mk(client, "alice")
+    _as(client, boss)
+
+    import backend.api.admin as admin_mod
+
+    def fake_post(path, cookie, json=None):
+        assert path == f"/payapi/admin/memberships/{alice.id}/revoke"
+        return {"user_id": alice.id, "active": False}
+
+    monkeypatch.setattr(admin_mod, "_payment_post_json", fake_post)
+    r = client.post(f"/api/admin/memberships/{alice.id}/revoke")
+    assert r.status_code == 200
+    assert r.json()["active"] is False
+
+
+def test_memberships_endpoints_require_admin(client, monkeypatch):
+    normie = _mk(client, "normie3")
+    _as(client, normie)
+    assert client.get("/api/admin/memberships").status_code == 403
+    assert client.get("/api/admin/orders").status_code == 403
+    assert client.post("/api/admin/memberships/grant", json={"username": "x", "days": 1}).status_code == 403

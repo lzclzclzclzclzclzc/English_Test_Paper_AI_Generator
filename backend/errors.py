@@ -114,6 +114,12 @@ class AIInternalError(BackendError):
     message = "AI Engine 内部异常"
 
 
+class PaymentUpstreamError(BackendError):
+    error_code = "payment.upstream"
+    http_status = 502
+    message = "支付服务不可用"
+
+
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(BackendError)
     async def handle_backend_error(request: Request, exc: BackendError) -> JSONResponse:

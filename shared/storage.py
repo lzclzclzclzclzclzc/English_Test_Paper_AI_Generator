@@ -218,6 +218,20 @@ def count_users(q: str = "") -> int:
         ).fetchone()[0]
 
 
+def usernames_by_ids(user_ids: list[str]) -> dict[str, str]:
+    """user_id → username 批量映射；查不到的 id 不在返回里。"""
+    if not user_ids:
+        return {}
+    init_db()
+    placeholders = ",".join("?" for _ in user_ids)
+    with connect() as conn:
+        rows = conn.execute(
+            f"SELECT id, username FROM users WHERE id IN ({placeholders})",
+            list(user_ids),
+        ).fetchall()
+    return {r["id"]: r["username"] for r in rows}
+
+
 def get_user_counts(user_id: str) -> dict:
     init_db()
     with connect() as conn:
