@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { listOrders } from '@/api/admin'
+import { displayName } from '@/lib/adminDisplay'
 import { cn } from '@/lib/utils'
 
 const STATUS_OPTIONS = [
@@ -53,7 +54,10 @@ export function AdminOrdersPage() {
             {(orders.data?.items ?? []).map((o) => (
               <tr key={o.out_trade_no} className="border-t border-hairline hover:bg-tint/40">
                 <td className="px-3 py-2 text-ink">{o.out_trade_no}</td>
-                <td className="px-3 py-2 text-muted-ink">{o.user_id}</td>
+                <td className="px-3 py-2 text-ink">
+                  {displayName(o.username)}
+                  <div className="text-[11px] text-quiet">{o.user_id}</div>
+                </td>
                 <td className="px-3 py-2 text-muted-ink">{o.plan_id}</td>
                 <td className="px-3 py-2 text-muted-ink">
                   ¥{(o.amount_cents / 100).toFixed(2)}

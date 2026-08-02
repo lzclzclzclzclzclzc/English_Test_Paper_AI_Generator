@@ -290,11 +290,12 @@ export interface AdminOverview {
 }
 export interface TimeseriesPoint { day: string; count: number }
 export interface AdminTimeseries { users_by_day: TimeseriesPoint[]; papers_by_day: TimeseriesPoint[] }
-export interface AdminMembership { user_id: string; expires_at: string | null; active: boolean }
+export interface AdminMembership { user_id: string; username: string | null; expires_at: string | null; active: boolean }
 export interface AdminMembershipList { items: AdminMembership[]; total: number }
 export interface AdminOrder {
   out_trade_no: string
   user_id: string
+  username: string | null
   plan_id: string
   amount_cents: number
   status: string

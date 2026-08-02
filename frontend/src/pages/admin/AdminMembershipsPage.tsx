@@ -1,7 +1,13 @@
 import { useState, type ReactNode } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { grantMembership, listMemberships, revokeMembership } from '@/api/admin'
+import {
+  grantMembership,
+  grantMembershipByUsername,
+  listMemberships,
+  revokeMembership,
+} from '@/api/admin'
+import { displayName } from '@/lib/adminDisplay'
 import { queryClient } from '@/lib/queryClient'
 import { toastApiError } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
@@ -25,11 +31,11 @@ function isValidDays(v: string): boolean {
 
 /** 开通天数弹窗：输入天数（正整数，默认 30）。 */
 function GrantDialog({
-  userId,
+  label,
   onConfirm,
   pending,
 }: {
-  userId: string
+  label: string
   onConfirm: (days: number) => void
   pending: boolean
 }) {
@@ -51,7 +57,7 @@ function GrantDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>开通会员</DialogTitle>
-          <DialogDescription>为用户 {userId} 开通指定天数的会员。</DialogDescription>
+          <DialogDescription>为用户 {label} 开通指定天数的会员。</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
           <Label htmlFor="grant-days">天数</Label>
@@ -140,8 +146,8 @@ export function AdminMembershipsPage() {
     queryFn: () => listMemberships(q),
   })
 
-  // 顶部直开表单：向任意 user_id 授予会员（可能尚无会员行）。
-  const [grantId, setGrantId] = useState('')
+  // 顶部直开表单：按用户名授予会员（可能尚无会员行）。
+  const [grantUsername, setGrantUsername] = useState('')
   const [grantDays, setGrantDays] = useState('30')
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin'] })
@@ -155,6 +161,17 @@ export function AdminMembershipsPage() {
     onError: toastApiError,
   })
 
+  const grantByUsernameMutation = useMutation({
+    mutationFn: ({ username, days }: { username: string; days: number }) =>
+      grantMembershipByUsername(username, days),
+    onSuccess: () => {
+      invalidate()
+      toast.success('会员已开通')
+      setGrantUsername('')
+    },
+    onError: toastApiError,
+  })
+
   const revokeMutation = useMutation({
     mutationFn: (id: string) => revokeMembership(id),
     onSuccess: () => {
@@ -164,7 +181,7 @@ export function AdminMembershipsPage() {
     onError: toastApiError,
   })
 
-  const topGrantValid = grantId.trim().length > 0 && isValidDays(grantDays)
+  const topGrantValid = grantUsername.trim().length > 0 && isValidDays(grantDays)
 
   return (
     <div className="flex flex-col gap-4">
@@ -172,14 +189,14 @@ export function AdminMembershipsPage() {
 
       <div className="flex flex-wrap items-end gap-2 rounded-md border border-hairline bg-wash/40 p-3">
         <div className="flex flex-col gap-1">
-          <Label htmlFor="top-grant-id" className="text-quiet">
-            用户 ID
+          <Label htmlFor="top-grant-username" className="text-quiet">
+            用户名
           </Label>
           <Input
-            id="top-grant-id"
-            value={grantId}
-            onChange={(e) => setGrantId(e.target.value)}
-            placeholder="用户 ID"
+            id="top-grant-username"
+            value={grantUsername}
+            onChange={(e) => setGrantUsername(e.target.value)}
+            placeholder="用户名"
             className="w-[220px]"
           />
         </div>
@@ -199,12 +216,12 @@ export function AdminMembershipsPage() {
         </div>
         <Button
           size="sm"
-          disabled={!topGrantValid || grantMutation.isPending}
+          disabled={!topGrantValid || grantByUsernameMutation.isPending}
           onClick={() =>
-            grantMutation.mutate(
-              { id: grantId.trim(), days: Number(grantDays) },
-              { onSuccess: () => setGrantId('') },
-            )
+            grantByUsernameMutation.mutate({
+              username: grantUsername.trim(),
+              days: Number(grantDays),
+            })
           }
         >
           开通
@@ -212,7 +229,7 @@ export function AdminMembershipsPage() {
       </div>
 
       <Input
-        placeholder="搜索用户 ID…"
+        placeholder="搜索用户名…"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         className="max-w-[280px]"
@@ -231,7 +248,10 @@ export function AdminMembershipsPage() {
           <tbody>
             {(memberships.data?.items ?? []).map((m) => (
               <tr key={m.user_id} className="border-t border-hairline hover:bg-tint/40">
-                <td className="px-3 py-2 text-ink">{m.user_id}</td>
+                <td className="px-3 py-2 text-ink">
+                  {displayName(m.username)}
+                  <div className="text-[11px] text-quiet">{m.user_id}</div>
+                </td>
                 <td className="px-3 py-2 text-muted-ink">
                   {m.expires_at ? m.expires_at.slice(0, 10) : '—'}
                 </td>
@@ -239,7 +259,7 @@ export function AdminMembershipsPage() {
                 <td className="px-3 py-2">
                   <div className="flex gap-2">
                     <GrantDialog
-                      userId={m.user_id}
+                      label={displayName(m.username)}
                       pending={grantMutation.isPending}
                       onConfirm={(days) => grantMutation.mutate({ id: m.user_id, days })}
                     />
@@ -250,7 +270,7 @@ export function AdminMembershipsPage() {
                         </Button>
                       }
                       title="取消会员"
-                      description={`确认取消用户 ${m.user_id} 的会员？`}
+                      description={`确认取消用户 ${displayName(m.username)} 的会员？`}
                       confirmLabel="确认"
                       pending={revokeMutation.isPending}
                       onConfirm={() => revokeMutation.mutate(m.user_id)}

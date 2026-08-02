@@ -1,4 +1,4 @@
-import { apiFetch, payFetch } from '@/api/client'
+import { apiFetch } from '@/api/client'
 import type {
   AdminMembership, AdminMembershipList, AdminOrderList, AdminOverview,
   AdminTimeseries, AdminUserDetail, AdminUserList, User,
@@ -24,12 +24,14 @@ export const unbanUser = (id: string) => apiFetch<User>(`/admin/users/${id}/unba
 export const getOverview = () => apiFetch<AdminOverview>('/admin/stats/overview')
 export const getTimeseries = (days = 30) => apiFetch<AdminTimeseries>(`/admin/stats/timeseries${qs({ days })}`)
 
-// 会员 / 订单 → 支付服务 (/payapi)
+// 会员 / 订单 → 主后端聚合端点 (/api，补齐 username)
 export const listMemberships = (q = '', limit = 50, offset = 0) =>
-  payFetch<AdminMembershipList>(`/admin/memberships${qs({ q, limit, offset })}`)
+  apiFetch<AdminMembershipList>(`/admin/memberships${qs({ q, limit, offset })}`)
 export const grantMembership = (id: string, body: { days?: number; plan_id?: string }) =>
-  payFetch<AdminMembership>(`/admin/memberships/${id}/grant`, { method: 'POST', body: JSON.stringify(body) })
+  apiFetch<AdminMembership>(`/admin/memberships/${id}/grant`, { method: 'POST', body: JSON.stringify(body) })
 export const revokeMembership = (id: string) =>
-  payFetch<AdminMembership>(`/admin/memberships/${id}/revoke`, { method: 'POST' })
+  apiFetch<AdminMembership>(`/admin/memberships/${id}/revoke`, { method: 'POST' })
+export const grantMembershipByUsername = (username: string, days: number) =>
+  apiFetch<AdminMembership>('/admin/memberships/grant', { method: 'POST', body: JSON.stringify({ username, days }) })
 export const listOrders = (status = '', limit = 50, offset = 0) =>
-  payFetch<AdminOrderList>(`/admin/orders${qs({ status, limit, offset })}`)
+  apiFetch<AdminOrderList>(`/admin/orders${qs({ status, limit, offset })}`)
