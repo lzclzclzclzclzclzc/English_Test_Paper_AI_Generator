@@ -5,7 +5,7 @@ from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, Field
 
-from shared.schemas import Answer, GenerateMode, Paper, QuestionType, RevisedQuestion, RevisionMode, WrongItemRef
+from shared.schemas import Answer, GenerateMode, MasteryProfile, Paper, QuestionType, RevisedQuestion, RevisionMode, WrongItemRef
 
 
 UserAnswerValue: TypeAlias = str | list[str] | dict[str, str]
@@ -218,3 +218,21 @@ class GrantByUsernameRequest(BaseModel):
 
 class GrantDaysRequest(BaseModel):
     days: int = Field(gt=0)
+
+
+class AdminAttemptDay(BaseModel):
+    day: str
+    attempts: int
+    correct_rate: float | None
+
+
+class AdminTypeAccuracy(BaseModel):
+    question_type: str
+    total: int
+    accuracy: float
+
+
+class AdminAnalytics(BaseModel):
+    site_mastery: MasteryProfile
+    attempts_by_day: list[AdminAttemptDay]
+    type_accuracy: list[AdminTypeAccuracy]

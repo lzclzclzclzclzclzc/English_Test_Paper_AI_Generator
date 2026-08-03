@@ -174,3 +174,10 @@ def build_profile(user_id: str, window_days: int | None = None) -> MasteryProfil
     from ai_engine import analyzer
 
     return analyzer.build_profile(user_id, window_days)
+
+
+def build_site_profile(window_days: int | None = None) -> MasteryProfile:
+    """Site-wide mastery profile across all users. Read-only, no LLM."""
+    from ai_engine import analyzer
+
+    return analyzer.build_site_profile(window_days)

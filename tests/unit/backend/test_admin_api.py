@@ -316,3 +316,83 @@ def test_memberships_endpoints_require_admin(client, monkeypatch):
     assert client.get("/api/admin/memberships").status_code == 403
     assert client.get("/api/admin/orders").status_code == 403
     assert client.post("/api/admin/memberships/grant", json={"username": "x", "days": 1}).status_code == 403
+
+
+# ---- analytics / user mastery ----
+
+
+def _seed_attempt(user_id, kp="kp_a", qt="single_choice", correct=True):
+    from datetime import datetime, timezone
+    from backend.schemas import StoredAttempt, StoredAttemptItem
+
+    storage.write_attempt(
+        StoredAttempt(
+            user_id=user_id,
+            paper_id="p_" + user_id,
+            answered_at=datetime.now(timezone.utc),
+            items=[
+                StoredAttemptItem(
+                    index=1,
+                    source_question_id="q_00001",
+                    knowledge_point_ids=[kp],
+                    question_type=qt,
+                    is_correct=correct,
+                )
+            ],
+        )
+    )
+
+
+def test_analytics_requires_admin(client):
+    normie = _mk(client, "normie4")
+    _as(client, normie)
+    assert client.get("/api/admin/analytics").status_code == 403
+
+
+def test_analytics_ok_for_admin(client):
+    boss = _mk(client, "boss", admin=True)
+    u1 = _mk(client, "u1")
+    _seed_attempt(u1.id, kp="kp_a", correct=False)
+    _as(client, boss)
+    r = client.get("/api/admin/analytics?days=30")
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body) >= {"site_mastery", "attempts_by_day", "type_accuracy"}
+    assert body["site_mastery"]["user_id"] == "__all__"
+    assert body["site_mastery"]["total_attempts_considered"] == 1
+    assert any(t["question_type"] == "single_choice" for t in body["type_accuracy"])
+
+
+def test_analytics_all_history_when_days_zero(client):
+    boss = _mk(client, "boss", admin=True)
+    u1 = _mk(client, "u1")
+    _seed_attempt(u1.id)
+    _as(client, boss)
+    r = client.get("/api/admin/analytics?days=0")
+    assert r.status_code == 200
+    assert r.json()["site_mastery"]["window_days"] is None
+
+
+def test_user_mastery_requires_admin(client):
+    normie = _mk(client, "normie5")
+    _as(client, normie)
+    assert client.get(f"/api/admin/users/{normie.id}/mastery").status_code == 403
+
+
+def test_user_mastery_404_for_missing_user(client):
+    boss = _mk(client, "boss", admin=True)
+    _as(client, boss)
+    assert client.get("/api/admin/users/ghost/mastery").status_code == 404
+
+
+def test_user_mastery_ok(client):
+    boss = _mk(client, "boss", admin=True)
+    u1 = _mk(client, "u1")
+    _seed_attempt(u1.id, kp="kp_weak", correct=False)
+    _as(client, boss)
+    r = client.get(f"/api/admin/users/{u1.id}/mastery")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["user_id"] == u1.id
+    assert body["total_attempts_considered"] == 1
+    assert any(k["knowledge_point_id"] == "kp_weak" for k in body["weak_kps"])

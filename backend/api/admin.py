@@ -8,6 +8,7 @@ from backend.auth.session import COOKIE_NAME
 from backend.deps import require_admin
 from backend.errors import AdminOperationError, PaymentUpstreamError, ResourceNotFoundError
 from backend.schemas import (
+    AdminAnalytics,
     AdminMembershipItem,
     AdminMembershipListView,
     AdminOrderItem,
@@ -22,7 +23,9 @@ from backend.schemas import (
     SetRoleRequest,
     User,
 )
+from backend.services import ai_gateway
 from shared import storage
+from shared.schemas import MasteryProfile
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -62,6 +65,14 @@ def user_detail(user_id: str, cookie: str | None = Depends(admin_cookie), _: Use
         correct_rate=storage.user_correct_rate(user_id),
         membership_expires_at=_fetch_membership_expiry(user_id, cookie),
     )
+
+
+@router.get("/users/{user_id}/mastery", response_model=MasteryProfile)
+def user_mastery(user_id: str, _: User = Depends(require_admin)) -> MasteryProfile:
+    """That user's knowledge-point mastery profile (read-only, no LLM) — the
+    individual-user learning picture behind the admin detail page."""
+    _require_target(user_id)
+    return ai_gateway.build_profile(user_id)
 
 
 @router.post("/users/{user_id}/role", response_model=User)
@@ -155,6 +166,20 @@ async def stats_timeseries(days: int = 30, _: User = Depends(require_admin)) -> 
     return AdminTimeseries(
         users_by_day=storage.users_created_by_day(days),
         papers_by_day=storage.papers_created_by_day(days),
+    )
+
+
+@router.get("/analytics", response_model=AdminAnalytics)
+def stats_analytics(days: int = 30, _: User = Depends(require_admin)) -> AdminAnalytics:
+    """Site-wide answering analytics: all-users mastery profile, daily
+    volume + correct-rate trend, and per-type accuracy. `days<=0` = all
+    history (window_days=None); the trend still needs a finite span, so it
+    falls back to a very wide window."""
+    window = days if days > 0 else None
+    return AdminAnalytics(
+        site_mastery=ai_gateway.build_site_profile(window),
+        attempts_by_day=storage.attempts_by_day(days if days > 0 else 3650),
+        type_accuracy=storage.question_type_accuracy(window),
     )
 
 

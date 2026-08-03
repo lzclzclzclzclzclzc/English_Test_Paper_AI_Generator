@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import {
   banUser,
   getUserDetail,
+  getUserMastery,
   resetPassword,
   setRole,
   unbanUser,
@@ -14,6 +15,7 @@ import { toastApiError } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { MasteryReport } from '@/components/MasteryReport'
 import {
   Dialog,
   DialogClose,
@@ -100,6 +102,12 @@ export function AdminUserDetailPage() {
   const detail = useQuery({
     queryKey: ['admin', 'user', userId],
     queryFn: () => getUserDetail(userId!),
+    enabled: !!userId,
+  })
+
+  const mastery = useQuery({
+    queryKey: ['admin', 'user', userId, 'mastery'],
+    queryFn: () => getUserMastery(userId!),
     enabled: !!userId,
   })
 
@@ -209,6 +217,23 @@ export function AdminUserDetailPage() {
           pending={passwordMutation.isPending}
           onConfirm={(pw) => passwordMutation.mutate(pw)}
         />
+      </div>
+
+      {/* 学习画像：复用学生端掌握度报告组件 */}
+      <div className="flex flex-col gap-4 border-t border-hairline pt-6">
+        <h2 className="text-[16px] text-ink [font-family:var(--font-display)]">学习画像</h2>
+        {mastery.isLoading ? (
+          <p className="text-[13px] text-quiet">加载中…</p>
+        ) : mastery.isError ? (
+          <p className="text-[13px] text-muted-ink">
+            画像加载失败{' '}
+            <button className="text-accent hover:underline" onClick={() => mastery.refetch()}>
+              重试
+            </button>
+          </p>
+        ) : mastery.data ? (
+          <MasteryReport profile={mastery.data} />
+        ) : null}
       </div>
     </div>
   )

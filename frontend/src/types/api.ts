@@ -303,3 +303,11 @@ export interface AdminOrder {
   paid_at: string | null
 }
 export interface AdminOrderList { items: AdminOrder[] }
+
+export interface AdminAttemptDay { day: string; attempts: number; correct_rate: number | null }
+export interface AdminTypeAccuracy { question_type: string; total: number; accuracy: number }
+export interface AdminAnalytics {
+  site_mastery: MasteryProfile
+  attempts_by_day: AdminAttemptDay[]
+  type_accuracy: AdminTypeAccuracy[]
+}

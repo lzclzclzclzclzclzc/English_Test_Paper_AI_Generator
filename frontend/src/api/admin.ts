@@ -1,7 +1,7 @@
 import { apiFetch } from '@/api/client'
 import type {
-  AdminMembership, AdminMembershipList, AdminOrderList, AdminOverview,
-  AdminTimeseries, AdminUserDetail, AdminUserList, User,
+  AdminAnalytics, AdminMembership, AdminMembershipList, AdminOrderList, AdminOverview,
+  AdminTimeseries, AdminUserDetail, AdminUserList, MasteryProfile, User,
 } from '@/types/api'
 
 const qs = (params: Record<string, string | number | undefined>) => {
@@ -23,6 +23,9 @@ export const banUser = (id: string) => apiFetch<User>(`/admin/users/${id}/ban`, 
 export const unbanUser = (id: string) => apiFetch<User>(`/admin/users/${id}/unban`, { method: 'POST' })
 export const getOverview = () => apiFetch<AdminOverview>('/admin/stats/overview')
 export const getTimeseries = (days = 30) => apiFetch<AdminTimeseries>(`/admin/stats/timeseries${qs({ days })}`)
+// days=0 = 全部历史；直接拼串确保 0 也传出（不经 qs 的 falsy 过滤）。
+export const getAnalytics = (days = 30) => apiFetch<AdminAnalytics>(`/admin/analytics?days=${days}`)
+export const getUserMastery = (id: string) => apiFetch<MasteryProfile>(`/admin/users/${id}/mastery`)
 
 // 会员 / 订单 → 主后端聚合端点 (/api，补齐 username)
 export const listMemberships = (q = '', limit = 50, offset = 0) =>

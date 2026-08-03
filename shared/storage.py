@@ -291,6 +291,71 @@ def papers_created_by_day(days: int = 30) -> list[dict]:
         return _by_day(conn, "papers", "generated_at", days)
 
 
+def attempts_by_day(days: int = 30) -> list[dict]:
+    """Per-day answered-item volume and correct rate across ALL users.
+
+    "attempts" here counts graded attempt_items (not attempt rows), matching
+    the granularity of MasteryProfile.total_attempts_considered. correct_rate
+    is the daily mean of is_correct (None only when a day has no items, which
+    cannot occur in a GROUP BY result)."""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT substr(a.answered_at, 1, 10) AS day,
+                   COUNT(*) AS attempts,
+                   ROUND(AVG(ai.is_correct), 4) AS correct_rate
+            FROM attempts a
+            JOIN attempt_items ai ON ai.attempt_id = a.id
+            WHERE a.answered_at >= ?
+            GROUP BY day
+            ORDER BY day
+            """,
+            (since,),
+        ).fetchall()
+    return [
+        {"day": r["day"], "attempts": r["attempts"], "correct_rate": r["correct_rate"]}
+        for r in rows
+    ]
+
+
+def question_type_accuracy(window_days: int | None = None) -> list[dict]:
+    """Wilson-lower-bound accuracy per question_type across ALL users.
+
+    Uses the same _wilson_lower_bound scoring as mastery so low-sample types
+    aren't over-credited. window_days None = all history."""
+    init_db()
+    params: list[object] = []
+    where = ""
+    if window_days is not None:
+        since = datetime.now(timezone.utc) - timedelta(days=window_days)
+        where = "WHERE a.answered_at >= ?"
+        params.append(since.isoformat())
+    with connect() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT ai.question_type AS question_type,
+                   COUNT(*) AS total,
+                   SUM(ai.is_correct) AS correct
+            FROM attempts a
+            JOIN attempt_items ai ON ai.attempt_id = a.id
+            {where}
+            GROUP BY ai.question_type
+            ORDER BY ai.question_type
+            """,
+            params,
+        ).fetchall()
+    return [
+        {
+            "question_type": r["question_type"],
+            "total": r["total"],
+            "accuracy": _wilson_lower_bound(r["correct"] or 0, r["total"]),
+        }
+        for r in rows
+    ]
+
+
 def update_password_hash(user_id: str, password_hash: str) -> None:
     init_db()
     with connect() as conn:

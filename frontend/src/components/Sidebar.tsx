@@ -52,6 +52,7 @@ const ADMIN_GROUPS = [
     label: '管理后台',
     items: [
       { to: '/admin', label: '概览', icon: LayoutDashboard, end: true },
+      { to: '/admin/analytics', label: '分析', icon: BarChart3, end: true },
       { to: '/admin/users', label: '用户', icon: Users, end: false },
       { to: '/admin/memberships', label: '会员', icon: BadgeCheck, end: true },
       { to: '/admin/orders', label: '订单', icon: ScrollText, end: true },
