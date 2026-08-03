@@ -143,9 +143,14 @@ def _has_question_bank(conn) -> bool:
 
 
 def _has_vector_bank(conn) -> bool:
+    # Listening questions are intentionally SQLite-only (matched by exact SQL,
+    # never semantic search), so they carry no embeddings. The vector bank is
+    # expected to cover only the non-listening questions — count those.
     question_count = 0
     if _table_exists(conn, "questions"):
-        row = conn.execute("SELECT COUNT(*) AS count FROM questions").fetchone()
+        row = conn.execute(
+            "SELECT COUNT(*) AS count FROM questions WHERE question_type NOT LIKE 'listening%'"
+        ).fetchone()
         question_count = int(row["count"])
     status = storage.inspect_chroma_question_collection(expected_question_count=question_count)
     return bool(status["ready"])
