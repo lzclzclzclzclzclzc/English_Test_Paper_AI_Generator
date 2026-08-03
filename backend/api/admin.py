@@ -34,6 +34,13 @@ def _require_target(user_id: str) -> User:
     return target
 
 
+def admin_cookie(request: Request) -> str | None:
+    """The acting admin's session cookie, forwarded on cross-service payment
+    reads so payment's require_admin passes. Centralises the extraction the
+    payment-calling endpoints all need."""
+    return request.cookies.get(COOKIE_NAME)
+
+
 @router.get("/users", response_model=AdminUserList)
 async def list_users(q: str = "", limit: int = 50, offset: int = 0, _: User = Depends(require_admin)) -> AdminUserList:
     items = storage.list_users(q=q, limit=limit, offset=offset)
@@ -41,10 +48,9 @@ async def list_users(q: str = "", limit: int = 50, offset: int = 0, _: User = De
 
 
 @router.get("/users/{user_id}", response_model=AdminUserDetail)
-def user_detail(user_id: str, request: Request, _: User = Depends(require_admin)) -> AdminUserDetail:
+def user_detail(user_id: str, cookie: str | None = Depends(admin_cookie), _: User = Depends(require_admin)) -> AdminUserDetail:
     target = _require_target(user_id)
     counts = storage.get_user_counts(user_id)
-    cookie = request.cookies.get(COOKIE_NAME)
     return AdminUserDetail(
         id=target.id,
         username=target.username,
@@ -89,6 +95,8 @@ async def ban(user_id: str, admin: User = Depends(require_admin)) -> User:
 async def unban(user_id: str, _: User = Depends(require_admin)) -> User:
     _require_target(user_id)
     storage.set_user_status(user_id, "active")
+    # Force re-authentication, symmetric with ban / reset-password.
+    storage.delete_sessions_by_user(user_id)
     return storage.get_user_by_id(user_id)
 
 
@@ -137,9 +145,8 @@ def _payment_post_json(path: str, cookie: str | None, json: dict | None = None) 
 
 
 @router.get("/stats/overview", response_model=AdminOverview)
-def stats_overview(request: Request, _: User = Depends(require_admin)) -> AdminOverview:
+def stats_overview(cookie: str | None = Depends(admin_cookie), _: User = Depends(require_admin)) -> AdminOverview:
     counts = storage.admin_counts()
-    cookie = request.cookies.get(COOKIE_NAME)
     return AdminOverview(**counts, active_members=_fetch_active_members(cookie))
 
 
@@ -156,13 +163,12 @@ async def stats_timeseries(days: int = 30, _: User = Depends(require_admin)) -> 
 
 @router.get("/memberships", response_model=AdminMembershipListView)
 def list_memberships(
-    request: Request,
     q: str = "",
     limit: int = 50,
     offset: int = 0,
+    cookie: str | None = Depends(admin_cookie),
     _: User = Depends(require_admin),
 ) -> AdminMembershipListView:
-    cookie = request.cookies.get(COOKIE_NAME)
     # Pull the full membership set from payment, then join usernames locally.
     payload = _payment_get_json(
         "/payapi/admin/memberships", cookie, params={"limit": 100000}
@@ -189,13 +195,12 @@ def list_memberships(
 
 @router.get("/orders", response_model=AdminOrderListView)
 def list_orders(
-    request: Request,
     status: str = "",
     limit: int = 50,
     offset: int = 0,
+    cookie: str | None = Depends(admin_cookie),
     _: User = Depends(require_admin),
 ) -> AdminOrderListView:
-    cookie = request.cookies.get(COOKIE_NAME)
     params: dict = {"limit": limit, "offset": offset}
     if status:
         params["status"] = status
@@ -220,12 +225,11 @@ def list_orders(
 
 @router.post("/memberships/grant")
 def grant_membership_by_username(
-    body: GrantByUsernameRequest, request: Request, _: User = Depends(require_admin)
+    body: GrantByUsernameRequest, cookie: str | None = Depends(admin_cookie), _: User = Depends(require_admin)
 ) -> dict:
     user = storage.get_user_by_username(body.username)
     if user is None:
         raise ResourceNotFoundError("用户不存在")
-    cookie = request.cookies.get(COOKIE_NAME)
     return _payment_post_json(
         f"/payapi/admin/memberships/{user.id}/grant", cookie, json={"days": body.days}
     )
@@ -233,9 +237,8 @@ def grant_membership_by_username(
 
 @router.post("/memberships/{user_id}/grant")
 def grant_membership(
-    user_id: str, body: GrantDaysRequest, request: Request, _: User = Depends(require_admin)
+    user_id: str, body: GrantDaysRequest, cookie: str | None = Depends(admin_cookie), _: User = Depends(require_admin)
 ) -> dict:
-    cookie = request.cookies.get(COOKIE_NAME)
     return _payment_post_json(
         f"/payapi/admin/memberships/{user_id}/grant", cookie, json={"days": body.days}
     )
@@ -243,9 +246,8 @@ def grant_membership(
 
 @router.post("/memberships/{user_id}/revoke")
 def revoke_membership(
-    user_id: str, request: Request, _: User = Depends(require_admin)
+    user_id: str, cookie: str | None = Depends(admin_cookie), _: User = Depends(require_admin)
 ) -> dict:
-    cookie = request.cookies.get(COOKIE_NAME)
     return _payment_post_json(f"/payapi/admin/memberships/{user_id}/revoke", cookie)
 
 

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 
 /** 校验是否为正整数天数。 */
 function isValidDays(v: string): boolean {
@@ -85,53 +86,6 @@ function GrantDialog({
             }}
           >
             确认
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-/** 确认弹窗：触发按钮 + 确认动作。确认后自动关闭。 */
-function ConfirmDialog({
-  trigger,
-  title,
-  description,
-  confirmLabel,
-  onConfirm,
-  pending,
-}: {
-  trigger: ReactNode
-  title: string
-  description: string
-  confirmLabel: string
-  onConfirm: () => void
-  pending: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" size="sm">
-              取消
-            </Button>
-          </DialogClose>
-          <Button
-            size="sm"
-            disabled={pending}
-            onClick={() => {
-              onConfirm()
-              setOpen(false)
-            }}
-          >
-            {confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -279,7 +233,24 @@ export function AdminMembershipsPage() {
                 </td>
               </tr>
             ))}
-            {memberships.data && memberships.data.items.length === 0 && (
+            {memberships.isLoading && (
+              <tr>
+                <td colSpan={4} className="px-3 py-6 text-center text-quiet">
+                  加载中…
+                </td>
+              </tr>
+            )}
+            {memberships.isError && (
+              <tr>
+                <td colSpan={4} className="px-3 py-6 text-center text-muted-ink">
+                  会员记录加载失败{' '}
+                  <button className="text-accent hover:underline" onClick={() => memberships.refetch()}>
+                    重试
+                  </button>
+                </td>
+              </tr>
+            )}
+            {!memberships.isLoading && !memberships.isError && memberships.data && memberships.data.items.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-3 py-6 text-center text-quiet">
                   暂无会员记录

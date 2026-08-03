@@ -26,6 +26,7 @@ DB_PATH_OVERRIDE: Path | None = None
 MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX = "20260709_001_attempt_items_item_index"
 MIGRATION_USERS_ROLE = "20260801_001_users_role"
 MIGRATION_USERS_STATUS = "20260801_002_users_status"
+MIGRATION_ATTEMPT_ITEMS_USER_ANSWER = "20260803_001_attempt_items_user_answer"
 CHROMA_COLLECTION_NAME = "questions"
 CHROMA_REQUIRED_METADATA_KEYS = {
     "book",
@@ -407,11 +408,8 @@ def list_papers(user_id: str, limit: int = 100, offset: int = 0) -> list[PaperLi
         rows = conn.execute(
             """
             SELECT paper_id, title, generated_at, payload_json, submitted
-            FROM (
-                SELECT paper_id, title, generated_at, payload_json, submitted
-                FROM papers
-                WHERE user_id = ?
-            )
+            FROM papers
+            WHERE user_id = ?
             ORDER BY generated_at DESC
             LIMIT ? OFFSET ?
             """,
@@ -689,9 +687,6 @@ def _write_attempt(conn: sqlite3.Connection, attempt: StoredAttempt, attempt_id:
     attempt_item_columns = _table_columns(conn, "attempt_items")
     if "item_index" not in attempt_item_columns:
         raise RuntimeError("attempt_items schema is missing item_index")
-    # incremental migration: store the user's submitted answer for review replay
-    if "user_answer_json" not in attempt_item_columns:
-        conn.execute("ALTER TABLE attempt_items ADD COLUMN user_answer_json TEXT")
     for item in attempt.items:
         conn.execute(
             """
@@ -783,6 +778,16 @@ def _migrate_attempt_items_item_index(conn: sqlite3.Connection) -> None:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_att_it_source ON attempt_items(source_question_id)")
 
 
+def _migrate_attempt_items_user_answer(conn: sqlite3.Connection) -> None:
+    if not _table_exists(conn, "attempt_items"):
+        return
+    if "user_answer_json" in _table_columns(conn, "attempt_items"):
+        return
+    # Stores the user's submitted answer for review replay (nullable — legacy
+    # rows predate this column and keep NULL).
+    conn.execute("ALTER TABLE attempt_items ADD COLUMN user_answer_json TEXT")
+
+
 def _ensure_schema_migrations(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -799,6 +804,7 @@ def _apply_migrations(conn: sqlite3.Connection) -> None:
         (MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX, _migrate_attempt_items_item_index),
         (MIGRATION_USERS_ROLE, _migrate_users_role),
         (MIGRATION_USERS_STATUS, _migrate_users_status),
+        (MIGRATION_ATTEMPT_ITEMS_USER_ANSWER, _migrate_attempt_items_user_answer),
     ]
     for migration_id, migration in migrations:
         if _migration_applied(conn, migration_id):

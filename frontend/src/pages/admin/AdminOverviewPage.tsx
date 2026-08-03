@@ -18,6 +18,17 @@ export function AdminOverviewPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-[20px] text-ink [font-family:var(--font-display)]">概览</h1>
+      {(overview.isError || series.isError) && (
+        <div className="flex items-center gap-3 rounded-md border border-hairline bg-wash/40 px-4 py-3">
+          <p className="text-[13px] text-muted-ink">部分数据加载失败</p>
+          <button
+            className="text-[13px] text-accent hover:underline"
+            onClick={() => { overview.refetch(); series.refetch() }}
+          >
+            重试
+          </button>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Metric label="总用户" value={o?.total_users ?? '—'} />
         <Metric label="今日新增" value={o?.new_users_today ?? '—'} />

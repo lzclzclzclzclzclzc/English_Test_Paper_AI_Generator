@@ -244,8 +244,12 @@ def implement_study_plan(plan_text: str, start_date: str = "") -> str:
 
     days_out = []
     saved_days = []
+    failed_days = []
     for r in results:
         if "error" in r:
+            failed_days.append({
+                "index": r["index"], "theme": r["theme"], "error": r["error"],
+            })
             days_out.append({
                 "index": r["index"], "theme": r["theme"],
                 "knowledge_points": r["kp_names"], "error": r["error"],
@@ -271,9 +275,14 @@ def implement_study_plan(plan_text: str, start_date: str = "") -> str:
     serialisable = {"total_days": len(saved_days), "days": saved_days}
     plan_id = _storage.save_study_plan(user_id, len(saved_days), serialisable)
 
+    # Surface partial failure explicitly so the coach can tell the user which
+    # days it couldn't build (requested_days > total_days ⇒ some days failed),
+    # rather than silently shrinking the plan.
     return json.dumps({
         "plan_id": plan_id,
+        "requested_days": len(plan_data.days),
         "total_days": len(saved_days),
+        "failed_days": failed_days,
         "days": days_out,
     }, ensure_ascii=False, indent=2)
 

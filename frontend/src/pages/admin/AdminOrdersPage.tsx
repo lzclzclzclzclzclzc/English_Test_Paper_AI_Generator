@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { listOrders } from '@/api/admin'
 import { displayName } from '@/lib/adminDisplay'
+import { formatYuan } from '@/lib/money'
 import { cn } from '@/lib/utils'
 
 const STATUS_OPTIONS = [
@@ -60,7 +61,7 @@ export function AdminOrdersPage() {
                 </td>
                 <td className="px-3 py-2 text-muted-ink">{o.plan_id}</td>
                 <td className="px-3 py-2 text-muted-ink">
-                  ¥{(o.amount_cents / 100).toFixed(2)}
+                  {formatYuan(o.amount_cents)}
                 </td>
                 <td className="px-3 py-2 text-muted-ink">{o.status}</td>
                 <td className="px-3 py-2 text-muted-ink">
@@ -68,7 +69,24 @@ export function AdminOrdersPage() {
                 </td>
               </tr>
             ))}
-            {orders.data && orders.data.items.length === 0 && (
+            {orders.isLoading && (
+              <tr>
+                <td colSpan={6} className="px-3 py-6 text-center text-quiet">
+                  加载中…
+                </td>
+              </tr>
+            )}
+            {orders.isError && (
+              <tr>
+                <td colSpan={6} className="px-3 py-6 text-center text-muted-ink">
+                  订单加载失败{' '}
+                  <button className="text-accent hover:underline" onClick={() => orders.refetch()}>
+                    重试
+                  </button>
+                </td>
+              </tr>
+            )}
+            {!orders.isLoading && !orders.isError && orders.data && orders.data.items.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-6 text-center text-quiet">
                   暂无订单
