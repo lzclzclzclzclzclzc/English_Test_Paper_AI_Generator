@@ -16,6 +16,7 @@ import { RequireAdmin } from '@/components/RequireAdmin'
 import { RedirectIfAdmin } from '@/components/RedirectIfAdmin'
 import { AdminLayout } from '@/pages/admin/AdminLayout'
 import { AdminOverviewPage } from '@/pages/admin/AdminOverviewPage'
+import { AdminAnalyticsPage } from '@/pages/admin/AdminAnalyticsPage'
 import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
 import { AdminMembershipsPage } from '@/pages/admin/AdminMembershipsPage'
@@ -54,6 +55,7 @@ export function AppRoutes() {
           }
         >
           <Route index element={<AdminOverviewPage />} />
+          <Route path="analytics" element={<AdminAnalyticsPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="users/:userId" element={<AdminUserDetailPage />} />
           <Route path="memberships" element={<AdminMembershipsPage />} />

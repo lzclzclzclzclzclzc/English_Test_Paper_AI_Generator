@@ -13,8 +13,19 @@ import math
 import sqlite3
 from collections import defaultdict
 
-from shared.config import get_config
 from shared.schemas import KPMastery, MasteryProfile
+
+
+def _db_path() -> str:
+    """Resolve the question DB path, honouring a storage test override.
+
+    analyzer reads the same DB storage writes to; when a caller (tests, or a
+    future multi-tenant setup) overrides the path via storage.set_db_path, we
+    must follow it — otherwise admin/mastery reads hit the default DB while
+    writes go to the override. Falls back to get_config().db_path."""
+    from shared import storage
+
+    return str(storage.get_db_path())
 
 # Number of weakest KPs to surface (Spec B §7.2).
 DEFAULT_WEAK_KP_LIMIT = 8
@@ -61,6 +72,29 @@ def _fetch_attempt_items(
         conn.close()
 
 
+def _fetch_all_attempt_items(
+    db_path: str, window_days: int | None
+) -> list[sqlite3.Row]:
+    """Fetch ALL users' answered items, optionally limited to the last N days.
+
+    Site-wide counterpart of _fetch_attempt_items (no user_id filter)."""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            """
+            SELECT ai.kps_json, ai.question_type, ai.is_correct
+            FROM attempts a
+            JOIN attempt_items ai ON a.id = ai.attempt_id
+            WHERE (? IS NULL OR a.answered_at >= datetime('now', '-' || ? || ' days'))
+            """,
+            (window_days, window_days),
+        ).fetchall()
+        return rows
+    finally:
+        conn.close()
+
+
 def build_profile(user_id: str, window_days: int | None = None) -> MasteryProfile:
     """Build a user's mastery profile from attempt history.
 
@@ -73,9 +107,26 @@ def build_profile(user_id: str, window_days: int | None = None) -> MasteryProfil
         (most-wrong question types, top 3), and total_attempts_considered.
         Empty profile when there's no history (Spec B §7.3).
     """
-    cfg = get_config()
-    rows = _fetch_attempt_items(str(cfg.db_path), user_id, window_days)
+    rows = _fetch_attempt_items(_db_path(), user_id, window_days)
+    return _reduce_profile(rows, user_id, window_days)
 
+
+def build_site_profile(window_days: int | None = None) -> MasteryProfile:
+    """Site-wide mastery profile aggregated across ALL users' attempt history.
+
+    Same reduction as build_profile but with no user_id filter — used by the
+    admin analytics dashboard to surface which knowledge points the whole
+    student body struggles with. Read-only, no LLM. user_id is "__all__" as a
+    sentinel (the profile is not tied to a single user)."""
+    rows = _fetch_all_attempt_items(_db_path(), window_days)
+    return _reduce_profile(rows, "__all__", window_days)
+
+
+def _reduce_profile(
+    rows: list[sqlite3.Row], user_id: str, window_days: int | None
+) -> MasteryProfile:
+    """Reduce answered-item rows to a MasteryProfile. Shared by single-user
+    (build_profile) and site-wide (build_site_profile) aggregation."""
     if not rows:
         return MasteryProfile(
             user_id=user_id,

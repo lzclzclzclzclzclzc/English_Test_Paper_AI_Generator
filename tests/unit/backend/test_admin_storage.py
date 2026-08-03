@@ -1,8 +1,32 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from backend.auth.password import hash_password, verify_password
+from backend.schemas import StoredAttempt, StoredAttemptItem
 from shared import storage
+
+
+def _item(kp, qt="single_choice", correct=True, idx=1):
+    return StoredAttemptItem(
+        index=idx,
+        source_question_id=f"q_{idx:05d}",
+        knowledge_point_ids=[kp] if isinstance(kp, str) else kp,
+        question_type=qt,
+        is_correct=correct,
+    )
+
+
+def _write(db, user_id, items, answered_at=None):
+    db.write_attempt(
+        StoredAttempt(
+            user_id=user_id,
+            paper_id="p_" + user_id,
+            answered_at=answered_at or datetime.now(timezone.utc),
+            items=items,
+        )
+    )
 
 
 @pytest.fixture
@@ -90,3 +114,48 @@ def test_usernames_by_ids_unknown_absent(db):
     result = db.usernames_by_ids([a.id, "ghost"])
     assert result == {a.id: "mapc"}
     assert "ghost" not in result
+
+
+def test_attempts_by_day_buckets_and_correct_rate(db):
+    now = datetime.now(timezone.utc)
+    yesterday = now - timedelta(days=1)
+    # today: 1 correct + 1 wrong → rate 0.5
+    _write(db, "u1", [_item("kp_a", correct=True, idx=1), _item("kp_a", correct=False, idx=2)], answered_at=now)
+    # yesterday: 1 correct → rate 1.0
+    _write(db, "u2", [_item("kp_a", correct=True, idx=1)], answered_at=yesterday)
+
+    series = db.attempts_by_day(days=7)
+    by_day = {p["day"]: p for p in series}
+    assert all(set(p.keys()) == {"day", "attempts", "correct_rate"} for p in series)
+    today_key = now.date().isoformat()
+    assert by_day[today_key]["attempts"] == 2
+    assert by_day[today_key]["correct_rate"] == 0.5
+    assert by_day[yesterday.date().isoformat()]["correct_rate"] == 1.0
+
+
+def test_attempts_by_day_window_excludes_old(db):
+    old = datetime.now(timezone.utc) - timedelta(days=100)
+    _write(db, "u1", [_item("kp_a", correct=True)], answered_at=old)
+    assert db.attempts_by_day(days=7) == []
+
+
+def test_question_type_accuracy_per_type_wilson(db):
+    # single_choice: 8/10 ; word_form: 0/2
+    for i in range(10):
+        _write(db, "u1", [_item("kp_sc", qt="single_choice", correct=(i < 8), idx=1)])
+    for i in range(2):
+        _write(db, "u2", [_item("kp_wf", qt="word_form", correct=False, idx=1)])
+
+    rows = db.question_type_accuracy()
+    by_type = {r["question_type"]: r for r in rows}
+    assert by_type["single_choice"]["total"] == 10
+    assert by_type["word_form"]["total"] == 2
+    # Wilson lower bound: high-sample 80% clearly beats all-wrong
+    assert by_type["single_choice"]["accuracy"] > by_type["word_form"]["accuracy"]
+    assert by_type["word_form"]["accuracy"] == 0.0  # 0 correct → 0.0
+
+
+def test_question_type_accuracy_window(db):
+    old = datetime.now(timezone.utc) - timedelta(days=100)
+    _write(db, "u1", [_item("kp_a", qt="single_choice", correct=True)], answered_at=old)
+    assert db.question_type_accuracy(window_days=7) == []
