@@ -77,8 +77,12 @@ def test_ban_and_unban(client):
     assert client.post(f"/api/admin/users/{victim.id}/ban").status_code == 200
     assert storage.get_session(victim_sid) is None
     assert storage.get_user_by_id(victim.id).status == "banned"
+    # A stale session created before unban must also be cleared — unban forces
+    # re-authentication, symmetric with ban / reset-password.
+    stale_sid = storage.create_session(victim.id)
     assert client.post(f"/api/admin/users/{victim.id}/unban").status_code == 200
     assert storage.get_user_by_id(victim.id).status == "active"
+    assert storage.get_session(stale_sid) is None
 
 
 def test_cannot_ban_self(client):

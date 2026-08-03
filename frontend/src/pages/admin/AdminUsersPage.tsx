@@ -43,7 +43,24 @@ export function AdminUsersPage() {
                 </td>
               </tr>
             ))}
-            {users.data && users.data.items.length === 0 && (
+            {users.isLoading && (
+              <tr>
+                <td colSpan={6} className="px-3 py-6 text-center text-quiet">
+                  加载中…
+                </td>
+              </tr>
+            )}
+            {users.isError && (
+              <tr>
+                <td colSpan={6} className="px-3 py-6 text-center text-muted-ink">
+                  用户列表加载失败{' '}
+                  <button className="text-accent hover:underline" onClick={() => users.refetch()}>
+                    重试
+                  </button>
+                </td>
+              </tr>
+            )}
+            {!users.isLoading && !users.isError && users.data && users.data.items.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-6 text-center text-quiet">
                   没有匹配的用户

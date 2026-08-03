@@ -24,6 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -31,53 +32,6 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
       <div className="text-quiet">{label}</div>
       <div className="text-ink">{value}</div>
     </>
-  )
-}
-
-/** 确认弹窗：触发按钮 + 确认动作。确认后自动关闭。 */
-function ConfirmDialog({
-  trigger,
-  title,
-  description,
-  confirmLabel,
-  onConfirm,
-  pending,
-}: {
-  trigger: ReactNode
-  title: string
-  description: string
-  confirmLabel: string
-  onConfirm: () => void
-  pending: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" size="sm">
-              取消
-            </Button>
-          </DialogClose>
-          <Button
-            size="sm"
-            disabled={pending}
-            onClick={() => {
-              onConfirm()
-              setOpen(false)
-            }}
-          >
-            {confirmLabel}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   )
 }
 
@@ -180,6 +134,15 @@ export function AdminUserDetailPage() {
   })
 
   if (detail.isLoading) return <div className="text-muted-ink">加载中…</div>
+  if (detail.isError)
+    return (
+      <div className="text-muted-ink">
+        加载失败{' '}
+        <button className="text-accent hover:underline" onClick={() => detail.refetch()}>
+          重试
+        </button>
+      </div>
+    )
 
   const u = detail.data
   if (!u) return <div className="text-muted-ink">未找到用户</div>

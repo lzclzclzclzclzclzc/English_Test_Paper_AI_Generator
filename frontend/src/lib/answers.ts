@@ -88,7 +88,7 @@ export function buildSubmission(
     const keys = getBlankKeys(item.question.answer)
     const map: BlankMap = {}
     for (const k of keys) {
-      map[k] = draft != null && typeof draft !== 'string' ? (draft[k] ?? '').trim() : ''
+      map[k] = (typeof draft === 'object' ? (draft[k] ?? '') : '').trim()
     }
     return { index: item.index, user_answer: map }
   })

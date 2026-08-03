@@ -225,23 +225,26 @@ class TestValidateRevision:
 
     def test_empty_fill_in_answer_fails(self):
         q = _make_wf_question()
-        rq = RevisedQuestion(
-            question_type="word_form",
-            knowledge_point_ids=q.knowledge_point_ids,
-            stem=q.stem,
-            answer=[{"blank1": [""]}],  # empty string in answer
-        )
-        # empty string after strip → fails
-        # Note: answer is a list here, str check goes via str(answer).strip()
-        # An empty list dict is still non-empty as string; this passes schema.
-        # Test the truly-empty string case:
-        rq2 = RevisedQuestion(
-            question_type="word_form",
-            knowledge_point_ids=q.knowledge_point_ids,
-            stem=q.stem,
-            answer="",  # bare empty string
-        )
-        assert _validate_revision(q, rq2) is False
+        # Every structurally-empty fill-in answer must be rejected. These all
+        # used to slip through the old `str(answer).strip()` check (a non-empty
+        # list stringifies to a truthy repr) but can never be graded correct.
+        bad_answers = [
+            "",                       # bare empty string
+            [],                       # no candidate groups
+            [{}],                     # group with no blanks
+            [{"blank1": []}],         # blank with no candidates
+            [{"blank1": [""]}],       # blank whose only candidate is blank
+            [{"blank1": ["  "]}],     # whitespace-only candidate
+            [{"blank1": ["ok"], "blank2": []}],  # one good blank, one empty
+        ]
+        for bad in bad_answers:
+            rq = RevisedQuestion(
+                question_type="word_form",
+                knowledge_point_ids=q.knowledge_point_ids,
+                stem=q.stem,
+                answer=bad,
+            )
+            assert _validate_revision(q, rq) is False, f"should reject {bad!r}"
 
     def test_valid_word_form_passes(self):
         q = _make_wf_question()
