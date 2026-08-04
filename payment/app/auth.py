@@ -15,6 +15,7 @@ _cache: dict[str, tuple["AuthUser", float]] = {}
 class AuthUser:
     id: str
     username: str
+    role: str = "user"
 
 
 async def get_current_user(request: Request) -> AuthUser:
@@ -27,7 +28,7 @@ async def get_current_user(request: Request) -> AuthUser:
     settings = get_settings()
     if settings.payment_dev_fake_user:
         name = settings.payment_dev_fake_user
-        return AuthUser(id=f"dev-{name}", username=name)
+        return AuthUser(id=f"dev-{name}", username=name, role=settings.payment_dev_fake_role)
 
     sid = request.cookies.get("session_id")
     if not sid:
@@ -38,7 +39,11 @@ async def get_current_user(request: Request) -> AuthUser:
         return hit[0]
 
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
+        # This is a purely LOCAL call (payment -> main backend, e.g.
+        # http://localhost:8000). trust_env=False makes httpx ignore any
+        # ambient system/env proxy config; otherwise a machine with a system
+        # HTTP proxy would route localhost through the proxy and fail (503).
+        async with httpx.AsyncClient(timeout=3.0, trust_env=False) as client:
             resp = await client.get(
                 f"{settings.main_backend_url}/api/auth/me",
                 cookies={"session_id": sid},
@@ -61,6 +66,13 @@ async def get_current_user(request: Request) -> AuthUser:
         )
 
     data = resp.json()
-    user = AuthUser(id=str(data["id"]), username=data["username"])
+    user = AuthUser(id=str(data["id"]), username=data["username"], role=data.get("role", "user"))
     _cache[sid] = (user, time.monotonic() + _CACHE_TTL_SECONDS)
+    return user
+
+
+async def require_admin(request: Request) -> AuthUser:
+    user = await get_current_user(request)
+    if user.role != "admin":
+        raise PaymentError(403, "auth.forbidden", "无权访问")
     return user

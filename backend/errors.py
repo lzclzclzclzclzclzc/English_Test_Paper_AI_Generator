@@ -36,6 +36,12 @@ class AuthenticationError(BackendError):
     message = "未登录或会话已过期"
 
 
+class AuthorizationError(BackendError):
+    error_code = "auth.forbidden"
+    http_status = 403
+    message = "无权访问"
+
+
 class UsernameConflictError(BackendError):
     error_code = "auth.username_conflict"
     http_status = 409
@@ -58,6 +64,12 @@ class ValidationError(BackendError):
     error_code = "request.invalid"
     http_status = 422
     message = "请求参数错误"
+
+
+class AdminOperationError(BackendError):
+    error_code = "admin.invalid_operation"
+    http_status = 400
+    message = "非法的管理操作"
 
 
 class RateLimitError(BackendError):
@@ -100,6 +112,12 @@ class AIInternalError(BackendError):
     error_code = "ai.internal"
     http_status = 500
     message = "AI Engine 内部异常"
+
+
+class PaymentUpstreamError(BackendError):
+    error_code = "payment.upstream"
+    http_status = 502
+    message = "支付服务不可用"
 
 
 def install_error_handlers(app: FastAPI) -> None:

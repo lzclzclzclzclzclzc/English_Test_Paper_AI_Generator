@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from shared.config import get_config
 from shared.llm.deepseek import get_llm_client
 
-QuestionType = Literal["single_choice", "word_form", "sentence_rewriting"]
+QuestionType = Literal["single_choice", "word_form", "sentence_rewriting", "listening_single_choice"]
 
 
 class StudyPlanDay(BaseModel):
@@ -91,7 +91,7 @@ def extract_study_plan(
 - **一天可以有多个知识点**：原文里"第X天：名词专题（名词变复数、名词→动词…）"这类
   一天多考点的安排，要把每个考点的 id 都提取进 knowledge_points 列表，不能只保留一个
 - knowledge_points 里的 id 必须从上方清单中选择，不能编造或缩写；找不到完全匹配就选语义最接近的
-- question_types 是这些知识点对应的题型集合（single_choice / word_form / sentence_rewriting）
+- question_types 是这些知识点对应的题型集合（single_choice / word_form / sentence_rewriting / listening_single_choice）
 - total_questions 取原文当天的总题量（各考点题量之和，1~20）
 - note 从原文中提取该天的备注描述
 """

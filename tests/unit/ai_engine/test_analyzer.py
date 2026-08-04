@@ -15,11 +15,10 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
-from ai_engine.analyzer import _wilson_lower, build_profile
+from ai_engine.analyzer import _wilson_lower, build_profile, build_site_profile
 
 
 # ---------------------------------------------------------------------------
@@ -111,9 +110,19 @@ def _insert_item(db_path: Path, attempt_id: str, qtype: str,
 
 
 def _patch_config(temp_db: Path):
-    mock_cfg = MagicMock()
-    mock_cfg.db_path = str(temp_db)
-    return patch("ai_engine.analyzer.get_config", return_value=mock_cfg)
+    """Point analyzer's DB resolution at the temp DB.
+
+    analyzer now resolves the path via storage.get_db_path(), so we set the
+    storage override (contextmanager-style) rather than patching get_config."""
+    from shared import storage
+
+    class _Ctx:
+        def __enter__(self):
+            storage.set_db_path(temp_db)
+        def __exit__(self, *exc):
+            storage.set_db_path(None)
+
+    return _Ctx()
 
 
 class TestBuildProfileEmpty:
@@ -229,3 +238,59 @@ class TestBuildProfileWindow:
         with _patch_config(temp_db):
             profile = build_profile("u1", window_days=14)
         assert profile.window_days == 14
+
+
+# ---------------------------------------------------------------------------
+# 3. build_site_profile — aggregation across ALL users
+# ---------------------------------------------------------------------------
+
+class TestBuildSiteProfile:
+    def test_empty_history_returns_empty(self, temp_db: Path):
+        with _patch_config(temp_db):
+            profile = build_site_profile()
+        assert profile.user_id == "__all__"
+        assert profile.weak_kps == []
+        assert profile.total_attempts_considered == 0
+
+    def test_aggregates_across_users(self, temp_db: Path):
+        # two different users; their items must BOTH be counted
+        _insert_attempt(temp_db, "a1", "u1")
+        _insert_item(temp_db, "a1", "single_choice", 1, ["kp_shared"])
+        _insert_attempt(temp_db, "a2", "u2")
+        _insert_item(temp_db, "a2", "word_form", 0, ["kp_shared"])
+        _insert_item(temp_db, "a2", "word_form", 0, ["kp_only_u2"])
+
+        with _patch_config(temp_db):
+            profile = build_site_profile()
+
+        assert profile.user_id == "__all__"
+        # 3 items total across both users
+        assert profile.total_attempts_considered == 3
+        kp_ids = {k.knowledge_point_id for k in profile.weak_kps}
+        assert kp_ids == {"kp_shared", "kp_only_u2"}
+        # kp_shared: 1 correct / 2 attempts (pooled across users); kp_only_u2: 0/1
+        by_id = {k.knowledge_point_id: k for k in profile.weak_kps}
+        assert by_id["kp_shared"].attempts == 2
+
+    def test_weak_kps_sorted_ascending(self, temp_db: Path):
+        _insert_attempt(temp_db, "a1", "u1")
+        # strong KP: many correct; weak KP: many wrong
+        for _ in range(10):
+            _insert_item(temp_db, "a1", "single_choice", 1, ["kp_strong"])
+        for _ in range(10):
+            _insert_item(temp_db, "a1", "single_choice", 0, ["kp_weak"])
+        with _patch_config(temp_db):
+            profile = build_site_profile()
+        masteries = [k.mastery for k in profile.weak_kps]
+        assert masteries == sorted(masteries)
+        assert profile.weak_kps[0].knowledge_point_id == "kp_weak"
+
+    def test_window_filters(self, temp_db: Path):
+        _insert_attempt(temp_db, "recent", "u1", "datetime('now')")
+        _insert_attempt(temp_db, "old", "u2", "datetime('now', '-100 days')")
+        _insert_item(temp_db, "recent", "single_choice", 0, ["kp_recent"])
+        _insert_item(temp_db, "old", "single_choice", 0, ["kp_old"])
+        with _patch_config(temp_db):
+            profile = build_site_profile(window_days=30)
+        assert profile.total_attempts_considered == 1
+        assert {k.knowledge_point_id for k in profile.weak_kps} == {"kp_recent"}

@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 OrderStatus = Literal["CREATED", "PAID", "EXPIRED", "CLOSED"]
 # qr = 当面付扫码(需沙箱版支付宝 App);web = 电脑网站支付(桌面浏览器收银台)
@@ -42,3 +42,14 @@ class OrderOut(BaseModel):
 class HealthOut(BaseModel):
     status: str
     mock_pay: bool
+
+
+class GrantMembershipIn(BaseModel):
+    days: int | None = None
+    plan_id: str | None = None
+
+    @model_validator(mode="after")
+    def _require_one(self):
+        if self.days is None and self.plan_id is None:
+            raise ValueError("days 或 plan_id 至少提供一个")
+        return self

@@ -1,0 +1,38 @@
+# 墨卷 · 本机/局域网生产 Caddy 配置
+#
+# Caddy 同时负责:① 提供前端静态产物(frontend/dist,SPA 路由回退);
+# ② 反向代理两个 API 服务 —— /api/* → 主后端(:8000)、/payapi/* → 支付(:8001)。
+# 浏览器只访问 Caddy,天然同源,无需 CORS。
+#
+# 站点地址用 `localhost` → Caddy 自动启用本地 HTTPS(首次运行 `caddy trust`
+# 安装本地 CA)。必须走 HTTPS 的原因:后端 BACKEND_ENV=production 下 session
+# cookie 带 Secure 标志(见 backend/auth/session.py),纯 HTTP 浏览器不会回传,
+# 会导致"登录后立刻掉登录态"。https://localhost 下 Secure cookie 正常工作。
+#
+# 用法(仓库根目录):
+#   caddy trust     # 首次:安装本地 CA(让浏览器信任 localhost 证书)
+#   caddy run       # 前台运行,读取本 Caddyfile
+# 然后访问 https://localhost
+#
+# 公网域名部署:把下面的 `localhost` 换成你的域名(如 example.com),
+# Caddy 会自动申请 Let's Encrypt 证书;其余配置不变。
+
+localhost {
+	# 主后端 API
+	handle /api/* {
+		reverse_proxy localhost:8000
+	}
+
+	# 支付服务 API
+	handle /payapi/* {
+		reverse_proxy localhost:8001
+	}
+
+	# 其余全部作为前端 SPA:找不到实体文件就回退到 index.html
+	# (使刷新 /admin/users 之类的前端路由不会 404)
+	handle {
+		root * frontend/dist
+		try_files {path} /index.html
+		file_server
+	}
+}

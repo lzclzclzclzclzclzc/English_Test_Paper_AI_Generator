@@ -4,10 +4,13 @@ Run:
     python test_connection.py
 """
 import os
+from dotenv import load_dotenv
 from openai import OpenAI
 
-API_KEY  = os.getenv("LLM_API_KEY",  "sk-bd715a2930c44d219331824a5e9217e8")
-BASE_URL = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
+load_dotenv()
+
+API_KEY  = os.environ["LLM_API_KEY"]
+BASE_URL = os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
 MODEL    = os.getenv("LLM_MODEL",    "deepseek-v4-flash")
 
 client = OpenAI(api_key=API_KEY, base_url=BASE_URL)

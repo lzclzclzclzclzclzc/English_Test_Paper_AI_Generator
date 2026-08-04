@@ -100,9 +100,28 @@ def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
         if labels != {"T", "F"}:
             return False
     elif qt in ("word_form", "sentence_rewriting"):
-        if not revised.answer or not str(revised.answer).strip():
+        if not _is_valid_blank_answer(revised.answer):
             return False
 
+    return True
+
+
+def _is_valid_blank_answer(answer: object) -> bool:
+    """A fill-in answer must be a non-empty list of blank-groups, and every
+    blank must carry at least one non-blank candidate string. Guards against
+    LLM output that is structurally list-shaped but empty (e.g. ``[{"blank1":
+    []}]``) — such answers pass pydantic but can never be graded correct.
+    """
+    if not isinstance(answer, list) or not answer:
+        return False
+    for group in answer:
+        if not isinstance(group, dict) or not group:
+            return False
+        for candidates in group.values():
+            if not isinstance(candidates, list):
+                return False
+            if not any(isinstance(c, str) and c.strip() for c in candidates):
+                return False
     return True
 
 
