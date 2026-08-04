@@ -39,6 +39,7 @@ from pydantic import BaseModel, Field
 QuestionType = Literal[
     "single_choice", "word_form", "sentence_rewriting", "listening_single_choice",
     "listening_true_false",
+    "listening_fill_blank",
     "reading_longtext_single_choice",
     "cloze_single_choice",
 ]

@@ -70,6 +70,7 @@ def _build_prompt(
         "- sentence_rewriting: 改写句子",
         "- listening_single_choice: 听力选择",
         "- listening_true_false: 听力判断题（一段长文本/对话后跟多道 True/False 判断题）",
+        "- listening_fill_blank: 听力填词（一段听力材料后跟多道小题，每空限填一词，题号连续）",
         "- reading_longtext_single_choice: 阅读理解（一段短文后跟多道 4 选项单选题）",
         "- cloze_single_choice: 完形填空（一段短文含多处空格，每空 4 选项单选）",
     ])
@@ -105,7 +106,7 @@ def _local_validate(
     """
     warnings = []
     valid_kp_ids = {kp.id for kp in kps}
-    valid_question_types = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice", "listening_true_false"}
+    valid_question_types = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice", "listening_true_false", "listening_fill_blank"}
 
     # Filter invalid KP ids
     valid_kps = []

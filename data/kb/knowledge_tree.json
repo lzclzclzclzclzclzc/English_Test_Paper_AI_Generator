@@ -328,6 +328,12 @@
       "aliases": ["听力长文", "听力短文", "听力篇章", "判断正误"]
     },
     {
+      "id": "kp_listening_fill_blank",
+      "level1": "listening_fill_blank",
+      "level2": "听力填词",
+      "aliases": ["听力填词", "听力填空", "听写填空", "听短文填词"]
+    },
+    {
       "id": "kp_reading_passage",
       "level1": "reading_longtext_single_choice",
       "level2": "阅读理解",
@@ -529,6 +535,9 @@
     ],
     "listening_true_false / 1 听力选择 / None": [
       "kp_listening_passage"
+    ],
+    "listening_fill_blank / 1 听力填词 / None": [
+      "kp_listening_fill_blank"
     ],
     "reading_longtext_single_choice / 3 阅读理解 / None": [
       "kp_reading_passage"

@@ -184,7 +184,7 @@ def load(
     to_embed = [
         q for q in all_qs
         if q["id"] not in already_have
-        and q["question_type"] not in ("listening_true_false", "reading_longtext_single_choice", "cloze_single_choice")
+        and q["question_type"] not in ("listening_true_false", "reading_longtext_single_choice", "cloze_single_choice", "listening_fill_blank")
     ]
     if not to_embed:
         log.info("nothing to do — all %d questions already embedded", stats.total_in_sqlite)

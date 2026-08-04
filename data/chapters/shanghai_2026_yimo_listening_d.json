@@ -1,0 +1,1461 @@
+[
+  {
+    "id": "q_13001",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "16",
+    "passage_id": "psg_2026_d_001",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Audiobooks",
+      "content": "Audio books were first developed in the 18 seventies, right after Thomas Edison invented the recorder. A device that could record and play back sound people called these audiobooks talking stories at first. In great Britain, as early as 1878 someone recited part of a poem and recorded it. Marking an early try at audio content. At first, audiobooks weren't hot books. The recorder back then only had space to record about four minutes of sound, which was too short for full stories. In 1931a special project was begun to help blind people be able to read books by listening to them. This project was called the talking birds program. Many famous works were put in this project like Shakespeare's plays, making more people interested in them. In 1952 longer records called LPS came out. They could hold up to 45 minutes of recordings, allowing audio books to become longer. Later, cassette tapes became popular for listening to books. And then CDS were used. Today we use computers, laptops, and many other devices to enjoy audio books.There are millions of them now for every reader, from young kids just starting with theories to adults who love all kinds of books.",
+      "audio_url": null
+    },
+    "stem": "People called Audiobooks（有声读物）, developed in the 1870s. ________ ________ at first.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "talking"
+        ],
+        "blank2": [
+          "stories"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13002",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "17",
+    "passage_id": "psg_2026_d_001",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Audiobooks",
+      "content": "Audio books were first developed in the 18 seventies, right after Thomas Edison invented the recorder. A device that could record and play back sound people called these audiobooks talking stories at first. In great Britain, as early as 1878 someone recited part of a poem and recorded it. Marking an early try at audio content. At first, audiobooks weren't hot books. The recorder back then only had space to record about four minutes of sound, which was too short for full stories. In 1931a special project was begun to help blind people be able to read books by listening to them. This project was called the talking birds program. Many famous works were put in this project like Shakespeare's plays, making more people interested in them. In 1952 longer records called LPS came out. They could hold up to 45 minutes of recordings, allowing audio books to become longer. Later, cassette tapes became popular for listening to books. And then CDS were used. Today we use computers, laptops, and many other devices to enjoy audio books.There are millions of them now for every reader, from young kids just starting with theories to adults who love all kinds of books.",
+      "audio_url": null
+    },
+    "stem": "In 1931, a special project was begun to help ________ ________ read books by listening.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "blind"
+        ],
+        "blank2": [
+          "people"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13003",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "18",
+    "passage_id": "psg_2026_d_001",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Audiobooks",
+      "content": "Audio books were first developed in the 18 seventies, right after Thomas Edison invented the recorder. A device that could record and play back sound people called these audiobooks talking stories at first. In great Britain, as early as 1878 someone recited part of a poem and recorded it. Marking an early try at audio content. At first, audiobooks weren't hot books. The recorder back then only had space to record about four minutes of sound, which was too short for full stories. In 1931a special project was begun to help blind people be able to read books by listening to them. This project was called the talking birds program. Many famous works were put in this project like Shakespeare's plays, making more people interested in them. In 1952 longer records called LPS came out. They could hold up to 45 minutes of recordings, allowing audio books to become longer. Later, cassette tapes became popular for listening to books. And then CDS were used. Today we use computers, laptops, and many other devices to enjoy audio books.There are millions of them now for every reader, from young kids just starting with theories to adults who love all kinds of books.",
+      "audio_url": null
+    },
+    "stem": "Many famous works were put in the project to make more people ________ ________ books.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "interested"
+        ],
+        "blank2": [
+          "in"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13004",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "19",
+    "passage_id": "psg_2026_d_001",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Audiobooks",
+      "content": "Audio books were first developed in the 18 seventies, right after Thomas Edison invented the recorder. A device that could record and play back sound people called these audiobooks talking stories at first. In great Britain, as early as 1878 someone recited part of a poem and recorded it. Marking an early try at audio content. At first, audiobooks weren't hot books. The recorder back then only had space to record about four minutes of sound, which was too short for full stories. In 1931a special project was begun to help blind people be able to read books by listening to them. This project was called the talking birds program. Many famous works were put in this project like Shakespeare's plays, making more people interested in them. In 1952 longer records called LPS came out. They could hold up to 45 minutes of recordings, allowing audio books to become longer. Later, cassette tapes became popular for listening to books. And then CDS were used. Today we use computers, laptops, and many other devices to enjoy audio books.There are millions of them now for every reader, from young kids just starting with theories to adults who love all kinds of books.",
+      "audio_url": null
+    },
+    "stem": "LPs could hold up to 45 minutes of recordings, allowing audiobooks to ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "become"
+        ],
+        "blank2": [
+          "longer"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13005",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "20",
+    "passage_id": "psg_2026_d_001",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Audiobooks",
+      "content": "Audio books were first developed in the 18 seventies, right after Thomas Edison invented the recorder. A device that could record and play back sound people called these audiobooks talking stories at first. In great Britain, as early as 1878 someone recited part of a poem and recorded it. Marking an early try at audio content. At first, audiobooks weren't hot books. The recorder back then only had space to record about four minutes of sound, which was too short for full stories. In 1931a special project was begun to help blind people be able to read books by listening to them. This project was called the talking birds program. Many famous works were put in this project like Shakespeare's plays, making more people interested in them. In 1952 longer records called LPS came out. They could hold up to 45 minutes of recordings, allowing audio books to become longer. Later, cassette tapes became popular for listening to books. And then CDS were used. Today we use computers, laptops, and many other devices to enjoy audio books.There are millions of them now for every reader, from young kids just starting with theories to adults who love all kinds of books.",
+      "audio_url": null
+    },
+    "stem": "Every reader from young kids just ________ ________ fairies to adults may enjoy audiobooks.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "starting"
+        ],
+        "blank2": [
+          "with"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13006",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "12",
+    "passage_id": "psg_2026_d_002",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - Animated Film",
+      "content": "W: Congratulations on your new animated film. What kind of story does the film tell?\nM: It's about a young boy who was born with special powers. Because of this, people around are afraid of him. In the story, he learns who he really is and chooses to protect others instead of fighting them.\nW: What is new or different about this film?\nM: We wanted the film to look Chinese but also feel modern. The background designs were inspired by old Chinese ink paintings, but we used 3D animation for the characters. It was not easy to balance the two styles.\nW: Can you tell us about the animation process?\nM: First, we spent a long time writing and improving the story. Then we designed the characters and drew storyboards for every scene. After that, animators used computers to create movement. Sometimes 1 second of animation took several days to finish.\nW: What was the biggest difficulty?\nM: The hardest part was making decisions. Because every small change affected the whole film. And I often watched scenes late at night to check if they were good enough.\nW: What do you hope audiences will remember?\nM: I hope they remember the feeling. Animation is not only for fun. It can also help people think about courage, choice and being themselves.\nW: That sounds very meaningful. Thank you for sharing your time and talking with us about your film.",
+      "audio_url": null
+    },
+    "stem": "The boy in the story is born with special powers and people are ________ ________ him.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "afraid"
+        ],
+        "blank2": [
+          "of"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13007",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "13",
+    "passage_id": "psg_2026_d_002",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - Animated Film",
+      "content": "W: Congratulations on your new animated film. What kind of story does the film tell?\nM: It's about a young boy who was born with special powers. Because of this, people around are afraid of him. In the story, he learns who he really is and chooses to protect others instead of fighting them.\nW: What is new or different about this film?\nM: We wanted the film to look Chinese but also feel modern. The background designs were inspired by old Chinese ink paintings, but we used 3D animation for the characters. It was not easy to balance the two styles.\nW: Can you tell us about the animation process?\nM: First, we spent a long time writing and improving the story. Then we designed the characters and drew storyboards for every scene. After that, animators used computers to create movement. Sometimes 1 second of animation took several days to finish.\nW: What was the biggest difficulty?\nM: The hardest part was making decisions. Because every small change affected the whole film. And I often watched scenes late at night to check if they were good enough.\nW: What do you hope audiences will remember?\nM: I hope they remember the feeling. Animation is not only for fun. It can also help people think about courage, choice and being themselves.\nW: That sounds very meaningful. Thank you for sharing your time and talking with us about your film.",
+      "audio_url": null
+    },
+    "stem": "The background designs were inspired by old Chinese ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "ink"
+        ],
+        "blank2": [
+          "paintings"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13008",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "14",
+    "passage_id": "psg_2026_d_002",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - Animated Film",
+      "content": "W: Congratulations on your new animated film. What kind of story does the film tell?\nM: It's about a young boy who was born with special powers. Because of this, people around are afraid of him. In the story, he learns who he really is and chooses to protect others instead of fighting them.\nW: What is new or different about this film?\nM: We wanted the film to look Chinese but also feel modern. The background designs were inspired by old Chinese ink paintings, but we used 3D animation for the characters. It was not easy to balance the two styles.\nW: Can you tell us about the animation process?\nM: First, we spent a long time writing and improving the story. Then we designed the characters and drew storyboards for every scene. After that, animators used computers to create movement. Sometimes 1 second of animation took several days to finish.\nW: What was the biggest difficulty?\nM: The hardest part was making decisions. Because every small change affected the whole film. And I often watched scenes late at night to check if they were good enough.\nW: What do you hope audiences will remember?\nM: I hope they remember the feeling. Animation is not only for fun. It can also help people think about courage, choice and being themselves.\nW: That sounds very meaningful. Thank you for sharing your time and talking with us about your film.",
+      "audio_url": null
+    },
+    "stem": "Sometimes ________ ________ of animation took several days to finish.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "1",
+          "one"
+        ],
+        "blank2": [
+          "second"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13009",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "15",
+    "passage_id": "psg_2026_d_002",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - Animated Film",
+      "content": "W: Congratulations on your new animated film. What kind of story does the film tell?\nM: It's about a young boy who was born with special powers. Because of this, people around are afraid of him. In the story, he learns who he really is and chooses to protect others instead of fighting them.\nW: What is new or different about this film?\nM: We wanted the film to look Chinese but also feel modern. The background designs were inspired by old Chinese ink paintings, but we used 3D animation for the characters. It was not easy to balance the two styles.\nW: Can you tell us about the animation process?\nM: First, we spent a long time writing and improving the story. Then we designed the characters and drew storyboards for every scene. After that, animators used computers to create movement. Sometimes 1 second of animation took several days to finish.\nW: What was the biggest difficulty?\nM: The hardest part was making decisions. Because every small change affected the whole film. And I often watched scenes late at night to check if they were good enough.\nW: What do you hope audiences will remember?\nM: I hope they remember the feeling. Animation is not only for fun. It can also help people think about courage, choice and being themselves.\nW: That sounds very meaningful. Thank you for sharing your time and talking with us about your film.",
+      "audio_url": null
+    },
+    "stem": "The hardest part for the director was ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "making"
+        ],
+        "blank2": [
+          "decisions"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13010",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "16",
+    "passage_id": "psg_2026_d_002",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - Animated Film",
+      "content": "W: Congratulations on your new animated film. What kind of story does the film tell?\nM: It's about a young boy who was born with special powers. Because of this, people around are afraid of him. In the story, he learns who he really is and chooses to protect others instead of fighting them.\nW: What is new or different about this film?\nM: We wanted the film to look Chinese but also feel modern. The background designs were inspired by old Chinese ink paintings, but we used 3D animation for the characters. It was not easy to balance the two styles.\nW: Can you tell us about the animation process?\nM: First, we spent a long time writing and improving the story. Then we designed the characters and drew storyboards for every scene. After that, animators used computers to create movement. Sometimes 1 second of animation took several days to finish.\nW: What was the biggest difficulty?\nM: The hardest part was making decisions. Because every small change affected the whole film. And I often watched scenes late at night to check if they were good enough.\nW: What do you hope audiences will remember?\nM: I hope they remember the feeling. Animation is not only for fun. It can also help people think about courage, choice and being themselves.\nW: That sounds very meaningful. Thank you for sharing your time and talking with us about your film.",
+      "audio_url": null
+    },
+    "stem": "Animation can help people think about courage, choice and ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "being"
+        ],
+        "blank2": [
+          "themselves"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13011",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "16",
+    "passage_id": "psg_2026_d_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Advertisements - Smart Bicycle & Smart Ring",
+      "content": "Looking for a smarter way to ride? Meet the smart bicycle. The future of cycling is here. Made with lightweight material, it's strong, fast and easy to handle. Choose from stylish colors like black, blue or red to match your personality. This bike is packed with amazing technology. A built-in GPS to guide your way, a phone holder to stay connected and a bright light for night rides. Perfect for students, commuters or anyone who loves cycling. Whether you're heading to school, work or exploring the city, the smart bicycle is your perfect choice. And the best part? It's only 199 dollars. Ride smarter, ride safer. Get your smart bicycle today and start your journey.\nWant to stay healthy and fashionable at the same time? Say hello to the smart ring. Your new health and fashion partner. Made with comfortable material, it's light, durable and perfect for everyday wear. Available in elegant colors like Silver, gold or Rose gold, it matches any clothes. This smart ring does it all. It tracks your steps, monitors your heart rate and even checks your sleep quality. It's great for fitness lovers or anyone who wants to stay active and healthy. Wear it to school, work or the gym. It's always there to help you stay on track. And guess what? It's only 99 dollars. Stay smart, stay stylish. Order your smart ring now and take the first step toward a healthier you.",
+      "audio_url": null
+    },
+    "stem": "Smart Bicycle: Color: black, ________, red.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "blue"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13012",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "17",
+    "passage_id": "psg_2026_d_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Advertisements - Smart Bicycle & Smart Ring",
+      "content": "Looking for a smarter way to ride? Meet the smart bicycle. The future of cycling is here. Made with lightweight material, it's strong, fast and easy to handle. Choose from stylish colors like black, blue or red to match your personality. This bike is packed with amazing technology. A built-in GPS to guide your way, a phone holder to stay connected and a bright light for night rides. Perfect for students, commuters or anyone who loves cycling. Whether you're heading to school, work or exploring the city, the smart bicycle is your perfect choice. And the best part? It's only 199 dollars. Ride smarter, ride safer. Get your smart bicycle today and start your journey.\nWant to stay healthy and fashionable at the same time? Say hello to the smart ring. Your new health and fashion partner. Made with comfortable material, it's light, durable and perfect for everyday wear. Available in elegant colors like Silver, gold or Rose gold, it matches any clothes. This smart ring does it all. It tracks your steps, monitors your heart rate and even checks your sleep quality. It's great for fitness lovers or anyone who wants to stay active and healthy. Wear it to school, work or the gym. It's always there to help you stay on track. And guess what? It's only 99 dollars. Stay smart, stay stylish. Order your smart ring now and take the first step toward a healthier you.",
+      "audio_url": null
+    },
+    "stem": "Smart Bicycle: a ________ ________ for night rides.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "bright"
+        ],
+        "blank2": [
+          "light"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13014",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "18",
+    "passage_id": "psg_2026_d_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Advertisements - Smart Bicycle & Smart Ring",
+      "content": "Looking for a smarter way to ride? Meet the smart bicycle. The future of cycling is here. Made with lightweight material, it's strong, fast and easy to handle. Choose from stylish colors like black, blue or red to match your personality. This bike is packed with amazing technology. A built-in GPS to guide your way, a phone holder to stay connected and a bright light for night rides. Perfect for students, commuters or anyone who loves cycling. Whether you're heading to school, work or exploring the city, the smart bicycle is your perfect choice. And the best part? It's only 199 dollars. Ride smarter, ride safer. Get your smart bicycle today and start your journey.\nWant to stay healthy and fashionable at the same time? Say hello to the smart ring. Your new health and fashion partner. Made with comfortable material, it's light, durable and perfect for everyday wear. Available in elegant colors like Silver, gold or Rose gold, it matches any clothes. This smart ring does it all. It tracks your steps, monitors your heart rate and even checks your sleep quality. It's great for fitness lovers or anyone who wants to stay active and healthy. Wear it to school, work or the gym. It's always there to help you stay on track. And guess what? It's only 99 dollars. Stay smart, stay stylish. Order your smart ring now and take the first step toward a healthier you.",
+      "audio_url": null
+    },
+    "stem": "Smart Bicycle: Possible user: ________, commuters, cycling lovers.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "students"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13015",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "19",
+    "passage_id": "psg_2026_d_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Advertisements - Smart Bicycle & Smart Ring",
+      "content": "Looking for a smarter way to ride? Meet the smart bicycle. The future of cycling is here. Made with lightweight material, it's strong, fast and easy to handle. Choose from stylish colors like black, blue or red to match your personality. This bike is packed with amazing technology. A built-in GPS to guide your way, a phone holder to stay connected and a bright light for night rides. Perfect for students, commuters or anyone who loves cycling. Whether you're heading to school, work or exploring the city, the smart bicycle is your perfect choice. And the best part? It's only 199 dollars. Ride smarter, ride safer. Get your smart bicycle today and start your journey.\nWant to stay healthy and fashionable at the same time? Say hello to the smart ring. Your new health and fashion partner. Made with comfortable material, it's light, durable and perfect for everyday wear. Available in elegant colors like Silver, gold or Rose gold, it matches any clothes. This smart ring does it all. It tracks your steps, monitors your heart rate and even checks your sleep quality. It's great for fitness lovers or anyone who wants to stay active and healthy. Wear it to school, work or the gym. It's always there to help you stay on track. And guess what? It's only 99 dollars. Stay smart, stay stylish. Order your smart ring now and take the first step toward a healthier you.",
+      "audio_url": null
+    },
+    "stem": "Smart Bicycle: Price: $________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "199"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13016",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "20",
+    "passage_id": "psg_2026_d_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Advertisements - Smart Bicycle & Smart Ring",
+      "content": "Looking for a smarter way to ride? Meet the smart bicycle. The future of cycling is here. Made with lightweight material, it's strong, fast and easy to handle. Choose from stylish colors like black, blue or red to match your personality. This bike is packed with amazing technology. A built-in GPS to guide your way, a phone holder to stay connected and a bright light for night rides. Perfect for students, commuters or anyone who loves cycling. Whether you're heading to school, work or exploring the city, the smart bicycle is your perfect choice. And the best part? It's only 199 dollars. Ride smarter, ride safer. Get your smart bicycle today and start your journey.\nWant to stay healthy and fashionable at the same time? Say hello to the smart ring. Your new health and fashion partner. Made with comfortable material, it's light, durable and perfect for everyday wear. Available in elegant colors like Silver, gold or Rose gold, it matches any clothes. This smart ring does it all. It tracks your steps, monitors your heart rate and even checks your sleep quality. It's great for fitness lovers or anyone who wants to stay active and healthy. Wear it to school, work or the gym. It's always there to help you stay on track. And guess what? It's only 99 dollars. Stay smart, stay stylish. Order your smart ring now and take the first step toward a healthier you.",
+      "audio_url": null
+    },
+    "stem": "Smart Ring: Material: ________ material.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "comfortable"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13017",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "21",
+    "passage_id": "psg_2026_d_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Advertisements - Smart Bicycle & Smart Ring",
+      "content": "Looking for a smarter way to ride? Meet the smart bicycle. The future of cycling is here. Made with lightweight material, it's strong, fast and easy to handle. Choose from stylish colors like black, blue or red to match your personality. This bike is packed with amazing technology. A built-in GPS to guide your way, a phone holder to stay connected and a bright light for night rides. Perfect for students, commuters or anyone who loves cycling. Whether you're heading to school, work or exploring the city, the smart bicycle is your perfect choice. And the best part? It's only 199 dollars. Ride smarter, ride safer. Get your smart bicycle today and start your journey.\nWant to stay healthy and fashionable at the same time? Say hello to the smart ring. Your new health and fashion partner. Made with comfortable material, it's light, durable and perfect for everyday wear. Available in elegant colors like Silver, gold or Rose gold, it matches any clothes. This smart ring does it all. It tracks your steps, monitors your heart rate and even checks your sleep quality. It's great for fitness lovers or anyone who wants to stay active and healthy. Wear it to school, work or the gym. It's always there to help you stay on track. And guess what? It's only 99 dollars. Stay smart, stay stylish. Order your smart ring now and take the first step toward a healthier you.",
+      "audio_url": null
+    },
+    "stem": "Smart Ring: Color: ________, gold, rose gold.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "silver"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13018",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "22",
+    "passage_id": "psg_2026_d_003",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Advertisements - Smart Bicycle & Smart Ring",
+      "content": "Looking for a smarter way to ride? Meet the smart bicycle. The future of cycling is here. Made with lightweight material, it's strong, fast and easy to handle. Choose from stylish colors like black, blue or red to match your personality. This bike is packed with amazing technology. A built-in GPS to guide your way, a phone holder to stay connected and a bright light for night rides. Perfect for students, commuters or anyone who loves cycling. Whether you're heading to school, work or exploring the city, the smart bicycle is your perfect choice. And the best part? It's only 199 dollars. Ride smarter, ride safer. Get your smart bicycle today and start your journey.\nWant to stay healthy and fashionable at the same time? Say hello to the smart ring. Your new health and fashion partner. Made with comfortable material, it's light, durable and perfect for everyday wear. Available in elegant colors like Silver, gold or Rose gold, it matches any clothes. This smart ring does it all. It tracks your steps, monitors your heart rate and even checks your sleep quality. It's great for fitness lovers or anyone who wants to stay active and healthy. Wear it to school, work or the gym. It's always there to help you stay on track. And guess what? It's only 99 dollars. Stay smart, stay stylish. Order your smart ring now and take the first step toward a healthier you.",
+      "audio_url": null
+    },
+    "stem": "Smart Ring: Features: ________ ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "check"
+        ],
+        "blank2": [
+          "sleep"
+        ],
+        "blank3": [
+          "quality"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13021",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "12",
+    "passage_id": "psg_2026_d_004",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - Jack's Roommate",
+      "content": "W: Hey Jack, how's everything going?\nM: Well, things are okay. Bob moved in last week. He's a nice guy from Britain and seems pretty easygoing.\nW: That's good to hear.\nM: Yeah, everything is fine so far except for some of his habits.\nW: Oh, what's wrong with him?\nM: Well, he stays up really late at night and sleeps until late morning. You know, I'm more of an early bird.\nW: I guess it might take some time to get used to.\nM: I doubt it. What's more, he's very messy. He leaves things all over the kitchen and the living room and sometimes I have to clean up after him.\nW: Oh, come on, it can't be that bad.\nM: It is on top of that. He's really loud when he talks on the phone with his friends and his music tastes are unusual. I never thought living with someone could be so challenging.\nW: Sounds like it's going to be tough.\nM: Yeah. I guess I just have to be patient and hope it gets better.",
+      "audio_url": null
+    },
+    "stem": "Bob moved in from Britain ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "last"
+        ],
+        "blank2": [
+          "week"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13023",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "13",
+    "passage_id": "psg_2026_d_004",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - Jack's Roommate",
+      "content": "W: Hey Jack, how's everything going?\nM: Well, things are okay. Bob moved in last week. He's a nice guy from Britain and seems pretty easygoing.\nW: That's good to hear.\nM: Yeah, everything is fine so far except for some of his habits.\nW: Oh, what's wrong with him?\nM: Well, he stays up really late at night and sleeps until late morning. You know, I'm more of an early bird.\nW: I guess it might take some time to get used to.\nM: I doubt it. What's more, he's very messy. He leaves things all over the kitchen and the living room and sometimes I have to clean up after him.\nW: Oh, come on, it can't be that bad.\nM: It is on top of that. He's really loud when he talks on the phone with his friends and his music tastes are unusual. I never thought living with someone could be so challenging.\nW: Sounds like it's going to be tough.\nM: Yeah. I guess I just have to be patient and hope it gets better.",
+      "audio_url": null
+    },
+    "stem": "He is a nice and easygoing guy, except for some of ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "his"
+        ],
+        "blank2": [
+          "habits"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13025",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "14",
+    "passage_id": "psg_2026_d_004",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - Jack's Roommate",
+      "content": "W: Hey Jack, how's everything going?\nM: Well, things are okay. Bob moved in last week. He's a nice guy from Britain and seems pretty easygoing.\nW: That's good to hear.\nM: Yeah, everything is fine so far except for some of his habits.\nW: Oh, what's wrong with him?\nM: Well, he stays up really late at night and sleeps until late morning. You know, I'm more of an early bird.\nW: I guess it might take some time to get used to.\nM: I doubt it. What's more, he's very messy. He leaves things all over the kitchen and the living room and sometimes I have to clean up after him.\nW: Oh, come on, it can't be that bad.\nM: It is on top of that. He's really loud when he talks on the phone with his friends and his music tastes are unusual. I never thought living with someone could be so challenging.\nW: Sounds like it's going to be tough.\nM: Yeah. I guess I just have to be patient and hope it gets better.",
+      "audio_url": null
+    },
+    "stem": "He ________ ________ really late at night and sleeps until late morning.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "stays"
+        ],
+        "blank2": [
+          "up"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13027",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "15",
+    "passage_id": "psg_2026_d_004",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - Jack's Roommate",
+      "content": "W: Hey Jack, how's everything going?\nM: Well, things are okay. Bob moved in last week. He's a nice guy from Britain and seems pretty easygoing.\nW: That's good to hear.\nM: Yeah, everything is fine so far except for some of his habits.\nW: Oh, what's wrong with him?\nM: Well, he stays up really late at night and sleeps until late morning. You know, I'm more of an early bird.\nW: I guess it might take some time to get used to.\nM: I doubt it. What's more, he's very messy. He leaves things all over the kitchen and the living room and sometimes I have to clean up after him.\nW: Oh, come on, it can't be that bad.\nM: It is on top of that. He's really loud when he talks on the phone with his friends and his music tastes are unusual. I never thought living with someone could be so challenging.\nW: Sounds like it's going to be tough.\nM: Yeah. I guess I just have to be patient and hope it gets better.",
+      "audio_url": null
+    },
+    "stem": "He is messy and ________ ________ all over the kitchen and the living room.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "leaves"
+        ],
+        "blank2": [
+          "things"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13029",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "16",
+    "passage_id": "psg_2026_d_004",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Dialogue - Jack's Roommate",
+      "content": "W: Hey Jack, how's everything going?\nM: Well, things are okay. Bob moved in last week. He's a nice guy from Britain and seems pretty easygoing.\nW: That's good to hear.\nM: Yeah, everything is fine so far except for some of his habits.\nW: Oh, what's wrong with him?\nM: Well, he stays up really late at night and sleeps until late morning. You know, I'm more of an early bird.\nW: I guess it might take some time to get used to.\nM: I doubt it. What's more, he's very messy. He leaves things all over the kitchen and the living room and sometimes I have to clean up after him.\nW: Oh, come on, it can't be that bad.\nM: It is on top of that. He's really loud when he talks on the phone with his friends and his music tastes are unusual. I never thought living with someone could be so challenging.\nW: Sounds like it's going to be tough.\nM: Yeah. I guess I just have to be patient and hope it gets better.",
+      "audio_url": null
+    },
+    "stem": "He is ________ ________ when he talks on the phone with his friends.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "really"
+        ],
+        "blank2": [
+          "loud"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13031",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "16",
+    "passage_id": "psg_2026_d_005",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Robots",
+      "content": "The idea of smart machines has a long history. In 1939, a large robot amazed people at the World's Fair. It led people to dream of a world full of smart devices. Today, the future is here. Modern robots do much more than just follow orders. They can recognize people's voices and climb stairs. They work in many fields. In factories, they can do daily tasks very well. They put together tiny parts and move heavy things. Some can even help doctors do operations in hospitals. What's more, robots do dangerous tasks to keep people safe. They are helpful to explore far into oceans or check damaged buildings after fires. According to some scientists, the most exciting robots are now active in space. For example, robots on the planet Mars act as scientists' eyes and hands. With cameras and tools, they study rocks and send useful information back to the Earth. While robots are becoming smarter, most experts agree they are designed to help us, not to take our place. The goal is to make the best use of this powerful technology to better serve us.",
+      "audio_url": null
+    },
+    "stem": "In 1939, a large robot led people to ________ ________ a world full of smart devices.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "dream"
+        ],
+        "blank2": [
+          "of"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13032",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "17",
+    "passage_id": "psg_2026_d_005",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Robots",
+      "content": "The idea of smart machines has a long history. In 1939, a large robot amazed people at the World's Fair. It led people to dream of a world full of smart devices. Today, the future is here. Modern robots do much more than just follow orders. They can recognize people's voices and climb stairs. They work in many fields. In factories, they can do daily tasks very well. They put together tiny parts and move heavy things. Some can even help doctors do operations in hospitals. What's more, robots do dangerous tasks to keep people safe. They are helpful to explore far into oceans or check damaged buildings after fires. According to some scientists, the most exciting robots are now active in space. For example, robots on the planet Mars act as scientists' eyes and hands. With cameras and tools, they study rocks and send useful information back to the Earth. While robots are becoming smarter, most experts agree they are designed to help us, not to take our place. The goal is to make the best use of this powerful technology to better serve us.",
+      "audio_url": null
+    },
+    "stem": "Robots can do ________ ________ very well in factories.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "daily"
+        ],
+        "blank2": [
+          "tasks"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13033",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "18",
+    "passage_id": "psg_2026_d_005",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Robots",
+      "content": "The idea of smart machines has a long history. In 1939, a large robot amazed people at the World's Fair. It led people to dream of a world full of smart devices. Today, the future is here. Modern robots do much more than just follow orders. They can recognize people's voices and climb stairs. They work in many fields. In factories, they can do daily tasks very well. They put together tiny parts and move heavy things. Some can even help doctors do operations in hospitals. What's more, robots do dangerous tasks to keep people safe. They are helpful to explore far into oceans or check damaged buildings after fires. According to some scientists, the most exciting robots are now active in space. For example, robots on the planet Mars act as scientists' eyes and hands. With cameras and tools, they study rocks and send useful information back to the Earth. While robots are becoming smarter, most experts agree they are designed to help us, not to take our place. The goal is to make the best use of this powerful technology to better serve us.",
+      "audio_url": null
+    },
+    "stem": "People can check damaged buildings ________ ________ with the help of robots.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "after"
+        ],
+        "blank2": [
+          "fires"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13034",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "19",
+    "passage_id": "psg_2026_d_005",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Robots",
+      "content": "The idea of smart machines has a long history. In 1939, a large robot amazed people at the World's Fair. It led people to dream of a world full of smart devices. Today, the future is here. Modern robots do much more than just follow orders. They can recognize people's voices and climb stairs. They work in many fields. In factories, they can do daily tasks very well. They put together tiny parts and move heavy things. Some can even help doctors do operations in hospitals. What's more, robots do dangerous tasks to keep people safe. They are helpful to explore far into oceans or check damaged buildings after fires. According to some scientists, the most exciting robots are now active in space. For example, robots on the planet Mars act as scientists' eyes and hands. With cameras and tools, they study rocks and send useful information back to the Earth. While robots are becoming smarter, most experts agree they are designed to help us, not to take our place. The goal is to make the best use of this powerful technology to better serve us.",
+      "audio_url": null
+    },
+    "stem": "Maybe the most exciting robots are now active ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "in"
+        ],
+        "blank2": [
+          "space"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13035",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "20",
+    "passage_id": "psg_2026_d_005",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Robots",
+      "content": "The idea of smart machines has a long history. In 1939, a large robot amazed people at the World's Fair. It led people to dream of a world full of smart devices. Today, the future is here. Modern robots do much more than just follow orders. They can recognize people's voices and climb stairs. They work in many fields. In factories, they can do daily tasks very well. They put together tiny parts and move heavy things. Some can even help doctors do operations in hospitals. What's more, robots do dangerous tasks to keep people safe. They are helpful to explore far into oceans or check damaged buildings after fires. According to some scientists, the most exciting robots are now active in space. For example, robots on the planet Mars act as scientists' eyes and hands. With cameras and tools, they study rocks and send useful information back to the Earth. While robots are becoming smarter, most experts agree they are designed to help us, not to take our place. The goal is to make the best use of this powerful technology to better serve us.",
+      "audio_url": null
+    },
+    "stem": "Robots on Mars can send ________ ________ back to the Earth with cameras and tools.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "useful"
+        ],
+        "blank2": [
+          "information"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13036",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "16",
+    "passage_id": "psg_2026_d_006",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - City Marathon",
+      "content": "John decided to join in the city Marathon race. He bought himself comfortable sports clothes and nice training shoes. Then he trained hard for the race every day. However, on the day of the race he was very nervous. As soon as the race started, he ran so fast that he soon felt tired. Halfway through the race, John found it hard to keep up with the other runners. He steps grew heavier with each breath. He wanted to give up. Just as John began to slow down, he noticed a barefoot man running ahead of him. To his surprise, the man still looked relaxed. He seemed to be enjoying the race. Encouraged by the man John went all out and managed to get second place, just a little behind him. After the race, John found the man and said, \"You were amazing. How did you run so well without shoes?\" He replied, \"I'm a pizza delivery man. Running all day is my job. This Marathon was a piece of cake.\" Hearing this John understood something important. Success doesn't only come from having the best equipment. What truly matters is to keep trying and find joy in the process.",
+      "audio_url": null
+    },
+    "stem": "John bought comfortable sports clothes and nice ________ ________ for the city marathon race.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "training"
+        ],
+        "blank2": [
+          "shoes"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13037",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "17",
+    "passage_id": "psg_2026_d_006",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - City Marathon",
+      "content": "John decided to join in the city Marathon race. He bought himself comfortable sports clothes and nice training shoes. Then he trained hard for the race every day. However, on the day of the race he was very nervous. As soon as the race started, he ran so fast that he soon felt tired. Halfway through the race, John found it hard to keep up with the other runners. He steps grew heavier with each breath. He wanted to give up. Just as John began to slow down, he noticed a barefoot man running ahead of him. To his surprise, the man still looked relaxed. He seemed to be enjoying the race. Encouraged by the man John went all out and managed to get second place, just a little behind him. After the race, John found the man and said, \"You were amazing. How did you run so well without shoes?\" He replied, \"I'm a pizza delivery man. Running all day is my job. This Marathon was a piece of cake.\" Hearing this John understood something important. Success doesn't only come from having the best equipment. What truly matters is to keep trying and find joy in the process.",
+      "audio_url": null
+    },
+    "stem": "John wanted to ________ ________ halfway through the race.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "give"
+        ],
+        "blank2": [
+          "up"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13038",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "18",
+    "passage_id": "psg_2026_d_006",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - City Marathon",
+      "content": "John decided to join in the city Marathon race. He bought himself comfortable sports clothes and nice training shoes. Then he trained hard for the race every day. However, on the day of the race he was very nervous. As soon as the race started, he ran so fast that he soon felt tired. Halfway through the race, John found it hard to keep up with the other runners. He steps grew heavier with each breath. He wanted to give up. Just as John began to slow down, he noticed a barefoot man running ahead of him. To his surprise, the man still looked relaxed. He seemed to be enjoying the race. Encouraged by the man John went all out and managed to get second place, just a little behind him. After the race, John found the man and said, \"You were amazing. How did you run so well without shoes?\" He replied, \"I'm a pizza delivery man. Running all day is my job. This Marathon was a piece of cake.\" Hearing this John understood something important. Success doesn't only come from having the best equipment. What truly matters is to keep trying and find joy in the process.",
+      "audio_url": null
+    },
+    "stem": "To John's surprise, a barefoot (赤脚的) man running ahead of him still ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "looked"
+        ],
+        "blank2": [
+          "relaxed"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13039",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "19",
+    "passage_id": "psg_2026_d_006",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - City Marathon",
+      "content": "John decided to join in the city Marathon race. He bought himself comfortable sports clothes and nice training shoes. Then he trained hard for the race every day. However, on the day of the race he was very nervous. As soon as the race started, he ran so fast that he soon felt tired. Halfway through the race, John found it hard to keep up with the other runners. He steps grew heavier with each breath. He wanted to give up. Just as John began to slow down, he noticed a barefoot man running ahead of him. To his surprise, the man still looked relaxed. He seemed to be enjoying the race. Encouraged by the man John went all out and managed to get second place, just a little behind him. After the race, John found the man and said, \"You were amazing. How did you run so well without shoes?\" He replied, \"I'm a pizza delivery man. Running all day is my job. This Marathon was a piece of cake.\" Hearing this John understood something important. Success doesn't only come from having the best equipment. What truly matters is to keep trying and find joy in the process.",
+      "audio_url": null
+    },
+    "stem": "Encouraged by the man, John went all out and got ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "second"
+        ],
+        "blank2": [
+          "place"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13040",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "20",
+    "passage_id": "psg_2026_d_006",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - City Marathon",
+      "content": "John decided to join in the city Marathon race. He bought himself comfortable sports clothes and nice training shoes. Then he trained hard for the race every day. However, on the day of the race he was very nervous. As soon as the race started, he ran so fast that he soon felt tired. Halfway through the race, John found it hard to keep up with the other runners. He steps grew heavier with each breath. He wanted to give up. Just as John began to slow down, he noticed a barefoot man running ahead of him. To his surprise, the man still looked relaxed. He seemed to be enjoying the race. Encouraged by the man John went all out and managed to get second place, just a little behind him. After the race, John found the man and said, \"You were amazing. How did you run so well without shoes?\" He replied, \"I'm a pizza delivery man. Running all day is my job. This Marathon was a piece of cake.\" Hearing this John understood something important. Success doesn't only come from having the best equipment. What truly matters is to keep trying and find joy in the process.",
+      "audio_url": null
+    },
+    "stem": "John realized the key to success is to ________ ________ and find joy in the process.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "keep"
+        ],
+        "blank2": [
+          "trying"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13041",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "21",
+    "passage_id": "psg_2026_d_007",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Magical Stories",
+      "content": "From old fairy tales to modern books like Harry Potter, people have always loved stories about magical beings like vampires and wizards. Many of us pretended to have magic powers when we were children. Even as we grow up, we still enjoy imagining what it would be like to be a superhero or a witch. So why are we so drawn to these magical stories? One big reason is that these stories make us feel a mix of fear and excitement. When a character is threatened by a monster, our hearts beat faster. But we can enjoy this feeling, because we know we are safe. Our brain understands that the story is not true, so we can enjoy being scared without any real danger. Also, these stories are a great way to take a break from everyday life. When we read them, we can forget about homework and other problems for a while. We get so interested in the characters' adventures that we feel like we are in a different world ourselves. In conclusion, stories about supernatural beings have all the right ingredients to keep us reading. They are exciting, a little scary, and offer a fun tour into amazing new worlds. That's an adventure we can safely enjoy from our favorite chair.",
+      "audio_url": null
+    },
+    "stem": "When reading stories as children, many of us pretended to have ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "magic"
+        ],
+        "blank2": [
+          "powers"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13042",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "22",
+    "passage_id": "psg_2026_d_007",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Magical Stories",
+      "content": "From old fairy tales to modern books like Harry Potter, people have always loved stories about magical beings like vampires and wizards. Many of us pretended to have magic powers when we were children. Even as we grow up, we still enjoy imagining what it would be like to be a superhero or a witch. So why are we so drawn to these magical stories? One big reason is that these stories make us feel a mix of fear and excitement. When a character is threatened by a monster, our hearts beat faster. But we can enjoy this feeling, because we know we are safe. Our brain understands that the story is not true, so we can enjoy being scared without any real danger. Also, these stories are a great way to take a break from everyday life. When we read them, we can forget about homework and other problems for a while. We get so interested in the characters' adventures that we feel like we are in a different world ourselves. In conclusion, stories about supernatural beings have all the right ingredients to keep us reading. They are exciting, a little scary, and offer a fun tour into amazing new worlds. That's an adventure we can safely enjoy from our favorite chair.",
+      "audio_url": null
+    },
+    "stem": "When a character is threatened by a monster, our hearts ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "beat"
+        ],
+        "blank2": [
+          "faster"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13043",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "23",
+    "passage_id": "psg_2026_d_007",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Magical Stories",
+      "content": "From old fairy tales to modern books like Harry Potter, people have always loved stories about magical beings like vampires and wizards. Many of us pretended to have magic powers when we were children. Even as we grow up, we still enjoy imagining what it would be like to be a superhero or a witch. So why are we so drawn to these magical stories? One big reason is that these stories make us feel a mix of fear and excitement. When a character is threatened by a monster, our hearts beat faster. But we can enjoy this feeling, because we know we are safe. Our brain understands that the story is not true, so we can enjoy being scared without any real danger. Also, these stories are a great way to take a break from everyday life. When we read them, we can forget about homework and other problems for a while. We get so interested in the characters' adventures that we feel like we are in a different world ourselves. In conclusion, stories about supernatural beings have all the right ingredients to keep us reading. They are exciting, a little scary, and offer a fun tour into amazing new worlds. That's an adventure we can safely enjoy from our favorite chair.",
+      "audio_url": null
+    },
+    "stem": "While reading, we can enjoy being scared without any ________ ________.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "real"
+        ],
+        "blank2": [
+          "danger"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13044",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "24",
+    "passage_id": "psg_2026_d_007",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Magical Stories",
+      "content": "From old fairy tales to modern books like Harry Potter, people have always loved stories about magical beings like vampires and wizards. Many of us pretended to have magic powers when we were children. Even as we grow up, we still enjoy imagining what it would be like to be a superhero or a witch. So why are we so drawn to these magical stories? One big reason is that these stories make us feel a mix of fear and excitement. When a character is threatened by a monster, our hearts beat faster. But we can enjoy this feeling, because we know we are safe. Our brain understands that the story is not true, so we can enjoy being scared without any real danger. Also, these stories are a great way to take a break from everyday life. When we read them, we can forget about homework and other problems for a while. We get so interested in the characters' adventures that we feel like we are in a different world ourselves. In conclusion, stories about supernatural beings have all the right ingredients to keep us reading. They are exciting, a little scary, and offer a fun tour into amazing new worlds. That's an adventure we can safely enjoy from our favorite chair.",
+      "audio_url": null
+    },
+    "stem": "When we read the stories, we can ________ ________ homework and other problems.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "forget"
+        ],
+        "blank2": [
+          "about"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13045",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "25",
+    "passage_id": "psg_2026_d_007",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Magical Stories",
+      "content": "From old fairy tales to modern books like Harry Potter, people have always loved stories about magical beings like vampires and wizards. Many of us pretended to have magic powers when we were children. Even as we grow up, we still enjoy imagining what it would be like to be a superhero or a witch. So why are we so drawn to these magical stories? One big reason is that these stories make us feel a mix of fear and excitement. When a character is threatened by a monster, our hearts beat faster. But we can enjoy this feeling, because we know we are safe. Our brain understands that the story is not true, so we can enjoy being scared without any real danger. Also, these stories are a great way to take a break from everyday life. When we read them, we can forget about homework and other problems for a while. We get so interested in the characters' adventures that we feel like we are in a different world ourselves. In conclusion, stories about supernatural beings have all the right ingredients to keep us reading. They are exciting, a little scary, and offer a fun tour into amazing new worlds. That's an adventure we can safely enjoy from our favorite chair.",
+      "audio_url": null
+    },
+    "stem": "Stories about supernatural beings offer a ________ ________ into amazing new worlds.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "fun"
+        ],
+        "blank2": [
+          "tour"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13046",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "16",
+    "passage_id": "psg_2026_d_008",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Aibi Robot",
+      "content": "Do you ever have trouble falling asleep the night before a trip? Do you feel bad about leaving your pet alone at home? Now, with the help of Aibi, a smart robot, you don't have to worry about them at all, no matter how far away you are. The robot looks very cute. It is white and about eighteen centimeters tall, which is perfect for going through narrow places in your home. The robot only works when you control it with an app on your phone, so you can decide exactly when to check on your pets. It has some advanced equipment, all of which work together to keep you connected to your furry friends. Once you connect it to your phone, you can see what the robot sees right on your screen with the help of a smart camera, getting a clear look at their funny daily moments. It can go around your home easily, so you can check on your pets, talk to them in real time, and play with them. The robot can also store food for a few days at a time with a small and tidy pocket on its back, so you can feed your pets while you are not at home. As you can see, the robot is very helpful, solving all the little problems that come with leaving pets alone. It cannot only look after your pets but also make them happy while you are away from home, letting them hear your voice even when you are on vacation. With it, you can travel with peace and don't need to worry about your pets. It's like having a pet sitter in your pocket, which is more convenient and always ready to help.",
+      "audio_url": null
+    },
+    "stem": "The Aibi robot is small enough to go through ________ ________ at home.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "narrow"
+        ],
+        "blank2": [
+          "places"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13047",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "17",
+    "passage_id": "psg_2026_d_008",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Aibi Robot",
+      "content": "Do you ever have trouble falling asleep the night before a trip? Do you feel bad about leaving your pet alone at home? Now, with the help of Aibi, a smart robot, you don't have to worry about them at all, no matter how far away you are. The robot looks very cute. It is white and about eighteen centimeters tall, which is perfect for going through narrow places in your home. The robot only works when you control it with an app on your phone, so you can decide exactly when to check on your pets. It has some advanced equipment, all of which work together to keep you connected to your furry friends. Once you connect it to your phone, you can see what the robot sees right on your screen with the help of a smart camera, getting a clear look at their funny daily moments. It can go around your home easily, so you can check on your pets, talk to them in real time, and play with them. The robot can also store food for a few days at a time with a small and tidy pocket on its back, so you can feed your pets while you are not at home. As you can see, the robot is very helpful, solving all the little problems that come with leaving pets alone. It cannot only look after your pets but also make them happy while you are away from home, letting them hear your voice even when you are on vacation. With it, you can travel with peace and don't need to worry about your pets. It's like having a pet sitter in your pocket, which is more convenient and always ready to help.",
+      "audio_url": null
+    },
+    "stem": "To make the Aibi robot work, you have to ________ ________ with the app on your phone.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "control"
+        ],
+        "blank2": [
+          "it"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13048",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "18",
+    "passage_id": "psg_2026_d_008",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Aibi Robot",
+      "content": "Do you ever have trouble falling asleep the night before a trip? Do you feel bad about leaving your pet alone at home? Now, with the help of Aibi, a smart robot, you don't have to worry about them at all, no matter how far away you are. The robot looks very cute. It is white and about eighteen centimeters tall, which is perfect for going through narrow places in your home. The robot only works when you control it with an app on your phone, so you can decide exactly when to check on your pets. It has some advanced equipment, all of which work together to keep you connected to your furry friends. Once you connect it to your phone, you can see what the robot sees right on your screen with the help of a smart camera, getting a clear look at their funny daily moments. It can go around your home easily, so you can check on your pets, talk to them in real time, and play with them. The robot can also store food for a few days at a time with a small and tidy pocket on its back, so you can feed your pets while you are not at home. As you can see, the robot is very helpful, solving all the little problems that come with leaving pets alone. It cannot only look after your pets but also make them happy while you are away from home, letting them hear your voice even when you are on vacation. With it, you can travel with peace and don't need to worry about your pets. It's like having a pet sitter in your pocket, which is more convenient and always ready to help.",
+      "audio_url": null
+    },
+    "stem": "With a ________ ________ on its head, the Aibi robot lets you watch your pets' daily moments clearly.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "smart"
+        ],
+        "blank2": [
+          "camera"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13049",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "19",
+    "passage_id": "psg_2026_d_008",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Aibi Robot",
+      "content": "Do you ever have trouble falling asleep the night before a trip? Do you feel bad about leaving your pet alone at home? Now, with the help of Aibi, a smart robot, you don't have to worry about them at all, no matter how far away you are. The robot looks very cute. It is white and about eighteen centimeters tall, which is perfect for going through narrow places in your home. The robot only works when you control it with an app on your phone, so you can decide exactly when to check on your pets. It has some advanced equipment, all of which work together to keep you connected to your furry friends. Once you connect it to your phone, you can see what the robot sees right on your screen with the help of a smart camera, getting a clear look at their funny daily moments. It can go around your home easily, so you can check on your pets, talk to them in real time, and play with them. The robot can also store food for a few days at a time with a small and tidy pocket on its back, so you can feed your pets while you are not at home. As you can see, the robot is very helpful, solving all the little problems that come with leaving pets alone. It cannot only look after your pets but also make them happy while you are away from home, letting them hear your voice even when you are on vacation. With it, you can travel with peace and don't need to worry about your pets. It's like having a pet sitter in your pocket, which is more convenient and always ready to help.",
+      "audio_url": null
+    },
+    "stem": "The robot has a small and tidy pocket on its back to ________ ________ for several days.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "store"
+        ],
+        "blank2": [
+          "food"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  },
+  {
+    "id": "q_13050",
+    "book": "shanghai_2026_yimo",
+    "question_type": "listening_fill_blank",
+    "chapter_l1": "1 听力填词",
+    "chapter_l2": null,
+    "number": "20",
+    "passage_id": "psg_2026_d_008",
+    "passage_json": {
+      "kind": "listening",
+      "title": "Passage - Aibi Robot",
+      "content": "Do you ever have trouble falling asleep the night before a trip? Do you feel bad about leaving your pet alone at home? Now, with the help of Aibi, a smart robot, you don't have to worry about them at all, no matter how far away you are. The robot looks very cute. It is white and about eighteen centimeters tall, which is perfect for going through narrow places in your home. The robot only works when you control it with an app on your phone, so you can decide exactly when to check on your pets. It has some advanced equipment, all of which work together to keep you connected to your furry friends. Once you connect it to your phone, you can see what the robot sees right on your screen with the help of a smart camera, getting a clear look at their funny daily moments. It can go around your home easily, so you can check on your pets, talk to them in real time, and play with them. The robot can also store food for a few days at a time with a small and tidy pocket on its back, so you can feed your pets while you are not at home. As you can see, the robot is very helpful, solving all the little problems that come with leaving pets alone. It cannot only look after your pets but also make them happy while you are away from home, letting them hear your voice even when you are on vacation. With it, you can travel with peace and don't need to worry about your pets. It's like having a pet sitter in your pocket, which is more convenient and always ready to help.",
+      "audio_url": null
+    },
+    "stem": "With the help of the Aibi robot, you can travel ________ ________ instead of worrying about your pets.",
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "with"
+        ],
+        "blank2": [
+          "peace"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_listening_fill_blank"
+    ]
+  }
+]

@@ -26,6 +26,10 @@
   - options 必须为 2 个，label 分别为 "T" 和 "F"
   - stem 为小题判断句（如 "The woman has just moved to the city."），不含听力原文
   - passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
+- 听力填词（listening_fill_blank）：
+  - answer 为填空答案列表（list[BlankGroup]），每个空 blankN 对应一个词（可给同音/拼写变体候选）
+  - stem 为带空位的小题句子（用连续下划线 ________ 表示空位），空位数与 answer 的 blankN 键数一致，每空限填一词
+  - stem 不含听力原文；passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
 - 阅读理解（reading_longtext_single_choice）：
   - answer 必须是 A/B/C/D 之一
   - options 必须为 4 个，label 分别为 A/B/C/D

@@ -38,6 +38,7 @@ def _infer_title(req: GenerateRequest) -> str:
             "sentence_rewriting": "改写句子",
             "listening_single_choice": "听力选择",
             "listening_true_false": "听力判断",
+            "listening_fill_blank": "听力填词",
             "reading_longtext_single_choice": "阅读理解",
             "cloze_single_choice": "完形填空",
         }
@@ -99,7 +100,7 @@ def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
         labels = {opt.label for opt in revised.options}
         if labels != {"T", "F"}:
             return False
-    elif qt in ("word_form", "sentence_rewriting"):
+    elif qt in ("word_form", "sentence_rewriting", "listening_fill_blank"):
         if not _is_valid_blank_answer(revised.answer):
             return False
 
@@ -177,7 +178,7 @@ def _revise_one(
             # independently (and in parallel), so any per-question passage
             # edit would break group consistency. Passage integrity trumps
             # the revision_intensity passage rule from the design doc.
-            if question.question_type in ("listening_true_false", "reading_longtext_single_choice", "cloze_single_choice"):
+            if question.question_type in ("listening_true_false", "reading_longtext_single_choice", "cloze_single_choice", "listening_fill_blank"):
                 revised.passage_id = question.passage_id
                 revised.passage_json = question.passage_json
             return revised, False

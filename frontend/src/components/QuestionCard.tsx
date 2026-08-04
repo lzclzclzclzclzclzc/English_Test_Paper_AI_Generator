@@ -5,6 +5,7 @@ import { formatCorrectAnswer, formatUserAnswer } from '@/lib/answers'
 import { SingleChoiceField } from '@/components/question-fields/SingleChoiceField'
 import { ListeningSingleChoiceField } from '@/components/question-fields/ListeningSingleChoiceField'
 import { ListeningTrueFalseField } from '@/components/question-fields/ListeningTrueFalseField'
+import { ListeningFillBlankField } from '@/components/question-fields/ListeningFillBlankField'
 import { WordFormField } from '@/components/question-fields/WordFormField'
 import { SentenceRewritingField } from '@/components/question-fields/SentenceRewritingField'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
@@ -99,6 +100,14 @@ export function QuestionCard({
           />
         ) : question.question_type === 'word_form' ? (
           <WordFormField
+            question={question}
+            mode={mode}
+            value={typeof value === 'object' ? (value as BlankMap) : undefined}
+            onChange={onChange}
+            result={result}
+          />
+        ) : question.question_type === 'listening_fill_blank' ? (
+          <ListeningFillBlankField
             question={question}
             mode={mode}
             value={typeof value === 'object' ? (value as BlankMap) : undefined}

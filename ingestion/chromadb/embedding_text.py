@@ -25,6 +25,7 @@ QTYPE_LABEL = {
     "word_form":           "词性转换",
     "sentence_rewriting":  "改写句子",
     "listening_single_choice": "听力选择",
+    "listening_fill_blank":    "听力填词",
 }
 
 # The <u>...</u> tags are inserted by us in stage 3 (see §3.11); strip them
@@ -92,6 +93,11 @@ def build_embedding_text(question: dict, kp_index: dict[str, dict]) -> str:
         template = _clean(question.get("template"))
         if template:
             lines.append(f"[模板] {template}")
+
+    elif qt == "listening_fill_blank":
+        stem = _clean(question.get("stem"))
+        if stem:
+            lines.append(f"[题干] {stem}")
 
     else:
         raise ValueError(f"unknown question_type: {qt!r}")

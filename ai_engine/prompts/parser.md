@@ -393,6 +393,18 @@
   "free_text": ""
 }
 
+## 示例 17b：听力填词请求（按篇）
+输入："来 1 篇听力填词（10 个空）"
+输出：
+{
+  "knowledge_points": [],
+  "question_types": ["listening_fill_blank"],
+  "total_questions": 10,
+  "type_distribution": {"listening_fill_blank": 10},
+  "revision_intensity": "light",
+  "free_text": ""
+}
+
 ## 示例 18：阅读理解请求（按篇）
 输入："来 1 篇阅读理解"
 输出：
