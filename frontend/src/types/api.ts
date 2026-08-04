@@ -251,6 +251,52 @@ export interface StudyPlan {
   days: StudyPlanDay[]
 }
 
+// ---- 背单词 ----
+
+export type VocabularyRating = 'known' | 'fuzzy' | 'forgot'
+
+export interface VocabularyCard {
+  word_id: string
+  term: string
+  part_of_speech: string
+  meanings: string[]
+  example_en: string
+  example_zh: string
+  card_type: 'review' | 'new'
+}
+
+export interface VocabularyToday {
+  date: string
+  daily_new_limit: number
+  new_count: number
+  review_count: number
+  completed_count: number
+  remaining_count: number
+  cards: VocabularyCard[]
+}
+
+export interface VocabularyReviewResponse {
+  word_id: string
+  correct_answer: string
+  spelling_correct: boolean
+  applied_rating: VocabularyRating
+  next_due_at: string
+  remaining_count: number
+}
+
+export interface VocabularyProgress {
+  date: string
+  daily_new_limit: number
+  new_completed: number
+  review_completed: number
+  due_count: number
+  mastered_count: number
+  total_words: number
+  streak_days: number
+  wordlist_label: string
+  source_url: string
+}
+
 
 /**
  * 所有业务错误的统一响应体。error_code 稳定清单（backend/errors.py）：

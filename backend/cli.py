@@ -58,6 +58,13 @@ def main(argv: list[str] | None = None) -> int:
     promote.add_argument("--username", required=True)
 
     sub.add_parser("cleanup-sessions")
+    seed_vocabulary = sub.add_parser("seed-vocabulary")
+    seed_vocabulary.add_argument(
+        "--file",
+        type=Path,
+        default=Path("data/vocabulary/shanghai-basic-1678.json"),
+        help="versioned vocabulary JSON (must contain 1,678 entries)",
+    )
     sub.add_parser("smoke")
     sub.add_parser("deploy-check")
 
@@ -87,6 +94,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "cleanup-sessions":
         print(json.dumps({"deleted": storage.cleanup_sessions()}))
+        return 0
+    if args.command == "seed-vocabulary":
+        count = storage.seed_vocabulary_from_json(args.file)
+        print(json.dumps({"seeded": count, "file": str(args.file)}, ensure_ascii=False))
         return 0
     if args.command == "smoke":
         return _smoke()

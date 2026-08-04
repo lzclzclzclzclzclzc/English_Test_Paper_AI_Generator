@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Literal
 from uuid import uuid4
 
 from backend.schemas import PaperListItem, Session, StoredAttempt, User, UserRecord
@@ -27,6 +27,12 @@ MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX = "20260709_001_attempt_items_item_index"
 MIGRATION_USERS_ROLE = "20260801_001_users_role"
 MIGRATION_USERS_STATUS = "20260801_002_users_status"
 MIGRATION_ATTEMPT_ITEMS_USER_ANSWER = "20260803_001_attempt_items_user_answer"
+MIGRATION_VOCABULARY_SCHEMA = "20260730_001_vocabulary_mvp"
+# Windows' bundled Python may not ship IANA zone data. Shanghai has no DST, so
+# the explicit UTC+08:00 offset keeps daily quota and streak boundaries stable.
+VOCABULARY_TIMEZONE = timezone(timedelta(hours=8), name="Asia/Shanghai")
+VOCABULARY_INTERVALS = (1, 3, 7, 14, 30)
+DEFAULT_DAILY_NEW_LIMIT = 20
 CHROMA_COLLECTION_NAME = "questions"
 CHROMA_REQUIRED_METADATA_KEYS = {
     "book",
@@ -853,6 +859,74 @@ def _migrate_attempt_items_user_answer(conn: sqlite3.Connection) -> None:
     conn.execute("ALTER TABLE attempt_items ADD COLUMN user_answer_json TEXT")
 
 
+def _migrate_vocabulary_schema(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS vocabulary_wordlists (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            source_url TEXT NOT NULL,
+            source_accessed_at TEXT NOT NULL,
+            source_sha256 TEXT NOT NULL,
+            imported_at TIMESTAMP NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS vocabulary_words (
+            id TEXT PRIMARY KEY,
+            wordlist_id TEXT NOT NULL REFERENCES vocabulary_wordlists(id),
+            term TEXT NOT NULL,
+            normalized_term TEXT NOT NULL UNIQUE,
+            part_of_speech TEXT NOT NULL,
+            meanings_json TEXT NOT NULL,
+            example_en TEXT NOT NULL,
+            example_zh TEXT NOT NULL,
+            is_active INTEGER NOT NULL DEFAULT 1
+        );
+        CREATE INDEX IF NOT EXISTS idx_vocabulary_words_active ON vocabulary_words(is_active, id);
+
+        CREATE TABLE IF NOT EXISTS vocabulary_settings (
+            user_id TEXT PRIMARY KEY REFERENCES users(id),
+            daily_new_limit INTEGER NOT NULL DEFAULT 20 CHECK(daily_new_limit BETWEEN 10 AND 50)
+        );
+
+        CREATE TABLE IF NOT EXISTS vocabulary_progress (
+            user_id TEXT NOT NULL REFERENCES users(id),
+            word_id TEXT NOT NULL REFERENCES vocabulary_words(id),
+            stage INTEGER NOT NULL DEFAULT 0 CHECK(stage BETWEEN 0 AND 5),
+            introduced_at TIMESTAMP NOT NULL,
+            last_reviewed_at TIMESTAMP NOT NULL,
+            due_at TIMESTAMP NOT NULL,
+            review_count INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY(user_id, word_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_vocabulary_progress_due ON vocabulary_progress(user_id, due_at);
+
+        CREATE TABLE IF NOT EXISTS vocabulary_daily_cards (
+            user_id TEXT NOT NULL REFERENCES users(id),
+            study_date TEXT NOT NULL,
+            word_id TEXT NOT NULL REFERENCES vocabulary_words(id),
+            card_type TEXT NOT NULL CHECK(card_type IN ('review', 'new')),
+            completed_at TIMESTAMP,
+            PRIMARY KEY(user_id, study_date, word_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_vocabulary_cards_open ON vocabulary_daily_cards(user_id, study_date, completed_at);
+
+        CREATE TABLE IF NOT EXISTS vocabulary_review_logs (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL REFERENCES users(id),
+            word_id TEXT NOT NULL REFERENCES vocabulary_words(id),
+            reviewed_at TIMESTAMP NOT NULL,
+            spelling_correct INTEGER NOT NULL,
+            requested_rating TEXT NOT NULL CHECK(requested_rating IN ('known', 'fuzzy', 'forgot')),
+            applied_rating TEXT NOT NULL CHECK(applied_rating IN ('known', 'fuzzy', 'forgot')),
+            stage_after INTEGER NOT NULL,
+            next_due_at TIMESTAMP NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_vocabulary_logs_user_time ON vocabulary_review_logs(user_id, reviewed_at);
+        """
+    )
+
+
 def _ensure_schema_migrations(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -867,6 +941,7 @@ def _ensure_schema_migrations(conn: sqlite3.Connection) -> None:
 def _apply_migrations(conn: sqlite3.Connection) -> None:
     migrations = [
         (MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX, _migrate_attempt_items_item_index),
+        (MIGRATION_VOCABULARY_SCHEMA, _migrate_vocabulary_schema),
         (MIGRATION_USERS_ROLE, _migrate_users_role),
         (MIGRATION_USERS_STATUS, _migrate_users_status),
         (MIGRATION_ATTEMPT_ITEMS_USER_ANSWER, _migrate_attempt_items_user_answer),
@@ -984,3 +1059,342 @@ def get_latest_study_plan(user_id: str) -> dict | None:
             (user_id,),
         ).fetchone()
     return json.loads(row["plan_json"]) if row else None
+
+
+# ─── Vocabulary ─────────────────────────────────────────────────────────────
+
+def _vocabulary_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _vocabulary_date(now: datetime | None = None) -> str:
+    return (now or _vocabulary_now()).astimezone(VOCABULARY_TIMEZONE).date().isoformat()
+
+
+def _normalize_vocabulary_term(value: str) -> str:
+    return " ".join(value.strip().casefold().split())
+
+
+def seed_vocabulary_from_json(path: str | Path, *, expected_count: int = 1678) -> int:
+    """Upsert a versioned word list without touching any learner progress."""
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    metadata = payload.get("metadata")
+    words = payload.get("words")
+    if not isinstance(metadata, dict) or not isinstance(words, list):
+        raise ValueError("vocabulary file must contain metadata and words")
+    required_metadata = {"id", "label", "source_url", "source_accessed_at", "source_sha256"}
+    if not required_metadata.issubset(metadata):
+        raise ValueError("vocabulary metadata is incomplete")
+    if len(words) != expected_count:
+        raise ValueError(f"expected {expected_count} vocabulary entries, got {len(words)}")
+
+    ids: set[str] = set()
+    normalized_terms: set[str] = set()
+    prepared: list[tuple[str, str, str, str, list[str], str, str]] = []
+    for item in words:
+        if not isinstance(item, dict):
+            raise ValueError("vocabulary entries must be objects")
+        try:
+            word_id = str(item["id"])
+            term = str(item["term"]).strip()
+            pos = str(item["part_of_speech"]).strip()
+            meanings = item["meanings"]
+            example_en = str(item["example_en"]).strip()
+            example_zh = str(item["example_zh"]).strip()
+        except KeyError as exc:
+            raise ValueError(f"vocabulary entry is missing {exc.args[0]}") from exc
+        normalized = _normalize_vocabulary_term(term)
+        if not word_id or not term or not pos or not isinstance(meanings, list) or not meanings or not example_en or not example_zh:
+            raise ValueError(f"vocabulary entry {word_id or '<unknown>'} is incomplete")
+        if word_id in ids or normalized in normalized_terms:
+            raise ValueError(f"duplicate vocabulary entry {word_id or term}")
+        ids.add(word_id)
+        normalized_terms.add(normalized)
+        prepared.append((word_id, term, normalized, pos, [str(value) for value in meanings], example_en, example_zh))
+
+    init_db()
+    now = _vocabulary_now().isoformat()
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO vocabulary_wordlists (id, label, source_url, source_accessed_at, source_sha256, imported_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                label = excluded.label,
+                source_url = excluded.source_url,
+                source_accessed_at = excluded.source_accessed_at,
+                source_sha256 = excluded.source_sha256,
+                imported_at = excluded.imported_at
+            """,
+            (metadata["id"], metadata["label"], metadata["source_url"], metadata["source_accessed_at"], metadata["source_sha256"], now),
+        )
+        for word_id, term, normalized, pos, meanings, example_en, example_zh in prepared:
+            conn.execute(
+                """
+                INSERT INTO vocabulary_words
+                    (id, wordlist_id, term, normalized_term, part_of_speech, meanings_json, example_en, example_zh, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+                ON CONFLICT(id) DO UPDATE SET
+                    wordlist_id = excluded.wordlist_id,
+                    term = excluded.term,
+                    normalized_term = excluded.normalized_term,
+                    part_of_speech = excluded.part_of_speech,
+                    meanings_json = excluded.meanings_json,
+                    example_en = excluded.example_en,
+                    example_zh = excluded.example_zh,
+                    is_active = 1
+                """,
+                (word_id, metadata["id"], term, normalized, pos, json.dumps(meanings, ensure_ascii=False), example_en, example_zh),
+            )
+    return len(prepared)
+
+
+def _vocabulary_settings(conn: sqlite3.Connection, user_id: str) -> int:
+    conn.execute(
+        "INSERT OR IGNORE INTO vocabulary_settings (user_id, daily_new_limit) VALUES (?, ?)",
+        (user_id, DEFAULT_DAILY_NEW_LIMIT),
+    )
+    return int(conn.execute("SELECT daily_new_limit FROM vocabulary_settings WHERE user_id = ?", (user_id,)).fetchone()[0])
+
+
+def _mask_vocabulary_example(example: str, term: str) -> str:
+    import re
+
+    if not term:
+        return example
+    return re.sub(re.escape(term), "_____", example, flags=re.IGNORECASE)
+
+
+def _ensure_vocabulary_daily_cards(conn: sqlite3.Connection, user_id: str, now: datetime) -> None:
+    study_date = _vocabulary_date(now)
+    existing = conn.execute(
+        "SELECT COUNT(*) FROM vocabulary_daily_cards WHERE user_id = ? AND study_date = ?",
+        (user_id, study_date),
+    ).fetchone()[0]
+    if existing:
+        return
+    limit = _vocabulary_settings(conn, user_id)
+    due_rows = conn.execute(
+        """
+        SELECT word_id FROM vocabulary_progress
+        WHERE user_id = ? AND due_at <= ?
+        ORDER BY due_at, word_id
+        """,
+        (user_id, now.isoformat()),
+    ).fetchall()
+    for row in due_rows:
+        conn.execute(
+            "INSERT INTO vocabulary_daily_cards (user_id, study_date, word_id, card_type) VALUES (?, ?, ?, 'review')",
+            (user_id, study_date, row["word_id"]),
+        )
+    new_rows = conn.execute(
+        """
+        SELECT w.id FROM vocabulary_words w
+        LEFT JOIN vocabulary_progress p ON p.word_id = w.id AND p.user_id = ?
+        WHERE w.is_active = 1 AND p.word_id IS NULL
+        ORDER BY w.id
+        LIMIT ?
+        """,
+        (user_id, limit),
+    ).fetchall()
+    for row in new_rows:
+        conn.execute(
+            "INSERT INTO vocabulary_daily_cards (user_id, study_date, word_id, card_type) VALUES (?, ?, ?, 'new')",
+            (user_id, study_date, row["id"]),
+        )
+
+
+def get_vocabulary_today(user_id: str, now: datetime | None = None) -> dict:
+    init_db()
+    now = now or _vocabulary_now()
+    study_date = _vocabulary_date(now)
+    with connect() as conn:
+        _ensure_vocabulary_daily_cards(conn, user_id, now)
+        limit = _vocabulary_settings(conn, user_id)
+        rows = conn.execute(
+            """
+            SELECT c.word_id, c.card_type, w.part_of_speech, w.meanings_json, w.example_en, w.example_zh, w.term
+            FROM vocabulary_daily_cards c
+            JOIN vocabulary_words w ON w.id = c.word_id
+            WHERE c.user_id = ? AND c.study_date = ? AND c.completed_at IS NULL
+            ORDER BY CASE c.card_type WHEN 'review' THEN 0 ELSE 1 END, c.word_id
+            """,
+            (user_id, study_date),
+        ).fetchall()
+        counts = conn.execute(
+            """
+            SELECT card_type, COUNT(*) AS count,
+                   SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END) AS completed
+            FROM vocabulary_daily_cards
+            WHERE user_id = ? AND study_date = ?
+            GROUP BY card_type
+            """,
+            (user_id, study_date),
+        ).fetchall()
+    count_map = {row["card_type"]: (int(row["count"]), int(row["completed"] or 0)) for row in counts}
+    new_count, new_completed = count_map.get("new", (0, 0))
+    review_count, review_completed = count_map.get("review", (0, 0))
+    return {
+        "date": study_date,
+        "daily_new_limit": limit,
+        "new_count": new_count,
+        "review_count": review_count,
+        "completed_count": new_completed + review_completed,
+        "remaining_count": len(rows),
+        "cards": [
+            {
+                "word_id": row["word_id"],
+                "term": row["term"],
+                "part_of_speech": row["part_of_speech"],
+                "meanings": json.loads(row["meanings_json"]),
+                "example_en": _mask_vocabulary_example(row["example_en"], row["term"]),
+                "example_zh": row["example_zh"],
+                "card_type": row["card_type"],
+            }
+            for row in rows
+        ],
+    }
+
+
+def review_vocabulary_card(
+    user_id: str,
+    word_id: str,
+    answer: str,
+    rating: Literal["known", "fuzzy", "forgot"],
+    now: datetime | None = None,
+) -> dict:
+    init_db()
+    now = now or _vocabulary_now()
+    study_date = _vocabulary_date(now)
+    with connect() as conn:
+        card = conn.execute(
+            """
+            SELECT c.card_type, w.term FROM vocabulary_daily_cards c
+            JOIN vocabulary_words w ON w.id = c.word_id
+            WHERE c.user_id = ? AND c.study_date = ? AND c.word_id = ? AND c.completed_at IS NULL
+            """,
+            (user_id, study_date, word_id),
+        ).fetchone()
+        if card is None:
+            raise ValueError("word is not an unfinished card in today's task")
+        spelling_correct = _normalize_vocabulary_term(answer) == _normalize_vocabulary_term(card["term"])
+        applied_rating = "fuzzy" if rating == "known" and not spelling_correct else rating
+        progress = conn.execute(
+            "SELECT stage, introduced_at, review_count FROM vocabulary_progress WHERE user_id = ? AND word_id = ?",
+            (user_id, word_id),
+        ).fetchone()
+        current_stage = int(progress["stage"]) if progress else 0
+        if applied_rating == "known":
+            stage = min(current_stage + 1, len(VOCABULARY_INTERVALS))
+            delay_days = VOCABULARY_INTERVALS[stage - 1]
+        elif applied_rating == "fuzzy":
+            stage = current_stage
+            delay_days = 1
+        else:
+            stage = 0
+            delay_days = 1
+        next_due_at = now + timedelta(days=delay_days)
+        introduced_at = progress["introduced_at"] if progress else now.isoformat()
+        review_count = int(progress["review_count"]) + 1 if progress else 1
+        conn.execute(
+            """
+            INSERT INTO vocabulary_progress (user_id, word_id, stage, introduced_at, last_reviewed_at, due_at, review_count)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id, word_id) DO UPDATE SET
+                stage = excluded.stage,
+                last_reviewed_at = excluded.last_reviewed_at,
+                due_at = excluded.due_at,
+                review_count = excluded.review_count
+            """,
+            (user_id, word_id, stage, introduced_at, now.isoformat(), next_due_at.isoformat(), review_count),
+        )
+        conn.execute(
+            "UPDATE vocabulary_daily_cards SET completed_at = ? WHERE user_id = ? AND study_date = ? AND word_id = ?",
+            (now.isoformat(), user_id, study_date, word_id),
+        )
+        conn.execute(
+            """
+            INSERT INTO vocabulary_review_logs
+                (id, user_id, word_id, reviewed_at, spelling_correct, requested_rating, applied_rating, stage_after, next_due_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (uuid4().hex, user_id, word_id, now.isoformat(), int(spelling_correct), rating, applied_rating, stage, next_due_at.isoformat()),
+        )
+        remaining = conn.execute(
+            "SELECT COUNT(*) FROM vocabulary_daily_cards WHERE user_id = ? AND study_date = ? AND completed_at IS NULL",
+            (user_id, study_date),
+        ).fetchone()[0]
+    return {
+        "word_id": word_id,
+        "correct_answer": card["term"],
+        "spelling_correct": spelling_correct,
+        "applied_rating": applied_rating,
+        "next_due_at": next_due_at,
+        "remaining_count": int(remaining),
+    }
+
+
+def get_vocabulary_progress(user_id: str, now: datetime | None = None) -> dict:
+    init_db()
+    now = now or _vocabulary_now()
+    study_date = _vocabulary_date(now)
+    with connect() as conn:
+        _ensure_vocabulary_daily_cards(conn, user_id, now)
+        limit = _vocabulary_settings(conn, user_id)
+        counts = conn.execute(
+            """
+            SELECT card_type, COUNT(*) AS count FROM vocabulary_daily_cards
+            WHERE user_id = ? AND study_date = ? AND completed_at IS NOT NULL GROUP BY card_type
+            """,
+            (user_id, study_date),
+        ).fetchall()
+        due_count = int(conn.execute(
+            "SELECT COUNT(*) FROM vocabulary_progress WHERE user_id = ? AND due_at <= ?",
+            (user_id, now.isoformat()),
+        ).fetchone()[0])
+        mastered_count = int(conn.execute(
+            "SELECT COUNT(*) FROM vocabulary_progress WHERE user_id = ? AND stage = ?",
+            (user_id, len(VOCABULARY_INTERVALS)),
+        ).fetchone()[0])
+        total_words = int(conn.execute("SELECT COUNT(*) FROM vocabulary_words WHERE is_active = 1").fetchone()[0])
+        logs = conn.execute(
+            "SELECT reviewed_at FROM vocabulary_review_logs WHERE user_id = ? ORDER BY reviewed_at DESC",
+            (user_id,),
+        ).fetchall()
+        source = conn.execute(
+            "SELECT label, source_url FROM vocabulary_wordlists ORDER BY imported_at DESC LIMIT 1"
+        ).fetchone()
+    completed = {row["card_type"]: int(row["count"]) for row in counts}
+    reviewed_days = {_vocabulary_date(_dt(row["reviewed_at"])) for row in logs}
+    streak_days = 0
+    cursor = now.astimezone(VOCABULARY_TIMEZONE).date()
+    while cursor.isoformat() in reviewed_days:
+        streak_days += 1
+        cursor -= timedelta(days=1)
+    return {
+        "date": study_date,
+        "daily_new_limit": limit,
+        "new_completed": completed.get("new", 0),
+        "review_completed": completed.get("review", 0),
+        "due_count": due_count,
+        "mastered_count": mastered_count,
+        "total_words": total_words,
+        "streak_days": streak_days,
+        "wordlist_label": source["label"] if source else "上海课程标准依据词表（第三方整理）",
+        "source_url": source["source_url"] if source else "",
+    }
+
+
+def set_vocabulary_daily_new_limit(user_id: str, daily_new_limit: int) -> int:
+    if not 10 <= daily_new_limit <= 50:
+        raise ValueError("daily_new_limit must be between 10 and 50")
+    init_db()
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO vocabulary_settings (user_id, daily_new_limit) VALUES (?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET daily_new_limit = excluded.daily_new_limit
+            """,
+            (user_id, daily_new_limit),
+        )
+    return daily_new_limit

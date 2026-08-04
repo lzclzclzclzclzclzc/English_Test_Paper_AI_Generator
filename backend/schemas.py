@@ -121,6 +121,67 @@ class AgentChatResponse(BaseModel):
     action: dict | None = None
 
 
+# ---- Vocabulary -------------------------------------------------------------
+
+VocabularyRating = Literal["known", "fuzzy", "forgot"]
+
+
+class VocabularyCard(BaseModel):
+    word_id: str
+    term: str
+    part_of_speech: str
+    meanings: list[str]
+    example_en: str
+    example_zh: str
+    card_type: Literal["review", "new"]
+
+
+class VocabularyTodayResponse(BaseModel):
+    date: str
+    daily_new_limit: int
+    new_count: int
+    review_count: int
+    completed_count: int
+    remaining_count: int
+    cards: list[VocabularyCard]
+
+
+class VocabularyReviewRequest(BaseModel):
+    word_id: str = Field(min_length=1, max_length=80)
+    answer: str = Field(max_length=160)
+    rating: VocabularyRating
+
+
+class VocabularyReviewResponse(BaseModel):
+    word_id: str
+    correct_answer: str
+    spelling_correct: bool
+    applied_rating: VocabularyRating
+    next_due_at: datetime
+    remaining_count: int
+
+
+class VocabularyProgressResponse(BaseModel):
+    date: str
+    daily_new_limit: int
+    new_completed: int
+    review_completed: int
+    due_count: int
+    mastered_count: int
+    total_words: int
+    streak_days: int
+    wordlist_label: str
+    source_url: str
+
+
+class VocabularySettingsRequest(BaseModel):
+    daily_new_limit: int = Field(ge=10, le=50)
+
+
+class VocabularySettingsResponse(BaseModel):
+    daily_new_limit: int
+
+
 class ErrorResponse(BaseModel):
     error_code: str
     message: str

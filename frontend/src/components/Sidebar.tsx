@@ -4,6 +4,7 @@ import {
   BadgeCheck,
   BarChart3,
   CalendarCheck,
+  BookOpen,
   LayoutDashboard,
   List,
   MessageCircle,
@@ -36,6 +37,8 @@ const GROUPS = [
       { to: '/review', label: '错题本', icon: XCircle, end: true },
       { to: '/mastery', label: '掌握度', icon: BarChart3, end: true },
       { to: '/study-plan', label: '学习计划', icon: CalendarCheck, end: true },
+      { to: '/vocabulary', label: '背单词', icon: BookOpen, end: true },
+      { to: '/vocabulary/progress', label: '背词进度', icon: BarChart3, end: true },
     ],
   },
   {

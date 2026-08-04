@@ -21,6 +21,8 @@ import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
 import { AdminMembershipsPage } from '@/pages/admin/AdminMembershipsPage'
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
+import { VocabularyPage } from '@/pages/VocabularyPage'
+import { VocabularyProgressPage } from '@/pages/VocabularyProgressPage'
 
 export function AppRoutes() {
   return (
@@ -44,6 +46,8 @@ export function AppRoutes() {
         />
         <Route path="/mastery" element={<RedirectIfAdmin><MasteryPage /></RedirectIfAdmin>} />
         <Route path="/study-plan" element={<RedirectIfAdmin><StudyPlanPage /></RedirectIfAdmin>} />
+        <Route path="/vocabulary" element={<RedirectIfAdmin><VocabularyPage /></RedirectIfAdmin>} />
+        <Route path="/vocabulary/progress" element={<RedirectIfAdmin><VocabularyProgressPage /></RedirectIfAdmin>} />
         <Route path="/membership" element={<RedirectIfAdmin><MembershipPage /></RedirectIfAdmin>} />
         <Route path="/settings" element={<RedirectIfAdmin><SettingsPage /></RedirectIfAdmin>} />
         <Route
