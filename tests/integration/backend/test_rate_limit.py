@@ -25,7 +25,7 @@ def limited_client(tmp_path, monkeypatch):
     reset_rate_limits()
     db_path = tmp_path / "rate-limit-test.db"
     storage.set_db_path(db_path)
-    monkeypatch.setenv("SQLITE_PATH", str(db_path))
+    monkeypatch.setenv("APP_DB_PATH", str(db_path))
     reset_config_cache()
     monkeypatch.setenv("BACKEND_ENV", "test")
     monkeypatch.setenv("BCRYPT_ROUNDS", "4")
@@ -38,6 +38,7 @@ def limited_client(tmp_path, monkeypatch):
     with TestClient(app, raise_server_exceptions=False) as test_client:
         yield test_client
     storage.set_db_path(None)
+    storage.set_bank_db_path(None)
     reset_rate_limits()
     reset_config_cache()
 
