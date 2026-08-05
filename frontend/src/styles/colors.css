@@ -50,6 +50,13 @@
 
   /* ── Accent emphasis ── */
   --accent-wash: color-mix(in oklab, var(--accent) 18%, transparent); /* <mark> highlight */
+
+  /* ── Paper-page cards（2026-08 试卷页卡片化改版）──
+     题目卡浮在暖纸底上：近白卡底 + 极浅边线；hover 才有阴影（静置仍平）。
+     改题档位色：原题 = 中性墨、轻改 = 绿、新出 = 赤陶（复用 accent）。 */
+  --surface-card: oklch(99.2% 0.003 95);
+  --rev-green: oklch(45% 0.09 150);
+  --rev-green-wash: color-mix(in oklab, var(--rev-green) 12%, transparent);
 }
 
 /* ── Dark mode — warm charcoal ground, warm off-white ink, brighter coral.
@@ -78,4 +85,8 @@
   --text-quiet: color-mix(in oklab, var(--warm-off-white) 60%, transparent);
 
   --accent-wash: color-mix(in oklab, var(--accent-bright) 26%, transparent);
+
+  --surface-card: oklch(27.5% 0.016 72);   /* 比暖炭墨地略亮一档 */
+  --rev-green: oklch(76% 0.1 150);
+  --rev-green-wash: color-mix(in oklab, var(--rev-green) 16%, transparent);
 }

@@ -18,6 +18,8 @@
     --font-heading: var(--font-serif);
     /* 英文题干沿用正文衬线栈（Georgia 在栈首，拉丁自动走 Georgia） */
     --font-question: var(--font-serif);
+    /* UI 元素（tag/按钮/序号块/答题卡）统一无衬线，与衬线题干形成对比 */
+    --font-ui: var(--font-ui-stack);
     --font-weight-medium: 400;
     --font-weight-semibold: 700;
 
@@ -36,6 +38,12 @@
     --color-ink-15: var(--ink-15);
     --color-ink-20: var(--ink-20);
     --color-ink-30: var(--ink-30);
+
+    /* ── 试卷页卡片化（2026-08）── */
+    --color-card-surface: var(--surface-card);
+    --color-rev-green: var(--rev-green);
+    --color-rev-green-wash: var(--rev-green-wash);
+    --radius-question-card: 0.5rem;
 
     /* ── shadcn 映射：组件自动进入喫茶去外观 ── */
     --color-background: var(--surface-page);

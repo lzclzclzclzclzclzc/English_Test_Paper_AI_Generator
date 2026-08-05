@@ -113,7 +113,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
 
   if (isLoading || history.isLoading) {
     return (
-      <div className="flex max-w-[52rem] flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[760px] flex-col gap-4">
         <Skeleton className="h-9 w-2/3" />
         <Skeleton className="h-72 w-full" />
       </div>
@@ -123,7 +123,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   if (error || !paper) {
     const notFound = error instanceof ApiError && error.status === 404
     return (
-      <div className="flex max-w-[52rem] flex-col items-start gap-4 pt-10">
+      <div className="mx-auto flex w-full max-w-[760px] flex-col items-start gap-4 pt-10">
         <p className="text-[18px] text-ink">
           {notFound ? '没有找到这份试卷' : '试卷加载失败'}
         </p>
@@ -200,9 +200,9 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   })
 
   return (
-    <div className="flex gap-12">
-      {/* 左：52rem 长卷 */}
-      <div className="min-w-0 max-w-[52rem] flex-1">
+    <div className="mx-auto flex w-full max-w-[1104px] justify-center gap-10">
+      {/* 左：760px 内容列（大屏与右栏一起居中，窄屏右栏折叠后单列居中） */}
+      <div className="min-w-0 max-w-[760px] flex-1">
         <p className="text-[11px] tracking-[0.1em] text-quiet">
           PAPER · {paper.paper_id.slice(0, 8)}
         </p>
@@ -319,7 +319,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
           )}
         </div>
 
-        <div className="mt-4 divide-y divide-ink-10">
+        <div className="mt-6 flex flex-col gap-4">
           {paper.items.map((item) => (
             <QuestionCard
               key={item.index}
@@ -350,7 +350,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         </div>
 
         {!submitted && (
-          <div className="mt-4 flex items-center gap-4 border-t border-hairline pt-8">
+          <div className="mt-8 flex items-center gap-4">
             <button
               type="button"
               disabled={phase === 'submitting'}
@@ -366,8 +366,8 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         )}
       </div>
 
-      {/* 右：280px 粘顶答题卡（作答态） */}
-      {!submitted && <AnswerCard paper={paper} answers={answers} />}
+      {/* 右：280px 粘顶答题卡。作答态标已答/未答，复盘态标对/错 + 元信息 */}
+      <AnswerCard paper={paper} answers={answers} results={submitted ? resultByIndex : null} />
 
       {/* 漏答确认 */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>

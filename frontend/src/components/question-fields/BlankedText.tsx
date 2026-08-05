@@ -11,7 +11,7 @@ interface BlankedTextProps {
   onChange?: (next: BlankMap) => void
 }
 
-/** 填空线输入框（handoff 第 5 屏）：无边框、只有 1px 底线，focus 转赤陶。 */
+/** 填空输入框（2026-08 卡片化改版）：浅底色圆角框，focus 描边转赤陶。 */
 function BlankInput({
   value,
   onChange,
@@ -27,16 +27,24 @@ function BlankInput({
       aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange?.(e.target.value)}
-      className="mx-1 inline-block min-w-[10rem] border-0 border-b border-ink-30 bg-transparent px-2 text-center text-ink outline-none transition-colors focus:border-accent"
+      className="mx-1 inline-block min-w-[10rem] rounded-md border border-ink-15 bg-tint px-3 py-1 text-center text-ink outline-none transition-colors focus:border-accent focus:bg-card-surface focus:ring-2 focus:ring-accent/15"
     />
   )
 }
 
-/** review 态的已填答案展示：填空线上的静态文字。 */
+/** review 态的已填答案展示：已填 = 深色字薄底框，未填 = 虚线框占位灰。 */
 function BlankValue({ text }: { text: string }) {
+  const filled = text.trim() !== ''
+  if (filled) {
+    return (
+      <span className="mx-1 inline-block min-w-[6rem] rounded-md bg-tint px-3 py-1 text-center font-semibold text-ink">
+        {text}
+      </span>
+    )
+  }
   return (
-    <span className="mx-1 inline-block min-w-[6rem] border-b border-ink-30 px-2 text-center text-ink">
-      {text.trim() === '' ? ' ' : text}
+    <span className="mx-1 inline-block min-w-[6rem] rounded-md border border-dashed border-ink-30 px-3 py-1 text-center text-[14px] text-quiet">
+      未作答
     </span>
   )
 }

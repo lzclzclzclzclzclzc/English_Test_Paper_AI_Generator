@@ -49,7 +49,7 @@ export function SingleChoiceField({
               <label
                 key={opt.label}
                 className={cn(
-                  'flex cursor-pointer items-baseline rounded-sm border px-4 py-[11px] text-[15px] transition-colors',
+                  'flex cursor-pointer items-baseline rounded-sm border px-4 py-2.5 text-[15px] transition-colors',
                   selected
                     ? 'border-accent bg-wash text-ink'
                     : 'border-ink-15 text-muted-ink hover:bg-tint',
@@ -71,7 +71,7 @@ export function SingleChoiceField({
               <div
                 key={opt.label}
                 className={cn(
-                  'flex items-baseline rounded-sm border px-4 py-[11px] text-[15px]',
+                  'flex items-baseline rounded-sm border px-4 py-2.5 text-[15px]',
                   isCorrect
                     ? 'border-accent bg-wash text-ink'
                     : isUser
