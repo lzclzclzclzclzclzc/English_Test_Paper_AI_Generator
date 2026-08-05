@@ -42,6 +42,12 @@
   - options 必须为 4 个，label 分别为 A/B/C/D
   - stem 通常为空（空格编号在 passage 中标记）
   - passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
+- 阅读首字母填空（reading_first_blank）：
+  - stem 必须为 null
+  - answer 为填空答案列表（list[BlankGroup]），值为**完整单词**（含首字母）
+  - passage_json.content 内必须保留 7 个空位标记 {首字母}{下划线}({题号}){下划线}，题号 (1)-(7) 与 answer 的 blank1..blank7 一一对应，每空限填一词
+  - 标记首字母必须与答案单词首字母一致（如内容 "... a______(1)____ of the problems."，answer 为 [{"blank1": ["aware"]}, ...]）
+  - passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
 
 # 输出格式
 （instructor 会自动附加 JSON Schema）

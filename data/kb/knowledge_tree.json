@@ -344,6 +344,12 @@
       "level1": "cloze_single_choice",
       "level2": "完形填空",
       "aliases": ["完形", "完形填空", "cloze"]
+    },
+    {
+      "id": "kp_reading_first_blank",
+      "level1": "reading_first_blank",
+      "level2": "阅读首字母填空",
+      "aliases": ["首字母填空", "阅读首字母", "短文首字母"]
     }
   ],
   "chapter_to_kp": {
@@ -544,6 +550,9 @@
     ],
     "cloze_single_choice / 4 完形填空 / None": [
       "kp_cloze_passage"
+    ],
+    "reading_first_blank / 3 阅读理解 / None": [
+      "kp_reading_first_blank"
     ]
   }
 }

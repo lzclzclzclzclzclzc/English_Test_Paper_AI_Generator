@@ -92,6 +92,8 @@ def _stem_hash(q: dict) -> str:
         payload["stem"]       = q.get("stem")
         payload["passage_id"] = q.get("passage_id")
         payload["options"]    = q.get("options")
+    elif qt == "reading_first_blank":
+        payload["passage_id"] = q.get("passage_id")
     elif qt == "word_form":
         payload["stem"] = q.get("stem")
         payload["hint"] = q.get("hint")

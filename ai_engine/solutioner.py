@@ -23,6 +23,14 @@ def _format_answer(answer: Answer) -> str:
     (which hurts word_form / sentence_rewriting explanations)."""
     if isinstance(answer, str):
         return answer
+    # 阅读首字母填空：answer 是多个单空 dict（[{blank1},{blank2},…]），语义是
+    # "所有空一起正确"，而非"或"的候选组合 → 逐空分行展示，避免 LLM 只解析一个空
+    if answer and all(isinstance(g, dict) and len(g) == 1 for g in answer):
+        lines: list[str] = []
+        for g in answer:
+            blank, cands = next(iter(g.items()))
+            lines.append(f"{blank}: {' / '.join(cands)}")
+        return "\n".join(lines)
     groups: list[str] = []
     for group in answer:
         blanks = "  ".join(

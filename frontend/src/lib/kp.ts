@@ -8,6 +8,7 @@ export const TYPE_LABELS: Record<string, string> = {
   listening_fill_blank: '听力填词',
   reading_longtext_single_choice: '阅读理解',
   cloze_single_choice: '完形填空',
+  reading_first_blank: '阅读首字母填空',
 }
 
 /**

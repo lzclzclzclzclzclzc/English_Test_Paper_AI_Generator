@@ -347,6 +347,9 @@ function PaperPageInner({ paperId }: { paperId: string }) {
           {groupByPassage(paper.items).map((group) => {
             const passage = group.passageId ? group.items[0].question.passage_json : null
             const isReading = passage?.kind === 'reading'
+            // 阅读首字母填空：ReadingFirstBlankField 自包含渲染整篇文章（空位内联），
+            // 无需再渲染独立的 PassageBlock，避免重复显示文章。
+            const isFirstBlank = group.items[0].question.question_type === 'reading_first_blank'
             const mode = submitted ? 'review' : 'answering'
             const questionList = (
               <div className={isReading ? 'flex flex-col gap-3' : 'divide-y divide-ink-10'}>
@@ -380,7 +383,8 @@ function PaperPageInner({ paperId }: { paperId: string }) {
               </div>
             )
             // 阅读理解：左右分栏（左 sticky 文章，右题目）
-            if (isReading && passage) {
+            // 阅读首字母填空除外——其文章已由 ReadingFirstBlankField 内联渲染
+            if (isReading && !isFirstBlank && passage) {
               return (
                 <div key={group.key} className="py-2 first:pt-0">
                   <div className="lg:grid lg:grid-cols-[5fr_4fr] lg:gap-6">
@@ -395,7 +399,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
             // 听力 / 无材料：上下垂直布局
             return (
               <div key={group.key} className="py-2 first:pt-0">
-                {passage && <PassageBlock passage={passage} mode={mode} />}
+                {passage && !isFirstBlank && <PassageBlock passage={passage} mode={mode} />}
                 {questionList}
               </div>
             )

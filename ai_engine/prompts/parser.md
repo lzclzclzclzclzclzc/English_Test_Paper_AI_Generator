@@ -70,7 +70,7 @@
 - 请求类："来几道"、"出几道"、"出一些"、"来一些"、"帮我出"、"帮我找"
 - 模糊类："随便出"、"随意出"、"随便来"
 - 知识点类：任何知识点名称（如"动词时态"、"不定代词"、"冠词"、"介词"、"形容词"、"副词"等）
-- 题型类：任何题型名称（如"单选题"、"单项选择"、"词性转换"、"改写句子"、"听力"、"听力选择"等）
+- 题型类：任何题型名称（如"单选题"、"单项选择"、"词性转换"、"改写句子"、"听力"、"听力选择"、"首字母填空"、"阅读首字母"等）
 
 **适用场景**（满足以下任一条件）：
 - 用户只说"练习"、"巩固"、"复习"等练习类词汇
@@ -104,6 +104,12 @@
   - 当用户用"道/题"为单位（如"来 6 道阅读理解"），按用户说的数量
   - 当用户未指定数量（如"来几篇阅读理解"），默认 1 篇 = 6 题
   - total_questions 上限 30 仍然适用（最多 5 篇）
+-- **阅读首字母填空按"篇"出题（1 篇 = 1 题）**：
+  - 每篇短文内含 7 个首字母填空，作为一道题整体渲染
+  - n 篇 → total_questions = n，type_distribution 中 reading_first_blank = n
+- **阅读首字母填空（reading_first_blank）一律按原题出**：
+  - 该题型复杂，改写（revise）极易导致答案出错，因此**无论用户怎么表述**（"练习"、"新题"、"重新出"、"结合主题"等），只要本题型包含 **reading_first_blank**，revision_intensity 一律设为 "original"，不做任何改写
+  - 若请求混合了其他题型，revision_intensity 仍按其他题型推断，但阅读首字母填空题目本身始终按原题出
 
 # 输入
 用户请求：{{ user_query }}
@@ -450,5 +456,17 @@
   "total_questions": 6,
   "type_distribution": {"reading_longtext_single_choice": 6},
   "revision_intensity": "light",
+  "free_text": ""
+}
+
+## 示例 22：阅读首字母填空（1 篇 = 1 题，一律按原题出）
+输入："来 1 篇阅读首字母填空（7 个空）"
+输出：
+{
+  "knowledge_points": [],
+  "question_types": ["reading_first_blank"],
+  "total_questions": 1,
+  "type_distribution": {"reading_first_blank": 1},
+  "revision_intensity": "original",
   "free_text": ""
 }

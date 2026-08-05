@@ -23,16 +23,24 @@ const sortBlankKeys = (keys: string[]) =>
   [...keys].sort((a, b) => numericSuffix(a) - numericSuffix(b))
 
 /**
- * 一道题要渲染几个输入框、键名是什么——唯一权威是 answer[0] 的键集。
+ * 一道题要渲染几个输入框、键名是什么。
+ * 兼容两种空位数组形态：
+ *   - 单元素多键：                    [{blank1, blank2, blank3}]   （改写/词形/听力填词）
+ *   - 多元素单键（每空一个 dict）：    [{blank1},{blank2},{blank3}] （阅读首字母填空）
+ * 汇总所有元素的键集，去重后按数字后缀排序。
  * 题干下划线连串数不可靠（真题 220 道中 51 道对不上），绝不据其计数。
  * 单选（answer 为字符串）返回 []；异常数据兜底为单空 ['blank1']。
  */
 export function getBlankKeys(answer: AnswerValue): string[] {
   if (typeof answer === 'string') return []
-  const first = answer[0]
-  if (!first) return ['blank1']
-  const keys = Object.keys(first)
-  return keys.length > 0 ? sortBlankKeys(keys) : ['blank1']
+  const keys: string[] = []
+  for (const item of answer) {
+    if (item && typeof item === 'object') {
+      keys.push(...Object.keys(item))
+    }
+  }
+  const unique = [...new Set(keys)]
+  return unique.length > 0 ? sortBlankKeys(unique) : ['blank1']
 }
 
 /** blankN → "空N"；非标准键名原样显示。 */
@@ -148,6 +156,15 @@ export function formatCorrectAnswer(a: AnswerValue): string {
       return (only !== undefined ? (cand[only] ?? []) : []).join(' / ')
     }
     return keys.map((k) => `${blankLabel(k)}: ${(cand[k] ?? []).join(' / ')}`).join('；')
+  }
+  // 阅读首字母填空：每个元素都是单空 dict（[{blank1},{blank2},…]）→ 按空位顺序展示
+  if (a.length > 1 && a.every((c) => c && Object.keys(c).length === 1)) {
+    return a
+      .map((cand) => {
+        const k = Object.keys(cand)[0]
+        return `${blankLabel(k)}: ${(cand[k] ?? []).join(' / ')}`
+      })
+      .join('；')
   }
   if (a.length === 1 && a[0] !== undefined) return formatCandidate(a[0])
   return a

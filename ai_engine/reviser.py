@@ -41,6 +41,7 @@ def _infer_title(req: GenerateRequest) -> str:
             "listening_fill_blank": "听力填词",
             "reading_longtext_single_choice": "阅读理解",
             "cloze_single_choice": "完形填空",
+            "reading_first_blank": "阅读首字母填空",
         }
         parts.append("、".join(type_names.get(t, t) for t in req.question_types))
     if req.revision_intensity == "original":
@@ -100,8 +101,13 @@ def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
         labels = {opt.label for opt in revised.options}
         if labels != {"T", "F"}:
             return False
-    elif qt in ("word_form", "sentence_rewriting", "listening_fill_blank"):
+    elif qt in ("word_form", "sentence_rewriting", "listening_fill_blank", "reading_first_blank"):
         if not _is_valid_blank_answer(revised.answer):
+            return False
+        # 阅读首字母填空：passage 会被强制保留为原题（7 空），故答案的空位数必须与
+        # 原题一致，否则会出现"文章有 7 空、答案只有 1 空"的错位，导致文章下方额外
+        # 渲染填空框。拒绝此类修订并回退到原题拷贝。
+        if qt == "reading_first_blank" and len(revised.answer) != len(original.answer):
             return False
 
     return True
@@ -138,6 +144,11 @@ def _revise_one(
     LLM call raised) and we fell back to copying the original. `original`
     mode is never a fallback — copying is its intended behaviour.
     """
+    if question.question_type == "reading_first_blank":
+        # 阅读首字母填空题型复杂，revise（light/fresh）极易导致答案与原题 7 空
+        # 错位、拼写错误等问题。硬性约束：一律按原题出，不做任何改写。
+        return _copy_question(question), False
+
     if intensity == "original":
         return _copy_question(question), False
 
@@ -178,7 +189,7 @@ def _revise_one(
             # independently (and in parallel), so any per-question passage
             # edit would break group consistency. Passage integrity trumps
             # the revision_intensity passage rule from the design doc.
-            if question.question_type in ("listening_true_false", "reading_longtext_single_choice", "cloze_single_choice", "listening_fill_blank"):
+            if question.question_type in ("listening_true_false", "reading_longtext_single_choice", "cloze_single_choice", "listening_fill_blank", "reading_first_blank"):
                 revised.passage_id = question.passage_id
                 revised.passage_json = question.passage_json
             return revised, False
@@ -230,7 +241,13 @@ def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
     # Actual LLM calls: original makes none; light/fresh call once per question
     # attempted (fallbacks still incurred a call unless the call itself raised,
     # but we report attempts as the observable count — matches Spec B §5.4).
-    llm_calls = len(items) if req.revision_intensity != "original" else 0
+    # 阅读首字母填空恒按原题出，从不调用 LLM，故不计入。
+    llm_calls = sum(
+        1
+        for retrieved in chosen
+        if req.revision_intensity != "original"
+        and retrieved.question.question_type != "reading_first_blank"
+    )
 
     return Paper(
         paper_id=uuid.uuid4().hex,

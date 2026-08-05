@@ -42,6 +42,7 @@ QuestionType = Literal[
     "listening_fill_blank",
     "reading_longtext_single_choice",
     "cloze_single_choice",
+    "reading_first_blank",
 ]
 RevisionMode = Literal["fresh", "light", "original"]
 GenerateMode = Literal["fresh", "remediation", "review"]
