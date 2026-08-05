@@ -12,6 +12,7 @@ from shared.schemas import (
     GenerateMode,
     QuestionType,
     RevisionMode,
+    VECTOR_INDEXED_QUESTION_TYPES,
     # question bank
     KnowledgePoint,
     Option,
@@ -39,6 +40,7 @@ __all__ = [
     "GenerateMode",
     "QuestionType",
     "RevisionMode",
+    "VECTOR_INDEXED_QUESTION_TYPES",
     "KnowledgePoint",
     "Option",
     "Question",

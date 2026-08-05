@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from shared import storage
+from shared.schemas import VECTOR_INDEXED_QUESTION_TYPES
 
 router = APIRouter(tags=["health"])
 
@@ -143,13 +144,17 @@ def _has_question_bank(conn) -> bool:
 
 
 def _has_vector_bank(conn) -> bool:
-    # Listening questions are intentionally SQLite-only (matched by exact SQL,
-    # never semantic search), so they carry no embeddings. The vector bank is
-    # expected to cover only the non-listening questions — count those.
+    # The vector store intentionally covers ONLY the semantically-searchable
+    # types (VECTOR_INDEXED_QUESTION_TYPES); every other type — listening_*,
+    # cloze, reading_longtext, reading_first_blank — is matched by exact SQL and
+    # carries no embedding. Count only the indexed types so the expected vector
+    # count stays correct as new SQL-only types are added to the bank.
     question_count = 0
     if _table_exists(conn, "questions"):
+        placeholders = ", ".join("?" for _ in VECTOR_INDEXED_QUESTION_TYPES)
         row = conn.execute(
-            "SELECT COUNT(*) AS count FROM questions WHERE question_type NOT LIKE 'listening%'"
+            f"SELECT COUNT(*) AS count FROM questions WHERE question_type IN ({placeholders})",
+            tuple(VECTOR_INDEXED_QUESTION_TYPES),
         ).fetchone()
         question_count = int(row["count"])
     status = storage.inspect_chroma_question_collection(expected_question_count=question_count)

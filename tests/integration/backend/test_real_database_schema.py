@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from backend.services import ai_gateway
 from shared import storage
 from shared.config import reset_config_cache
+from shared.schemas import VECTOR_INDEXED_QUESTION_TYPES
 from tests.integration.backend.conftest import _fake_paper
 
 
@@ -119,16 +120,25 @@ def test_chroma_artifact_matches_real_question_bank_shape():
     sqlite_db = _require_real_question_bank()
     chroma_db = _require_real_chroma()
 
+    # The vector store covers ONLY the semantically-searchable types; every
+    # other type is SQL-only and carries no embedding, so the expected vector
+    # count is the count of the indexed types, not the whole bank.
     with sqlite3.connect(sqlite_db) as conn:
-        question_count = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+        total_count = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+        placeholders = ", ".join("?" for _ in VECTOR_INDEXED_QUESTION_TYPES)
+        indexed_count = conn.execute(
+            f"SELECT COUNT(*) FROM questions WHERE question_type IN ({placeholders})",
+            tuple(VECTOR_INDEXED_QUESTION_TYPES),
+        ).fetchone()[0]
 
-    status = storage.inspect_chroma_question_collection(expected_question_count=question_count)
+    status = storage.inspect_chroma_question_collection(expected_question_count=indexed_count)
 
-    assert question_count > 0
+    assert total_count > 0
+    assert indexed_count > 0
     assert status["ready"] is True
     assert status["collection"] == "questions"
     assert status["dimension"] == 2560
-    assert status["embedding_count"] == question_count
+    assert status["embedding_count"] == indexed_count
     assert {
         "book",
         "chapter_l1",
