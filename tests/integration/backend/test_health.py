@@ -137,7 +137,7 @@ def test_readiness_accepts_real_question_bank_copy(tmp_path, monkeypatch):
 
     try:
         get_config()
-        storage.init_db()  # create user tables in the fresh app.db so core_tables passes
+        storage.init_db()  # belt-and-suspenders: create_app() also inits the app DB
         with TestClient(create_app(), raise_server_exceptions=False) as real_db_client:
             response = real_db_client.get("/api/health/ready")
         body = response.json()
