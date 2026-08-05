@@ -39,13 +39,16 @@ def test_backend_flow_against_copied_real_question_bank(tmp_path, monkeypatch):
     source_db = _require_real_question_bank()
     db_copy = tmp_path / "questions-copy.db"
     shutil.copyfile(source_db, db_copy)
+    app_db = tmp_path / "app.db"
 
     monkeypatch.setenv("BACKEND_ENV", "test")
     monkeypatch.setenv("BCRYPT_ROUNDS", "4")
-    monkeypatch.setenv("SQLITE_PATH", str(db_copy))
+    monkeypatch.setenv("SQLITE_PATH", str(db_copy))   # bank = copied real questions.db
+    monkeypatch.setenv("APP_DB_PATH", str(app_db))     # user data = fresh temp file
     monkeypatch.setattr(ai_gateway, "generate_paper", _fake_paper)
     reset_config_cache()
-    storage.set_db_path(db_copy)
+    storage.set_db_path(app_db)
+    storage.set_bank_db_path(db_copy)
 
     from backend.main import create_app
 
@@ -75,12 +78,14 @@ def test_backend_flow_against_copied_real_question_bank(tmp_path, monkeypatch):
             assert grade.status_code == 200
             assert client.get("/api/users/me/mastery").status_code == 200
 
-        with storage.connect() as conn:
+        with storage.connect_bank() as conn:
             question_count = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
             kp_count = conn.execute("SELECT COUNT(*) FROM knowledge_points").fetchone()[0]
             qkp_count = conn.execute("SELECT COUNT(*) FROM question_knowledge_points").fetchone()[0]
             question_columns = {row["name"] for row in conn.execute("PRAGMA table_info(questions)")}
             kp_columns = {row["name"] for row in conn.execute("PRAGMA table_info(knowledge_points)")}
+
+        with storage.connect() as conn:
             attempt_count = conn.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]
             attempt_item_columns = {row["name"] for row in conn.execute("PRAGMA table_info(attempt_items)")}
             users_table = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").fetchone()
@@ -106,6 +111,7 @@ def test_backend_flow_against_copied_real_question_bank(tmp_path, monkeypatch):
         assert "embedding_text" not in question_columns
         assert {"id", "level1", "level2", "aliases_json"}.issubset(kp_columns)
         assert "parent_id" not in kp_columns
+        # fresh app.db + exactly one graded paper in this test → exactly one attempt
         assert attempt_count == 1
         assert "difficulty" not in attempt_item_columns
         assert users_table is not None
@@ -113,6 +119,7 @@ def test_backend_flow_against_copied_real_question_bank(tmp_path, monkeypatch):
         assert migration_count >= 1
     finally:
         storage.set_db_path(None)
+        storage.set_bank_db_path(None)
         reset_config_cache()
 
 
