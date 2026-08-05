@@ -304,6 +304,17 @@ class ErrorResponse(BaseModel):
 
 ## 3. 数据库扩展
 
+### 3.0 两个 SQLite 文件
+
+自 Task 9 起，SQLite 存储拆分为两个文件，职责互不重叠：
+
+| 文件 | 用途 | Git 状态 | 连接方法 | 环境变量 | 配置字段 |
+|---|---|---|---|---|---|
+| `data/questions.db` | 只读题库（`questions` / `knowledge_points` / `question_knowledge_points`） | **已提交** | `storage.connect_bank()` | `SQLITE_PATH` | `config.db_path` |
+| `data/app.db` | 用户/应用数据（`users` / `sessions` / `papers` / `attempts` / `attempt_items` / `study_plans` / `schema_migrations`） | **gitignored** | `storage.connect()` | `APP_DB_PATH` | `config.app_db_path` |
+
+`data/app.db` 由 `python -m backend.cli init-db`（或 `create_app()` 启动时）自动创建；首次部署前必须执行一次。题库与用户表之间**没有跨文件 JOIN**，无需 `ATTACH`。`/api/health/ready` 就绪探针会同时打开两个连接以验证双库可达。
+
 ### 3.1 新增表（追加到 Spec A § 3.7 的 SQL）
 
 ```sql
