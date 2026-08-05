@@ -10,10 +10,10 @@ Usage
 
 Output: tests/scripts/review_flow_report_<YYYYMMDD_HHMMSS>.md
 
-Note: this WRITES to data/questions.db (attempts / attempt_items tables).
-That file is under `git update-index --skip-worktree`, so the writes won't
-show up in `git status`. The demo user's rows are cleared and re-seeded on
-each run, so it's idempotent.
+Note: attempt history is written to the app DB (data/app.db, via APP_DB_PATH);
+questions are read from the bank (data/questions.db). The demo user's rows are
+cleared and re-seeded on each run, so it's idempotent — the tracked bank is
+never written.
 """
 from __future__ import annotations
 
