@@ -42,6 +42,11 @@ def _fake_revise(paper: Paper, _: str) -> Paper:
 def client(tmp_path, monkeypatch):
     reset_rate_limits()
     db_path = tmp_path / "backend-test.db"
+    # bank_path is a fresh, never-created file so the bank reads as "missing"
+    # (these mock-backed tests never touch the real question bank). We set BOTH
+    # the module override and SQLITE_PATH: the override wins normally, but the
+    # env var covers get_bank_db_path()'s config fallback if the cache is reset
+    # mid-test — don't drop it as apparent duplication.
     bank_path = tmp_path / "bank-empty.db"
     storage.set_db_path(db_path)
     storage.set_bank_db_path(bank_path)
