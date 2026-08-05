@@ -124,7 +124,7 @@ export function AdminAnalyticsPage() {
           <ChartCard title="每日做题量 / 正确率">
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#00000010" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-10)" />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis yAxisId="vol" allowDecimals={false} tick={{ fontSize: 11 }} width={32} />
                 <YAxis
@@ -150,7 +150,7 @@ export function AdminAnalyticsPage() {
                   type="monotone"
                   dataKey="rate"
                   name="正确率(%)"
-                  stroke="#8a8a8a"
+                  stroke="var(--text-quiet)"
                   strokeWidth={2}
                   strokeDasharray="4 3"
                   dot={false}

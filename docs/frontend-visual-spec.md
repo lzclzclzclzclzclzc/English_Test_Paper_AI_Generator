@@ -1,5 +1,8 @@
 # 前端视觉规范 —「喫茶去」
 
+> **v2.1（2026-08-05）：试卷答题页卡片化修订，见 § 10。** § 9 的
+> 「无卡片/无阴影/无胶囊/无绿黄红」四条在试卷页按 § 10 放宽，其余页面照旧。
+
 > Spec F v2 · 2026-07-27 改版。视觉来源：设计交接包 `design_handoff_test_paper_ui`
 > （`English Test Paper AI Generator.zip`，内含 hifi 原型 `试卷生成器.dc.html` + `tokens/*.css`）。
 > 取代 2026-07-07 的「墨卷」版（v1，藏青墨蓝 + 卷面拟物）；卷面语言（装订线、文武线、分数章）随 v1 一并废弃。
@@ -190,3 +193,37 @@ Assemble 0.3s，文案照抄 handoff），右上角 0.1s 精度真实计时；�
 - 绿/黄/红语义色；渐变、emoji、左边框强调条、卡片盒子、静置阴影
 - 胶囊圆角；400/700 之外的字重；非 `kk-rise`/`kk-pulse` 的装饰动效
 - 小于 10.5px 的文字（10.5–12px 仅限大写字距标签，正文不低于 13px）
+
+## 10. v2.1 修订：试卷答题页卡片化（2026-08-05）
+
+针对「超宽画布靠左漂、层次糊、可交互感弱」的评审意见，`PaperPage` 及其
+子组件改为卡片体系。**仅限试卷页（含 PassageBlock / QuestionCard /
+AnswerCard / 各 question-fields）**，其余页面仍守 § 9。
+
+新增 tokens（`colors.css` / `spacing.css` / `index.css` @theme）：
+
+| Token | 值 | 用途 |
+|---|---|---|
+| `--surface-card` | 亮 `oklch(99.2% .003 95)` / 暗 `oklch(27.5% .016 72)` | 题目卡、材料卡、答题卡底 |
+| `--radius-question-card` | `0.5rem` | 卡片圆角 |
+| `--shadow-card-hover` | 双层软阴影 | **仅 hover**，静置仍平（Flat-Paper 的让步版） |
+| `--rev-green` (+wash) | 亮 `oklch(45% .09 150)` / 暗 `oklch(76% .1 150)` | 改题档位「轻改」 |
+| `--font-ui`（`--font-ui-stack`） | 系统无衬线栈 | UI 元素：tag/按钮/序号块/答题卡；题干仍衬线 |
+
+规则：
+
+1. **布局**：内容列 `max-w-[760px]`，与右栏 280px 答题卡一起在主区域内居中
+   （`max-w-[1104px] justify-center gap-10`）；题与题之间 `gap-4`，不再用细分割线。
+2. **题头三件套**：赤陶序号块（`bg-wash text-accent` 圆角块）+ 题型胶囊
+   （细线边）+ 改题档位色胶囊：原题=中性墨 tint、轻改=绿 `--rev-green`、
+   AI 新出=赤陶 wash。review 态右端 ✓ 墨圈 / ✕ 赤陶圈，考点标签灰字跟随。
+3. **中文指令**（连词成句/改为被动语态/词形 hint）：`bg-wash text-accent`
+   行内标签，不再是浅灰括号小字。
+4. **填空**：作答 = 浅底圆角输入框（`bg-tint border-ink-15`），focus 赤陶描边
+   + ring；复盘已填 = 深字薄底框（bold），未填 = 虚线框「未作答/未填」。
+5. **右栏答题卡**：卡片容器；作答态 = 进度 + 已答/未答格 + 题量/题型分布；
+   复盘态 = 答对数 + 对错格（错 = 赤陶 wash）。lg 以下折叠。
+6. **材料卡**（PassageBlock）与题目卡同款卡底；听力组材料卡在题目上方，
+   阅读组 lg 起左右分栏（左 sticky 材料卡 5fr / 右题目卡列 4fr）。
+7. **字体分工**：题干/选项/正文衬线不变；tag、按钮、序号块、答题卡、播放
+   控件一律 `font-ui` 无衬线。间距全部走 Tailwind 4px 刻度。

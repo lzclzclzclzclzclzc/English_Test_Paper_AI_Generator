@@ -42,7 +42,7 @@ function groupByPassage(items: PaperItem[]): Array<{ key: string; passageId: str
     const key = pid ?? `solo-${item.index}`
     const idx = seen.get(key)
     if (idx !== undefined) {
-      groups[idx].items.push(item)
+      groups[idx]?.items.push(item)
     } else {
       seen.set(key, groups.length)
       groups.push({ key, passageId: pid, items: [item] })
@@ -345,11 +345,11 @@ function PaperPageInner({ paperId }: { paperId: string }) {
 
         <div className="mt-6 flex flex-col gap-4">
           {groupByPassage(paper.items).map((group) => {
-            const passage = group.passageId ? group.items[0].question.passage_json : null
+            const passage = group.passageId ? (group.items[0]?.question.passage_json ?? null) : null
             const isReading = passage?.kind === 'reading'
             // 阅读首字母填空：ReadingFirstBlankField 自包含渲染整篇文章（空位内联），
             // 无需再渲染独立的 PassageBlock，避免重复显示文章。
-            const isFirstBlank = group.items[0].question.question_type === 'reading_first_blank'
+            const isFirstBlank = group.items[0]?.question.question_type === 'reading_first_blank'
             const mode = submitted ? 'review' : 'answering'
             const questionList = (
               <div className="flex min-w-0 flex-col gap-4">

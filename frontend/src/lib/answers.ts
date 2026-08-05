@@ -161,7 +161,7 @@ export function formatCorrectAnswer(a: AnswerValue): string {
   if (a.length > 1 && a.every((c) => c && Object.keys(c).length === 1)) {
     return a
       .map((cand) => {
-        const k = Object.keys(cand)[0]
+        const k = Object.keys(cand)[0] ?? ''
         return `${blankLabel(k)}: ${(cand[k] ?? []).join(' / ')}`
       })
       .join('；')
