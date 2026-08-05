@@ -15,6 +15,7 @@ import type { AnswerDraft } from '@/lib/answers'
 import { buildSubmission, listUnanswered } from '@/lib/answers'
 import { buildPaperNotices } from '@/lib/paperNotices'
 import { AnswerCard } from '@/components/AnswerCard'
+import { PassageBlock } from '@/components/PassageBlock'
 import { QuestionCard } from '@/components/QuestionCard'
 import { GradeBanner } from '@/components/GradeBanner'
 import { MemberPill, UpgradeDialog } from '@/components/UpgradeDialog'
@@ -30,7 +31,25 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { GradeSubmissionResponse } from '@/types/api'
+import type { GradeSubmissionResponse, PaperItem } from '@/types/api'
+
+/** 按 passage_id 分组：同组小题共享一段材料，PassageBlock 只渲染一次。 */
+function groupByPassage(items: PaperItem[]): Array<{ key: string; passageId: string | null; items: PaperItem[] }> {
+  const groups: Array<{ key: string; passageId: string | null; items: PaperItem[] }> = []
+  const seen = new Map<string, number>()
+  for (const item of items) {
+    const pid = item.question.passage_id ?? null
+    const key = pid ?? `solo-${item.index}`
+    const idx = seen.get(key)
+    if (idx !== undefined) {
+      groups[idx]!.items.push(item)
+    } else {
+      seen.set(key, groups.length)
+      groups.push({ key, passageId: pid, items: [item] })
+    }
+  }
+  return groups
+}
 
 /**
  * 薄壳：以 key=paperId 强制重挂载内层——revise 换 id 导航后
@@ -325,33 +344,67 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         </div>
 
         <div className="mt-4 divide-y divide-ink-10">
-          {paper.items.map((item) => (
-            <QuestionCard
-              key={item.index}
-              item={item}
-              mode={submitted ? 'review' : 'answering'}
-              value={answers[item.index]}
-              onChange={(v) => setAnswers((prev) => ({ ...prev, [item.index]: v }))}
-              result={resultByIndex.get(item.index)}
-              solutionSlot={
-                submitted ? (
-                  <SolutionBlock
-                    question={item.question}
-                    sourceQuestionId={item.source_question_id}
-                    revisionMode={item.revision_mode}
-                    cacheKey={['solution', paper.paper_id, item.index]}
-                    locked={locked}
-                    userId={userId}
-                    userAnswer={(() => {
-                      const r = resultByIndex.get(item.index)
-                      if (!r || r.is_correct) return null
-                      return r.user_answer ?? null
-                    })()}
+          {groupByPassage(paper.items).map((group) => {
+            const firstItem = group.items[0]!
+            const passage = group.passageId ? firstItem.question.passage_json ?? null : null
+            const isReading = passage?.kind === 'reading'
+            // 阅读首字母填空：ReadingFirstBlankField 自包含渲染整篇文章（空位内联），
+            // 无需再渲染独立的 PassageBlock，避免重复显示文章。
+            const isFirstBlank = firstItem.question.question_type === 'reading_first_blank'
+            const mode = submitted ? 'review' : 'answering'
+            const questionList = (
+              <div className={isReading ? 'flex flex-col gap-3' : 'divide-y divide-ink-10'}>
+                {group.items.map((item) => (
+                  <QuestionCard
+                    key={item.index}
+                    item={item}
+                    mode={mode}
+                    value={answers[item.index]}
+                    onChange={(v) => setAnswers((prev) => ({ ...prev, [item.index]: v }))}
+                    result={resultByIndex.get(item.index)}
+                    solutionSlot={
+                      submitted ? (
+                        <SolutionBlock
+                          question={item.question}
+                          sourceQuestionId={item.source_question_id}
+                          revisionMode={item.revision_mode}
+                          cacheKey={['solution', paper.paper_id, item.index]}
+                          locked={locked}
+                          userId={userId}
+                          userAnswer={(() => {
+                            const r = resultByIndex.get(item.index)
+                            if (!r || r.is_correct) return null
+                            return r.user_answer ?? null
+                          })()}
+                        />
+                      ) : undefined
+                    }
                   />
-                ) : undefined
-              }
-            />
-          ))}
+                ))}
+              </div>
+            )
+            // 阅读理解：左右分栏（左 sticky 文章，右题目）
+            // 阅读首字母填空除外——其文章已由 ReadingFirstBlankField 内联渲染
+            if (isReading && !isFirstBlank && passage) {
+              return (
+                <div key={group.key} className="py-2 first:pt-0">
+                  <div className="lg:grid lg:grid-cols-[5fr_4fr] lg:gap-6">
+                    <div className="lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-y-auto">
+                      <PassageBlock passage={passage} mode={mode} />
+                    </div>
+                    {questionList}
+                  </div>
+                </div>
+              )
+            }
+            // 听力 / 无材料：上下垂直布局
+            return (
+              <div key={group.key} className="py-2 first:pt-0">
+                {passage && !isFirstBlank && <PassageBlock passage={passage} mode={mode} />}
+                {questionList}
+              </div>
+            )
+          })}
         </div>
 
         {!submitted && (

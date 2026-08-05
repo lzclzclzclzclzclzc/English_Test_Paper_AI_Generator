@@ -46,6 +46,10 @@ log = logging.getLogger(__name__)
 DEFAULT_CHROMA_DIR = Path("data/chroma")
 COLLECTION_NAME = "questions"
 
+# Question types that share a passage and must be retrieved as a whole group
+# (never enter the vector store — SQL-only, grouped by passage_id).
+PASSAGE_TYPES = {"listening_true_false", "reading_longtext_single_choice", "cloze_single_choice", "listening_fill_blank", "reading_first_blank"}
+
 
 def _dot(a, b) -> float:
     """Dot product of two equal-length vectors. Both the query and stored
@@ -179,6 +183,11 @@ class Retriever:
         exclude: set[str],
     ) -> list[RetrievedItem]:
         """Retrieve up to `target` items for one bucket."""
+        # Passage-based types (listening_true_false) are retrieved as whole
+        # passage groups via SQL only — never the vector path.
+        if set(bucket_qtypes) & PASSAGE_TYPES:
+            return self._fill_bucket_passage(req, bucket_qtypes, target, exclude)
+
         # 1. SQL hard-filter → candidate id set for this bucket
         hard_ids = self._repo.filter_ids(
             question_types=bucket_qtypes or None,
@@ -202,6 +211,53 @@ class Retriever:
             q = questions.get(qid)
             if q is not None:
                 out.append(RetrievedItem(question=q, score=scores.get(qid, 0.0)))
+        return out
+
+    # ─── passage-group path (listening_true_false) ──────────────────
+    def _fill_bucket_passage(
+        self,
+        req: GenerateRequest,
+        bucket_qtypes: list[QuestionType],
+        target: int,
+        exclude: set[str],
+    ) -> list[RetrievedItem]:
+        """Retrieve whole passage groups for listening_true_false.
+
+        Picks random passage_ids, takes ALL questions under each, until the
+        cumulative count reaches `target`. The last passage may push the count
+        past target — passage integrity outweighs exact count.
+        """
+        hard_ids = self._repo.filter_ids(
+            question_types=bucket_qtypes or None,
+            knowledge_points=req.knowledge_points or None,
+        )
+        hard_ids = [i for i in hard_ids if i not in exclude]
+        if not hard_ids:
+            return []
+
+        questions = self._repo.get_by_ids(hard_ids)
+        # Group by passage_id (solo questions without passage_id fall back to
+        # their own id so each is its own "group" of 1).
+        groups: dict[str, list[str]] = {}
+        for qid, q in questions.items():
+            pid = q.passage_id or f"solo-{qid}"
+            groups.setdefault(pid, []).append(qid)
+
+        rng = random.Random(self._seed)
+        passage_ids = list(groups.keys())
+        rng.shuffle(passage_ids)
+
+        chosen_ids: list[str] = []
+        for pid in passage_ids:
+            if len(chosen_ids) >= target:
+                break
+            chosen_ids.extend(groups[pid])
+
+        out: list[RetrievedItem] = []
+        for qid in chosen_ids:
+            q = questions.get(qid)
+            if q is not None:
+                out.append(RetrievedItem(question=q, score=0.0))
         return out
 
     # ─── SQL random path (D3) ────────────────────────────────────────

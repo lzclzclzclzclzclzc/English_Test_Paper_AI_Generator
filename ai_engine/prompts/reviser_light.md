@@ -21,6 +21,31 @@
 - answer 必须是 options 中某个选项的 label
 - 听力选择题（listening_single_choice）的 stem 必须包含说话者标识（M: 男声 / W: 女声）和问题（Question:），示例格式：
   M: Good morning.\nW: Hello.\nQuestion: What time is it?
+- 听力判断题（listening_true_false）：
+  - answer 必须是 "T" 或 "F"（大写）
+  - options 必须为 2 个，label 分别为 "T" 和 "F"
+  - stem 为小题判断句（如 "The woman has just moved to the city."），不含听力原文
+  - passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
+- 听力填词（listening_fill_blank）：
+  - answer 为填空答案列表（list[BlankGroup]），每个空 blankN 对应一个词（可给同音/拼写变体候选）
+  - stem 为带空位的小题句子（用连续下划线 ________ 表示空位），空位数与 answer 的 blankN 键数一致，每空限填一词
+  - stem 不含听力原文；passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
+- 阅读理解（reading_longtext_single_choice）：
+  - answer 必须是 A/B/C/D 之一
+  - options 必须为 4 个，label 分别为 A/B/C/D
+  - stem 为小题题干，不含阅读原文
+  - passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
+- 完形填空（cloze_single_choice）：
+  - answer 必须是 A/B/C/D 之一
+  - options 必须为 4 个，label 分别为 A/B/C/D
+  - stem 通常为空（空格编号在 passage 中标记）
+  - passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
+- 阅读首字母填空（reading_first_blank）：
+  - stem 必须为 null
+  - answer 为填空答案列表（list[BlankGroup]），值为**完整单词**（含首字母）
+  - passage_json.content 内必须保留 7 个空位标记 {首字母}{下划线}({题号}){下划线}，题号 (1)-(7) 与 answer 的 blank1..blank7 一一对应，每空限填一词
+  - 标记首字母必须与答案单词首字母一致（如内容 "... a______(1)____ of the problems."，answer 为 [{"blank1": ["aware"]}, ...]）
+  - passage_id 和 passage_json 必须与原题**完全一致**（不可修改，由系统保证同组一致）
 
 # 输出格式
 （instructor 会自动附加 JSON Schema）

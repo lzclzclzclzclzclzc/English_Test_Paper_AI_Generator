@@ -320,6 +320,36 @@
       "level1": "listening_single_choice",
       "level2": "听力对话理解",
       "aliases": ["听力", "听力理解", "对话"]
+    },
+    {
+      "id": "kp_listening_passage",
+      "level1": "listening_true_false",
+      "level2": "听力篇章理解",
+      "aliases": ["听力长文", "听力短文", "听力篇章", "判断正误"]
+    },
+    {
+      "id": "kp_listening_fill_blank",
+      "level1": "listening_fill_blank",
+      "level2": "听力填词",
+      "aliases": ["听力填词", "听力填空", "听写填空", "听短文填词"]
+    },
+    {
+      "id": "kp_reading_passage",
+      "level1": "reading_longtext_single_choice",
+      "level2": "阅读理解",
+      "aliases": ["阅读", "阅读篇章", "阅读短文", "阅读理解"]
+    },
+    {
+      "id": "kp_cloze_passage",
+      "level1": "cloze_single_choice",
+      "level2": "完形填空",
+      "aliases": ["完形", "完形填空", "cloze"]
+    },
+    {
+      "id": "kp_reading_first_blank",
+      "level1": "reading_first_blank",
+      "level2": "阅读首字母填空",
+      "aliases": ["首字母填空", "阅读首字母", "短文首字母"]
     }
   ],
   "chapter_to_kp": {
@@ -508,6 +538,21 @@
     ],
     "listening_single_choice / 1 听力选择 / None": [
       "kp_listening_dialogue"
+    ],
+    "listening_true_false / 1 听力选择 / None": [
+      "kp_listening_passage"
+    ],
+    "listening_fill_blank / 1 听力填词 / None": [
+      "kp_listening_fill_blank"
+    ],
+    "reading_longtext_single_choice / 3 阅读理解 / None": [
+      "kp_reading_passage"
+    ],
+    "cloze_single_choice / 4 完形填空 / None": [
+      "kp_cloze_passage"
+    ],
+    "reading_first_blank / 3 阅读理解 / None": [
+      "kp_reading_first_blank"
     ]
   }
 }
