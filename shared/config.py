@@ -30,6 +30,7 @@ class AppConfig(BaseSettings):
 
     data_dir: Path = Path("data")
     db_path: Path = Path("data/questions.db")
+    app_db_path: Path = Path("data/app.db")
     chroma_path: Path = Path("data/chroma")
     kb_tree_path: Path = Path("data/kb/knowledge_tree.json")
     chapters_dir: Path = Path("data/chapters")
@@ -55,6 +56,7 @@ def get_config() -> AppConfig:
         _config = config.model_copy(
             update={
                 "db_path": Path(os.getenv("SQLITE_PATH", config.db_path)),
+                "app_db_path": Path(os.getenv("APP_DB_PATH", config.app_db_path)),
                 "chroma_path": Path(os.getenv("CHROMA_PATH", config.chroma_path)),
                 "backend": config.backend.model_copy(
                     update={
