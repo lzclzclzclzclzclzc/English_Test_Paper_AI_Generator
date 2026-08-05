@@ -29,6 +29,8 @@ function question(overrides: Partial<RevisedQuestion> = {}): RevisedQuestion {
     original_sentence: null,
     instruction: null,
     template: null,
+    passage_id: null,
+    passage_json: null,
     answer: 'B',
     solution: null,
     knowledge_point_ids: ['kp_single_choice_basic'],

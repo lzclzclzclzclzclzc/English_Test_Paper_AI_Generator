@@ -36,16 +36,17 @@ import type { GradeSubmissionResponse, PaperItem } from '@/types/api'
 /** 按 passage_id 分组：同组小题共享一段材料，PassageBlock 只渲染一次。 */
 function groupByPassage(items: PaperItem[]): Array<{ key: string; passageId: string | null; items: PaperItem[] }> {
   const groups: Array<{ key: string; passageId: string | null; items: PaperItem[] }> = []
-  const seen = new Map<string, number>()
+  const seen = new Map<string, { items: PaperItem[] }>()
   for (const item of items) {
     const pid = item.question.passage_id ?? null
     const key = pid ?? `solo-${item.index}`
-    const idx = seen.get(key)
-    if (idx !== undefined) {
-      groups[idx].items.push(item)
+    const existing = seen.get(key)
+    if (existing) {
+      existing.items.push(item)
     } else {
-      seen.set(key, groups.length)
-      groups.push({ key, passageId: pid, items: [item] })
+      const group = { key, passageId: pid, items: [item] }
+      seen.set(key, group)
+      groups.push(group)
     }
   }
   return groups
@@ -345,11 +346,13 @@ function PaperPageInner({ paperId }: { paperId: string }) {
 
         <div className="mt-4 divide-y divide-ink-10">
           {groupByPassage(paper.items).map((group) => {
-            const passage = group.passageId ? group.items[0].question.passage_json : null
+            const firstItem = group.items[0]
+            if (!firstItem) return null
+            const passage = group.passageId ? firstItem.question.passage_json : null
             const isReading = passage?.kind === 'reading'
             // 阅读首字母填空：ReadingFirstBlankField 自包含渲染整篇文章（空位内联），
             // 无需再渲染独立的 PassageBlock，避免重复显示文章。
-            const isFirstBlank = group.items[0].question.question_type === 'reading_first_blank'
+            const isFirstBlank = firstItem.question.question_type === 'reading_first_blank'
             const mode = submitted ? 'review' : 'answering'
             const questionList = (
               <div className={isReading ? 'flex flex-col gap-3' : 'divide-y divide-ink-10'}>
