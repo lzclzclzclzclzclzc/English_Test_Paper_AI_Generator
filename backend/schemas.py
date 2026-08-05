@@ -126,39 +126,55 @@ class AgentChatResponse(BaseModel):
 VocabularyRating = Literal["known", "fuzzy", "forgot"]
 
 
-class VocabularyCard(BaseModel):
+class VocabularyCardPrompt(BaseModel):
+    word_id: str
+    term: str
+    origin: Literal["scheduled_review", "new"]
+    retry_count: int = 0
+
+
+class VocabularyCardDetail(BaseModel):
     word_id: str
     term: str
     part_of_speech: str
     meanings: list[str]
     example_en: str
     example_zh: str
-    card_type: Literal["review", "new"]
+
+
+class VocabularyTaskCounts(BaseModel):
+    scheduled_review_total: int
+    scheduled_review_completed: int
+    new_total: int
+    new_completed: int
+    retry_total: int
+    retry_completed: int
+    retry_pending: int
+    remaining_count: int
 
 
 class VocabularyTodayResponse(BaseModel):
     date: str
     daily_new_limit: int
-    new_count: int
-    review_count: int
-    completed_count: int
-    remaining_count: int
-    cards: list[VocabularyCard]
+    phase: Literal["scheduled_review", "new", "same_day_retry", "completed"]
+    current_card: VocabularyCardPrompt | None
+    counts: VocabularyTaskCounts
 
 
-class VocabularyReviewRequest(BaseModel):
+class VocabularyJudgmentRequest(BaseModel):
     word_id: str = Field(min_length=1, max_length=80)
-    answer: str = Field(max_length=160)
     rating: VocabularyRating
 
 
-class VocabularyReviewResponse(BaseModel):
+class VocabularyJudgmentResponse(BaseModel):
     word_id: str
-    correct_answer: str
-    spelling_correct: bool
-    applied_rating: VocabularyRating
+    rating: VocabularyRating
+    detail: VocabularyCardDetail
     next_due_at: datetime
-    remaining_count: int
+    stage: int
+    added_to_same_day_retry: bool
+    phase: Literal["scheduled_review", "new", "same_day_retry", "completed"]
+    counts: VocabularyTaskCounts
 
 
 class VocabularyProgressResponse(BaseModel):
@@ -166,11 +182,21 @@ class VocabularyProgressResponse(BaseModel):
     daily_new_limit: int
     new_completed: int
     review_completed: int
+    same_day_retry_pending: int
+    same_day_retry_completed: int
     due_count: int
+    learned_count: int
     mastered_count: int
     total_words: int
     streak_days: int
     wordlist_label: str
+    source_url: str
+    wordlist_sources: list["VocabularyWordlistSource"]
+
+
+class VocabularyWordlistSource(BaseModel):
+    category: Literal["national_core", "shanghai_extension"]
+    label: str
     source_url: str
 
 

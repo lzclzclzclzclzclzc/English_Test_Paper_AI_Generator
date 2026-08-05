@@ -6,9 +6,9 @@ from backend.deps import current_user
 from backend.errors import ValidationError
 from backend.schemas import (
     User,
+    VocabularyJudgmentRequest,
+    VocabularyJudgmentResponse,
     VocabularyProgressResponse,
-    VocabularyReviewRequest,
-    VocabularyReviewResponse,
     VocabularySettingsRequest,
     VocabularySettingsResponse,
     VocabularyTodayResponse,
@@ -23,10 +23,10 @@ async def today(user: User = Depends(current_user)) -> VocabularyTodayResponse:
     return VocabularyTodayResponse(**storage.get_vocabulary_today(user.id))
 
 
-@router.post("/reviews", response_model=VocabularyReviewResponse)
-async def review(body: VocabularyReviewRequest, user: User = Depends(current_user)) -> VocabularyReviewResponse:
+@router.post("/judgments", response_model=VocabularyJudgmentResponse)
+async def judge(body: VocabularyJudgmentRequest, user: User = Depends(current_user)) -> VocabularyJudgmentResponse:
     try:
-        return VocabularyReviewResponse(**storage.review_vocabulary_card(user.id, body.word_id, body.answer, body.rating))
+        return VocabularyJudgmentResponse(**storage.judge_vocabulary_card(user.id, body.word_id, body.rating))
     except ValueError as exc:
         raise ValidationError(str(exc)) from exc
 

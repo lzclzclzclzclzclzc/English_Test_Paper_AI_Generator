@@ -255,33 +255,50 @@ export interface StudyPlan {
 
 export type VocabularyRating = 'known' | 'fuzzy' | 'forgot'
 
-export interface VocabularyCard {
+export interface VocabularyCardPrompt {
+  word_id: string
+  term: string
+  origin: 'scheduled_review' | 'new'
+  retry_count: number
+}
+
+export interface VocabularyCardDetail {
   word_id: string
   term: string
   part_of_speech: string
   meanings: string[]
   example_en: string
   example_zh: string
-  card_type: 'review' | 'new'
+}
+
+export interface VocabularyTaskCounts {
+  scheduled_review_total: number
+  scheduled_review_completed: number
+  new_total: number
+  new_completed: number
+  retry_total: number
+  retry_completed: number
+  retry_pending: number
+  remaining_count: number
 }
 
 export interface VocabularyToday {
   date: string
   daily_new_limit: number
-  new_count: number
-  review_count: number
-  completed_count: number
-  remaining_count: number
-  cards: VocabularyCard[]
+  phase: 'scheduled_review' | 'new' | 'same_day_retry' | 'completed'
+  current_card: VocabularyCardPrompt | null
+  counts: VocabularyTaskCounts
 }
 
-export interface VocabularyReviewResponse {
+export interface VocabularyJudgmentResponse {
   word_id: string
-  correct_answer: string
-  spelling_correct: boolean
-  applied_rating: VocabularyRating
+  rating: VocabularyRating
+  detail: VocabularyCardDetail
   next_due_at: string
-  remaining_count: number
+  stage: number
+  added_to_same_day_retry: boolean
+  phase: VocabularyToday['phase']
+  counts: VocabularyTaskCounts
 }
 
 export interface VocabularyProgress {
@@ -289,11 +306,21 @@ export interface VocabularyProgress {
   daily_new_limit: number
   new_completed: number
   review_completed: number
+  same_day_retry_pending: number
+  same_day_retry_completed: number
   due_count: number
+  learned_count: number
   mastered_count: number
   total_words: number
   streak_days: number
   wordlist_label: string
+  source_url: string
+  wordlist_sources: VocabularyWordlistSource[]
+}
+
+export interface VocabularyWordlistSource {
+  category: 'national_core' | 'shanghai_extension'
+  label: string
   source_url: string
 }
 

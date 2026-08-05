@@ -62,8 +62,8 @@ def main(argv: list[str] | None = None) -> int:
     seed_vocabulary.add_argument(
         "--file",
         type=Path,
-        default=Path("data/vocabulary/shanghai-basic-1678.json"),
-        help="versioned vocabulary JSON (must contain 1,678 entries)",
+        default=Path("data/vocabulary/national-core-plus-shanghai-extension.json"),
+        help="versioned merged vocabulary JSON",
     )
     sub.add_parser("smoke")
     sub.add_parser("deploy-check")

@@ -64,7 +64,7 @@ def _entry(term: str, href: str) -> dict | None:
         description = sense.select_one("p")
         if prop is None or description is None:
             continue
-        text = description.get_text("", strip=True)
+        text = re.sub(r"[\uFF1B;\s]+$", "", description.get_text("", strip=True)).strip()
         if not text:
             continue
         parts.append(prop.get_text("", strip=True))

@@ -2,15 +2,15 @@ import { apiFetch } from '@/api/client'
 import type {
   VocabularyProgress,
   VocabularyRating,
-  VocabularyReviewResponse,
+  VocabularyJudgmentResponse,
   VocabularyToday,
 } from '@/types/api'
 
 export const getVocabularyToday = () => apiFetch<VocabularyToday>('/vocabulary/today')
 export const getVocabularyProgress = () => apiFetch<VocabularyProgress>('/vocabulary/progress')
 
-export const reviewVocabulary = (body: { word_id: string; answer: string; rating: VocabularyRating }) =>
-  apiFetch<VocabularyReviewResponse>('/vocabulary/reviews', {
+export const judgeVocabulary = (body: { word_id: string; rating: VocabularyRating }) =>
+  apiFetch<VocabularyJudgmentResponse>('/vocabulary/judgments', {
     method: 'POST',
     body: JSON.stringify(body),
   })

@@ -147,6 +147,8 @@ def test_init_db_records_applied_migrations(client):
         storage.MIGRATION_USERS_ROLE,
         storage.MIGRATION_USERS_STATUS,
         storage.MIGRATION_ATTEMPT_ITEMS_USER_ANSWER,
+        storage.MIGRATION_VOCABULARY_RETRY_QUEUE,
+        storage.MIGRATION_VOCABULARY_WORD_SOURCES,
     ]
 
 
