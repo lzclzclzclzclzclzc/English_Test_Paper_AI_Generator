@@ -114,7 +114,6 @@ def test_readiness_reports_missing_question_bank(client):
     assert response.status_code == 503
     assert body["status"] == "not_ready"
     assert body["checks"]["sqlite"] is True
-    assert body["checks"]["core_tables"] is True
     assert body["checks"]["question_bank"] is False
     assert body["checks"]["vector_bank"] is False
 

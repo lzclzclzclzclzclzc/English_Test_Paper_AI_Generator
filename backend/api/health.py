@@ -30,32 +30,37 @@ async def readiness() -> JSONResponse:
 
 
 def _readiness_checks() -> dict[str, bool]:
+    checks = {
+        "sqlite": False,
+        "core_tables": False,
+        "question_bank": False,
+        "vector_bank": False,
+    }
     try:
-        with storage.connect() as conn:
-            conn.execute("SELECT 1").fetchone()
-            return {
-                "sqlite": True,
-                "core_tables": _has_tables(
-                    conn,
-                    {
-                        "users",
-                        "sessions",
-                        "papers",
-                        "attempts",
-                        "attempt_items",
-                        "schema_migrations",
-                    },
-                ),
-                "question_bank": _has_question_bank(conn),
-                "vector_bank": _has_vector_bank(conn),
-            }
+        with storage.connect() as app_conn:
+            app_conn.execute("SELECT 1").fetchone()
+            checks["sqlite"] = True
+            checks["core_tables"] = _has_tables(
+                app_conn,
+                {
+                    "users",
+                    "sessions",
+                    "papers",
+                    "attempts",
+                    "attempt_items",
+                    "schema_migrations",
+                },
+            )
     except Exception:
-        return {
-            "sqlite": False,
-            "core_tables": False,
-            "question_bank": False,
-            "vector_bank": False,
-        }
+        return checks
+    try:
+        with storage.connect_bank() as bank_conn:
+            bank_conn.execute("SELECT 1").fetchone()
+            checks["question_bank"] = _has_question_bank(bank_conn)
+            checks["vector_bank"] = _has_vector_bank(bank_conn)
+    except Exception:
+        pass
+    return checks
 
 
 def _has_tables(conn, table_names: set[str]) -> bool:
