@@ -41,9 +41,17 @@
 
     /* ── 试卷页卡片化（2026-08）── */
     --color-card-surface: var(--surface-card);
-    --color-rev-green: var(--rev-green);
-    --color-rev-green-wash: var(--rev-green-wash);
     --radius-question-card: 0.5rem;
+
+    /* ── v2.2 多色层次：答对绿 + 分科色（语法/听力/阅读）── */
+    --color-success: var(--success);
+    --color-success-wash: var(--success-wash);
+    --color-grammar: var(--grammar);
+    --color-grammar-wash: var(--grammar-wash);
+    --color-listening: var(--listening);
+    --color-listening-wash: var(--listening-wash);
+    --color-reading: var(--reading);
+    --color-reading-wash: var(--reading-wash);
 
     /* ── shadcn 映射：组件自动进入喫茶去外观 ── */
     --color-background: var(--surface-page);

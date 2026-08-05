@@ -6,11 +6,23 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 /**
- * 掌握度分级（handoff 第 7 屏，One Chroma Rule）：不用绿/黄/红，
- * 进度条一律赤陶——mastery ≥ 0.4 降到 0.45 不透明度，< 0.4 全饱和，
- * 即薄弱点更醒目。
+ * 掌握度分级（Spec F v2.2 三色 band）：< 0.4 薄弱 = 赤陶、
+ * 0.4–0.7 一般 = 赭黄、≥ 0.7 扎实 = 绿。条与分数同色，一眼扫出节奏。
  */
 const WEAK_THRESHOLD = 0.4
+const SOLID_THRESHOLD = 0.7
+
+const bandOf = (m: number) => (m < WEAK_THRESHOLD ? 'weak' : m < SOLID_THRESHOLD ? 'mid' : 'solid')
+const BAND_BAR: Record<string, string> = {
+  weak: 'bg-accent',
+  mid: 'bg-grammar',
+  solid: 'bg-success',
+}
+const BAND_TEXT: Record<string, string> = {
+  weak: 'text-accent',
+  mid: 'text-grammar',
+  solid: 'text-success',
+}
 
 export function MasteryReport({ profile }: { profile: MasteryProfile }) {
   useKnowledgePoints() // 确保目录到达后重渲染，考点显示为中文名
@@ -54,7 +66,7 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
       {/* 考点行：名称+次数 / 进度条 / 分数 */}
       <div className="flex flex-col">
         {sorted.map((kp) => {
-          const weak = kp.mastery < WEAK_THRESHOLD
+          const band = bandOf(kp.mastery)
           return (
             <div
               key={kp.knowledge_point_id}
@@ -68,14 +80,14 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
                   {kp.knowledge_point_id} · {kp.attempts} 次作答
                 </span>
               </div>
-              <div className="h-[6px] overflow-hidden bg-ink-10 max-sm:hidden">
+              <div className="h-[6px] overflow-hidden rounded-full bg-ink-10 max-sm:hidden">
                 <div
-                  className={cn('h-full bg-accent', !weak && 'opacity-45')}
+                  className={cn('h-full rounded-full', BAND_BAR[band])}
                   style={{ width: `${Math.round(kp.mastery * 100)}%` }}
                 />
               </div>
               <span
-                className={cn('text-right font-mono text-[13px]', weak ? 'text-accent' : 'text-muted-ink')}
+                className={cn('text-right font-mono text-[13px] font-[650]', BAND_TEXT[band])}
                 title="稳健掌握度（Wilson 下界）：答题次数越少估计越保守"
               >
                 {kp.mastery.toFixed(2)}
@@ -113,11 +125,16 @@ function Stat({
   accent?: boolean
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[11px] tracking-[0.1em] text-quiet">{label}</span>
-      <span className={cn('text-[28px] leading-none', accent ? 'text-accent' : 'text-ink')}>
+    <div className="flex flex-col gap-1 font-ui">
+      <span className="text-[11px] font-[550] tracking-[0.1em] text-quiet">{label}</span>
+      <span
+        className={cn(
+          'text-[32px] font-[750] leading-none tabular-nums',
+          accent ? 'text-accent' : 'text-ink',
+        )}
+      >
         {value}
-        {unit && <span className="ml-1 text-[13px] text-quiet">{unit}</span>}
+        {unit && <span className="ml-1 text-[13px] font-[450] text-quiet">{unit}</span>}
       </span>
     </div>
   )

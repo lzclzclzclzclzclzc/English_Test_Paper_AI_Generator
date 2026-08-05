@@ -52,11 +52,21 @@
   --accent-wash: color-mix(in oklab, var(--accent) 18%, transparent); /* <mark> highlight */
 
   /* ── Paper-page cards（2026-08 试卷页卡片化改版）──
-     题目卡浮在暖纸底上：近白卡底 + 极浅边线；hover 才有阴影（静置仍平）。
-     改题档位色：原题 = 中性墨、轻改 = 绿、新出 = 赤陶（复用 accent）。 */
+     题目卡浮在暖纸底上：近白卡底 + 极浅边线；hover 才有阴影（静置仍平）。 */
   --surface-card: oklch(99.2% 0.003 95);
-  --rev-green: oklch(45% 0.09 150);
-  --rev-green-wash: color-mix(in oklab, var(--rev-green) 12%, transparent);
+
+  /* ── v2.2 多色层次（2026-08-05）──
+     赤陶仍是品牌与交互主色；以下为语义/分科色，全部压低饱和以贴合暖纸底：
+     success = 答对/轻改；分科色按题型家族——语法(单选/词形/改写)=赭黄、
+     听力=靛蓝、阅读(长文/完形/首字母)=墨青。各配 12–15% wash 薄底。 */
+  --success: oklch(45% 0.1 150);
+  --success-wash: color-mix(in oklab, var(--success) 13%, transparent);
+  --grammar: oklch(50% 0.1 75);
+  --grammar-wash: color-mix(in oklab, var(--grammar) 13%, transparent);
+  --listening: oklch(46% 0.1 255);
+  --listening-wash: color-mix(in oklab, var(--listening) 12%, transparent);
+  --reading: oklch(46% 0.09 195);
+  --reading-wash: color-mix(in oklab, var(--reading) 12%, transparent);
 }
 
 /* ── Dark mode — warm charcoal ground, warm off-white ink, brighter coral.
@@ -87,6 +97,13 @@
   --accent-wash: color-mix(in oklab, var(--accent-bright) 26%, transparent);
 
   --surface-card: oklch(27.5% 0.016 72);   /* 比暖炭墨地略亮一档 */
-  --rev-green: oklch(76% 0.1 150);
-  --rev-green-wash: color-mix(in oklab, var(--rev-green) 16%, transparent);
+
+  --success: oklch(74% 0.11 150);
+  --success-wash: color-mix(in oklab, var(--success) 18%, transparent);
+  --grammar: oklch(78% 0.1 80);
+  --grammar-wash: color-mix(in oklab, var(--grammar) 16%, transparent);
+  --listening: oklch(75% 0.09 255);
+  --listening-wash: color-mix(in oklab, var(--listening) 16%, transparent);
+  --reading: oklch(76% 0.09 195);
+  --reading-wash: color-mix(in oklab, var(--reading) 16%, transparent);
 }

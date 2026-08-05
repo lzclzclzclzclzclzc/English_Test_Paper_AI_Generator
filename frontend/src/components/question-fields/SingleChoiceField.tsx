@@ -73,15 +73,15 @@ export function SingleChoiceField({
                 className={cn(
                   'flex items-baseline rounded-sm border px-4 py-2.5 text-[15px]',
                   isCorrect
-                    ? 'border-accent bg-wash text-ink'
+                    ? 'border-success bg-success-wash text-ink'
                     : isUser
-                      ? 'border-ink-30 text-muted-ink'
+                      ? 'border-accent bg-wash text-muted-ink'
                       : 'border-ink-15 text-quiet',
                 )}
               >
                 <span className="mr-4 shrink-0 font-mono text-[13px] opacity-70">{opt.label}</span>
                 <span>{opt.text}</span>
-                {isCorrect && <span className="ml-auto pl-3 font-bold text-accent">✓</span>}
+                {isCorrect && <span className="ml-auto pl-3 font-bold text-success">✓</span>}
                 {isUser && !isCorrect && (
                   <span className="ml-auto pl-3 font-bold text-accent">✕</span>
                 )}

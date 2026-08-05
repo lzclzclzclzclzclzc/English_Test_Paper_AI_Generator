@@ -9,7 +9,7 @@ import { ListeningFillBlankField } from '@/components/question-fields/ListeningF
 import { ReadingFirstBlankField } from '@/components/question-fields/ReadingFirstBlankField'
 import { WordFormField } from '@/components/question-fields/WordFormField'
 import { SentenceRewritingField } from '@/components/question-fields/SentenceRewritingField'
-import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
+import { TYPE_LABELS, TYPE_FAMILY, prettifyKp, type TypeFamily } from '@/lib/kp'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { cn } from '@/lib/utils'
 
@@ -27,8 +27,15 @@ interface QuestionCardProps {
 /** 改题档位：原题 = 中性墨、轻改 = 绿、新出 = 赤陶（AI 介入程度递增） */
 const REVISION_META: Record<PaperItem['revision_mode'], { label: string; className: string }> = {
   original: { label: '原题', className: 'bg-tint text-muted-ink' },
-  light: { label: '轻改', className: 'bg-rev-green-wash text-rev-green' },
+  light: { label: '轻改', className: 'bg-success-wash text-success' },
   fresh: { label: 'AI 新出', className: 'bg-wash text-accent' },
+}
+
+/** 分科色胶囊（v2.2）：语法 = 赭黄、听力 = 靛蓝、阅读 = 墨青 */
+const FAMILY_PILL: Record<TypeFamily, string> = {
+  grammar: 'bg-grammar-wash text-grammar',
+  listening: 'bg-listening-wash text-listening',
+  reading: 'bg-reading-wash text-reading',
 }
 
 /**
@@ -62,10 +69,15 @@ export function QuestionCard({
       className="scroll-mt-10 rounded-[var(--radius-question-card)] border border-soft bg-card-surface p-6 transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] max-md:p-4"
     >
       <div className="flex flex-wrap items-center gap-2 font-ui">
-        <span className="flex h-7 min-w-9 items-center justify-center rounded-md bg-wash px-2 text-[13px] font-semibold tabular-nums text-accent">
+        <span className="flex h-7 min-w-9 items-center justify-center rounded-md bg-wash px-2 text-[13px] font-[650] tabular-nums text-accent">
           {String(item.index).padStart(2, '0')}
         </span>
-        <span className="rounded-full border border-ink-15 px-2.5 py-1 text-[12px] leading-none text-muted-ink">
+        <span
+          className={cn(
+            'rounded-full px-2.5 py-1 text-[12px] font-[550] leading-none',
+            FAMILY_PILL[TYPE_FAMILY[question.question_type] ?? 'grammar'],
+          )}
+        >
           {typeLabel}
         </span>
         <span
@@ -79,8 +91,10 @@ export function QuestionCard({
         {isReview && result && (
           <span
             className={cn(
-              'ml-auto flex size-6 shrink-0 items-center justify-center rounded-full border text-[12px] leading-none',
-              result.is_correct ? 'border-ink-30 text-ink' : 'border-accent text-accent',
+              'ml-auto flex size-6 shrink-0 items-center justify-center rounded-full border font-[650] text-[12px] leading-none',
+              result.is_correct
+                ? 'border-success bg-success-wash text-success'
+                : 'border-accent bg-wash text-accent',
             )}
           >
             {result.is_correct ? '✓' : '✕'}

@@ -16,7 +16,7 @@ export function PageHeader({ title, intro, children }: PageHeaderProps) {
   return (
     <div className="mb-12 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
       <div className="flex min-w-0 flex-col gap-3">
-        <h1 className="text-[34px] font-normal leading-snug text-ink [font-family:var(--font-display)] [text-wrap:balance]">
+        <h1 className="text-[40px] font-normal leading-snug text-ink [font-family:var(--font-display)] [text-wrap:balance]">
           {title}
         </h1>
         {intro && (

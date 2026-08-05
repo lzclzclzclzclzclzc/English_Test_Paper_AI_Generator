@@ -12,17 +12,23 @@ const generateSchema = z.object({
 
 export type GenerateFormValues = z.infer<typeof generateSchema>
 
-/** 题型 chips：点击往输入框追加「N 道××」，可连点组一份混合卷（覆盖题库全部 9 种题型）。 */
-const TYPE_CHIPS: ReadonlyArray<{ label: string; n: number }> = [
-  { label: '单项选择', n: 5 },
-  { label: '词形转换', n: 4 },
-  { label: '句子改写', n: 3 },
-  { label: '听力选择', n: 3 },
-  { label: '听力判断', n: 4 },
-  { label: '听力填词', n: 3 },
-  { label: '阅读理解', n: 3 },
-  { label: '完形填空', n: 3 },
-  { label: '阅读首字母填空', n: 1 },
+/** 题型 chips：点击往输入框追加「N 道××」，可连点组一份混合卷（覆盖题库全部 9 种题型）。
+    分科色（Spec F v2.2）：语法 = 赭黄、听力 = 靛蓝、阅读 = 墨青。 */
+const FAMILY_CHIP: Record<'grammar' | 'listening' | 'reading', string> = {
+  grammar: 'border-transparent bg-grammar-wash text-grammar hover:border-grammar',
+  listening: 'border-transparent bg-listening-wash text-listening hover:border-listening',
+  reading: 'border-transparent bg-reading-wash text-reading hover:border-reading',
+}
+const TYPE_CHIPS: ReadonlyArray<{ label: string; n: number; family: keyof typeof FAMILY_CHIP }> = [
+  { label: '单项选择', n: 5, family: 'grammar' },
+  { label: '词形转换', n: 4, family: 'grammar' },
+  { label: '句子改写', n: 3, family: 'grammar' },
+  { label: '听力选择', n: 3, family: 'listening' },
+  { label: '听力判断', n: 4, family: 'listening' },
+  { label: '听力填词', n: 3, family: 'listening' },
+  { label: '阅读理解', n: 3, family: 'reading' },
+  { label: '完形填空', n: 3, family: 'reading' },
+  { label: '阅读首字母填空', n: 1, family: 'reading' },
 ]
 
 interface GenerateFormProps {
@@ -61,11 +67,11 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
       {/* 题型 chips：细线边小方角，hover 转赤陶；点击追加「N 道××」，可连点组混合卷 */}
       <div className="flex flex-wrap items-baseline gap-2">
         <span className="font-ui text-[12px] text-quiet">点选题型：</span>
-        {TYPE_CHIPS.map(({ label, n }) => (
+        {TYPE_CHIPS.map(({ label, n, family }) => (
           <button
             key={label}
             type="button"
-            className="rounded-sm border border-hairline px-3 py-1 font-ui text-[12.5px] text-muted-ink transition-colors hover:border-accent hover:bg-tint hover:text-accent"
+            className={`rounded-sm border px-3 py-1 font-ui text-[12.5px] font-[550] transition-colors ${FAMILY_CHIP[family]}`}
             onClick={() => {
               const cur = form.getValues('user_query').trim()
               const seg = `${n} 道${label}`

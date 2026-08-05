@@ -11,6 +11,20 @@ export const TYPE_LABELS: Record<string, string> = {
   reading_first_blank: '阅读首字母填空',
 }
 
+/** 题型 → 分科家族（Spec F v2.2 分科色）：语法=赭黄、听力=靛蓝、阅读=墨青。 */
+export type TypeFamily = 'grammar' | 'listening' | 'reading'
+export const TYPE_FAMILY: Record<string, TypeFamily> = {
+  single_choice: 'grammar',
+  word_form: 'grammar',
+  sentence_rewriting: 'grammar',
+  listening_single_choice: 'listening',
+  listening_true_false: 'listening',
+  listening_fill_blank: 'listening',
+  reading_longtext_single_choice: 'reading',
+  cloze_single_choice: 'reading',
+  reading_first_blank: 'reading',
+}
+
 /**
  * 知识点 id → 中文名（level2）的运行时映射。
  * 由 useKnowledgePoints() 在 App 启动时从后端 /api/knowledge-points 填充，

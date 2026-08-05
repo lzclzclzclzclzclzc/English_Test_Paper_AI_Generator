@@ -45,15 +45,23 @@ export function AnswerCard({ paper, answers, results }: AnswerCardProps) {
         <span className="text-[11px] font-bold tracking-[0.14em] text-quiet">
           {isReview ? '本卷回顾' : '答题卡'}
         </span>
-        <span className="text-[28px] leading-none text-ink">
+        <span
+          className={cn(
+            'text-[32px] font-[750] leading-none tabular-nums',
+            isReview ? 'text-success' : 'text-ink',
+          )}
+        >
           {doneCount}
-          <span className="text-[15px] text-quiet">
+          <span className="text-[15px] font-[450] text-quiet">
             {' '}/ {paper.items.length} {isReview ? '答对' : '已答'}
           </span>
         </span>
-        <div className="h-[2px] w-full bg-ink-10">
+        <div className="h-[3px] w-full bg-ink-10">
           <div
-            className="h-full bg-accent transition-[width] duration-300 ease-out"
+            className={cn(
+              'h-full transition-[width] duration-300 ease-out',
+              isReview ? 'bg-success' : 'bg-accent',
+            )}
             style={{ width: `${Math.round(ratio * 100)}%` }}
           />
         </div>
@@ -74,8 +82,8 @@ export function AnswerCard({ paper, answers, results }: AnswerCardProps) {
                   'flex h-8 items-center justify-center rounded-md border text-[13px] tabular-nums transition-colors',
                   state === 'done' && 'border-accent bg-wash text-ink',
                   state === 'todo' && 'border-ink-15 text-quiet hover:border-ink-30',
-                  state === 'correct' && 'border-ink-20 text-ink',
-                  state === 'wrong' && 'border-accent bg-wash text-accent',
+                  state === 'correct' && 'border-success bg-success-wash text-success',
+                  state === 'wrong' && 'border-accent bg-wash font-[650] text-accent',
                 )}
               >
                 {item.index}

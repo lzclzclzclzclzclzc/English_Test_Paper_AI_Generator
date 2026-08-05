@@ -42,19 +42,32 @@ export function GradeBanner({
     )
   }
 
+  // 正确率分band（v2.2）：≥80% 绿 / ≥60% 赭黄 / 以下赤陶
+  const rate = totalCount === 0 ? 0 : correctCount / totalCount
+  const rateColor = rate >= 0.8 ? 'text-success' : rate >= 0.6 ? 'text-grammar' : 'text-accent'
+
   return (
     <div className="kk-rise flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-hairline pb-6">
-      <div className="flex items-end gap-8">
+      <div className="flex items-end gap-8 font-ui">
         <div className="flex flex-col gap-1">
-          <span className="text-[11px] tracking-[0.1em] text-quiet">答对</span>
-          <span className="text-[44px] leading-none text-ink">
+          <span className="text-[11px] font-[550] tracking-[0.1em] text-quiet">答对</span>
+          <span className="text-[54px] font-[750] leading-none tabular-nums text-success">
             {correctCount}
-            <span className="text-[18px] text-quiet"> / {totalCount}</span>
+            <span className="text-[18px] font-[450] text-quiet"> / {totalCount}</span>
           </span>
         </div>
         <div className="flex flex-col gap-1 pb-1">
-          <span className="text-[11px] tracking-[0.1em] text-quiet">错题</span>
-          <span className="text-[24px] leading-none text-accent">{wrongCount}</span>
+          <span className="text-[11px] font-[550] tracking-[0.1em] text-quiet">错题</span>
+          <span className="text-[28px] font-[650] leading-none tabular-nums text-accent">
+            {wrongCount}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 pb-1">
+          <span className="text-[11px] font-[550] tracking-[0.1em] text-quiet">正确率</span>
+          <span className={`text-[28px] font-[650] leading-none tabular-nums ${rateColor}`}>
+            {Math.round(rate * 100)}
+            <span className="text-[14px] font-[450]">%</span>
+          </span>
         </div>
         {remediatedPaperId && (
           <span className="pb-1 text-[13px] text-quiet">已生成错题巩固卷，点右侧进入</span>
