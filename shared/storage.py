@@ -45,7 +45,9 @@ def set_db_path(path: str | Path | None) -> None:
 
 
 def get_db_path() -> Path:
-    return DB_PATH_OVERRIDE or get_config().db_path
+    # This is the APP/user DB (users, papers, attempts, …). The question bank
+    # lives at config.db_path — reached via get_bank_db_path()/connect_bank().
+    return DB_PATH_OVERRIDE or get_config().app_db_path
 
 
 def get_chroma_path() -> Path:
@@ -534,8 +536,7 @@ def mark_paper_submitted(paper_id: str) -> None:
 
 
 def list_knowledge_points() -> list[KnowledgePoint]:
-    init_db()
-    with connect() as conn:
+    with connect_bank() as conn:
         if not _table_exists(conn, "knowledge_points"):
             return []
         rows = conn.execute(
@@ -553,8 +554,7 @@ def list_knowledge_points() -> list[KnowledgePoint]:
 
 
 def get_question(question_id: str) -> Question | None:
-    init_db()
-    with connect() as conn:
+    with connect_bank() as conn:
         if not _table_exists(conn, "questions"):
             return None
         row = conn.execute("SELECT * FROM questions WHERE id = ?", (question_id,)).fetchone()
@@ -571,8 +571,7 @@ def list_questions(
     limit: int = 50,
     offset: int = 0,
 ) -> list[Question]:
-    init_db()
-    with connect() as conn:
+    with connect_bank() as conn:
         if not _table_exists(conn, "questions"):
             return []
         clauses: list[str] = []
@@ -605,8 +604,7 @@ def list_questions(
 
 
 def write_question_solution(question_id: str, solution: str) -> bool:
-    init_db()
-    with connect() as conn:
+    with connect_bank() as conn:
         if not _table_exists(conn, "questions"):
             return False
         cur = conn.execute(
