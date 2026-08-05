@@ -4,12 +4,12 @@ from typing import Literal
 
 from ai_engine.pipeline import (
     build_profile as run_build_profile,
+    build_site_profile as run_build_site_profile,
     generate_paper as run_generate_paper,
     generate_solution as run_generate_solution,
     revise_paper as run_revise_paper,
 )
 from shared.schemas import MasteryProfile, Paper, RevisedQuestion, WrongItemRef
-
 
 def generate_paper(
     user_query: str,
@@ -49,3 +49,7 @@ def generate_solution(
 
 def build_profile(user_id: str, window_days: int | None = None) -> MasteryProfile:
     return run_build_profile(user_id, window_days)
+
+
+def build_site_profile(window_days: int | None = None) -> MasteryProfile:
+    return run_build_site_profile(window_days)

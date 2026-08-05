@@ -3,6 +3,12 @@ export const TYPE_LABELS: Record<string, string> = {
   single_choice: '单项选择',
   word_form: '词形转换',
   sentence_rewriting: '句子改写',
+  listening_single_choice: '听力选择',
+  listening_true_false: '听力判断',
+  listening_fill_blank: '听力填词',
+  reading_longtext_single_choice: '阅读理解',
+  cloze_single_choice: '完形填空',
+  reading_first_blank: '阅读首字母填空',
 }
 
 /**

@@ -3,6 +3,10 @@ import type { GradeResultItem, PaperItem } from '@/types/api'
 import type { AnswerDraft, BlankMap } from '@/lib/answers'
 import { formatCorrectAnswer, formatUserAnswer } from '@/lib/answers'
 import { SingleChoiceField } from '@/components/question-fields/SingleChoiceField'
+import { ListeningSingleChoiceField } from '@/components/question-fields/ListeningSingleChoiceField'
+import { ListeningTrueFalseField } from '@/components/question-fields/ListeningTrueFalseField'
+import { ListeningFillBlankField } from '@/components/question-fields/ListeningFillBlankField'
+import { ReadingFirstBlankField } from '@/components/question-fields/ReadingFirstBlankField'
 import { WordFormField } from '@/components/question-fields/WordFormField'
 import { SentenceRewritingField } from '@/components/question-fields/SentenceRewritingField'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
@@ -85,8 +89,24 @@ export function QuestionCard({
       </div>
 
       <div className="mt-4 flex min-w-0 flex-col gap-3">
-        {question.question_type === 'single_choice' ? (
+        {question.question_type === 'single_choice' || question.question_type === 'reading_longtext_single_choice' || question.question_type === 'cloze_single_choice' ? (
           <SingleChoiceField
+            question={question}
+            mode={mode}
+            value={typeof value === 'string' ? value : undefined}
+            onChange={onChange}
+            result={result}
+          />
+        ) : question.question_type === 'listening_single_choice' ? (
+          <ListeningSingleChoiceField
+            question={question}
+            mode={mode}
+            value={typeof value === 'string' ? value : undefined}
+            onChange={onChange}
+            result={result}
+          />
+        ) : question.question_type === 'listening_true_false' ? (
+          <ListeningTrueFalseField
             question={question}
             mode={mode}
             value={typeof value === 'string' ? value : undefined}
@@ -95,6 +115,22 @@ export function QuestionCard({
           />
         ) : question.question_type === 'word_form' ? (
           <WordFormField
+            question={question}
+            mode={mode}
+            value={typeof value === 'object' ? (value as BlankMap) : undefined}
+            onChange={onChange}
+            result={result}
+          />
+        ) : question.question_type === 'listening_fill_blank' ? (
+          <ListeningFillBlankField
+            question={question}
+            mode={mode}
+            value={typeof value === 'object' ? (value as BlankMap) : undefined}
+            onChange={onChange}
+            result={result}
+          />
+        ) : question.question_type === 'reading_first_blank' ? (
+          <ReadingFirstBlankField
             question={question}
             mode={mode}
             value={typeof value === 'object' ? (value as BlankMap) : undefined}
@@ -111,8 +147,8 @@ export function QuestionCard({
           />
         )}
 
-        {/* review 态：答错时的答案比对（单选已在选项上标注，不重复） */}
-        {isReview && result && !result.is_correct && question.question_type !== 'single_choice' && (
+        {/* review 态：答错时的答案比对（单选/听力/判断/阅读已在选项上标注，不重复） */}
+        {isReview && result && !result.is_correct && question.question_type !== 'single_choice' && question.question_type !== 'listening_single_choice' && question.question_type !== 'listening_true_false' && question.question_type !== 'reading_longtext_single_choice' && question.question_type !== 'cloze_single_choice' && (
           <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
             <span className="text-accent">
               你的答案：{formatUserAnswer(result.user_answer)}

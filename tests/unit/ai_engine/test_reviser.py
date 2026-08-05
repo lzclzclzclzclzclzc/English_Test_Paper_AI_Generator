@@ -37,6 +37,7 @@ from ai_engine.reviser import (
 from shared.schemas import (
     GenerateRequest,
     Option,
+    Passage,
     Question,
     RetrievedItem,
     RetrievalResult,
@@ -89,6 +90,44 @@ def _make_wf_question(id: str = "q_00002") -> Question:
         knowledge_point_ids=["kp_wf_noun"],
         source_md="test.md",
         source_line=10,
+        created_at=datetime.now(timezone.utc),
+    )
+
+
+def _make_rfb_question(id: str = "q_22001") -> Question:
+    """Minimal valid reading_first_blank Question (1 passage, 7 blanks)."""
+    return Question(
+        id=id,
+        book="test_book",
+        question_type="reading_first_blank",
+        chapter_l1="3 阅读理解",
+        chapter_l2="3.1 首字母填空",
+        number="1",
+        passage_id="psg_2021_001",
+        passage_json=Passage(
+            kind="reading",
+            title="Tablets",
+            content=(
+                "we must also be a______(1)____ of the problems. "
+                "there are many a______(2)____ to use tablets. "
+                "T______(3)____, using tablets could reduce time. "
+                "teaching a______(4)____. instead of f______(5)____ on their work. "
+                "expensive to r______(6)____. it would c______(7)____ prove worthwhile."
+            ),
+            audio_url=None,
+        ),
+        answer=[
+            {"blank1": ["aware"]},
+            {"blank2": ["advantages"]},
+            {"blank3": ["Therefore"]},
+            {"blank4": ["activities"]},
+            {"blank5": ["focusing"]},
+            {"blank6": ["repair"]},
+            {"blank7": ["certainly"]},
+        ],
+        knowledge_point_ids=["kp_reading_first_blank"],
+        source_md="test.md",
+        source_line=20,
         created_at=datetime.now(timezone.utc),
     )
 
@@ -225,23 +264,26 @@ class TestValidateRevision:
 
     def test_empty_fill_in_answer_fails(self):
         q = _make_wf_question()
-        rq = RevisedQuestion(
-            question_type="word_form",
-            knowledge_point_ids=q.knowledge_point_ids,
-            stem=q.stem,
-            answer=[{"blank1": [""]}],  # empty string in answer
-        )
-        # empty string after strip → fails
-        # Note: answer is a list here, str check goes via str(answer).strip()
-        # An empty list dict is still non-empty as string; this passes schema.
-        # Test the truly-empty string case:
-        rq2 = RevisedQuestion(
-            question_type="word_form",
-            knowledge_point_ids=q.knowledge_point_ids,
-            stem=q.stem,
-            answer="",  # bare empty string
-        )
-        assert _validate_revision(q, rq2) is False
+        # Every structurally-empty fill-in answer must be rejected. These all
+        # used to slip through the old `str(answer).strip()` check (a non-empty
+        # list stringifies to a truthy repr) but can never be graded correct.
+        bad_answers = [
+            "",                       # bare empty string
+            [],                       # no candidate groups
+            [{}],                     # group with no blanks
+            [{"blank1": []}],         # blank with no candidates
+            [{"blank1": [""]}],       # blank whose only candidate is blank
+            [{"blank1": ["  "]}],     # whitespace-only candidate
+            [{"blank1": ["ok"], "blank2": []}],  # one good blank, one empty
+        ]
+        for bad in bad_answers:
+            rq = RevisedQuestion(
+                question_type="word_form",
+                knowledge_point_ids=q.knowledge_point_ids,
+                stem=q.stem,
+                answer=bad,
+            )
+            assert _validate_revision(q, rq) is False, f"should reject {bad!r}"
 
     def test_valid_word_form_passes(self):
         q = _make_wf_question()
@@ -640,6 +682,54 @@ class TestBuildPaperMetadata:
         paper = build_paper(req, retrieval)
 
         assert len(paper.items) == 1
+
+
+class TestReadingFirstBlankAlwaysOriginal:
+    """阅读首字母填空一律按原题出——即使 light/fresh 也不调用 LLM、不改写。"""
+
+    def test_light_mode_does_not_call_llm(self):
+        q = _make_rfb_question()
+        req = _make_req(n=1, intensity="light")
+        retrieval = _make_retrieval([q])
+
+        mock_client = MagicMock()
+        with patch("ai_engine.reviser.get_llm_client", return_value=mock_client):
+            paper = build_paper(req, retrieval)
+
+        assert mock_client.structured.call_count == 0
+        assert paper.metadata["llm_calls"] == 0
+
+    def test_fresh_mode_does_not_call_llm(self):
+        q = _make_rfb_question()
+        req = _make_req(n=1, intensity="fresh")
+        retrieval = _make_retrieval([q])
+
+        mock_client = MagicMock()
+        with patch("ai_engine.reviser.get_llm_client", return_value=mock_client):
+            paper = build_paper(req, retrieval)
+
+        assert mock_client.structured.call_count == 0
+        assert paper.metadata["llm_calls"] == 0
+
+    def test_content_and_answer_unchanged_under_light(self):
+        q = _make_rfb_question()
+        req = _make_req(n=1, intensity="light")
+        retrieval = _make_retrieval([q])
+
+        paper = build_paper(req, retrieval)
+        item = paper.items[0]
+        assert item.question.passage_id == q.passage_id
+        assert item.question.passage_json.content == q.passage_json.content
+        assert item.question.answer == q.answer
+        assert item.revision_mode == "light"  # 标签仍按请求记录，但内容未改
+
+    def test_revision_failures_empty(self):
+        q = _make_rfb_question()
+        req = _make_req(n=1, intensity="fresh")
+        retrieval = _make_retrieval([q])
+
+        paper = build_paper(req, retrieval)
+        assert paper.metadata["revision_failures"] == []
 
 
 # ---------------------------------------------------------------------------

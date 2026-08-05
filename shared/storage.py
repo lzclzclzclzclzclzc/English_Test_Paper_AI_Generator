@@ -24,6 +24,9 @@ from shared.schemas import (
 
 DB_PATH_OVERRIDE: Path | None = None
 MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX = "20260709_001_attempt_items_item_index"
+MIGRATION_USERS_ROLE = "20260801_001_users_role"
+MIGRATION_USERS_STATUS = "20260801_002_users_status"
+MIGRATION_ATTEMPT_ITEMS_USER_ANSWER = "20260803_001_attempt_items_user_answer"
 CHROMA_COLLECTION_NAME = "questions"
 CHROMA_REQUIRED_METADATA_KEYS = {
     "book",
@@ -157,6 +160,8 @@ def _row_to_user_record(row: sqlite3.Row | None) -> UserRecord | None:
         username=row["username"],
         password_hash=row["password_hash"],
         created_at=_dt(row["created_at"]),
+        role=row["role"] if "role" in row.keys() else "user",
+        status=row["status"] if "status" in row.keys() else "active",
     )
 
 
@@ -172,7 +177,211 @@ def get_user_by_id(user_id: str) -> User | None:
     with connect() as conn:
         row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     record = _row_to_user_record(row)
-    return User(id=record.id, username=record.username, created_at=record.created_at) if record else None
+    return User(id=record.id, username=record.username, created_at=record.created_at, role=record.role, status=record.status) if record else None
+
+
+def set_user_role(user_id: str, role: str) -> None:
+    init_db()
+    with connect() as conn:
+        conn.execute("UPDATE users SET role = ? WHERE id = ?", (role, user_id))
+
+
+def set_user_status(user_id: str, status: str) -> None:
+    init_db()
+    with connect() as conn:
+        conn.execute("UPDATE users SET status = ? WHERE id = ?", (status, user_id))
+
+
+def list_users(q: str = "", limit: int = 50, offset: int = 0) -> list[dict]:
+    init_db()
+    like = f"%{q}%"
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT u.id, u.username, u.created_at, u.role, u.status,
+                   (SELECT COUNT(*) FROM papers p WHERE p.user_id = u.id) AS paper_count,
+                   (SELECT COUNT(*) FROM attempts a WHERE a.user_id = u.id) AS attempt_count
+            FROM users u
+            WHERE u.username LIKE ?
+            ORDER BY u.created_at DESC
+            LIMIT ? OFFSET ?
+            """,
+            (like, limit, offset),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def count_users(q: str = "") -> int:
+    init_db()
+    with connect() as conn:
+        return conn.execute(
+            "SELECT COUNT(*) FROM users WHERE username LIKE ?", (f"%{q}%",)
+        ).fetchone()[0]
+
+
+def usernames_by_ids(user_ids: list[str]) -> dict[str, str]:
+    """user_id → username 批量映射；查不到的 id 不在返回里。"""
+    if not user_ids:
+        return {}
+    init_db()
+    placeholders = ",".join("?" for _ in user_ids)
+    with connect() as conn:
+        rows = conn.execute(
+            f"SELECT id, username FROM users WHERE id IN ({placeholders})",
+            list(user_ids),
+        ).fetchall()
+    return {r["id"]: r["username"] for r in rows}
+
+
+def get_user_counts(user_id: str) -> dict:
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT (SELECT COUNT(*) FROM papers p WHERE p.user_id = ?) AS paper_count,
+                   (SELECT COUNT(*) FROM attempts a WHERE a.user_id = ?) AS attempt_count
+            """,
+            (user_id, user_id),
+        ).fetchone()
+    return {"paper_count": row["paper_count"], "attempt_count": row["attempt_count"]}
+
+
+def admin_counts() -> dict:
+    init_db()
+    today = datetime.now(timezone.utc).date().isoformat()
+    with connect() as conn:
+        total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        new_today = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE substr(created_at, 1, 10) = ?", (today,)
+        ).fetchone()[0]
+        total_papers = conn.execute("SELECT COUNT(*) FROM papers").fetchone()[0]
+        total_attempts = conn.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]
+    return {
+        "total_users": total_users,
+        "new_users_today": new_today,
+        "total_papers": total_papers,
+        "total_attempts": total_attempts,
+    }
+
+
+def _by_day(conn: sqlite3.Connection, table: str, ts_col: str, days: int) -> list[dict]:
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    rows = conn.execute(
+        f"""
+        SELECT substr({ts_col}, 1, 10) AS day, COUNT(*) AS count
+        FROM {table}
+        WHERE {ts_col} >= ?
+        GROUP BY day
+        ORDER BY day
+        """,
+        (since,),
+    ).fetchall()
+    return [{"day": r["day"], "count": r["count"]} for r in rows]
+
+
+def users_created_by_day(days: int = 30) -> list[dict]:
+    init_db()
+    with connect() as conn:
+        return _by_day(conn, "users", "created_at", days)
+
+
+def papers_created_by_day(days: int = 30) -> list[dict]:
+    init_db()
+    with connect() as conn:
+        return _by_day(conn, "papers", "generated_at", days)
+
+
+def attempts_by_day(days: int = 30) -> list[dict]:
+    """Per-day answered-item volume and correct rate across ALL users.
+
+    "attempts" here counts graded attempt_items (not attempt rows), matching
+    the granularity of MasteryProfile.total_attempts_considered. correct_rate
+    is the daily mean of is_correct (None only when a day has no items, which
+    cannot occur in a GROUP BY result)."""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT substr(a.answered_at, 1, 10) AS day,
+                   COUNT(*) AS attempts,
+                   ROUND(AVG(ai.is_correct), 4) AS correct_rate
+            FROM attempts a
+            JOIN attempt_items ai ON ai.attempt_id = a.id
+            WHERE a.answered_at >= ?
+            GROUP BY day
+            ORDER BY day
+            """,
+            (since,),
+        ).fetchall()
+    return [
+        {"day": r["day"], "attempts": r["attempts"], "correct_rate": r["correct_rate"]}
+        for r in rows
+    ]
+
+
+def question_type_accuracy(window_days: int | None = None) -> list[dict]:
+    """Wilson-lower-bound accuracy per question_type across ALL users.
+
+    Uses the same _wilson_lower_bound scoring as mastery so low-sample types
+    aren't over-credited. window_days None = all history."""
+    init_db()
+    params: list[object] = []
+    where = ""
+    if window_days is not None:
+        since = datetime.now(timezone.utc) - timedelta(days=window_days)
+        where = "WHERE a.answered_at >= ?"
+        params.append(since.isoformat())
+    with connect() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT ai.question_type AS question_type,
+                   COUNT(*) AS total,
+                   SUM(ai.is_correct) AS correct
+            FROM attempts a
+            JOIN attempt_items ai ON ai.attempt_id = a.id
+            {where}
+            GROUP BY ai.question_type
+            ORDER BY ai.question_type
+            """,
+            params,
+        ).fetchall()
+    return [
+        {
+            "question_type": r["question_type"],
+            "total": r["total"],
+            "accuracy": _wilson_lower_bound(r["correct"] or 0, r["total"]),
+        }
+        for r in rows
+    ]
+
+
+def update_password_hash(user_id: str, password_hash: str) -> None:
+    init_db()
+    with connect() as conn:
+        conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user_id))
+
+
+def delete_sessions_by_user(user_id: str) -> None:
+    init_db()
+    with connect() as conn:
+        conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+
+
+def user_correct_rate(user_id: str) -> float | None:
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n, SUM(ai.is_correct) AS c
+            FROM attempts a JOIN attempt_items ai ON ai.attempt_id = a.id
+            WHERE a.user_id = ?
+            """,
+            (user_id,),
+        ).fetchone()
+    if not row or not row["n"]:
+        return None
+    return round((row["c"] or 0) / row["n"], 4)
 
 
 def create_session(user_id: str, ttl_days: int = 30) -> str:
@@ -264,11 +473,8 @@ def list_papers(user_id: str, limit: int = 100, offset: int = 0) -> list[PaperLi
         rows = conn.execute(
             """
             SELECT paper_id, title, generated_at, payload_json, submitted
-            FROM (
-                SELECT paper_id, title, generated_at, payload_json, submitted
-                FROM papers
-                WHERE user_id = ?
-            )
+            FROM papers
+            WHERE user_id = ?
             ORDER BY generated_at DESC
             LIMIT ? OFFSET ?
             """,
@@ -546,9 +752,6 @@ def _write_attempt(conn: sqlite3.Connection, attempt: StoredAttempt, attempt_id:
     attempt_item_columns = _table_columns(conn, "attempt_items")
     if "item_index" not in attempt_item_columns:
         raise RuntimeError("attempt_items schema is missing item_index")
-    # incremental migration: store the user's submitted answer for review replay
-    if "user_answer_json" not in attempt_item_columns:
-        conn.execute("ALTER TABLE attempt_items ADD COLUMN user_answer_json TEXT")
     for item in attempt.items:
         conn.execute(
             """
@@ -573,6 +776,22 @@ def _mark_paper_submitted(conn: sqlite3.Connection, paper_id: str) -> None:
         "UPDATE papers SET submitted = 1, submitted_at = ? WHERE paper_id = ?",
         (datetime.now(timezone.utc).isoformat(), paper_id),
     )
+
+
+def _migrate_users_role(conn: sqlite3.Connection) -> None:
+    if not _table_exists(conn, "users"):
+        return
+    if "role" in _table_columns(conn, "users"):
+        return
+    conn.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'")
+
+
+def _migrate_users_status(conn: sqlite3.Connection) -> None:
+    if not _table_exists(conn, "users"):
+        return
+    if "status" in _table_columns(conn, "users"):
+        return
+    conn.execute("ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'active'")
 
 
 def _migrate_attempt_items_item_index(conn: sqlite3.Connection) -> None:
@@ -624,6 +843,16 @@ def _migrate_attempt_items_item_index(conn: sqlite3.Connection) -> None:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_att_it_source ON attempt_items(source_question_id)")
 
 
+def _migrate_attempt_items_user_answer(conn: sqlite3.Connection) -> None:
+    if not _table_exists(conn, "attempt_items"):
+        return
+    if "user_answer_json" in _table_columns(conn, "attempt_items"):
+        return
+    # Stores the user's submitted answer for review replay (nullable — legacy
+    # rows predate this column and keep NULL).
+    conn.execute("ALTER TABLE attempt_items ADD COLUMN user_answer_json TEXT")
+
+
 def _ensure_schema_migrations(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -638,6 +867,9 @@ def _ensure_schema_migrations(conn: sqlite3.Connection) -> None:
 def _apply_migrations(conn: sqlite3.Connection) -> None:
     migrations = [
         (MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX, _migrate_attempt_items_item_index),
+        (MIGRATION_USERS_ROLE, _migrate_users_role),
+        (MIGRATION_USERS_STATUS, _migrate_users_status),
+        (MIGRATION_ATTEMPT_ITEMS_USER_ANSWER, _migrate_attempt_items_user_answer),
     ]
     for migration_id, migration in migrations:
         if _migration_applied(conn, migration_id):

@@ -1,7 +1,6 @@
 # Spec B：AI Engine 详细设计
 
 **创建日期**：2026-07-07
-**项目根目录**：`C:\Users\I779318\Desktop\CSS\English_Test_Paper_AI_Generator`
 **范围**：AI Engine 子系统（`ai_engine/`）的模块设计、Pipeline 编排、LLM 稳定输出栈、Prompt 组织、观测、测试与未来 FastAPI 接入契约
 **依赖**：本 spec 引用 [`./2026-07-07-question-bank-ingestion-design.md`](./2026-07-07-question-bank-ingestion-design.md)（下称 Spec A），共享数据契约、目录结构、存储、LLM 客户端、配置、测试基础设施均在 Spec A 中定义，本 spec 不复制
 

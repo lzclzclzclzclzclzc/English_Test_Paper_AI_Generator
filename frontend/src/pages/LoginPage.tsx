@@ -41,7 +41,9 @@ export function LoginPage() {
       // register 与 login 的响应都是 User 且都会 Set-Cookie（注册自动登录）
       const user = mode === 'login' ? await login(values) : await register(values)
       queryClient.setQueryData(['auth', 'me'], user)
-      navigate(from, { replace: true })
+      // 管理员未指定返回路径时直达管理后台；否则沿用 from（普通页会被 RedirectIfAdmin 兜回）
+      const dest = from === '/' && user.role === 'admin' ? '/admin' : from
+      navigate(dest, { replace: true })
     } catch (err) {
       if (
         err instanceof ApiError &&

@@ -74,9 +74,26 @@ def _stem_hash(q: dict) -> str:
     content across reruns produces identical hashes."""
     payload: dict[str, Any] = {"qt": q["question_type"], "answer": q["answer"]}
     qt = q["question_type"]
-    if qt == "single_choice":
+    if qt == "single_choice" or qt == "listening_single_choice":
         payload["stem"]    = q.get("stem")
         payload["options"] = q.get("options")
+    elif qt == "listening_true_false":
+        payload["stem"]       = q.get("stem")
+        payload["passage_id"] = q.get("passage_id")
+        payload["options"]    = q.get("options")
+    elif qt == "listening_fill_blank":
+        payload["stem"]       = q.get("stem")
+        payload["passage_id"] = q.get("passage_id")
+    elif qt == "reading_longtext_single_choice":
+        payload["stem"]       = q.get("stem")
+        payload["passage_id"] = q.get("passage_id")
+        payload["options"]    = q.get("options")
+    elif qt == "cloze_single_choice":
+        payload["stem"]       = q.get("stem")
+        payload["passage_id"] = q.get("passage_id")
+        payload["options"]    = q.get("options")
+    elif qt == "reading_first_blank":
+        payload["passage_id"] = q.get("passage_id")
     elif qt == "word_form":
         payload["stem"] = q.get("stem")
         payload["hint"] = q.get("hint")
@@ -94,8 +111,30 @@ def _open_and_init(db_path: Path) -> sqlite3.Connection:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
+    # Migrate BEFORE executescript: schema.sql's CREATE INDEX references
+    # passage_id, which must exist on a pre-existing questions table before
+    # the index DDL can run.
+    _migrate(conn)
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add passage_id / passage_json columns to a pre-existing questions table.
+
+    CREATE TABLE IF NOT EXISTS won't add columns to an existing table, so we
+    ALTER explicitly when the columns are missing. Runs before executescript
+    so that schema.sql's CREATE INDEX idx_q_passage can find the column."""
+    table_exists = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='questions'"
+    ).fetchone() is not None
+    if not table_exists:
+        return  # Fresh DB — schema.sql creates the table with all columns
+    cols = {row["name"] for row in conn.execute("PRAGMA table_info(questions)")}
+    if "passage_id" not in cols:
+        conn.execute("ALTER TABLE questions ADD COLUMN passage_id TEXT")
+    if "passage_json" not in cols:
+        conn.execute("ALTER TABLE questions ADD COLUMN passage_json TEXT")
 
 
 def _load_kps(
@@ -134,6 +173,10 @@ def _load_questions(
             json.dumps(q["options"], ensure_ascii=False)
             if q.get("options") is not None else None
         )
+        passage_json = (
+            json.dumps(q["passage_json"], ensure_ascii=False)
+            if q.get("passage_json") is not None else None
+        )
 
         cur = conn.execute(
             """
@@ -142,6 +185,7 @@ def _load_questions(
                 stem, options_json,
                 hint,
                 original_sentence, instruction, template,
+                passage_id, passage_json,
                 answer_json, solution,
                 source_md, source_line, stem_hash,
                 created_at, version
@@ -150,17 +194,19 @@ def _load_questions(
                       ?,
                       ?, ?, ?,
                       ?, ?,
+                      ?, ?,
                       ?, ?, ?,
                       ?, ?)
             """,
             (
                 q["id"], q["book"], q["question_type"],
-                q["chapter_l1"], q["chapter_l2"], q["number"],
+                q["chapter_l1"], q["chapter_l2"] or "", q["number"],
                 q.get("stem"), options_json,
                 q.get("hint"),
                 q.get("original_sentence"), q.get("instruction"), q.get("template"),
+                q.get("passage_id"), passage_json,
                 answer_json, None,             # solution is None on ingestion (§1.5)
-                q["source_md"], q["source_line"], _stem_hash(q),
+                q["source_md"] or "", q["source_line"], _stem_hash(q),
                 now, 1,
             ),
         )

@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     mock_pay: bool = True
     payment_dev_fake_user: str = ""
+    payment_dev_fake_role: str = "user"
     main_backend_url: str = "http://localhost:8000"
 
     db_path: str = "data/payment.db"

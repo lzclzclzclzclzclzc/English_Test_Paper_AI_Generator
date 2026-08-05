@@ -54,6 +54,9 @@ def main(argv: list[str] | None = None) -> int:
     create_user.add_argument("--username", required=True)
     create_user.add_argument("--password", required=True)
 
+    promote = sub.add_parser("promote-admin")
+    promote.add_argument("--username", required=True)
+
     sub.add_parser("cleanup-sessions")
     sub.add_parser("smoke")
     sub.add_parser("deploy-check")
@@ -72,6 +75,15 @@ def main(argv: list[str] | None = None) -> int:
         storage.init_db()
         user = storage.create_user(args.username, hash_password(args.password))
         print(user.model_dump_json())
+        return 0
+    if args.command == "promote-admin":
+        storage.init_db()
+        record = storage.get_user_by_username(args.username)
+        if record is None:
+            print(json.dumps({"error": "user_not_found", "username": args.username}, ensure_ascii=False))
+            return 2
+        storage.set_user_role(record.id, "admin")
+        print(json.dumps({"promoted": args.username}, ensure_ascii=False))
         return 0
     if args.command == "cleanup-sessions":
         print(json.dumps({"deleted": storage.cleanup_sessions()}))
