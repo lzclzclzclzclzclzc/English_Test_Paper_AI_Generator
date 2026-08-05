@@ -16,7 +16,7 @@ export const judgeVocabulary = (body: { word_id: string; rating: VocabularyRatin
   })
 
 export const updateVocabularySettings = (daily_new_limit: number) =>
-  apiFetch<{ daily_new_limit: number }>('/vocabulary/settings', {
+  apiFetch<{ daily_new_limit: number; today_new_cards_added: number }>('/vocabulary/settings', {
     method: 'PATCH',
     body: JSON.stringify({ daily_new_limit }),
   })

@@ -13,8 +13,10 @@ export function VocabularyProgressPage() {
   useEffect(() => { if (progress.data) setLimit(progress.data.daily_new_limit) }, [progress.data])
   const update = useMutation({
     mutationFn: () => updateVocabularySettings(limit),
-    onSuccess: () => {
-      setSaveMessage('已保存。已生成的今日任务不会改变，新的数量会用于下一次生成任务。')
+    onSuccess: (result) => {
+      setSaveMessage(result.today_new_cards_added > 0
+        ? `已保存，今日已追加 ${result.today_new_cards_added} 个新词。`
+        : '已保存。当前已发放的新词数量无需追加。')
       queryClient.invalidateQueries({ queryKey: ['vocabulary'] })
     },
     onError: () => setSaveMessage('保存失败，请检查网络后重试。'),

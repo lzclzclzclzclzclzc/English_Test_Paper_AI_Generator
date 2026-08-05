@@ -140,8 +140,37 @@ def test_due_reviews_take_priority_before_new_words(logged_in_client, tmp_path):
 
 def test_vocabulary_settings_validate(logged_in_client, tmp_path):
     _seed_three_words(tmp_path)
-    assert logged_in_client.patch("/api/vocabulary/settings", json={"daily_new_limit": 10}).json() == {"daily_new_limit": 10}
+    assert logged_in_client.patch("/api/vocabulary/settings", json={"daily_new_limit": 10}).json() == {
+        "daily_new_limit": 10,
+        "today_new_cards_added": 3,
+    }
     assert logged_in_client.patch("/api/vocabulary/settings", json={"daily_new_limit": 9}).status_code == 422
+
+
+def test_increasing_daily_goal_appends_new_cards_today(logged_in_client, tmp_path):
+    words = [
+        {
+            "id": f"v_{index:04d}", "term": f"term{index}", "part_of_speech": "n.",
+            "meanings": [f"释义{index}"], "example_en": f"Term {index} is here.", "example_zh": f"词{index}在这里。",
+        }
+        for index in range(1, 13)
+    ]
+    payload = {
+        "metadata": {
+            "id": "test-twelve", "label": "测试词表", "source_url": "https://example.test/list",
+            "source_accessed_at": "2026-08-05", "source_sha256": hashlib.sha256(b"test-twelve").hexdigest(),
+        },
+        "words": words,
+    }
+    path = tmp_path / "twelve.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    storage.seed_vocabulary_from_json(path, expected_count=12)
+
+    first = logged_in_client.patch("/api/vocabulary/settings", json={"daily_new_limit": 10})
+    assert first.json()["today_new_cards_added"] == 10
+    expanded = logged_in_client.patch("/api/vocabulary/settings", json={"daily_new_limit": 12})
+    assert expanded.json() == {"daily_new_limit": 12, "today_new_cards_added": 2}
+    assert logged_in_client.get("/api/vocabulary/today").json()["counts"]["new_total"] == 12
 
 
 def test_vocabulary_meaning_normalization_removes_source_trailing_punctuation():

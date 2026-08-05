@@ -206,6 +206,7 @@ class VocabularySettingsRequest(BaseModel):
 
 class VocabularySettingsResponse(BaseModel):
     daily_new_limit: int
+    today_new_cards_added: int
 
 
 class ErrorResponse(BaseModel):

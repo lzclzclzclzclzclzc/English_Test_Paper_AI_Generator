@@ -1271,43 +1271,63 @@ def _mask_vocabulary_example(example: str, term: str) -> str:
     return re.sub(re.escape(term), "_____", example, flags=re.IGNORECASE)
 
 
-def _ensure_vocabulary_daily_cards(conn: sqlite3.Connection, user_id: str, now: datetime) -> None:
+def _ensure_vocabulary_daily_cards(conn: sqlite3.Connection, user_id: str, now: datetime) -> int:
     study_date = _vocabulary_date(now)
     existing = conn.execute(
         "SELECT COUNT(*) FROM vocabulary_daily_cards WHERE user_id = ? AND study_date = ?",
         (user_id, study_date),
     ).fetchone()[0]
-    if existing:
-        return
-    limit = _vocabulary_settings(conn, user_id)
-    due_rows = conn.execute(
+    if not existing:
+        due_rows = conn.execute(
+            """
+            SELECT word_id FROM vocabulary_progress
+            WHERE user_id = ? AND due_at <= ?
+            ORDER BY due_at, word_id
+            """,
+            (user_id, now.isoformat()),
+        ).fetchall()
+        for row in due_rows:
+            conn.execute(
+                "INSERT INTO vocabulary_daily_cards (user_id, study_date, word_id, card_type) VALUES (?, ?, ?, 'review')",
+                (user_id, study_date, row["word_id"]),
+            )
+    return _append_vocabulary_daily_new_cards(conn, user_id, study_date, _vocabulary_settings(conn, user_id))
+
+
+def _append_vocabulary_daily_new_cards(
+    conn: sqlite3.Connection, user_id: str, study_date: str, daily_new_limit: int
+) -> int:
+    """Fill today's new-word allocation without changing cards already issued."""
+    issued_count = int(conn.execute(
         """
-        SELECT word_id FROM vocabulary_progress
-        WHERE user_id = ? AND due_at <= ?
-        ORDER BY due_at, word_id
+        SELECT COUNT(*) FROM vocabulary_daily_cards
+        WHERE user_id = ? AND study_date = ? AND card_type = 'new'
         """,
-        (user_id, now.isoformat()),
-    ).fetchall()
-    for row in due_rows:
-        conn.execute(
-            "INSERT INTO vocabulary_daily_cards (user_id, study_date, word_id, card_type) VALUES (?, ?, ?, 'review')",
-            (user_id, study_date, row["word_id"]),
-        )
+        (user_id, study_date),
+    ).fetchone()[0])
+    additional = max(daily_new_limit - issued_count, 0)
+    if additional == 0:
+        return 0
     new_rows = conn.execute(
         """
         SELECT w.id FROM vocabulary_words w
         LEFT JOIN vocabulary_progress p ON p.word_id = w.id AND p.user_id = ?
         WHERE w.is_active = 1 AND p.word_id IS NULL
+          AND NOT EXISTS (
+              SELECT 1 FROM vocabulary_daily_cards c
+              WHERE c.user_id = ? AND c.study_date = ? AND c.word_id = w.id
+          )
         ORDER BY CASE w.source_category WHEN 'national_core' THEN 0 ELSE 1 END, w.id
         LIMIT ?
         """,
-        (user_id, limit),
+        (user_id, user_id, study_date, additional),
     ).fetchall()
     for row in new_rows:
         conn.execute(
             "INSERT INTO vocabulary_daily_cards (user_id, study_date, word_id, card_type) VALUES (?, ?, ?, 'new')",
             (user_id, study_date, row["id"]),
         )
+    return len(new_rows)
 
 
 def _vocabulary_counts(conn: sqlite3.Connection, user_id: str, study_date: str) -> dict:
@@ -1597,10 +1617,11 @@ def get_vocabulary_progress(user_id: str, now: datetime | None = None) -> dict:
     }
 
 
-def set_vocabulary_daily_new_limit(user_id: str, daily_new_limit: int) -> int:
+def set_vocabulary_daily_new_limit(user_id: str, daily_new_limit: int) -> dict[str, int]:
     if not 10 <= daily_new_limit <= 50:
         raise ValueError("daily_new_limit must be between 10 and 50")
     init_db()
+    now = _vocabulary_now()
     with connect() as conn:
         conn.execute(
             """
@@ -1609,4 +1630,5 @@ def set_vocabulary_daily_new_limit(user_id: str, daily_new_limit: int) -> int:
             """,
             (user_id, daily_new_limit),
         )
-    return daily_new_limit
+        added_today = _ensure_vocabulary_daily_cards(conn, user_id, now)
+    return {"daily_new_limit": daily_new_limit, "today_new_cards_added": added_today}

@@ -38,4 +38,4 @@ async def progress(user: User = Depends(current_user)) -> VocabularyProgressResp
 
 @router.patch("/settings", response_model=VocabularySettingsResponse)
 async def settings(body: VocabularySettingsRequest, user: User = Depends(current_user)) -> VocabularySettingsResponse:
-    return VocabularySettingsResponse(daily_new_limit=storage.set_vocabulary_daily_new_limit(user.id, body.daily_new_limit))
+    return VocabularySettingsResponse(**storage.set_vocabulary_daily_new_limit(user.id, body.daily_new_limit))
