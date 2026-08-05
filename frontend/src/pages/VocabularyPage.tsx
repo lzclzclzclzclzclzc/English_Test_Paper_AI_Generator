@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { getVocabularyToday, judgeVocabulary } from '@/api/vocabulary'
+import { getVocabularyToday, judgeVocabulary, updateVocabularySettings } from '@/api/vocabulary'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { queryClient } from '@/lib/queryClient'
 import type { VocabularyJudgmentResponse, VocabularyRating } from '@/types/api'
 import {
   formatVocabularyMeanings,
@@ -27,11 +28,23 @@ export function VocabularyPage() {
   const navigate = useNavigate()
   const [judgment, setJudgment] = useState<VocabularyJudgmentResponse | null>(null)
   const [loadingNext, setLoadingNext] = useState(false)
+  const [moreTarget, setMoreTarget] = useState(30)
   const today = useQuery({ queryKey: ['vocabulary', 'today'], queryFn: getVocabularyToday })
   const card = today.data?.current_card
   const judge = useMutation({
     mutationFn: (rating: VocabularyRating) => judgeVocabulary({ word_id: card!.word_id, rating }),
-    onSuccess: setJudgment,
+    onSuccess: (result) => {
+      setJudgment(result)
+      void queryClient.invalidateQueries({ queryKey: ['vocabulary', 'today'] })
+    },
+  })
+  const addMore = useMutation({
+    mutationFn: () => updateVocabularySettings(moreTarget),
+    onSuccess: async () => {
+      setJudgment(null)
+      await queryClient.invalidateQueries({ queryKey: ['vocabulary'] })
+      await today.refetch()
+    },
   })
 
   const next = async () => {
@@ -63,6 +76,10 @@ export function VocabularyPage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [card, judge, judgment])
 
+  useEffect(() => {
+    if (today.data) setMoreTarget(Math.min(50, today.data.daily_new_limit + 10))
+  }, [today.data?.daily_new_limit])
+
   if (today.isLoading || loadingNext) return <Skeleton className="h-80 w-full" />
   if (today.isError || !today.data) {
     return <div className="border-t border-hairline pt-8 text-sm text-muted-ink">今日单词任务加载失败，请稍后重试。</div>
@@ -82,6 +99,19 @@ export function VocabularyPage() {
             <div className="bg-canvas px-4 py-5"><p className="text-xs text-quiet">今日新词</p><p className="mt-2 text-xl text-ink">{counts.new_completed}</p></div>
             <div className="bg-canvas px-4 py-5"><p className="text-xs text-quiet">到期复习</p><p className="mt-2 text-xl text-ink">{counts.scheduled_review_completed}</p></div>
             <div className="bg-canvas px-4 py-5"><p className="text-xs text-quiet">再复习通过</p><p className="mt-2 text-xl text-ink">{counts.retry_completed}</p></div>
+          </div>
+          <div className="mt-8 border-t border-hairline pt-6">
+            <h2 className="text-lg text-ink [font-family:var(--font-display)]">继续背新词</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-ink">提高今日目标后，系统会立刻按国家核心词优先的顺序补发新词。</p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <input className="h-9 w-24 rounded-sm border border-hairline bg-transparent px-2 text-ink" type="number" min="10" max="50" value={moreTarget} onChange={(event) => setMoreTarget(Number(event.target.value))} />
+              <span className="text-sm text-muted-ink">词 / 天</span>
+              <Button disabled={addMore.isPending || moreTarget <= today.data.daily_new_limit || moreTarget > 50} onClick={() => addMore.mutate()}>
+                {addMore.isPending ? '正在追加…' : '开始背更多'}
+              </Button>
+            </div>
+            {addMore.isError && <p className="mt-3 text-sm text-accent">追加失败，请稍后重试。</p>}
+            {moreTarget >= 50 && <p className="mt-3 text-xs text-quiet">今日目标上限为 50 词。</p>}
           </div>
           <div className="mt-7 flex gap-3"><Button onClick={() => navigate('/vocabulary/progress')}>查看进度</Button><Button variant="outline" onClick={() => navigate('/')}>返回首页</Button></div>
         </section>
