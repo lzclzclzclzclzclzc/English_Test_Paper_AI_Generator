@@ -36,7 +36,14 @@ from pydantic import BaseModel, Field
 # ─────────────────────────────────────────────────────────────────────────────
 # Shared enums / aliases
 # ─────────────────────────────────────────────────────────────────────────────
-QuestionType = Literal["single_choice", "word_form", "sentence_rewriting", "listening_single_choice"]
+QuestionType = Literal[
+    "single_choice", "word_form", "sentence_rewriting", "listening_single_choice",
+    "listening_true_false",
+    "listening_fill_blank",
+    "reading_longtext_single_choice",
+    "cloze_single_choice",
+    "reading_first_blank",
+]
 RevisionMode = Literal["fresh", "light", "original"]
 GenerateMode = Literal["fresh", "remediation", "review"]
 
@@ -65,8 +72,10 @@ Answer = str | list[BlankGroup]
 # Question bank (Spec A §2.1 / §2.2) — produced by ingestion, read by ai_engine
 # ─────────────────────────────────────────────────────────────────────────────
 class Option(BaseModel):
-    """One choice in a single_choice question."""
-    label: Literal["A", "B", "C", "D"]
+    """One choice in a single_choice / listening_true_false question.
+
+    `label` is A-D for single_choice, or T/F for listening_true_false."""
+    label: Literal["A", "B", "C", "D", "T", "F"]
     text: str
 
 
@@ -78,6 +87,18 @@ class KnowledgePoint(BaseModel):
     level1: QuestionType
     level2: str                          # "动词时态与语态"
     aliases: list[str] = Field(default_factory=list)
+
+
+class Passage(BaseModel):
+    """Shared material for long-text questions (listening_true_false /
+    reading_longtext_single_choice).
+
+    `content` for listening uses `M:`/`W:` prefixes per line (reuses TTS);
+    for reading it is plain prose with `\\n`-separated paragraphs."""
+    kind: Literal["listening", "reading"]
+    title: str | None = None
+    content: str
+    audio_url: str | None = None      # reserved: future real audio file path
 
 
 class Question(BaseModel):
@@ -107,6 +128,10 @@ class Question(BaseModel):
     original_sentence: str | None = None  # may embed <u>...</u> for 对划线部分提问
     instruction: str | None = None
     template: str | None = None
+
+    # Shared material for listening_true_false (null for non-passage types)
+    passage_id: str | None = None
+    passage_json: Passage | None = None
 
     answer: Answer
     solution: str | None = None          # None until Solutioner fills it on demand
@@ -202,6 +227,8 @@ class RevisedQuestion(BaseModel):
     original_sentence: str | None = None
     instruction: str | None = None
     template: str | None = None
+    passage_id: str | None = None
+    passage_json: Passage | None = None
     answer: Answer
     solution: str | None = None
     knowledge_point_ids: list[str] = Field(default_factory=list)

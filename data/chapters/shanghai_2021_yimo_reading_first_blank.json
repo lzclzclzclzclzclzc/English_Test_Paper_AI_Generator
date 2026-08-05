@@ -1,0 +1,947 @@
+[
+  {
+    "id": "q_22001",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "1",
+    "passage_id": "psg_2021_r_001",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 宝山 2021 一模",
+      "content": "Should we use tablet computers in the classroom?\nThe use of tablet computers(or simply“tablets”)in the classroom has become an increasingly popular choice in many primary schools across the country，including many in our local area.It is important that we consider this an opportunity，but we must also be a______(1)____of the problems.\nOn one hand，there are many a______(2)____to use tablets in the classroom.\nFirstly，tablets could improve productivity(效率)during the school day.Because of their familiarity with computers and mobile phones，many of our students can type faster than they can write by hand.T______(3)____，using tablets in the classroom could reduce the time it takes for them to complete tasks.Additionally，there are endless tablet functions(功能)which could provide interesting teaching a______(4)____.For example，we could play computer games to teach Maths，or make simple flashes to show how magnets behave.Also，students could take photos outdoors and then use them for writing tasks.\nHowever，we must also consider the possible problems with introducing tablets to our classrooms.Some students may play with the tablets instead of f______(5)____on their work.Another problem is that，while many students can use tablets already，many of our teachers are not good at it and would need to be trained.We may also have problems with the tablets breaking，which would be very expensive to r______(6)____.This is in addition to the cost of buying the tablets in the first place.\nAll in all，even though using tablets in the classroom may have many problems，it seems that it would be a wonderful opportunity for students and teachers at our school.There are a lot of costs indeed，but it would c______(7)____prove to be a worthwhile investment(物有所值的投资).",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "aware"
+        ]
+      },
+      {
+        "blank2": [
+          "advantages"
+        ]
+      },
+      {
+        "blank3": [
+          "Therefore"
+        ]
+      },
+      {
+        "blank4": [
+          "activities"
+        ]
+      },
+      {
+        "blank5": [
+          "focusing"
+        ]
+      },
+      {
+        "blank6": [
+          "repair"
+        ]
+      },
+      {
+        "blank7": [
+          "certainly"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22002",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "2",
+    "passage_id": "psg_2021_r_002",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 崇明 2021 一模",
+      "content": "Would you like to travel into space?\nIt is 2050.Space tourism has become a reality.So would you want to be a space tourist?Here，some middle school students share their opinions.\n❖Jeea，U.K.\nI love space very much and would like to be the first teenager to d_____(1)____a new planet.Then perhaps it would be named after me.I would become famous around the world!\n❖Emily，U.S.\nSpace exploration can be dangerous.What should I do if I get l_____(2)____?I can't come back to the earth.I am also afraid of heights.It would be very frightening when you look down from a spaceship!\n❖Klaudia，Spain\nI would love to go to space because from there I could enjoy a nice v_____(3)____of the earth.The blue oceans and green forests on the earth must be magnificent.What's more，I am curious about what life is like without gravity(重力).Perhaps it would be fun to play golf in space!\n❖Edward，U.K.\nIt would be cool.But how lonely and depressed I would be without a_____(4)____around me!I would miss my family.It also requires a large amount of training to become a space tourist，and I don't think I have time for that.Moreover，I don't think I can a______(5)____a trip to space.That would definitely cost a lot!\n❖Zainab，South Africa\nI'd love to.We studied the solar system in Science classes this semester.I think space is amazing and I desire to know more about it.Unluckily，I have no other way but to search for information about it o_____(6)____.If I can have the chance to travel to space，I would directly see the things I never see on the earth.\n❖Ana，U.S.\nI would not like to be a space tourist.I respect those who love space tourism.For me，I only want to f______(7)____on what I have on this planet—my family，my school and my pets.I would like to work hard to make progress in what I am doing.",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "discover"
+        ]
+      },
+      {
+        "blank2": [
+          "lost"
+        ]
+      },
+      {
+        "blank3": [
+          "view"
+        ]
+      },
+      {
+        "blank4": [
+          "anyone",
+          "anybody"
+        ]
+      },
+      {
+        "blank5": [
+          "afford"
+        ]
+      },
+      {
+        "blank6": [
+          "online"
+        ]
+      },
+      {
+        "blank7": [
+          "focus"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22003",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "3",
+    "passage_id": "psg_2021_r_003",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 奉贤 2021 一模",
+      "content": "Once upon a time，there was a family with 8 children living in a village.Two of the children，both boys，loved painting very much，but the family was so p______(1)____that it was impossible to send both of them to study at art school at the same time.\nAfter many discussions，the two boys finally worked out a plan.They would toss(抛)a coin.The loser would go down into the mines(煤矿)and，with his money，pay for his brother's college tuition(学费).Then，when the brother who won the toss f______(2)____his studies，he would pay for the other brother to study at the college.\nOne of the brothers，Albrecht Durer，won the toss and his brother Jack went down into the mines.Durer worked with all his h______(3)____and his paintings were much better than those of most of his teachers'.He was beginning to make a lot of money for his paintings.\nDurer returned.When he told Jack he could go to art college，Jack said softly，“The four years in the mines has done too much to my hands.It is too late.Now I can't even h______(4)____a glass.”\nTo show his great love and respect to his brother，Durer drew his brother's hands with palms(手掌)together and thin fingers t_____(5)____the sky.He called his drawing The Praying Hands，which became very famous years later.\nThe next time you see a copy of that touching works，take a s_____(6)____look.Let it be your reminder:No one can ever succeed a_____(7)____!",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "poor"
+        ]
+      },
+      {
+        "blank2": [
+          "finished"
+        ]
+      },
+      {
+        "blank3": [
+          "heart"
+        ]
+      },
+      {
+        "blank4": [
+          "hold"
+        ]
+      },
+      {
+        "blank5": [
+          "to",
+          "towards"
+        ]
+      },
+      {
+        "blank6": [
+          "second",
+          "serious"
+        ]
+      },
+      {
+        "blank7": [
+          "alone"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22004",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "4",
+    "passage_id": "psg_2021_r_004",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 虹口 2021 一模",
+      "content": "Hello，everyone.I arrived in China a few months ago.Like every other foreigner，I had to f______(1)____a few“culture shocks”.Here I would like to share a few of such culture shocks.\nIt is known to all that China holds 20% of world's total population but even then it comes as a s______(2)____when one steps outside into public areas and sees a flood of people who at first look almost the same，all dark haired with dark eyes.\nThe next on my list is the language problem.When one first decides to go to China the first thought that crosses a______(3)____mind is“how am I going to communicate?!!?”Although most Chinese are very interested in the English language，the fact remains that except the major cities like Beijing and Shanghai，the English language knowledge of most Chinese is very poor if not zero.L______(4)____，you would always be able to find help.\nThe third is the silent but keen interest of Chinese towards the foreigners.There are times when you would be sitting in a bus or just passing by and you would n_____(5)____someone trying to take your picture.\nNow the next one is my f______(6)____one.Chinese have the same love...FOOD.You start walking anywhere in China and after every 5 steps you will come across a food stall.Honestly，I have never seen a food place empty in China no matter what is being sold there.\nBut frankly speaking，no matter what a foreigner goes through，life in China can be a total adventure and one thing is certain that the Chinese are the most h______(7)____and the most sweet natured people one could ever come across anywhere in the world.Whenever I meet with difficulty，I am sure to get a hand from the strangers to solve my problem.",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "face"
+        ]
+      },
+      {
+        "blank2": [
+          "surprise"
+        ]
+      },
+      {
+        "blank3": [
+          "anyone's",
+          "anybody's"
+        ]
+      },
+      {
+        "blank4": [
+          "Luckily"
+        ]
+      },
+      {
+        "blank5": [
+          "notice"
+        ]
+      },
+      {
+        "blank6": [
+          "favourite"
+        ]
+      },
+      {
+        "blank7": [
+          "helpful"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22005",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "5",
+    "passage_id": "psg_2021_r_005",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 黄浦 2021 一模",
+      "content": "Run for class president\nTwo months ago，when our class election(选举)started，I decided to run for class president.I enjoyed speaking in pubic and got along well with people，so I felt it easy to win.But I was a_____(1)____that people would feel bad for me if I lost.\nI was busy preparing in the following week.My plan wasn't to make promise to do things I couldn't m______(2)____but to show my class why I wanted to be president.I put up my posters in hallways and in the classroom.I also spent three hours writing my speech，saying that I was the one they could turn to whenever they had a problem.Since I was c_____(3)____prepared，I felt that my chances of winning were strong.\nHowever，when I gave my speech on Election Day，the response wasn't what I had e_____(4)____.Few people actually listened.When it was my opponent's(对手的)turn，everyone was screaming his name.His speech was short，but all to the point.By then，I realized I should have made mine shorter and c______(5)____.\nIt was obvious who would win.For the rest of the day，I felt like it was over.I wanted to just go home and cry，but I made it through.\nMy prediction was right:I didn't win.\nThe next day，people were still talking about the election.I just pretended not to hear.But later，things got better.People f______(6)____about the election and talked to me just as they did before.\nI don't regret putting time and energy into the election because I've learned that things aren't always going the way I look forward to.And moments of failure like this build c_____(7)____—since then I've learned to face disappointment and grown stronger.",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "afraid"
+        ]
+      },
+      {
+        "blank2": [
+          "manage"
+        ]
+      },
+      {
+        "blank3": [
+          "completely"
+        ]
+      },
+      {
+        "blank4": [
+          "expected"
+        ]
+      },
+      {
+        "blank5": [
+          "clearer"
+        ]
+      },
+      {
+        "blank6": [
+          "forgot"
+        ]
+      },
+      {
+        "blank7": [
+          "character"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22006",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "6",
+    "passage_id": "psg_2021_r_006",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 嘉定 2021 一模",
+      "content": "Do you remember when you wrote a letter last time?If the answer is“not recently”，don't worry.You are not a_____(1)____.\nA survey of 1，000 teenagers around the world done by a French company BIC found that a third of today's teenagers had never written a letter，half had not written a thank-you letter，and a quarter had not even written a birthday or Christmas card.In fact，58 percent of teenagers c______(2)____that handwriting was“too slow”and 17 percent believed it was“outdated”.\nThese results have caused w______(3)____that the art of handwriting may one day die out.\n“Handwriting is one of the most c_____(4)____art forms we have and should be given the same importance as other art forms such as painting，or photography，”Jonathan Skyrme，general manager at BIC UK＆Ireland，told the Daily Mail.\nThe New York Times once explained that a handwritten letter sends a message in a way that o_____(5)____messages can never do.“When you get an email，you can never be sure that you are the o______(6)____person to have received it—or even that it was written by the person who sent it，”said the newspaper.\nAs US author Simon Garfield once wrote，“Emails are a poke(蜻艇点水)，but letters are a loving touch.”\nSo imagine the powerful message you send when you actually write out your thoughts by hand，buy a stamp，take it to a mailbox，and wait days for your special s_____(7)____to receive it.",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "alone"
+        ]
+      },
+      {
+        "blank2": [
+          "complained"
+        ]
+      },
+      {
+        "blank3": [
+          "worry",
+          "worries"
+        ]
+      },
+      {
+        "blank4": [
+          "creative"
+        ]
+      },
+      {
+        "blank5": [
+          "online"
+        ]
+      },
+      {
+        "blank6": [
+          "only"
+        ]
+      },
+      {
+        "blank7": [
+          "someone"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22007",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "7",
+    "passage_id": "psg_2021_r_007",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 静安 2021 一模",
+      "content": "Taking action\nAt Seven Oaks Middle School，Daniela Carrera was searching for a club.There was a dance club，a choir，an exercise club，and an action club that found creative ways to raise money for other people.Daniela was thinking about j______(1)____the dance club because dancing was her favourite.\nThen Daniela's friend Ciara told her about the action club's new p_____(2)____.At first，Daniela was puzzled.“Why would people in a nursing home want a video-game console(平台)?”she asked Ciara.\n“This would be a s_____(3)____kind of console that plays fitness games.The games help people who need to exercise but weren't able to get to a gym or exercise a_____(4)____out of their rooms.Besides，everybody loves video games，don't they?”Ciara replied.\n“Not my great-grandmother，”Daniela said，laughing.But she agreed to go to the club meeting the next day.\nAt the meeting，Mr.Washington，the club's manager，d______(5)____to Daniela and the others how fitness video games helped encourage people to move.He explained how the consoles could help distract(转移注意力)people who s______(6)____from severe pains.That was all Daniela needed to hear.\n“How can I help?”She asked as she signed up for the club.\n“We're selling raffle(抽奖赠卖)tickets.With the money we get，we'll buy two fitness consoles.We'll give one to the w_____(7)____of the raffle.We'll give the other console to the nursing home，”explained Mr.Washington.“Great!Let's get started.I'm motivated to sell the tickets immediately!”said Daniela.",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "joining"
+        ]
+      },
+      {
+        "blank2": [
+          "plan",
+          "project",
+          "program"
+        ]
+      },
+      {
+        "blank3": [
+          "special",
+          "specific"
+        ]
+      },
+      {
+        "blank4": [
+          "alone",
+          "anywhere"
+        ]
+      },
+      {
+        "blank5": [
+          "described"
+        ]
+      },
+      {
+        "blank6": [
+          "suffered"
+        ]
+      },
+      {
+        "blank7": [
+          "winner"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22008",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "8",
+    "passage_id": "psg_2021_r_008",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 闵行 2021 一模",
+      "content": "I don't believe it!It's 11 p.m.and I'm still sitting here writing this article for the school magazine!I've had two weeks to write it and my teacher wants it tomorrow.She's always c_____(1)____that I leave things to the last minute.Maybe she's right.A month ago，I made up my mind to be more efficient this year and not to leave things to the last minute.But I've failed.I've also been trying to get fitter for four weeks now.I've started going to the gym.I've taken up karate lessons and I've changed my diet.I've even been going to bed earlier.But I'm not feeling any fitter.I felt just a little u_____(2)____.I miss my bad habits.Why is leading a better life so hard?\nI've just read an article on a website and I've found out that it isn't my fault!In fact，it isn't anyone's fault!It's our brains.They're programmed，therefore，it is difficult to break bad habits.There's nothing we can do.Scientists have done experiments that show we use one part of our brain when we think about o______(3)____and another when we think about other people.However，when we think about the“future us”，we use the part of the brain that we usually use to think about other people.In other words，the brain sees the“future you”as a different person to your“present you”.And that's why we don't always find it easy to make sensible d_____(4)____in the future when we face difficulties.\nBut that's not all.Scientists have also found out that it takes around ten weeks to form a good habit.For example，if I want to keep fit，it's going to take me ten weeks to go to the gym and then it will become an automatic part of my life.That's because ten weeks is the amount of time the brain needs to change and a_____(5)____new ways of behaviour as a part of everyday life.The good news is that once you make it to ten weeks，everything becomes much easier.The bad news is that ten\nweeks is a really long time，so it's easy to give up on(打消)your good plan s______(6)____.\nSo there you are.Maybe we want to change our ways and become better people but our brains won't let us.Or is this just an e_____(7)____?Look!I've finished my article on time.Anything is possible!",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "complaining"
+        ]
+      },
+      {
+        "blank2": [
+          "unhappier"
+        ]
+      },
+      {
+        "blank3": [
+          "ourselves"
+        ]
+      },
+      {
+        "blank4": [
+          "decisions"
+        ]
+      },
+      {
+        "blank5": [
+          "accept"
+        ]
+      },
+      {
+        "blank6": [
+          "soon",
+          "sooner"
+        ]
+      },
+      {
+        "blank7": [
+          "excuse"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22009",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "9",
+    "passage_id": "psg_2021_r_009",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 浦东 2021 一模",
+      "content": "We might love to tell others about our unusual experiences—that time we climbed Mount Qomolangma，tasted some rare food or ran into a famous person on the street.But new research suggests that if we s______(1)____these unusual experiences with others，it may bring something uncomfortable.\n“Unusual experiences are pleasant in the moment but can cause social t_____(2)____in the long run，”says psychological scientist Gus Cooney of Harvard University.“Some people mistakenly thought that having an unusual experience would make them the star.But they were wrong，because to be unusual is to be different from other people，and social interaction is based on something similar.”\n“We all h______(3)____to have experiences that are fine and rare，and when we get what we want，we are always eager to tell our friends.But I've noticed that conversations always seem to develop well on more ordinary topics，”Cooney explains.“This made me wonder if unusual experiences were r______(4)____as lovely as we had thought.”\nTo find out，Cooney and his colleagues had 68 people come to the lab in groups of f______(5)____.In each group，one person was asked to watch a popular video of a street magician performing for a crowd，while the other three people were asked to watch an ordinary animated video.After watching the videos，the people sat around a table and had a five-minute free conversation.\nAfter the group discussion，the people who watched the magician's performance felt w______(6)____than those who watched the animated video，because they felt they were not included during the discussion.\nThis finding suggests that we ought to give more thought in choosing what to talk about with others.If an experience turns you into someone who has n_____(7)____in common with others，then no matter how good it is，it won't make you comfortable in the long run.",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "share"
+        ]
+      },
+      {
+        "blank2": [
+          "trouble",
+          "troubles"
+        ]
+      },
+      {
+        "blank3": [
+          "hope"
+        ]
+      },
+      {
+        "blank4": [
+          "really"
+        ]
+      },
+      {
+        "blank5": [
+          "four"
+        ]
+      },
+      {
+        "blank6": [
+          "worse"
+        ]
+      },
+      {
+        "blank7": [
+          "nothing"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22010",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "10",
+    "passage_id": "psg_2021_r_010",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 普陀 2021 一模",
+      "content": "For some people，music is no fun at all.About four percent of us are what scientists call amusic.Those amusics are born without the ability to r_____(1)____，repeat or remember musical notes(音调).Amusic people often cannot tell the difference between two songs.Amusics can only hear the difference between two notes if they are pretty different.\nAs a result，songs sound like n______(2)_____to an amusic.Many amusics compare the sound of music to pieces of metal hitting each other.Life can be hard for amusics.Their unfitness to enjoy music makes them away from others.It can be difficult for other people to get to know them.Actually，most people cannot understand what it feels like to be an amusic.Many amusics may not feel very c______(3)_____when they go to a restaurant or a shopping mall.Sometimes they even feel painful.That is why many amusics usually stay away from places where there is music.“I used to h______(4)_____parties，”says Margaret，a seventyyear-old woman who only discovered that she was an amusic last month.By studying people like Margaret，scientists are f______(5)_____learning how to find this unusual condition.\nScientists say that the brains of amusics are different from the brains of people who enjoy music.The difference isn't about defective hearing(听力障碍).\nMany amusics are happy when their condition is found.For years，Margaret felt embarrassed about the p_____(6)____with music.Now she knows that a large number of people are like her.There is a name for the condition.That makes it e______(7)____for her to explain“When people invite me to a concert，I just say‘No thanks，I'm amusic’，”says Margaret.“I just wish I had learned to say that when I was seventeen and not seventy.”",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "recognize"
+        ]
+      },
+      {
+        "blank2": [
+          "noise"
+        ]
+      },
+      {
+        "blank3": [
+          "comfortable"
+        ]
+      },
+      {
+        "blank4": [
+          "hate"
+        ]
+      },
+      {
+        "blank5": [
+          "finally"
+        ]
+      },
+      {
+        "blank6": [
+          "problem"
+        ]
+      },
+      {
+        "blank7": [
+          "easier",
+          "easy"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22011",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "11",
+    "passage_id": "psg_2021_r_011",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 青浦 2021 一模",
+      "content": "The best language for learning math\nWhat is the best language for learning math?Hint(提示):You are not reading it.\nChinese，Japanese and Korean all have simpler number words.They express math concepts(概念)more c_____(1)____than English.The language gap has drawn lots of attention.Several recent studies have l______(2)____weaker math abilities in English-speaking children to English number words.\nChinese，for example，has just ten basic number words.English，however，has more than two dozen(一打).The trouble starts at“e______(3)____”.English has a word for that number.Chinese，Japanese and Korean have words that can be translated as“ten-one”—spoken with the“ten”first.That makes it easier for children to understand the place value.Students can easily see that the number system is based on units of 10.\nEnglish number words over 10 don't make the place value clear.Words for numbers 13 to 19 change the order of the ones(个位)and tens.Children are more l______(4)____to confuse 17 with 71.Therefore，children working with English number words have a harder time doing complex(复杂的)calculations.They make more m______(5)____.\nIt also feels more natural for Chinese speakers than for English speakers to use the“make-a-ten”method.When they a______(6)____two numbers，Chinese students often break down the numbers into parts and regroup them into tens and ones.For example，9 plus 5 becomes 9 plus 1 plus 4.This method greatly helps students work out math problems.Many teachers in America are teaching their students the“make-a-ten”method.However，they are having a hard time because of the confusing English number words.\nNow，you should feel l______(7)____that you are learning math in China.Thanks to your mother language，all the math problems have become less difficult and less confusing.",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "clearly"
+        ]
+      },
+      {
+        "blank2": [
+          "linked"
+        ]
+      },
+      {
+        "blank3": [
+          "eleven"
+        ]
+      },
+      {
+        "blank4": [
+          "likely"
+        ]
+      },
+      {
+        "blank5": [
+          "mistakes"
+        ]
+      },
+      {
+        "blank6": [
+          "add"
+        ]
+      },
+      {
+        "blank7": [
+          "lucky"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22012",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "12",
+    "passage_id": "psg_2021_r_012",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 松江 2021 一模",
+      "content": "A boy named Michael visited his grandparents on their farm with his sister，May.One day，Grandma gave him a slingshot(弹弓)to play with out in the woods.He practiced how to use it for some time but he still couldn't hit the target(目标)he set for himself.\nFeeling a little u______(1)____，he headed back to the farmhouse for dinner.On the way，he happened to see Grandma's pet duck.Just then，an idea suddenly came to his mind.He a_____(2)____at the duck with his slingshot and let it fly，hitting the duck in the head and killing it.\nIn a panic(惊慌)，Michael hid the dead duck in the bushes，only to find that his sister was watching him all the time.May had seen everything he did，but she said n______(3)____.\nAfter lunch the next day，Grandma said，“May，let's wash the dishes.”But May said，“Grandma，Michael told me he wanted to help in the k______(4)____.”Then she came close to Michael and whispered(低语)，“Remember the duck?”So Michael did the washing.\nLater that day，Grandpa asked if Michael and May wanted to go fishing，but Grandma interrupted，“I'm sorry but I need May to help me prepare for dinner.”May just smiled and said，“Well，that's all right because Michael told me he wanted to help you.”Then she whispered to Michael again，“Remember the duck?”\nSo May went fishing and Michael stayed b_____(5)____to help make supper.After several days of doing both his chores and May's，Michael finally couldn't bear it anymore.He went to his grandma and told her the t______(6)____that he had caused the death of her pet duck.\nIt really s______(7)____Michael that Grandma just smiled and gave him a big hug.“Sweetheart，I know，”said Grandma.“You see，I was standing at the window the other day and saw the whole thing，but because I love you，I forgave you.I just wanted to find out how long you would let May make a slave of you!”",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "upset"
+        ]
+      },
+      {
+        "blank2": [
+          "aimed"
+        ]
+      },
+      {
+        "blank3": [
+          "nothing"
+        ]
+      },
+      {
+        "blank4": [
+          "kitchen"
+        ]
+      },
+      {
+        "blank5": [
+          "behind"
+        ]
+      },
+      {
+        "blank6": [
+          "truth"
+        ]
+      },
+      {
+        "blank7": [
+          "surprised"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22013",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "13",
+    "passage_id": "psg_2021_r_013",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 徐汇 2021 一模",
+      "content": "If you have ever had trouble doing things you should do or would like to do，you have experienced procrastination(拖延症).When you procrastinate，instead of working on important meaningful tasks，you find yourself performing meaningless activities.\nIf you are a procrastinator，perhaps you spend lots of time watching TV，playing video games，checking Facebook，eating，cleaning or walking back and forth through the room.Afterwards，you feel powerless and have the f______(1)____of guilt and trouble.Once again，you end up doing nothing.Sound familiar?\nL_____(2)____people don't do anything and are just fine with it.Procrastinators，however，want to actually do something but can't force themselves to s_____(3)____.\nAnother fact about procrastination is that it is d_____(4)____from relaxation.Relaxing recharges you with energy.But procrastination makes you not energetic.The less energy you have，the greater the chances of you putting off your responsibilities，and，once more，you will achieve nothing.\nMy dad always used to say，“Peter，you need to learn how to give yourself orders.”I would always answer，“I tell myself what to do.I just don't listen.”\nMost likely，failure of the ability to listen to o______(5)____is the main reason.The scientific name of this ability is self-regulation.\nSelf-regulation is the ability to actively control your emotions.The more developed this ability is，the more often you will do what you tell yourself to do.Good news is it is possible to have selfregulation by t______(6)____.You need to begin by setting the bar as low as possible.Creating habits isn't about quantity;it's about small steps and regular repetition.\nOnce you learn a new habit，you can exercise your willpower muscle(肌肉).As you s______(7)____raise the bar，your willpower will gain strength day by day.\nGradual changes are more pleasant than sudden，great changes.Therefore bigger success can be made.",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "feeling"
+        ]
+      },
+      {
+        "blank2": [
+          "Lazy"
+        ]
+      },
+      {
+        "blank3": [
+          "start"
+        ]
+      },
+      {
+        "blank4": [
+          "different"
+        ]
+      },
+      {
+        "blank5": [
+          "ourselves"
+        ]
+      },
+      {
+        "blank6": [
+          "training"
+        ]
+      },
+      {
+        "blank7": [
+          "slowly"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22014",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "14",
+    "passage_id": "psg_2021_r_014",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 杨浦 2021 一模",
+      "content": "A rare experience\nImagine the situation.You're walking down the crowded high street and s______(1)____a complete stranger stops you and says，“Hi!You were on the beach in the south of Spain six years ago.How are you doing?”This stranger isn't necessarily m______(2)____.He or she might be a“super-recogniser”.These are people who have the unusual ability to recognise people they have seen only once—a long time ago，maybe in a crowd.\nWhatever the differences in looks\nIt doesn't matter what the person looks like now.People change，get different hair styles，dye their hair or go grey.Wrinkles，new glasses and makeups give them new a______(3)____，but the“super-recognisers”can still recognise them.\nAn inborn skill\nAlthough scientists have known for a long time that about 2% of people suffer from faceblindness，which means that they have huge problems recognising faces，they are only now realising that some people are the exact o______(4)____.Tests have shown that a“super-recogniser”can identify people that they only saw for a brief moment—and this is not an ability that we can d______(5)____，it's something we are born with.\nA great h______(6)____\nThe police are starting to use“super-recognisers”to spot criminal faces in videos of crowds.They look for people with a specific build and facial features like beards and moustaches but they can even recognise quite o_____(7)____people，with no noticeable features at all.As well as surprising our holidaymaker in Spain six years later，this ability can be used for a very practical purpose indeed.",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "suddenly"
+        ]
+      },
+      {
+        "blank2": [
+          "mad"
+        ]
+      },
+      {
+        "blank3": [
+          "appearance",
+          "appearances"
+        ]
+      },
+      {
+        "blank4": [
+          "opposite"
+        ]
+      },
+      {
+        "blank5": [
+          "develop"
+        ]
+      },
+      {
+        "blank6": [
+          "help"
+        ]
+      },
+      {
+        "blank7": [
+          "ordinary"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  },
+  {
+    "id": "q_22015",
+    "book": "shanghai_2021_yimo",
+    "question_type": "reading_first_blank",
+    "chapter_l1": "3 阅读理解",
+    "chapter_l2": null,
+    "number": "15",
+    "passage_id": "psg_2021_r_015",
+    "passage_json": {
+      "kind": "reading",
+      "title": "Reading - 长宁金山 2021 一模",
+      "content": "Freediving is diving underwater，holding your breath，without the use of equipment.In ancient times people had to freedive to get food，such as fish and shellfish.Free divers also c______(1)____treasures lying at the bottom of the ocean.The Mediterranean Sea，south of Europe，had many trading ships passing through.Often ships sank，sometimes because of storms.They would swim down to the shipwreck and try to lift the most precious pieces.In modern times，freediving is part of many different a______(2)____such as underwater photography and spearfishing.Sports such as underwater football，rugby and hockey also involve freediving.\nThe most dangerous freediving is practised by a small group of extreme sportsmen and sportswomen who swim very deep.They aim to go to great depths and d_____(3)____for a long time on a single breath，wearing only a wetsuit.Deep under the water it is cold and black.The weight or pressure on your body is much h_____(4)____than that at the surface.That weight，and going so long on only one breath，can cause a person to become unconscious(无意识的)because of a lack of oxygen，and then die.\nWhy do people want to take part in a sport that is so dangerous?\nYou need to be fit to swim so deep，but you also need to be very strong mentally(精神上).At first it is difficult to sink.You have to stay c______(5)____and even slow your thinking.But finally the air is pushed from your body，and you start to sink.It is as if the water were d______(6)____you down.This is a very peaceful feeling.\nNatalia wrote many poems about her love of being in the deep blue ocean.She felt at one with nature there，as if in an ancient space.She would go into a deep state of being quiet and thinking before she went into the water.She would leave b______(7)____her the stress of life，which she called“surface fuss”.According to Natalia，when you stop breathing，most of your body's functions stop.It is as if time itself stopped.",
+      "audio_url": null
+    },
+    "stem": null,
+    "hint": null,
+    "original_sentence": null,
+    "instruction": null,
+    "template": null,
+    "answer": [
+      {
+        "blank1": [
+          "collected"
+        ]
+      },
+      {
+        "blank2": [
+          "activities"
+        ]
+      },
+      {
+        "blank3": [
+          "distances"
+        ]
+      },
+      {
+        "blank4": [
+          "higher",
+          "heavier"
+        ]
+      },
+      {
+        "blank5": [
+          "calm"
+        ]
+      },
+      {
+        "blank6": [
+          "drawing",
+          "dragging"
+        ]
+      },
+      {
+        "blank7": [
+          "behind"
+        ]
+      }
+    ],
+    "source_md": null,
+    "source_line": 0,
+    "knowledge_point_ids": [
+      "kp_reading_first_blank"
+    ]
+  }
+]

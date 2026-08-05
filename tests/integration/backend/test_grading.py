@@ -41,3 +41,25 @@ def test_empty_blank_answer_is_wrong():
     correct = [{"blank1": ["proofs"]}]
     assert compare("", correct, "word_form") is False
     assert compare({"blank1": ""}, correct, "word_form") is False
+
+
+def test_reading_first_blank_all_blanks_must_be_correct():
+    """阅读首字母填空：answer 是多个单空 dict，必须全部正确才算对，任一空错即整题错。"""
+    correct = [
+        {"blank1": ["aware"]},
+        {"blank2": ["advantages"]},
+        {"blank3": ["Therefore"]},
+    ]
+    all_correct = {
+        "blank1": "aware",
+        "blank2": "advantages",
+        "blank3": "Therefore",
+    }
+    one_wrong = dict(all_correct)
+    one_wrong["blank2"] = "wrong"
+    only_one_ok = {k: ("aware" if k == "blank1" else "wrong") for k in all_correct}
+
+    assert compare(all_correct, correct, "reading_first_blank") is True
+    assert compare(one_wrong, correct, "reading_first_blank") is False
+    assert compare(only_one_ok, correct, "reading_first_blank") is False
+    assert compare({}, correct, "reading_first_blank") is False

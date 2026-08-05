@@ -59,6 +59,15 @@ describe('getBlankKeys', () => {
       getBlankKeys([{ blank10: ['j'], blank2: ['b'], blank1: ['a'] }]),
     ).toEqual(['blank1', 'blank2', 'blank10'])
   })
+  it('多元素单空 dict（阅读首字母填空）汇总全部键', () => {
+    expect(
+      getBlankKeys([
+        { blank1: ['c'] },
+        { blank2: ['f'] },
+        { blank3: ['i'] },
+      ]),
+    ).toEqual(['blank1', 'blank2', 'blank3'])
+  })
   it('异常空数组兜底单空', () => {
     expect(getBlankKeys([])).toEqual(['blank1'])
   })
@@ -168,5 +177,14 @@ describe('formatCorrectAnswer', () => {
         { blank1: ['in'], blank2: ['order'] },
       ]),
     ).toBe('① 空1: so；空2: that　② 空1: in；空2: order')
+  })
+  it('多元素单空 dict（阅读首字母填空）按空位顺序展示', () => {
+    expect(
+      formatCorrectAnswer([
+        { blank1: ['concentrate'] },
+        { blank2: ['fall'] },
+        { blank3: ['interesting'] },
+      ]),
+    ).toBe('空1: concentrate；空2: fall；空3: interesting')
   })
 })

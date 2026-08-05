@@ -14,7 +14,7 @@ import json
 import sqlite3
 from pathlib import Path
 
-from shared.schemas import Option, Question, QuestionType
+from shared.schemas import Option, Passage, Question, QuestionType
 
 DEFAULT_DB_PATH = Path("data/questions.db")
 
@@ -24,6 +24,9 @@ def _row_to_question(row: sqlite3.Row, kp_ids: list[str]) -> Question:
     options = None
     if row["options_json"]:
         options = [Option(**o) for o in json.loads(row["options_json"])]
+    passage_json = None
+    if row["passage_json"]:
+        passage_json = Passage(**json.loads(row["passage_json"]))
     return Question(
         id=row["id"],
         book=row["book"],
@@ -37,6 +40,8 @@ def _row_to_question(row: sqlite3.Row, kp_ids: list[str]) -> Question:
         original_sentence=row["original_sentence"],
         instruction=row["instruction"],
         template=row["template"],
+        passage_id=row["passage_id"],
+        passage_json=passage_json,
         answer=json.loads(row["answer_json"]),
         solution=row["solution"],
         knowledge_point_ids=kp_ids,

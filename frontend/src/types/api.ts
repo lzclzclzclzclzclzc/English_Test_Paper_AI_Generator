@@ -11,7 +11,7 @@
 
 // ---- 字面量联合（schemas.py 顶部 Literal） ----
 
-export type QuestionType = 'single_choice' | 'word_form' | 'sentence_rewriting' | 'listening_single_choice'
+export type QuestionType = 'single_choice' | 'word_form' | 'sentence_rewriting' | 'listening_single_choice' | 'listening_true_false' | 'listening_fill_blank' | 'reading_longtext_single_choice' | 'cloze_single_choice' | 'reading_first_blank'
 export type GenerationMode = 'fresh' | 'remediation' | 'review'
 export type RevisionMode = 'fresh' | 'light' | 'original'
 
@@ -34,8 +34,16 @@ export type UserAnswerValue = string | string[] | Record<string, string>
 // ---- 基础构件 ----
 
 export interface Option {
-  label: 'A' | 'B' | 'C' | 'D'
+  label: 'A' | 'B' | 'C' | 'D' | 'T' | 'F'
   text: string
+}
+
+/** 共享材料（listening_true_false 用），对应 schemas.py Passage */
+export interface Passage {
+  kind: 'listening' | 'reading'
+  title: string | null
+  content: string
+  audio_url: string | null
 }
 
 // ---- 题目（试卷内渲染的形态） ----
@@ -54,6 +62,10 @@ export interface RevisedQuestion {
   instruction: string | null
   /** sentence_rewriting：带空模板。注意下划线连串数 ≠ 空数，空数以 answer[0] 键数为准 */
   template: string | null
+  /** listening_true_false：共享材料组 id（同组小题相同） */
+  passage_id: string | null
+  /** listening_true_false：共享材料对象（同组小题冗余存储） */
+  passage_json: Passage | null
   answer: AnswerValue
   solution: string | null
   knowledge_point_ids: string[]
