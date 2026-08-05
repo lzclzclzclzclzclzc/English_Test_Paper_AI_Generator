@@ -12,11 +12,18 @@ const generateSchema = z.object({
 
 export type GenerateFormValues = z.infer<typeof generateSchema>
 
-const SUGGESTIONS = [
-  '来 5 道现在完成时的选择题',
-  '来 4 道词形转换题',
-  '来 3 道句子改写题',
-] as const
+/** 题型 chips：点击往输入框追加「N 道××」，可连点组一份混合卷（覆盖题库全部 9 种题型）。 */
+const TYPE_CHIPS: ReadonlyArray<{ label: string; n: number }> = [
+  { label: '单项选择', n: 5 },
+  { label: '词形转换', n: 4 },
+  { label: '句子改写', n: 3 },
+  { label: '听力选择', n: 3 },
+  { label: '听力判断', n: 4 },
+  { label: '听力填词', n: 3 },
+  { label: '阅读理解', n: 3 },
+  { label: '完形填空', n: 3 },
+  { label: '阅读首字母填空', n: 1 },
+]
 
 interface GenerateFormProps {
   onSubmit: (values: GenerateFormValues) => void
@@ -42,7 +49,7 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
     <form className="flex max-w-[44rem] flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
       <textarea
         rows={4}
-        placeholder="来 12 道现在完成时的单项选择，中等难度，最好带点时间状语的辨析"
+        placeholder="来 12 道现在完成时的单项选择，再配 3 道听力填词——也可以点下面的题型标签组卷"
         className="w-full resize-none rounded-[3px] border border-ink-20 bg-transparent px-4 py-3 text-[16px] leading-[1.8] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent"
         {...form.register('user_query')}
       />
@@ -51,16 +58,23 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
       )}
       {serverError && <p className="-mt-3 text-[12px] text-accent">{serverError}</p>}
 
-      {/* 建议 chips：细线边小方角，hover 转赤陶 */}
-      <div className="flex flex-wrap gap-2">
-        {SUGGESTIONS.map((s) => (
+      {/* 题型 chips：细线边小方角，hover 转赤陶；点击追加「N 道××」，可连点组混合卷 */}
+      <div className="flex flex-wrap items-baseline gap-2">
+        <span className="font-ui text-[12px] text-quiet">点选题型：</span>
+        {TYPE_CHIPS.map(({ label, n }) => (
           <button
-            key={s}
+            key={label}
             type="button"
-            className="rounded-sm border border-hairline px-3 py-1 text-[12.5px] text-muted-ink transition-colors hover:border-accent hover:bg-tint hover:text-accent"
-            onClick={() => form.setValue('user_query', s, { shouldValidate: true })}
+            className="rounded-sm border border-hairline px-3 py-1 font-ui text-[12.5px] text-muted-ink transition-colors hover:border-accent hover:bg-tint hover:text-accent"
+            onClick={() => {
+              const cur = form.getValues('user_query').trim()
+              const seg = `${n} 道${label}`
+              form.setValue('user_query', cur === '' ? `来 ${seg}` : `${cur}、${seg}`, {
+                shouldValidate: true,
+              })
+            }}
           >
-            {s}
+            {label}
           </button>
         ))}
       </div>
