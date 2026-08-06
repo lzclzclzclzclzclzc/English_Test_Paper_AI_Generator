@@ -36,10 +36,11 @@ export function GeneratePage() {
   return (
     <div className="max-w-[52rem]">
       <PageHeader
-        title="生成试卷"
+        title="一句话出卷"
         intro={
           <>
-            用一句话说出你想练的题型或考点，AI 会解析你的要求，从真题库检索、按力度改题，
+            练习中心各面板能配出来的，这里一句话都能说到——还能说得更细。用一句话说出题型、
+            考点、题量和改题力度，AI 会解析要求，从真题库检索、按力度改题，
             <mark>组一份能直接做的卷</mark>。
           </>
         }

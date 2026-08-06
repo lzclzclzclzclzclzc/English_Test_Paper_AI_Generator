@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { MasteryProfile } from '@/types/api'
+import { PATHS } from '@/lib/paths'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { Button } from '@/components/ui/button'
@@ -34,7 +35,7 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
           做几份试卷之后，这里会标出你最需要巩固的考点
         </p>
         <Button asChild>
-          <Link to="/">去生成一份</Link>
+          <Link to={PATHS.home}>去生成一份</Link>
         </Button>
       </div>
     )

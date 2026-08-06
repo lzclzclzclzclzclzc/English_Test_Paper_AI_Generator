@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { GradeSubmissionResponse, PaperItem } from '@/types/api'
+import { PATHS } from '@/lib/paths'
 
 /** 按 passage_id 分组：同组小题共享一段材料，PassageBlock 只渲染一次。 */
 function groupByPassage(items: PaperItem[]): Array<{ key: string; passageId: string | null; items: PaperItem[] }> {
@@ -157,7 +158,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         )}
         {notFound ? (
           <Button asChild variant="outline">
-            <Link to="/">去生成新试卷</Link>
+            <Link to={PATHS.home}>去生成新试卷</Link>
           </Button>
         ) : (
           <Button variant="outline" onClick={() => refetch()}>

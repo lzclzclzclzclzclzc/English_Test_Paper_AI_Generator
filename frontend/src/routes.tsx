@@ -1,9 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from '@/components/RequireAuth'
 import { AppLayout } from '@/components/AppLayout'
-import { LandingPage } from '@/pages/LandingPage'
+import { HomeGate } from '@/components/HomeGate'
 import { LoginPage } from '@/pages/LoginPage'
 import { GeneratePage } from '@/pages/GeneratePage'
+import { PracticePage } from '@/pages/PracticePage'
+import { DrillPage } from '@/pages/DrillPage'
+import { CustomPaperPage } from '@/pages/CustomPaperPage'
+import { MockPage } from '@/pages/MockPage'
 import { AssistantPage } from '@/pages/AssistantPage'
 import { PapersPage } from '@/pages/PapersPage'
 import { PaperPageRoute } from '@/pages/PaperPage'
@@ -21,12 +25,15 @@ import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
 import { AdminMembershipsPage } from '@/pages/admin/AdminMembershipsPage'
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
+import { PATHS } from '@/lib/paths'
 
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/welcome" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage />} />
+      {/* `/` 双态:未登录营销首页 / 已登录工作台(见 HomeGate) */}
+      <Route path={PATHS.home} element={<HomeGate />} />
+      <Route path={PATHS.welcome} element={<Navigate to={PATHS.home} replace />} />
+      <Route path={PATHS.login} element={<LoginPage />} />
       <Route
         element={
           <RequireAuth>
@@ -34,20 +41,24 @@ export function AppRoutes() {
           </RequireAuth>
         }
       >
-        <Route path="/" element={<RedirectIfAdmin><GeneratePage /></RedirectIfAdmin>} />
-        <Route path="/assistant" element={<RedirectIfAdmin><AssistantPage /></RedirectIfAdmin>} />
-        <Route path="/review" element={<RedirectIfAdmin><ReviewPage /></RedirectIfAdmin>} />
-        <Route path="/papers" element={<RedirectIfAdmin><PapersPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.generate} element={<RedirectIfAdmin><GeneratePage /></RedirectIfAdmin>} />
+        <Route path={PATHS.practice} element={<RedirectIfAdmin><PracticePage /></RedirectIfAdmin>} />
+        <Route path={PATHS.practiceCustom} element={<RedirectIfAdmin><CustomPaperPage /></RedirectIfAdmin>} />
+        <Route path="/practice/:slug" element={<RedirectIfAdmin><DrillPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.mock} element={<RedirectIfAdmin><MockPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.assistant} element={<RedirectIfAdmin><AssistantPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.review} element={<RedirectIfAdmin><ReviewPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.papers} element={<RedirectIfAdmin><PapersPage /></RedirectIfAdmin>} />
         <Route
           path="/papers/:paperId"
           element={<RedirectIfAdmin><PaperPageRoute /></RedirectIfAdmin>}
         />
-        <Route path="/mastery" element={<RedirectIfAdmin><MasteryPage /></RedirectIfAdmin>} />
-        <Route path="/study-plan" element={<RedirectIfAdmin><StudyPlanPage /></RedirectIfAdmin>} />
-        <Route path="/membership" element={<RedirectIfAdmin><MembershipPage /></RedirectIfAdmin>} />
-        <Route path="/settings" element={<RedirectIfAdmin><SettingsPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.mastery} element={<RedirectIfAdmin><MasteryPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.studyPlan} element={<RedirectIfAdmin><StudyPlanPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.membership} element={<RedirectIfAdmin><MembershipPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.settings} element={<RedirectIfAdmin><SettingsPage /></RedirectIfAdmin>} />
         <Route
-          path="/admin"
+          path={PATHS.admin}
           element={
             <RequireAdmin>
               <AdminLayout />
@@ -62,7 +73,7 @@ export function AppRoutes() {
           <Route path="orders" element={<AdminOrdersPage />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to={PATHS.home} replace />} />
     </Routes>
   )
 }

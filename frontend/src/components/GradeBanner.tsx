@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { PATHS } from '@/lib/paths'
 
 interface GradeBannerProps {
   correctCount: number
@@ -84,7 +85,7 @@ export function GradeBanner({
           renderRemediateButton()
         ) : (
           <Button size="sm" asChild>
-            <Link to="/">出一份新卷</Link>
+            <Link to={PATHS.home}>出一份新卷</Link>
           </Button>
         )}
       </div>

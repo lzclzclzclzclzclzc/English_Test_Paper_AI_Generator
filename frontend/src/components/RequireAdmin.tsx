@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { adminGuardState } from '@/components/requireAdmin.logic'
+import { PATHS } from '@/lib/paths'
 
 /** 管理员路由守卫：加载中显示骨架；非管理员重定向首页。
  *  真正的鉴权由后端 require_admin 兜底，这里只控制可见性。 */
@@ -18,7 +19,7 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
     )
   }
   if (state === 'redirect') {
-    return <Navigate to="/" replace />
+    return <Navigate to={PATHS.home} replace />
   }
   return children
 }

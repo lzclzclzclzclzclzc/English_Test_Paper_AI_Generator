@@ -1,68 +1,19 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import {
-  BadgeCheck,
-  BarChart3,
-  CalendarCheck,
-  LayoutDashboard,
-  List,
-  MessageCircle,
-  PanelLeft,
-  Pen,
-  ScrollText,
-  Settings,
-  Users,
-  XCircle,
-} from 'lucide-react'
+import { PanelLeft } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { logout } from '@/api/auth'
 import { useAuth } from '@/hooks/useAuth'
 import { useMembership } from '@/hooks/useMembership'
 import { queryClient } from '@/lib/queryClient'
+import { ADMIN_GROUPS, NAV_GROUPS } from '@/lib/nav'
+import { PATHS } from '@/lib/paths'
 import { cn } from '@/lib/utils'
-
-const GROUPS = [
-  {
-    label: '出卷',
-    items: [
-      { to: '/', label: '生成试卷', icon: Pen, end: true },
-      { to: '/assistant', label: '学习助手', icon: MessageCircle, end: true },
-      { to: '/papers', label: '历史试卷', icon: List, end: false },
-    ],
-  },
-  {
-    label: '复习',
-    items: [
-      { to: '/review', label: '错题本', icon: XCircle, end: true },
-      { to: '/mastery', label: '掌握度', icon: BarChart3, end: true },
-      { to: '/study-plan', label: '学习计划', icon: CalendarCheck, end: true },
-    ],
-  },
-  {
-    label: '资料',
-    items: [
-      { to: '/membership', label: '会员', icon: BadgeCheck, end: true },
-      { to: '/settings', label: '设置', icon: Settings, end: true },
-    ],
-  },
-] as const
-
-const ADMIN_GROUPS = [
-  {
-    label: '管理后台',
-    items: [
-      { to: '/admin', label: '概览', icon: LayoutDashboard, end: true },
-      { to: '/admin/analytics', label: '分析', icon: BarChart3, end: true },
-      { to: '/admin/users', label: '用户', icon: Users, end: false },
-      { to: '/admin/memberships', label: '会员', icon: BadgeCheck, end: true },
-      { to: '/admin/orders', label: '订单', icon: ScrollText, end: true },
-    ],
-  },
-] as const
 
 /**
  * 左侧可折叠导航（handoff 第 3 屏）：展开 232px / 收起 66px，粘顶全高，
  * 右侧 1px 细线。当前项 = accent-wash 底 + 赤陶字；收起时组标签变细线。
+ * 导航数据在 lib/nav.ts(三组九项);设置固定在底部用户区。
  * 管理员登录时主导航替换为管理后台菜单（不显示普通功能）。
  */
 export function Sidebar() {
@@ -73,13 +24,14 @@ export function Sidebar() {
   const { isMember, expiresAt } = useMembership()
   const navigate = useNavigate()
 
-  const groups = user?.role === 'admin' ? ADMIN_GROUPS : GROUPS
+  const isAdmin = user?.role === 'admin'
+  const groups = isAdmin ? ADMIN_GROUPS : NAV_GROUPS
 
   const logoutMutation = useMutation({
     mutationFn: logout,
     onSettled: () => {
       queryClient.clear()
-      navigate('/login')
+      navigate(PATHS.login)
     },
   })
 
@@ -104,7 +56,7 @@ export function Sidebar() {
       >
         {!collapsed && (
           <NavLink
-            to="/"
+            to={PATHS.home}
             className="whitespace-nowrap text-[17px] tracking-[0.06em] text-ink [font-family:var(--font-display)]"
           >
             试卷生成器
@@ -130,31 +82,55 @@ export function Sidebar() {
                 {group.label}
               </div>
             )}
-            {group.items.map(({ to, label, icon: Icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                title={collapsed ? label : undefined}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-sm px-3 py-[9px] text-[14.5px] transition-colors',
+            {group.items.map(({ to, label, icon: Icon, end, disabled, badge }) =>
+              disabled ? (
+                // 未上线入口：不可点占位（不用赤陶——不可交互处不给强调色）
+                <span
+                  key={to}
+                  title={collapsed ? label : undefined}
+                  className={cn(
+                    'flex cursor-default items-center gap-3 rounded-sm px-3 py-[9px] text-[14.5px] text-quiet',
                     collapsed && 'justify-center px-0',
-                    isActive
-                      ? 'bg-wash text-accent'
-                      : 'text-muted-ink hover:bg-tint hover:text-ink',
-                  )
-                }
-              >
-                <Icon className="size-[18px] shrink-0" strokeWidth={1.5} />
-                {!collapsed && <span className="whitespace-nowrap">{label}</span>}
-              </NavLink>
-            ))}
+                  )}
+                >
+                  <Icon className="size-[18px] shrink-0" strokeWidth={1.5} />
+                  {!collapsed && (
+                    <span className="flex items-center gap-1.5 whitespace-nowrap">
+                      {label}
+                      {badge && (
+                        <span className="rounded-sm border border-hairline px-1 py-px text-[10px] leading-none">
+                          {badge}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  title={collapsed ? label : undefined}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-3 rounded-sm px-3 py-[9px] text-[14.5px] transition-colors',
+                      collapsed && 'justify-center px-0',
+                      isActive
+                        ? 'bg-wash text-accent'
+                        : 'text-muted-ink hover:bg-tint hover:text-ink',
+                    )
+                  }
+                >
+                  <Icon className="size-[18px] shrink-0" strokeWidth={1.5} />
+                  {!collapsed && <span className="whitespace-nowrap">{label}</span>}
+                </NavLink>
+              ),
+            )}
           </div>
         ))}
       </nav>
 
-      {/* 底部：头像方块 + 用户名 + 登出 */}
+      {/* 底部：头像方块 + 用户名 + 设置/登出 */}
       <div
         className={cn(
           'flex shrink-0 items-center gap-2.5 border-t border-hairline px-3.5 py-3.5',
@@ -177,14 +153,29 @@ export function Sidebar() {
                 </span>
               )}
             </span>
-            <button
-              type="button"
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
-              className="self-start text-[12px] text-quiet transition-colors hover:text-accent"
-            >
-              登出
-            </button>
+            <span className="flex items-center gap-3">
+              {!isAdmin && (
+                <NavLink
+                  to={PATHS.settings}
+                  className={({ isActive }) =>
+                    cn(
+                      'text-[12px] transition-colors hover:text-accent',
+                      isActive ? 'text-accent' : 'text-quiet',
+                    )
+                  }
+                >
+                  设置
+                </NavLink>
+              )}
+              <button
+                type="button"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                className="self-start text-[12px] text-quiet transition-colors hover:text-accent"
+              >
+                登出
+              </button>
+            </span>
           </div>
         )}
       </div>

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { listPapers } from '@/api/papers'
 import type { PaperListItem } from '@/types/api'
+import { PATHS } from '@/lib/paths'
 import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -69,7 +70,7 @@ function PaperRow({ paper }: { paper: PaperListItem }) {
   const date = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   return (
     <Link
-      to={`/papers/${paper.paper_id}`}
+      to={PATHS.paper(paper.paper_id)}
       className="grid grid-cols-[110px_minmax(0,1fr)_auto] items-center gap-4 border-b border-hairline px-2 py-[18px] transition-colors hover:bg-tint max-sm:grid-cols-[minmax(0,1fr)_auto]"
     >
       <span className="font-mono text-[12.5px] text-quiet max-sm:hidden">{date}</span>
@@ -98,7 +99,7 @@ function EmptyState() {
         用一句话描述想练的题型或考点，生成你的第一份卷
       </p>
       <Button asChild className="mt-3">
-        <Link to="/">去出卷</Link>
+        <Link to={PATHS.home}>去出卷</Link>
       </Button>
     </div>
   )
