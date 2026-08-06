@@ -2,6 +2,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link } from 'react-router-dom'
+import { FAMILY_CHIP_CLASS } from '@/lib/kp'
+import type { TypeFamily } from '@/lib/kp'
+import { PATHS } from '@/lib/paths'
 
 const generateSchema = z.object({
   user_query: z
@@ -14,12 +17,7 @@ export type GenerateFormValues = z.infer<typeof generateSchema>
 
 /** 题型 chips：点击往输入框追加「N 道××」，可连点组一份混合卷（覆盖题库全部 9 种题型）。
     分科色（Spec F v2.2）：语法 = 赭黄、听力 = 靛蓝、阅读 = 墨青。 */
-const FAMILY_CHIP: Record<'grammar' | 'listening' | 'reading', string> = {
-  grammar: 'border-transparent bg-grammar-wash text-grammar hover:border-grammar',
-  listening: 'border-transparent bg-listening-wash text-listening hover:border-listening',
-  reading: 'border-transparent bg-reading-wash text-reading hover:border-reading',
-}
-const TYPE_CHIPS: ReadonlyArray<{ label: string; n: number; family: keyof typeof FAMILY_CHIP }> = [
+const TYPE_CHIPS: ReadonlyArray<{ label: string; n: number; family: TypeFamily }> = [
   { label: '单项选择', n: 5, family: 'grammar' },
   { label: '词形转换', n: 4, family: 'grammar' },
   { label: '句子改写', n: 3, family: 'grammar' },
@@ -71,7 +69,7 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
           <button
             key={label}
             type="button"
-            className={`rounded-sm border px-3 py-1 font-ui text-[12.5px] font-[550] transition-colors ${FAMILY_CHIP[family]}`}
+            className={`rounded-sm border px-3 py-1 font-ui text-[12.5px] font-[550] transition-colors ${FAMILY_CHIP_CLASS[family]}`}
             onClick={() => {
               const cur = form.getValues('user_query').trim()
               const seg = `${n} 道${label}`
@@ -102,7 +100,7 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
 
       <p className="text-[12.5px] text-quiet">
         想练错题或综合复习？去{' '}
-        <Link to="/review" className="text-accent underline underline-offset-2">
+        <Link to={PATHS.review} className="text-accent underline underline-offset-2">
           错题本
         </Link>
       </p>

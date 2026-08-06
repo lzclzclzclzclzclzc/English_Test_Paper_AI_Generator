@@ -4,6 +4,7 @@ import { getReadiness } from '@/api/health'
 import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import { GenerateForm, type GenerateFormValues } from '@/components/GenerateForm'
 import { PageHeader } from '@/components/PageHeader'
+import { generateQuotaNotice } from '@/lib/quota'
 import { PipelineProgress } from '@/components/PipelineProgress'
 import { UpgradeDialog } from '@/components/UpgradeDialog'
 
@@ -54,7 +55,7 @@ export function GeneratePage() {
         onSubmit={handleSubmit}
         isPending={isPending}
         serverError={serverError}
-        quotaNotice={locked ? `今日免费出卷剩 ${freeRemaining} 次，开通会员不限次数` : null}
+        quotaNotice={generateQuotaNotice(locked, freeRemaining)}
       />
       {isPending && <PipelineProgress />}
       <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />

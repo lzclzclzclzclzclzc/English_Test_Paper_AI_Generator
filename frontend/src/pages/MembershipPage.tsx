@@ -5,18 +5,10 @@ import { createOrder, getMembership, getPayHealth, getPlans } from '@/api/paymen
 import { PageHeader } from '@/components/PageHeader'
 import { PayQrDialog } from '@/components/PayQrDialog'
 import { formatYuan } from '@/lib/money'
+import { BENEFITS } from '@/lib/pricing'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { PayOrder } from '@/types/payment'
-
-/** 权益对比：与实际前端门槛一一对应（quota.ts / GenerateForm / PaperPage）。 */
-const BENEFITS = [
-  { feature: '按描述生成新卷', free: '每天 3 次', member: '不限次数' },
-  { feature: '错题巩固 / 综合复习', free: '—', member: '✓' },
-  { feature: 'AI 单题解析', free: '每天 2 次', member: '不限次数' },
-  { feature: '一句话重新出卷', free: '—', member: '✓' },
-  { feature: '做题与判分', free: '✓', member: '✓' },
-] as const
 
 function formatDate(iso: string): string {
   const d = new Date(iso)
