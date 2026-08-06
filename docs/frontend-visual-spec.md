@@ -104,14 +104,17 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 
 - 展开 232px / 收起 66px，`transition: width .25s ease-out`，粘顶全高，右侧 1px 细线。
 - 顶部 64px：品牌「试卷生成器」（display 字体，收起时隐藏）+ 30×30 折叠按钮（lucide `panel-left`）。
-- 三组导航，组标签 10.5px/700/0.14em 弱色：
-  **出卷**（生成试卷 `/`、历史试卷 `/papers`）、
-  **复习**（错题本 `/review`、掌握度 `/mastery`）、
-  **资料**（会员 `/membership`、设置 `/settings`）。
-  收起时组标签变成一条 1px 细线分隔符。
+- 三组导航（数据在 `lib/nav.ts`），组标签 10.5px/700/0.14em 弱色：
+  **练习**（工作台 `/`、练习中心 `/practice`、整卷模拟 `/mock`、学习助手 `/assistant`）、
+  **复盘**（错题本 `/review`、掌握度 `/mastery`、学习计划 `/study-plan`）、
+  **我的**（历史试卷 `/papers`、会员 `/membership`）。
+  收起时组标签变成一条 1px 细线分隔符。「生成试卷」不再是侧栏项——一句话出卷
+  降级为能力（`/generate`），入口在工作台迷你输入条与各面板脚注。
 - 导航项：lucide 图标 18px（strokeWidth 1.5）+ 14.5px 文字，padding 9/12，圆角
   0.25rem。当前项 = `--accent-wash` 底 + 赤陶字；非当前 = 透明底 + `--text-muted`。
-- 底部：30×30 头像方块（tint 底）+ 用户名（+ 会员小标）+「登出」小字链接。
+  支持 disabled+badge 占位项（未上线入口，quiet 色不可点）。
+- 底部：30×30 头像方块（tint 底）+ 用户名（+ 会员小标）+「设置」/「登出」小字链接
+  （设置自组内移至底部用户区）。
 - 折叠状态持久化 `localStorage['sidebarCollapsed']`。
 
 ~~每个应用内页面顶部保留一个 11px 大写弱色端点小标签~~（2026-07-29 已整体撤下：
@@ -126,18 +129,23 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 
 | # | 屏幕 | 路由 | 状态 |
 |---|------|------|------|
-| 1 | 落地页（未登录） | `/welcome` | ✅ `LandingPage`：粘顶磨砂页眉 + hero（58px 标题、`<mark>` 高亮、唯一 CTA）+ 4 项赤陶数据条 + `#how` 四列流程 + `#engine` 模式/判分 + `#bank` 题库工序 chips |
+| 1 | 营销首页（未登录） | `/`（`HomeGate` 双态，`/welcome` 重定向至此） | ✅ `LandingPage`：11 段叙事——粘顶磨砂页眉（useAuth 双态 CTA）+ hero 打字机出卷演示（`kk-caret`）+ 数据条（1,397/9/55/3）+ `#types` 三族三色题型墙 + `#engine` 四步流程与三档强度 + `#loop` 判分讲解闭环 + `#assistant` 学习助手 + `#parents` 家长区 + `#pricing` 免费列与三档价格（lib/pricing 静态镜像）+ `#faq` + 底部 CTA/页脚 |
 | 2 | 登录 / 注册 | `/login` | ✅ 左右两栏（1.15fr/1fr 竖细线）；左栏品牌/26px 说明句/底部小字，右栏 24rem 表单，tab 选中 2px 赤陶下边框 |
 | 3 | 应用外壳 | — | ✅ 见 § 4 |
-| 4 | 生成试卷 | `/` | ✅ 44rem textarea + 建议 chips + 主按钮 + 状态小字 + `PipelineProgress` 管线面板（见下） |
+| 4a | 工作台（登录后首页） | `/` | ✅ `DashboardPage`：页眉（距中考 N 天 · 免费额度）+ 一句话迷你输入条 + 继续作答 + 今日一练（按星期轮换配方）+ 弱点速览 Top3 + 快捷入口 + 词汇预告；首次使用换三步引导空态 |
+| 4b | 一句话出卷 | `/generate` | ✅ 原生成页迁移改名：44rem textarea + 题型 chips + 强度措辞说明折叠行 + `PipelineProgress` 管线面板（见下） |
+| 4c | 练习中心 | `/practice` | ✅ 三族色区行式题型条目 ×9 + 主题出卷条（仅语法）+ 速练一组 + 工坊入口 + 词汇即将上线 |
+| 4d | 题型专项 ×9 | `/practice/:slug` | ✅ `DrillPageTemplate` 一模板九配置（`lib/drillConfig.ts`）：题量档位 + 考点 chips（语法族，隐藏 0 题 KP、薄尾预警）+ 强度三档（真题档会员）+ 主题（语法族）+ 拼句预览（`lib/composeQuery.ts`） |
+| 4e | 自选组卷工坊 | `/practice/custom` | ✅ 九行 steppers（语法行展开考点多选）+ 粘顶汇总栏（共 N/30 题、强度、主题、拼句预览） |
+| 4f | 整卷模拟 | `/mock` | ✅ 5 预设配方行（全科 30/语法 25/听力 15/阅读 13/真题检测卷[会员]）+ 限时开关（纯前端倒计时，到时温和提醒） |
 | 5 | 当前试卷 / 作答 | `/papers/:id` | ✅ 两栏 `minmax(0,1fr) 280px`：左 52rem 长卷（PAPER·id 标签、题目 `<article>` 细线分隔、纵向选项列表、下划线填空），右粘顶答题卡（N/12 + 2px 进度条 + 4 列题号格） |
 | 6 | 成绩与解析 | 同上（交卷后） | ✅ 总分 44px / 答对 / 错题（赤陶）统计行 + ✓/✕ 状态圆 + 解析手风琴（kicker `POST /API/SOLUTIONS · 按需生成`） |
-| 7 | 掌握度 | `/mastery` | ✅ 统计行 + 考点行网格 `minmax(0,1fr) 88px 200px 64px`，6px 赤陶进度条按不透明度分级，底部薄弱点总结 + 出卷入口 |
+| 7 | 掌握度 | `/mastery` | ✅ 统计行 + 考点行网格 `minmax(0,1fr) 88px 200px 64px`，6px 赤陶进度条按不透明度分级，底部薄弱点总结 + 出卷入口；新增「生成学情报告」（会员）——打印友好一页纸（练习量/最弱 5 考点/固定话术建议，`StudyReport.tsx`） |
 | 8 | 历史试卷 | `/papers` | ✅ 无卡片行式列表 `110px minmax(0,1fr) auto`，整行可点 hover tint |
 | 9 | 错题本 | `/review` | ✅ 勾选方块（选中 = 赤陶边 + wash + ✓）+ 行式列表 + 两个出卷入口（REMEDIATION / REVIEW 分栏），底部计数 `已选 N 道 · mode=remediation` |
 | 10 | 题库浏览 | — | ⏸ 未做：需后端只读检索端点（`GET /api/questions?…`），见 Spec D § 11 |
 | 11 | 题库摄入控制台 | — | ⏸ 未做：管理员向功能，需 ingestion 状态端点，分阶段上线（handoff 允许） |
-| 12 | 设置 | `/settings` | ✅ 细线行式列表：账号 / 阅读外观（纸色 Ink · 深墨地 Deep Ink 切换 `.dark`，持久化 `localStorage['theme']`）/ 速率限制说明 |
+| 12 | 设置 | `/settings` | ✅ 细线行式列表：账号 / 阅读外观（纸色 Ink · 深墨地 Deep Ink 切换 `.dark`，持久化 `localStorage['theme']`）/ 备考目标（目标中考日期，`lib/examDate.ts`，驱动工作台倒计时）/ 速率限制说明；入口移至侧栏底部用户区 |
 | — | 会员（本仓库特有，不在 handoff 内） | `/membership` | ✅ 按同一语言重做：细线分栏套餐、赤陶价格、细线表格权益对比 |
 | — | 学习助手（dev agent 功能，不在 handoff 内） | `/assistant` | ✅ 对话式：用户消息 = wash 底右对齐，助手回复 = 无框正文 + 底部细线，markdown 用 `.chat-md`（细线表格），思考中 = 赤陶脉冲点 |
 | — | 学习计划（dev agent 功能，不在 handoff 内） | `/study-plan` | ✅ DAY 序号 + 细线行式打卡列表，考点中文名 chips，「开始练习 →」次按钮 |
@@ -178,8 +186,9 @@ Assemble 0.3s，文案照抄 handoff），右上角 0.1s 精度真实计时；�
 1. **生成页无「出卷模式 / 题量 / 知识点 chips」分段控件**：本仓库产品结构是
    fresh 在生成页、remediation/review 在错题本页（配合会员门槛与本地错题本），
    题量/考点由 AI 从自然语言解析。属有意保留的产品差异。
-2. **落地页路由为 `/welcome`**（handoff 为未登录的 `/`）：`/` 保留给应用内
-   生成页，未登录访问受保护路由仍跳 `/login`（登录页与落地页互链）。
+2. ~~落地页路由为 `/welcome`~~（2026-08-06 已改）：`/` 为 `HomeGate` 双态——
+   未登录见营销首页、已登录见工作台、管理员重定向 `/admin`；`/welcome` 客户端
+   重定向到 `/`。原生成页迁至 `/generate`。匿名访问 `/` 仅发 `GET /auth/me`。
 3. **历史试卷右侧状态**只有「已交卷 / 未作答」，无「已交 45/60」分数——
    `GET /api/papers` 摘要无得分字段（后端缺口，见 Spec D § 11）。
 4. **题库浏览、摄入控制台**未做（端点缺失，见 § 5 表格）。

@@ -493,6 +493,29 @@ export default defineConfig({
 
 ---
 
+## 10.5 功能拆分改版（2026-08-06）
+
+单一自然语言入口拆为分层多入口,全部出卷入口共用一根管道
+「结构化选择 → `lib/composeQuery.ts` 确定性拼句(措辞对齐 `ai_engine/prompts/parser.md`)
+→ `useGeneratePaper` → `POST /api/papers/generate`」:
+
+- **路由**:`/` 双态(`HomeGate`:匿名=营销首页、登录=工作台、admin 重定向);
+  原生成页迁 `/generate`(一句话出卷);新增 `/practice`(练习中心 hub)、
+  `/practice/:slug`(题型专项 ×9,`lib/drillConfig.ts` 一模板九配置)、
+  `/practice/custom`(自选组卷工坊)、`/mock`(整卷模拟 5 配方 + 纯前端限时);
+  `/welcome` 重定向 `/`。路径常量集中 `lib/paths.ts`,侧栏数据 `lib/nav.ts`(三组九项)。
+- **新增能力**:强度三档显式控件(真题档会员)、按考点专练(隐藏 0 题 KP、
+  8 个薄尾 KP 预警)、主题出卷(仅语法,自动升 fresh)、每日一练(按星期配方)、
+  中考倒计时(`lib/examDate.ts` + 设置页)、打印分版(学生卷免费/教师版含参考答案
+  会员,Tailwind `print:` 变体)、学情报告(会员,`StudyReport.tsx`)、
+  shortfall 行动提示(试卷页)、学习计划空态预填学习助手。
+- **定价单一来源**:`lib/pricing.ts` 静态镜像 payment PLANS + 共享 BENEFITS
+  (营销首页匿名展示与会员页共用;购买路径仍走 `getPlans()` 实时数据)。
+- **配额**:所有 fresh 入口共享一个 `'generate'` 池(3 次/天,不按入口拆分)。
+- 前置后端修复:`ai_engine/parser.py` 白名单补齐两个阅读题型(独立提交)。
+
+---
+
 ## 11. 开放问题（记录，不阻塞实现）
 
 1. **未提交试卷刷新丢失答案**：MVP 接受。若用户反馈强烈，后续加 `sessionStorage` 草稿保存。

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -50,9 +50,21 @@ function saveMessages(messages: ChatMessage[]) {
  */
 export function AssistantPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>(loadMessages)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  // 其他页面(如学习计划空态)可通过 location.state.prefill 预填输入框;
+  // 只填不发,发送权留给用户。读取后清掉 state,刷新不重复预填。
+  useEffect(() => {
+    const prefill = (location.state as { prefill?: unknown } | null)?.prefill
+    if (typeof prefill === 'string' && prefill.trim() !== '') {
+      setInput(prefill)
+      window.history.replaceState({}, '')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const chatMutation = useMutation({
     mutationFn: agentChat,

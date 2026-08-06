@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/PageHeader'
 import { TYPE_LABELS } from '@/lib/kp'
+import { PATHS } from '@/lib/paths'
 import type { StudyPlanDay } from '@/types/api'
 
 /** 学习计划单日行（喫茶去）：细线分隔的行式列表，无卡片。 */
@@ -45,7 +46,7 @@ function DayRow({ day }: { day: StudyPlanDay }) {
       </div>
 
       <Button asChild size="sm" variant="outline" className="mt-1 shrink-0">
-        <Link to={`/papers/${day.paper_id}`}>开始练习 →</Link>
+        <Link to={PATHS.paper(day.paper_id)}>开始练习 →</Link>
       </Button>
     </div>
   )
@@ -87,7 +88,9 @@ export function StudyPlanPage() {
             去学习助手告诉我你的目标（比如「帮我制定 7 天学习计划」），我来安排每天练什么
           </p>
           <Button asChild className="mt-3">
-            <Link to="/assistant">去学习助手</Link>
+            <Link to={PATHS.assistant} state={{ prefill: '帮我制定一个 7 天学习计划' }}>
+              让学习助手帮我制定计划
+            </Link>
           </Button>
         </div>
       )}
