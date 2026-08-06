@@ -1,14 +1,15 @@
 import { Navigate, useParams } from 'react-router-dom'
-import { PageHeader } from '@/components/PageHeader'
+import { DrillPageTemplate } from '@/components/drill/DrillPageTemplate'
+import { drillBySlug } from '@/lib/drillConfig'
 import { PATHS } from '@/lib/paths'
 
-/** 题型专项页路由壳。占位版:PR3 接入 drillConfig + DrillPageTemplate。 */
+/**
+ * 题型专项页路由壳：/practice/:slug → DrillConfig → 模板。
+ * key 按 slug 重置模板内部状态（题量/考点不跨题型残留）。
+ */
 export function DrillPage() {
   const { slug } = useParams<{ slug: string }>()
-  if (!slug) return <Navigate to={PATHS.home} replace />
-  return (
-    <div className="max-w-[52rem]">
-      <PageHeader title="题型专项" intro={slug} />
-    </div>
-  )
+  const config = slug ? drillBySlug(slug) : undefined
+  if (!config) return <Navigate to={PATHS.home} replace />
+  return <DrillPageTemplate key={config.slug} config={config} />
 }
