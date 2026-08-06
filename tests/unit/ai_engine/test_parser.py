@@ -147,6 +147,30 @@ def test_local_validate_drops_invalid_type_distribution_keys(sample_kps: list[Kn
     assert any("capped" in w for w in warnings)
 
 
+def test_local_validate_keeps_all_nine_question_types(sample_kps: list[KnowledgePoint]) -> None:
+    # Regression: reading_longtext_single_choice / cloze_single_choice were missing
+    # from the whitelist, so their type_distribution quotas were silently dropped.
+    dist = {
+        "single_choice": 2,
+        "word_form": 2,
+        "sentence_rewriting": 2,
+        "listening_single_choice": 2,
+        "listening_true_false": 2,
+        "listening_fill_blank": 2,
+        "reading_longtext_single_choice": 6,
+        "cloze_single_choice": 6,
+        "reading_first_blank": 1,
+    }
+    resp = GenerateRequest(
+        total_questions=25,
+        type_distribution=dict(dist),
+        revision_intensity="light",
+    )
+    validated, warnings = _local_validate(resp, sample_kps)
+    assert validated.type_distribution == dist
+    assert warnings == []
+
+
 def test_local_validate_scales_oversized_type_distribution(sample_kps: list[KnowledgePoint]) -> None:
     resp = GenerateRequest(
         total_questions=5,

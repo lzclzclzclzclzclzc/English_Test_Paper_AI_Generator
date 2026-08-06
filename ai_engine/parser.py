@@ -107,7 +107,7 @@ def _local_validate(
     """
     warnings = []
     valid_kp_ids = {kp.id for kp in kps}
-    valid_question_types = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice", "listening_true_false", "listening_fill_blank", "reading_first_blank"}
+    valid_question_types = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice", "listening_true_false", "listening_fill_blank", "reading_longtext_single_choice", "cloze_single_choice", "reading_first_blank"}
 
     # Filter invalid KP ids
     valid_kps = []
