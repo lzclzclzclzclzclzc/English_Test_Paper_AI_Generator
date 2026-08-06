@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { login, register } from '@/api/auth'
 import { ApiError } from '@/api/client'
+import { PATHS } from '@/lib/paths'
 import { queryClient } from '@/lib/queryClient'
 import { cn } from '@/lib/utils'
 
@@ -157,7 +158,7 @@ export function LoginPage() {
             </button>
 
             <Link
-              to="/welcome"
+              to={PATHS.home}
               className="self-start text-[13px] text-quiet transition-colors hover:text-accent"
             >
               返回首页
