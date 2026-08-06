@@ -18,6 +18,7 @@ from backend.schemas import (
 from backend.services.grading import compare
 from shared import storage
 from shared.schemas import PaperItem
+from backend.schemas import WritingGradeResultItem
 
 router = APIRouter(prefix="/attempts", tags=["attempts"])
 

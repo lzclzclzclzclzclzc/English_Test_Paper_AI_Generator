@@ -19,6 +19,8 @@ class BackendConfig(BaseModel):
     frontend_origin: str = "http://localhost:5173"
     rate_limit_generate_per_min: int = 30
     rate_limit_solutions_per_min: int = 60
+    rate_limit_writing_per_min: int = 10
+    payment_service_url: str = "http://127.0.0.1:8001"
 
 
 class AppConfig(BaseSettings):
@@ -71,6 +73,7 @@ def get_config() -> AppConfig:
                         "rate_limit_solutions_per_min": int(
                             os.getenv("RATE_LIMIT_SOLUTIONS_PER_MIN", config.backend.rate_limit_solutions_per_min)
                         ),
+                        "payment_service_url": os.getenv("PAYMENT_SERVICE_URL", config.backend.payment_service_url),
                     }
                 ),
             }

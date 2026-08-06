@@ -27,6 +27,7 @@ MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX = "20260709_001_attempt_items_item_index"
 MIGRATION_USERS_ROLE = "20260801_001_users_role"
 MIGRATION_USERS_STATUS = "20260801_002_users_status"
 MIGRATION_ATTEMPT_ITEMS_USER_ANSWER = "20260803_001_attempt_items_user_answer"
+MIGRATION_WRITING_GRADE_RESULTS = "20260806_001_writing_grade_results"
 CHROMA_COLLECTION_NAME = "questions"
 CHROMA_REQUIRED_METADATA_KEYS = {
     "book",
@@ -132,6 +133,28 @@ def init_db() -> None:
                 plan_json TEXT NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_study_plans_user ON study_plans(user_id, status);
+
+            CREATE TABLE IF NOT EXISTS writing_grade_results (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL REFERENCES users(id),
+                paper_id TEXT NOT NULL,
+                item_index INTEGER NOT NULL,
+                user_essay TEXT NOT NULL,
+                total_score REAL NOT NULL,
+                content_score REAL NOT NULL,
+                language_score REAL NOT NULL,
+                organization_score REAL NOT NULL,
+                word_count INTEGER NOT NULL,
+                level TEXT NOT NULL,
+                content_analysis TEXT,
+                language_analysis TEXT,
+                organization_analysis TEXT,
+                overall_comment TEXT,
+                revised_version TEXT,
+                graded_at TIMESTAMP NOT NULL,
+                UNIQUE(user_id, paper_id, item_index)
+            );
+            CREATE INDEX IF NOT EXISTS idx_writing_grade_user_paper ON writing_grade_results(user_id, paper_id);
             """
         )
         _apply_migrations(conn)
@@ -680,7 +703,9 @@ def _row_to_question(conn: sqlite3.Connection, row: sqlite3.Row) -> Question:
         original_sentence=row["original_sentence"],
         instruction=row["instruction"],
         template=row["template"],
-        answer=json.loads(row["answer_json"]),
+        reference_expressions=row["reference_expressions"] if "reference_expressions" in row.keys() else None,
+        min_words=row["min_words"] if "min_words" in row.keys() else None,
+        answer=json.loads(row["answer_json"]) if row["answer_json"] else None,
         solution=row["solution"],
         knowledge_point_ids=[kp["knowledge_point_id"] for kp in kp_rows],
         source_md=row["source_md"],
@@ -778,6 +803,157 @@ def _mark_paper_submitted(conn: sqlite3.Connection, paper_id: str) -> None:
     )
 
 
+def save_writing_grade_results(user_id: str, paper_id: str, items: list[dict]) -> None:
+    """Persist essay + writing grade results keyed by (user_id, paper_id, item_index).
+
+    items: list of {
+        index: int, user_essay: str,
+        total_score, content_score, language_score, organization_score,
+        word_count, level,
+        content_analysis, language_analysis, organization_analysis, overall_comment, revised_version
+    }
+    """
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with connect() as conn:
+        for it in items:
+            row_id = uuid4().hex
+            conn.execute(
+                """
+                INSERT INTO writing_grade_results
+                    (id, user_id, paper_id, item_index, user_essay, total_score,
+                     content_score, language_score, organization_score, word_count, level,
+                     content_analysis, language_analysis, organization_analysis, overall_comment,
+                     revised_version, graded_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(user_id, paper_id, item_index) DO UPDATE SET
+                    user_essay = excluded.user_essay,
+                    total_score = excluded.total_score,
+                    content_score = excluded.content_score,
+                    language_score = excluded.language_score,
+                    organization_score = excluded.organization_score,
+                    word_count = excluded.word_count,
+                    level = excluded.level,
+                    content_analysis = excluded.content_analysis,
+                    language_analysis = excluded.language_analysis,
+                    organization_analysis = excluded.organization_analysis,
+                    overall_comment = excluded.overall_comment,
+                    revised_version = excluded.revised_version,
+                    graded_at = excluded.graded_at
+                """,
+                (
+                    row_id, user_id, paper_id, it["index"], it["user_essay"],
+                    float(it["total_score"]), float(it["content_score"]),
+                    float(it["language_score"]), float(it["organization_score"]),
+                    int(it["word_count"]), it["level"],
+                    it.get("content_analysis"), it.get("language_analysis"),
+                    it.get("organization_analysis"), it.get("overall_comment"),
+                    it.get("revised_version"), now,
+                ),
+            )
+
+
+def get_writing_grade_results(paper_id: str, user_id: str) -> list[dict]:
+    """Return the latest stored writing grade results for a paper."""
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT item_index, user_essay, total_score, content_score, language_score,
+                   organization_score, word_count, level, content_analysis, language_analysis,
+                   organization_analysis, overall_comment, revised_version, graded_at
+            FROM writing_grade_results
+            WHERE paper_id = ? AND user_id = ?
+            ORDER BY item_index
+            """,
+            (paper_id, user_id),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def mark_paper_submitted_if_needed(paper_id: str, user_id: str) -> None:
+    """Mark a paper submitted if it is not already, so list view shows "已提交".
+
+    This is used when only the writing endpoint submitted a new attempt (no
+    objective POST /attempts call was made).
+    """
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT submitted FROM papers WHERE paper_id = ? AND user_id = ?",
+            (paper_id, user_id),
+        ).fetchone()
+        if not row or bool(row["submitted"]):
+            return
+        conn.execute(
+            "UPDATE papers SET submitted = 1, submitted_at = ? WHERE paper_id = ?",
+            (datetime.now(timezone.utc).isoformat(), paper_id),
+        )
+
+
+def save_writing_attempt_items(user_id: str, paper_id: str, items: list[dict]) -> str | None:
+    """Insert or upsert essay user_answer into the latest attempt for this paper so that
+    AnswerCard / review replay show the writing item as answered.
+
+    If no attempt record exists yet (paper has only writing items and no objective
+    submission via POST /attempts), create a synthetic attempt record so that
+    attempt_items can be attached and the list-views reflect submission status.
+
+    Returns the attempt_id if we wrote to an attempt, or None on failure.
+    """
+    init_db()
+    with connect() as conn:
+        attempt_row = conn.execute(
+            """
+            SELECT id FROM attempts
+            WHERE paper_id = ? AND user_id = ?
+            ORDER BY answered_at DESC LIMIT 1
+            """,
+            (paper_id, user_id),
+        ).fetchone()
+        if not attempt_row:
+            # No attempt yet — create one so attempt_items rows can be linked.
+            attempt_id = uuid4().hex
+            now = datetime.now(timezone.utc).isoformat()
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO attempts (id, paper_id, user_id, answered_at)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (attempt_id, paper_id, user_id, now),
+                )
+            except Exception:
+                return None
+        else:
+            attempt_id = attempt_row["id"]
+        for it in items:
+            conn.execute(
+                """
+                INSERT INTO attempt_items
+                    (attempt_id, item_index, source_question_id, question_type, is_correct,
+                     kps_json, user_answer_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(attempt_id, item_index) DO UPDATE SET
+                    user_answer_json = excluded.user_answer_json,
+                    is_correct = excluded.is_correct,
+                    kps_json = excluded.kps_json,
+                    source_question_id = excluded.source_question_id,
+                    question_type = excluded.question_type
+                """,
+                (
+                    attempt_id,
+                    it["index"],
+                    it["source_question_id"],
+                    "writing",
+                    0,
+                    json.dumps(it.get("knowledge_point_ids") or [], ensure_ascii=False),
+                    json.dumps(it["user_essay"], ensure_ascii=False),
+                ),
+            )
+        return attempt_id
+
+
 def _migrate_users_role(conn: sqlite3.Connection) -> None:
     if not _table_exists(conn, "users"):
         return
@@ -848,9 +1024,39 @@ def _migrate_attempt_items_user_answer(conn: sqlite3.Connection) -> None:
         return
     if "user_answer_json" in _table_columns(conn, "attempt_items"):
         return
-    # Stores the user's submitted answer for review replay (nullable — legacy
-    # rows predate this column and keep NULL).
     conn.execute("ALTER TABLE attempt_items ADD COLUMN user_answer_json TEXT")
+
+
+def _migrate_writing_grade_results(conn: sqlite3.Connection) -> None:
+    if _table_exists(conn, "writing_grade_results"):
+        return
+    conn.execute(
+        """
+        CREATE TABLE writing_grade_results (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL REFERENCES users(id),
+            paper_id TEXT NOT NULL,
+            item_index INTEGER NOT NULL,
+            user_essay TEXT NOT NULL,
+            total_score REAL NOT NULL,
+            content_score REAL NOT NULL,
+            language_score REAL NOT NULL,
+            organization_score REAL NOT NULL,
+            word_count INTEGER NOT NULL,
+            level TEXT NOT NULL,
+            content_analysis TEXT,
+            language_analysis TEXT,
+            organization_analysis TEXT,
+            overall_comment TEXT,
+            revised_version TEXT,
+            graded_at TIMESTAMP NOT NULL,
+            UNIQUE(user_id, paper_id, item_index)
+        );
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_writing_grade_user_paper ON writing_grade_results(user_id, paper_id)",
+    )
 
 
 def _ensure_schema_migrations(conn: sqlite3.Connection) -> None:
@@ -870,6 +1076,7 @@ def _apply_migrations(conn: sqlite3.Connection) -> None:
         (MIGRATION_USERS_ROLE, _migrate_users_role),
         (MIGRATION_USERS_STATUS, _migrate_users_status),
         (MIGRATION_ATTEMPT_ITEMS_USER_ANSWER, _migrate_attempt_items_user_answer),
+        (MIGRATION_WRITING_GRADE_RESULTS, _migrate_writing_grade_results),
     ]
     for migration_id, migration in migrations:
         if _migration_applied(conn, migration_id):

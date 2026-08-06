@@ -11,6 +11,8 @@ interface GradeBannerProps {
   /** 组好的错题巩固卷 id，有值时按钮变「跳转试卷」 */
   remediatedPaperId?: string | null
   onOpenRemediation?: () => void
+  /** 作文题总分（仅当试卷包含作文题时有值） */
+  writingScore?: number | null
 }
 
 /**
@@ -26,6 +28,7 @@ export function GradeBanner({
   remediating = false,
   remediatedPaperId = null,
   onOpenRemediation,
+  writingScore = null,
 }: GradeBannerProps) {
   const renderRemediateButton = () => {
     if (remediatedPaperId) {
@@ -58,6 +61,12 @@ export function GradeBanner({
         </div>
         {remediatedPaperId && (
           <span className="pb-1 text-[13px] text-quiet">已生成错题巩固卷，点右侧进入</span>
+        )}
+        {writingScore !== null && (
+          <div className="flex flex-col gap-1 pb-1">
+            <span className="text-[11px] tracking-[0.1em] text-quiet">作文</span>
+            <span className="text-[20px] leading-none text-accent">{writingScore} / 20</span>
+          </div>
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2.5">

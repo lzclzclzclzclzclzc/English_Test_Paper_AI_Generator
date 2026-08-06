@@ -58,7 +58,12 @@ export function splitTemplateByBlanks(text: string, n: number): string[] | null 
   return parts.length === n + 1 ? parts : null
 }
 
-const isBlankQuestion = (item: PaperItem) => typeof item.question.answer !== 'string'
+const isBlankQuestion = (item: PaperItem) => {
+  const qt = item.question.question_type
+  // Writing questions are answered with a string essay, not blanks
+  if (qt === 'writing') return false
+  return typeof item.question.answer !== 'string'
+}
 
 /** 单题草稿是否"已答完"：单选有值；填空每个空都非空白。 */
 function isDraftComplete(item: PaperItem, draft: AnswerDraft | undefined): boolean {
