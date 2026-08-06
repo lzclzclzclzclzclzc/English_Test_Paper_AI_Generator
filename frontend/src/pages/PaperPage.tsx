@@ -12,9 +12,11 @@ import { toastApiError } from '@/lib/errors'
 import { queryClient } from '@/lib/queryClient'
 import { stopAll as stopTTS } from '@/lib/tts'
 import type { AnswerDraft } from '@/lib/answers'
-import { buildSubmission, listUnanswered } from '@/lib/answers'
+import { buildSubmission, formatCorrectAnswer, listUnanswered } from '@/lib/answers'
 import { buildPaperNotices } from '@/lib/paperNotices'
+import { claimPendingTimer } from '@/lib/paperTimer'
 import { AnswerCard } from '@/components/AnswerCard'
+import { PaperTimer } from '@/components/PaperTimer'
 import { PassageBlock } from '@/components/PassageBlock'
 import { QuestionCard } from '@/components/QuestionCard'
 import { GradeBanner } from '@/components/GradeBanner'
@@ -77,6 +79,17 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
   // 点「再做一遍」后置 true，强制忽略历史结果、回到答题态
   const [redoing, setRedoing] = useState(false)
+  // 教师版打印：先渲染 print-only 的参考答案区，再触发 window.print
+  const [teacherPrint, setTeacherPrint] = useState(false)
+  // 限时模式：挂载时一次性取走出卷入口登记的分钟数（刷新不重启计时）
+  const [timerMinutes] = useState(() => claimPendingTimer())
+  const [timeUpOpen, setTimeUpOpen] = useState(false)
+
+  useEffect(() => {
+    if (!teacherPrint) return
+    window.print()
+    setTeacherPrint(false)
+  }, [teacherPrint])
 
   const { locked } = useMembership()
   const { data: user } = useAuth()
@@ -238,7 +251,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
           {generatedAt} · 共 {paper.items.length} 题
         </p>
 
-        <div className="mt-5 flex items-center gap-2.5 border-b border-hairline pb-6">
+        <div className="mt-5 flex items-center gap-2.5 border-b border-hairline pb-6 print:hidden">
           <Button variant="outline" size="sm" asChild>
             <Link to="/papers">← 历史试卷</Link>
           </Button>
@@ -259,13 +272,39 @@ function PaperPageInner({ paperId }: { paperId: string }) {
             {locked && <MemberPill className="ml-1.5" />}
           </Button>
           <Button variant="outline" size="sm" onClick={() => window.print()}>
-            打印 / 导出
+            打印学生卷
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (locked) {
+                setUpgradeReason('教师版试卷含完整参考答案，是会员功能。')
+              } else {
+                setTeacherPrint(true)
+              }
+            }}
+          >
+            打印教师版
+            {locked && <MemberPill className="ml-1.5" />}
           </Button>
         </div>
 
+        {/* 限时模式：细线一行（提醒制，不强制收卷）；交卷后整行消失 */}
+        {timerMinutes !== null && phase !== 'submitted' && (
+          <div className="mt-4 inline-flex items-center gap-3 rounded-sm border border-hairline px-3 py-2 print:hidden">
+            <PaperTimer
+              minutes={timerMinutes}
+              running={phase === 'answering'}
+              onExpire={() => setTimeUpOpen(true)}
+            />
+            <span className="text-[12px] text-quiet">限时模式 · 到时提醒，不强制收卷</span>
+          </div>
+        )}
+
         {/* 重新生成面板（handoff 第 5 屏）：细线圆角框，POST /api/papers/revise */}
         {reviseOpen && (
-          <div className="kk-rise mt-6 flex max-w-[44rem] flex-col gap-3 rounded-md border border-hairline p-5">
+          <div className="kk-rise mt-6 flex max-w-[44rem] flex-col gap-3 rounded-md border border-hairline p-5 print:hidden">
             <span className="text-[10.5px] font-bold tracking-[0.14em] text-quiet">
               POST /API/PAPERS/REVISE
             </span>
@@ -300,7 +339,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         )}
 
         {submitted && (
-          <div className="mt-6">
+          <div className="mt-6 print:hidden">
             <GradeBanner
               correctCount={correctCount}
               totalCount={paper.items.length}
@@ -322,7 +361,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         )}
 
         {/* 生成说明（request 回显 + metadata 里的检索/改写降级提示）：只陈述事实，不打断做题 */}
-        <div className="mt-5 flex flex-col gap-1.5">
+        <div className="mt-5 flex flex-col gap-1.5 print:hidden">
           <RequestSummary request={paper.request} />
           {revisedFrom && (
             <p className="text-[12.5px] text-quiet">
@@ -341,6 +380,12 @@ function PaperPageInner({ paperId }: { paperId: string }) {
                 <li key={n}>{n}</li>
               ))}
             </ul>
+          )}
+          {paper.request.total_questions > paper.items.length && (
+            <p className="text-[12.5px] leading-relaxed text-quiet">
+              本卷实际组入 {paper.items.length} 题（要求 {paper.request.total_questions} 题）
+              ——该考点真题库存有限，已如实组卷；想要足量可点「重新生成」换成全新出题。
+            </p>
           )}
         </div>
 
@@ -364,19 +409,21 @@ function PaperPageInner({ paperId }: { paperId: string }) {
                     result={resultByIndex.get(item.index)}
                     solutionSlot={
                       submitted ? (
-                        <SolutionBlock
-                          question={item.question}
-                          sourceQuestionId={item.source_question_id}
-                          revisionMode={item.revision_mode}
-                          cacheKey={['solution', paper.paper_id, item.index]}
-                          locked={locked}
-                          userId={userId}
-                          userAnswer={(() => {
-                            const r = resultByIndex.get(item.index)
-                            if (!r || r.is_correct) return null
-                            return r.user_answer ?? null
-                          })()}
-                        />
+                        <div className="print:hidden">
+                          <SolutionBlock
+                            question={item.question}
+                            sourceQuestionId={item.source_question_id}
+                            revisionMode={item.revision_mode}
+                            cacheKey={['solution', paper.paper_id, item.index]}
+                            locked={locked}
+                            userId={userId}
+                            userAnswer={(() => {
+                              const r = resultByIndex.get(item.index)
+                              if (!r || r.is_correct) return null
+                              return r.user_answer ?? null
+                            })()}
+                          />
+                        </div>
                       ) : undefined
                     }
                   />
@@ -406,7 +453,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         </div>
 
         {!submitted && (
-          <div className="mt-8 flex items-center gap-4">
+          <div className="mt-8 flex items-center gap-4 print:hidden">
             <button
               type="button"
               disabled={phase === 'submitting'}
@@ -420,10 +467,27 @@ function PaperPageInner({ paperId }: { paperId: string }) {
             </span>
           </div>
         )}
+        {/* 教师版打印专用：参考答案汇总（屏幕上不渲染） */}
+        {teacherPrint && (
+          <section className="hidden print:block">
+            <h2 className="mt-10 border-t border-hairline pt-6 text-[20px] text-ink [font-family:var(--font-display)]">
+              参考答案（教师版）
+            </h2>
+            <ol className="mt-3 flex flex-col gap-1 text-[13.5px] leading-[1.9] text-ink">
+              {paper.items.map((item) => (
+                <li key={item.index}>
+                  {item.index}. {formatCorrectAnswer(item.question.answer)}
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
       </div>
 
       {/* 右：280px 粘顶答题卡。作答态标已答/未答，复盘态标对/错 + 元信息 */}
-      <AnswerCard paper={paper} answers={answers} results={submitted ? resultByIndex : null} />
+      <div className="contents print:hidden">
+        <AnswerCard paper={paper} answers={answers} results={submitted ? resultByIndex : null} />
+      </div>
 
       {/* 漏答确认 */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -439,6 +503,29 @@ function PaperPageInner({ paperId }: { paperId: string }) {
               继续作答
             </Button>
             <Button onClick={doSubmit}>仍要交卷</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 限时到点提醒：可交可续，不强制 */}
+      <Dialog open={timeUpOpen} onOpenChange={setTimeUpOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>时间到了</DialogTitle>
+            <DialogDescription>可以现在交卷，也可以继续作答。</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTimeUpOpen(false)}>
+              继续作答
+            </Button>
+            <Button
+              onClick={() => {
+                setTimeUpOpen(false)
+                handleSubmitClick()
+              }}
+            >
+              现在交卷
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

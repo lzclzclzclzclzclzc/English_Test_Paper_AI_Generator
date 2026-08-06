@@ -44,7 +44,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className="sticky top-0 flex h-svh shrink-0 flex-col border-r border-hairline transition-[width] duration-250 ease-out"
+      className="sticky top-0 flex h-svh shrink-0 flex-col border-r border-hairline transition-[width] duration-250 ease-out print:hidden"
       style={{ width: collapsed ? 66 : 232 }}
     >
       {/* 顶部 64px：品牌 + 折叠按钮 */}
