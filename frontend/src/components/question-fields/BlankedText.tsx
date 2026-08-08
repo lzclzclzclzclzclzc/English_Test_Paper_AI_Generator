@@ -2,8 +2,8 @@ import type { BlankMap } from '@/lib/answers'
 import { blankLabel, splitTemplateByBlanks } from '@/lib/answers'
 
 interface BlankedTextProps {
-  /** 含下划线空位标记的题干/模板 */
-  text: string
+  /** 含下划线空位标记的题干/模板；null 表示无模板（如连词成句） */
+  text: string | null
   /** 空位键（blank1..N，来自 getBlankKeys），顺序即输入框顺序 */
   blankKeys: string[]
   mode: 'answering' | 'review'
@@ -47,7 +47,7 @@ function BlankValue({ text }: { text: string }) {
  * 输入框带"空N"标签排在下方（应对真题库中 51/220 的标记不一致数据）。
  */
 export function BlankedText({ text, blankKeys, mode, value, onChange }: BlankedTextProps) {
-  const segments = splitTemplateByBlanks(text, blankKeys.length)
+  const segments = text ? splitTemplateByBlanks(text, blankKeys.length) : null
 
   const setBlank = (key: string, v: string) => onChange?.({ ...value, [key]: v })
 
@@ -77,26 +77,47 @@ export function BlankedText({ text, blankKeys, mode, value, onChange }: BlankedT
     )
   }
 
-  // 兜底：空位标记与空数不符 → 原文 + 标签输入框
+  // 兜底：无模板（连词成句等）或空位标记与空数不符
+  const noTemplate = !text
   return (
     <div className="flex flex-col gap-2.5">
-      <p className="text-[17px] leading-[1.9] text-ink">{text}</p>
-      <div className="flex flex-wrap gap-x-6 gap-y-2">
-        {blankKeys.map((key) => (
-          <span key={key} className="flex items-baseline gap-1.5 text-[13px] text-muted-ink">
-            {blankLabel(key)}：
-            {mode === 'answering' ? (
-              <BlankInput
-                ariaLabel={blankLabel(key)}
-                value={value[key] ?? ''}
-                onChange={(v) => setBlank(key, v)}
-              />
-            ) : (
-              <BlankValue text={value[key] ?? ''} />
-            )}
-          </span>
-        ))}
-      </div>
+      {text && <p className="text-[17px] leading-[1.9] text-ink">{text}</p>}
+      {noTemplate ? (
+        // 无模板：整行输入框（连词成句需输入完整句子）
+        blankKeys.map((key) => (
+          mode === 'answering' ? (
+            <input
+              key={key}
+              type="text"
+              aria-label={blankLabel(key)}
+              value={value[key] ?? ''}
+              onChange={(e) => setBlank(key, e.target.value)}
+              className="w-full border-0 border-b border-ink-30 bg-transparent px-1 text-[16px] text-ink outline-none transition-colors focus:border-accent"
+            />
+          ) : (
+            <p key={key} className="min-h-[1.9em] border-b border-ink-30 px-1 text-[16px] leading-[1.9] text-ink">
+              {value[key] ?? ''}
+            </p>
+          )
+        ))
+      ) : (
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          {blankKeys.map((key) => (
+            <span key={key} className="flex items-baseline gap-1.5 text-[13px] text-muted-ink">
+              {blankLabel(key)}：
+              {mode === 'answering' ? (
+                <BlankInput
+                  ariaLabel={blankLabel(key)}
+                  value={value[key] ?? ''}
+                  onChange={(v) => setBlank(key, v)}
+                />
+              ) : (
+                <BlankValue text={value[key] ?? ''} />
+              )}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

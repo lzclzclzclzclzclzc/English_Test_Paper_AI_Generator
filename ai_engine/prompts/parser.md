@@ -96,20 +96,22 @@
 # 重要规则
 - 若用户提到清单外的知识点，不要造 id，只写进 free_text 字段
 - knowledge_points 中的每个 id 必须是清单中存在的
-- total_questions 不能超过 30
+- total_questions 不能超过 50
 - question_types 必须从枚举中选择
 - **阅读理解 / 完形填空按"篇"出题（每篇固定 6 题）**：
   - 当用户用"篇"为单位（如"来 3 篇阅读理解"、"出 2 篇完形填空"），题目数 = 篇数 × 6
     - n 篇 → total_questions = 6n，type_distribution 中对应题型 = 6n
   - 当用户用"道/题"为单位（如"来 6 道阅读理解"），按用户说的数量
   - 当用户未指定数量（如"来几篇阅读理解"），默认 1 篇 = 6 题
-  - total_questions 上限 30 仍然适用（最多 5 篇）
+  - total_questions 上限 50 仍然适用（最多 8 篇）
 -- **阅读首字母填空按"篇"出题（1 篇 = 1 题）**：
   - 每篇短文内含 7 个首字母填空，作为一道题整体渲染
   - n 篇 → total_questions = n，type_distribution 中 reading_first_blank = n
-- **阅读首字母填空（reading_first_blank）一律按原题出**：
-  - 该题型复杂，改写（revise）极易导致答案出错，因此**无论用户怎么表述**（"练习"、"新题"、"重新出"、"结合主题"等），只要本题型包含 **reading_first_blank**，revision_intensity 一律设为 "original"，不做任何改写
-  - 若请求混合了其他题型，revision_intensity 仍按其他题型推断，但阅读首字母填空题目本身始终按原题出
+- **段落类题型一律按原题出**（为保证出题速度，避免 passage 一致性被破坏）：
+  - 涉及题型：listening_true_false、listening_fill_blank、reading_longtext_single_choice、cloze_single_choice、reading_first_blank
+  - **无论用户怎么表述**（"练习"、"新题"、"重新出"、"结合主题"等），这些题型始终按原题出，不做改写
+  - 若请求**只包含**段落类题型，revision_intensity 一律设为 "original"
+  - 若请求混合了非段落题型（single_choice / word_form / sentence_rewriting / listening_single_choice），revision_intensity 按非段落题型推断，但段落类题目本身始终按原题出
 
 # 输入
 用户请求：{{ user_query }}
@@ -395,7 +397,7 @@
   "question_types": ["listening_true_false"],
   "total_questions": 5,
   "type_distribution": {"listening_true_false": 5},
-  "revision_intensity": "light",
+  "revision_intensity": "original",
   "free_text": ""
 }
 
@@ -407,7 +409,7 @@
   "question_types": ["listening_fill_blank"],
   "total_questions": 10,
   "type_distribution": {"listening_fill_blank": 10},
-  "revision_intensity": "light",
+  "revision_intensity": "original",
   "free_text": ""
 }
 
@@ -419,7 +421,7 @@
   "question_types": ["reading_longtext_single_choice"],
   "total_questions": 6,
   "type_distribution": {"reading_longtext_single_choice": 6},
-  "revision_intensity": "light",
+  "revision_intensity": "original",
   "free_text": ""
 }
 
@@ -431,7 +433,7 @@
   "question_types": ["cloze_single_choice"],
   "total_questions": 12,
   "type_distribution": {"cloze_single_choice": 12},
-  "revision_intensity": "light",
+  "revision_intensity": "original",
   "free_text": ""
 }
 
@@ -443,7 +445,7 @@
   "question_types": ["reading_longtext_single_choice", "cloze_single_choice"],
   "total_questions": 18,
   "type_distribution": {"reading_longtext_single_choice": 12, "cloze_single_choice": 6},
-  "revision_intensity": "light",
+  "revision_intensity": "original",
   "free_text": ""
 }
 
@@ -455,7 +457,7 @@
   "question_types": ["reading_longtext_single_choice"],
   "total_questions": 6,
   "type_distribution": {"reading_longtext_single_choice": 6},
-  "revision_intensity": "light",
+  "revision_intensity": "original",
   "free_text": ""
 }
 

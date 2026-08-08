@@ -42,7 +42,7 @@ class AppConfig(BaseSettings):
     llm_max_concurrency: int = 4
     llm_max_retries: int = 3
 
-    max_questions_per_paper: int = 30
+    max_questions_per_paper: int = 50
     backend: BackendConfig = BackendConfig()
 
 

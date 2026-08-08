@@ -34,6 +34,9 @@ async def submit_attempt(body: GradeSubmissionRequest, user: User = Depends(curr
     for submitted in body.items:
         paper_item = by_index[submitted.index]
         question = paper_item.question
+        # Skip writing questions — graded via /api/writing/grade, not here.
+        if question.question_type == "writing":
+            continue
         is_correct = compare(submitted.user_answer, question.answer, question.question_type)
         results.append(
             GradeResultItem(
@@ -63,12 +66,16 @@ def _validate_submission_items(
     submitted_items: list[GradeSubmissionItem],
 ) -> dict[int, PaperItem]:
     by_index = {item.index: item for item in paper_items}
-    paper_indices = set(by_index)
+    # Writing questions are graded separately via /api/writing/grade — they are
+    # NOT required in this submission. Only non-writing indices must be covered.
+    required_indices = {
+        item.index for item in paper_items if item.question.question_type != "writing"
+    }
     submitted_indices = [item.index for item in submitted_items]
     submitted_index_set = set(submitted_indices)
     duplicate_indices = sorted({index for index in submitted_indices if submitted_indices.count(index) > 1})
-    unknown_indices = sorted(submitted_index_set - paper_indices)
-    missing_indices = sorted(paper_indices - submitted_index_set)
+    unknown_indices = sorted(submitted_index_set - set(by_index))
+    missing_indices = sorted(required_indices - submitted_index_set)
     if duplicate_indices or unknown_indices or missing_indices:
         raise ValidationError(
             {

@@ -33,15 +33,13 @@ export function SentenceRewritingField({
       {question.instruction && (
         <p className="text-[13px] text-quiet">（{question.instruction}）</p>
       )}
-      {question.template && (
-        <BlankedText
-          text={question.template}
-          blankKeys={blankKeys}
-          mode={mode}
-          value={displayValue}
-          onChange={onChange}
-        />
-      )}
+      <BlankedText
+        text={question.template}
+        blankKeys={blankKeys}
+        mode={mode}
+        value={displayValue}
+        onChange={onChange}
+      />
     </div>
   )
 }

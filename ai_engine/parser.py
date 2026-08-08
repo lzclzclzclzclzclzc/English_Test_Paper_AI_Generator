@@ -22,7 +22,7 @@ from ai_engine.errors import ParserError
 from ai_engine.prompts import load
 
 
-MAX_QUESTIONS = 30
+MAX_QUESTIONS = 50
 
 
 def _load_kp_catalog(db_path: str) -> list[KnowledgePoint]:
@@ -108,7 +108,7 @@ def _local_validate(
     """
     warnings = []
     valid_kp_ids = {kp.id for kp in kps}
-    valid_question_types = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice", "listening_true_false", "listening_fill_blank", "reading_first_blank", "writing"}
+    valid_question_types = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice", "listening_true_false", "listening_fill_blank", "reading_longtext_single_choice", "cloze_single_choice", "reading_first_blank", "writing"}
 
     # Filter invalid KP ids
     valid_kps = []

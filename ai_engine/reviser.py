@@ -74,6 +74,18 @@ def _copy_question(q: Question) -> RevisedQuestion:
     )
 
 
+# 段落类题型（共享 passage）以及无标准答案的写作题，一律按原题出：
+# 段落题改写会破坏同组 passage 一致性且耗时；为保证出题速度，直接拷贝原题。
+_PASSTHROUGH_TYPES = frozenset({
+    "reading_first_blank",
+    "writing",
+    "listening_true_false",
+    "listening_fill_blank",
+    "reading_longtext_single_choice",
+    "cloze_single_choice",
+})
+
+
 def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
     """Three-layer defense validation.
 
@@ -87,7 +99,7 @@ def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
         return False
 
     qt = original.question_type
-    if qt in ("single_choice", "listening_single_choice", "reading_longtext_single_choice", "cloze_single_choice"):
+    if qt in ("single_choice", "listening_single_choice"):
         if revised.answer not in {"A", "B", "C", "D"}:
             return False
         if not revised.options or len(revised.options) != 4:
@@ -95,21 +107,8 @@ def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:
         labels = {opt.label for opt in revised.options}
         if labels != {"A", "B", "C", "D"}:
             return False
-    elif qt == "listening_true_false":
-        if revised.answer not in {"T", "F"}:
-            return False
-        if not revised.options or len(revised.options) != 2:
-            return False
-        labels = {opt.label for opt in revised.options}
-        if labels != {"T", "F"}:
-            return False
-    elif qt in ("word_form", "sentence_rewriting", "listening_fill_blank", "reading_first_blank"):
+    elif qt in ("word_form", "sentence_rewriting"):
         if not _is_valid_blank_answer(revised.answer):
-            return False
-        # 阅读首字母填空：passage 会被强制保留为原题（7 空），故答案的空位数必须与
-        # 原题一致，否则会出现"文章有 7 空、答案只有 1 空"的错位，导致文章下方额外
-        # 渲染填空框。拒绝此类修订并回退到原题拷贝。
-        if qt == "reading_first_blank" and len(revised.answer) != len(original.answer):
             return False
 
     return True
@@ -146,14 +145,9 @@ def _revise_one(
     LLM call raised) and we fell back to copying the original. `original`
     mode is never a fallback — copying is its intended behaviour.
     """
-    if question.question_type == "reading_first_blank":
-        # 阅读首字母填空题型复杂，revise（light/fresh）极易导致答案与原题 7 空
-        # 错位、拼写错误等问题。硬性约束：一律按原题出，不做任何改写。
-        return _copy_question(question), False
-
-    if question.question_type == "writing":
-        # 作文题没有标准答案（answer=null），不需要改写题目。
-        # 直接使用原题，保持 stem/hint/instruction/reference_expressions/min_words 不变。
+    if question.question_type in _PASSTHROUGH_TYPES:
+        # 段落类题型（共享 passage）改写会破坏同组一致性且耗时；
+        # 作文题无标准答案，无需改写。为保证出题速度，一律按原题出。
         return _copy_question(question), False
 
     if intensity == "original":
@@ -190,15 +184,6 @@ def _revise_one(
         )
 
         if _validate_revision(question, revised):
-            # Force-preserve passage fields for passage-based types — the
-            # passage is shared across a group of questions and must stay
-            # identical across all of them. The Reviser processes questions
-            # independently (and in parallel), so any per-question passage
-            # edit would break group consistency. Passage integrity trumps
-            # the revision_intensity passage rule from the design doc.
-            if question.question_type in ("listening_true_false", "reading_longtext_single_choice", "cloze_single_choice", "listening_fill_blank", "reading_first_blank"):
-                revised.passage_id = question.passage_id
-                revised.passage_json = question.passage_json
             return revised, False
         else:
             return _copy_question(question), True
@@ -248,13 +233,12 @@ def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
     # Actual LLM calls: original makes none; light/fresh call once per question
     # attempted (fallbacks still incurred a call unless the call itself raised,
     # but we report attempts as the observable count — matches Spec B §5.4).
-    # 阅读首字母填空恒按原题出，从不调用 LLM，故不计入。
-    # 作文题同样按原题出，不调用 LLM。
+    # 段落类题型与作文题恒按原题出，从不调用 LLM，故不计入。
     llm_calls = sum(
         1
         for retrieved in chosen
         if req.revision_intensity != "original"
-        and retrieved.question.question_type not in ("reading_first_blank", "writing")
+        and retrieved.question.question_type not in _PASSTHROUGH_TYPES
     )
 
     return Paper(

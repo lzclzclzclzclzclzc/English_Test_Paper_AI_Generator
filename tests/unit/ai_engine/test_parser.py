@@ -280,7 +280,7 @@ def test_parse_review_mode_with_mastery() -> None:
 
 @pytestmark_integration
 def test_parse_total_questions_capped_at_max() -> None:
-    """total_questions > 30 gets capped."""
+    """total_questions > 50 gets capped."""
     req = parse("来一百道单选题")
     assert req.total_questions <= MAX_QUESTIONS
 
