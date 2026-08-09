@@ -519,6 +519,10 @@ export default defineConfig({
 - **配额**:所有 fresh 入口共享一个 `'generate'` 池(3 次/天,不按入口拆分)。
 - 前置后端修复:`ai_engine/parser.py` 白名单补齐两个阅读题型(独立提交)。
 - 2026-08-07 复盘域拆分:错题本页单一职责(列表+巩固卷右栏),综合复习迁入掌握度页;删除 ReviewGeneratePanel。
+- 2026-08-09(晚)词汇模块合入:merge `CJN/vocabulary-mvp`——`/vocabulary`(间隔重复
+  今日卡片)与 `/vocabulary/progress`(统计+每日目标)接入四组导航(练习「背单词」、
+  复盘「背词进度」),工作台/练习中心/营销页的「即将上线」占位全部点亮为真实入口;
+  空库需 `python -m backend.cli seed-vocabulary` 导入词表(2,047 词)。
 - 2026-08-09 信息架构扩展(用户反馈驱动):侧栏拆为四组十三项(练习/出卷/助手/复盘),
   「我的」组收进底部头像弹出菜单(历史试卷/会员/设置/登出);新增 `/daily` 每日一练
   (配方唯一事实源 `lib/dailyRecipes.ts`,与工作台今日一练卡共用)、`/themes` 主题出卷

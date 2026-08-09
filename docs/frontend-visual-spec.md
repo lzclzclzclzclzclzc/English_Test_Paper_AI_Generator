@@ -104,11 +104,11 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 
 - 展开 232px / 收起 66px，`transition: width .25s ease-out`，粘顶全高，右侧 1px 细线。
 - 顶部 64px：品牌「试卷生成器」（display 字体，收起时隐藏）+ 30×30 折叠按钮（lucide `panel-left`）。
-- 四组十三项导航（2026-08-09 拆满侧栏；数据在 `lib/nav.ts`），组标签 10.5px/700/0.14em 弱色：
-  **练习**（工作台 `/home`、每日一练 `/daily`、练习中心 `/practice`、词汇学习[disabled+即将上线]）、
+- 四组十四项导航（2026-08-09 拆满侧栏 + 词汇模块合入；数据在 `lib/nav.ts`），组标签 10.5px/700/0.14em 弱色：
+  **练习**（工作台 `/home`、每日一练 `/daily`、练习中心 `/practice`、背单词 `/vocabulary`）、
   **出卷**（主题出卷 `/themes`、自选组卷 `/practice/custom`、整卷模拟 `/mock`、一句话出卷 `/generate`）、
   **助手**（学习助手 `/assistant`、学习计划 `/study-plan`）、
-  **复盘**（错题本 `/review`、掌握度 `/mastery`、学情报告 `/report`）。
+  **复盘**（错题本 `/review`、掌握度 `/mastery`、背词进度 `/vocabulary/progress`、学情报告 `/report`）。
   收起时组标签变成一条 1px 细线分隔符。「我的」组撤销——历史试卷/会员收进头像菜单。
 - 导航项：lucide 图标 18px（strokeWidth 1.5）+ 14.5px 文字（font-ui），padding 9/12，
   圆角 0.25rem。当前项 = `--accent-wash` 底 + 赤陶字；非当前 = 透明底 + `--text-muted`。
@@ -153,6 +153,8 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 | — | 学习助手（dev agent 功能，不在 handoff 内） | `/assistant` | ✅ 对话式：用户消息 = wash 底右对齐，助手回复 = 无框正文 + 底部细线，markdown 用 `.chat-md`（细线表格），思考中 = 赤陶脉冲点 |
 | — | 学习计划（dev agent 功能，不在 handoff 内） | `/study-plan` | ✅ 月历视图（`StudyPlanCalendar`，2026-08-09）：周一起 7 列 ink-10 细线网格，计划日 = 主题名 +「N 题」（有卷整格 Link 进卷 / 无卷点击锚点滚到 DAY 行），今天赤陶圆点 + 当天计划格 wash，中考日赤陶细线 chip，‹›切月限计划/中考覆盖范围；日历下保留 DAY 行式列表；全空 date 时只显列表 |
 | — | 学情报告（自掌握度页独立） | `/report` | ✅ 会员 = `StudyReport` 完整复用（近 30 天，打印友好）；非会员 = 居中提示卡（赤陶上边线 + 价值句 + 去开通会员）。掌握度页保留链接入口 |
+| — | 背单词（CJN/vocabulary-mvp 合入，2026-08-09） | `/vocabulary` | ✅ 间隔重复今日卡片流：今日新词/到期复习/今日再复习三队列，认识（进长期复习）/ 模糊 / 不认识（今日重出）三档判定 + 快捷键 1/2/3，判定后释义确认与下次复习日期；全部完成显示完成总结。词表需 `python -m backend.cli seed-vocabulary` 导入（2,047 词） |
+| — | 背词进度 | `/vocabulary/progress` | ✅ 统计块（今日新词/复习队列/已学习 N/2047/长期掌握/连续学习天数）+ 每日新词目标设置（10–50）+ 词表来源说明 |
 
 **管线进度（第 4 屏）**：后端同步返回、无 SSE（Spec C 明确），采用 handoff
 落地方式 (a)——固定时间轴演示四步（Parser 0.8s / Retriever 1.2s / Reviser 2.6s /
