@@ -43,12 +43,12 @@ export function AdminOrdersPage() {
         <table className="w-full text-[13px]">
           <thead className="bg-wash/60 text-left font-ui text-muted-ink">
             <tr>
-              <th className="px-3 py-2 font-[550]">订单号</th>
-              <th className="px-3 py-2 font-[550]">用户</th>
-              <th className="px-3 py-2 font-[550]">套餐</th>
-              <th className="px-3 py-2 font-[550]">金额</th>
-              <th className="px-3 py-2 font-[550]">状态</th>
-              <th className="px-3 py-2 font-[550]">创建时间</th>
+              <th className="px-3 py-2">订单号</th>
+              <th className="px-3 py-2">用户</th>
+              <th className="px-3 py-2">套餐</th>
+              <th className="px-3 py-2">金额</th>
+              <th className="px-3 py-2">状态</th>
+              <th className="px-3 py-2">创建时间</th>
             </tr>
           </thead>
           <tbody>

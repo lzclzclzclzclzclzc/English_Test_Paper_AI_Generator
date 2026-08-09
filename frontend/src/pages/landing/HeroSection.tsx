@@ -61,7 +61,7 @@ const CHECKING_MS = 800
 const HOLD_MS = 5000
 const FADE_MS = 300
 
-const CHIP = 'shrink-0 rounded-sm border px-2 py-0.5 font-ui text-[11px] font-[550]'
+const CHIP = 'shrink-0 rounded-sm border px-2 py-0.5 font-ui text-[11px]'
 
 /**
  * 自然语言出卷的拟真演示面板。所有定时器都由 useEffect 返回清理;

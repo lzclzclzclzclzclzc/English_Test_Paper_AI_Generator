@@ -75,7 +75,7 @@ export function MembershipPage() {
           {plansQuery.data?.map((plan) => (
             <div key={plan.id} className="flex flex-col gap-3 px-8 py-7 first:pl-2 last:pr-2 max-sm:px-2">
               <span className="text-[15px] text-ink">{plan.name}</span>
-              <span className="font-ui text-[28px] font-[650] leading-none tabular-nums text-accent">
+              <span className="font-ui text-[28px] font-bold leading-none tabular-nums text-accent">
                 {formatYuan(plan.amount_cents)}
               </span>
               <span className="text-[12.5px] leading-relaxed text-quiet">{plan.description}</span>

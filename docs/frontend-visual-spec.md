@@ -175,7 +175,7 @@ Assemble 0.3s，文案照抄 handoff），右上角 0.1s 精度真实计时；�
 | hover | 统一 `--hover-tint` 薄底或文字转赤陶。**无位移、无阴影、无放大** |
 | 列表 | 一律细线分隔的行，不用卡片容器；表头 11px 大写弱色 + `--ink-20` 下边线 |
 | 空态 | 细线上起段：标题 + 一句引导 + 主按钮指向唯一下一步 |
-| 字体分层 | 交互控件与 UI 细节（按钮/chip/tab/toggle、导航项与组标签、kicker、badge/pill、表单分组小标）一律 `font-ui`（数字与计数加 `tabular-nums`，权重走 `font-[550/650/750]`）；阅读内容（正文、intro、题干选项、解析、表格内容）一律衬线（仅 400/700）；display 仅品牌与 h1 |
+| 字体分层 | **全站单一衬线**（2026-08-09 用户裁定）：`--font-ui` token 指向 `--font-serif`，控件与正文同族；`font-ui` 类保留（语义 = UI 细节 + `tabular-nums` 数字对齐），字重全站仅 400/700（大数字层级用 `font-bold`，中间字重已清除）；display 仅品牌与 h1，`--font-mono` 仅 PAPER·id 等技术性小标 |
 
 ---
 

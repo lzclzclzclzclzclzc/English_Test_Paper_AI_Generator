@@ -6,7 +6,7 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-md border border-hairline bg-wash/40 px-4 py-3">
       <div className="text-[12px] text-quiet">{label}</div>
-      <div className="mt-1 font-ui text-[22px] font-[650] tabular-nums text-ink">{value}</div>
+      <div className="mt-1 font-ui text-[22px] font-bold tabular-nums text-ink">{value}</div>
     </div>
   )
 }

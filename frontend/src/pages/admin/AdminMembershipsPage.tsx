@@ -193,10 +193,10 @@ export function AdminMembershipsPage() {
         <table className="w-full text-[13px]">
           <thead className="bg-wash/60 text-left font-ui text-muted-ink">
             <tr>
-              <th className="px-3 py-2 font-[550]">用户</th>
-              <th className="px-3 py-2 font-[550]">到期时间</th>
-              <th className="px-3 py-2 font-[550]">状态</th>
-              <th className="px-3 py-2 font-[550]">操作</th>
+              <th className="px-3 py-2">用户</th>
+              <th className="px-3 py-2">到期时间</th>
+              <th className="px-3 py-2">状态</th>
+              <th className="px-3 py-2">操作</th>
             </tr>
           </thead>
           <tbody>

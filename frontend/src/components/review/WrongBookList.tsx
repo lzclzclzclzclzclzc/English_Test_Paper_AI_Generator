@@ -226,7 +226,7 @@ function WrongBookRow({
         >
           <span
             className={cn(
-              'shrink-0 rounded-sm px-2 py-[3px] font-ui text-[11px] font-[550] leading-none',
+              'shrink-0 rounded-sm px-2 py-[3px] font-ui text-[11px] leading-none',
               FAMILY_PILL[TYPE_FAMILY[question.question_type] ?? 'grammar'],
             )}
           >

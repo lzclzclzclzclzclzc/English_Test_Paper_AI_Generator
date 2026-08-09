@@ -82,7 +82,7 @@ export function TypeGrid() {
                   className="flex flex-col items-start gap-2 border-b border-hairline py-4 last:border-b-0"
                 >
                   <span
-                    className={`rounded-sm border px-3 py-1 font-ui text-[12.5px] font-[550] ${FAMILY_CHIP_CLASS[col.family]}`}
+                    className={`rounded-sm border px-3 py-1 font-ui text-[12.5px] ${FAMILY_CHIP_CLASS[col.family]}`}
                   >
                     {TYPE_LABELS[row.id] ?? row.id}
                   </span>

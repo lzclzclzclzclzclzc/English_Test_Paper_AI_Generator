@@ -20,11 +20,11 @@ export function AdminUsersPage() {
         <table className="w-full text-[13px]">
           <thead className="bg-wash/60 text-left font-ui text-muted-ink">
             <tr>
-              <th className="px-3 py-2 font-[550]">用户名</th>
-              <th className="px-3 py-2 font-[550]">注册</th>
-              <th className="px-3 py-2 font-[550]">角色</th>
-              <th className="px-3 py-2 font-[550]">状态</th>
-              <th className="px-3 py-2 font-[550]">试卷</th>
+              <th className="px-3 py-2">用户名</th>
+              <th className="px-3 py-2">注册</th>
+              <th className="px-3 py-2">角色</th>
+              <th className="px-3 py-2">状态</th>
+              <th className="px-3 py-2">试卷</th>
               <th className="px-3 py-2"></th>
             </tr>
           </thead>

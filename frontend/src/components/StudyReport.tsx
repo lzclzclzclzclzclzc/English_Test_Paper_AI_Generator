@@ -87,16 +87,16 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
       {/* 练习量 */}
       <div className="flex flex-wrap items-end gap-x-10 gap-y-4 border-b border-hairline pb-6 font-ui">
         <div className="flex flex-col gap-1">
-          <span className="text-[11px] font-[550] tracking-[0.1em] text-quiet">纳入作答</span>
-          <span className="text-[32px] font-[750] leading-none tabular-nums text-ink">
+          <span className="text-[11px] tracking-[0.1em] text-quiet">纳入作答</span>
+          <span className="text-[32px] font-bold leading-none tabular-nums text-ink">
             {profile.total_attempts_considered}
             <span className="text-[13px] font-[450] text-quiet"> 题次</span>
           </span>
         </div>
         {paperCount !== null && (
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-[550] tracking-[0.1em] text-quiet">生成试卷</span>
-            <span className="text-[32px] font-[750] leading-none tabular-nums text-ink">
+            <span className="text-[11px] tracking-[0.1em] text-quiet">生成试卷</span>
+            <span className="text-[32px] font-bold leading-none tabular-nums text-ink">
               {paperCount}
               <span className="text-[13px] font-[450] text-quiet">
                 {' '}
@@ -106,8 +106,8 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
           </div>
         )}
         <div className="flex flex-col gap-1">
-          <span className="text-[11px] font-[550] tracking-[0.1em] text-quiet">覆盖考点</span>
-          <span className="text-[32px] font-[750] leading-none tabular-nums text-ink">
+          <span className="text-[11px] tracking-[0.1em] text-quiet">覆盖考点</span>
+          <span className="text-[32px] font-bold leading-none tabular-nums text-ink">
             {profile.weak_kps.length}
             <span className="text-[13px] font-[450] text-quiet"> 个</span>
           </span>
@@ -139,7 +139,7 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
                     </span>
                     <span
                       className={cn(
-                        'text-[15px] font-[650] tabular-nums',
+                        'text-[15px] font-bold tabular-nums',
                         BAND_TEXT[band],
                       )}
                     >

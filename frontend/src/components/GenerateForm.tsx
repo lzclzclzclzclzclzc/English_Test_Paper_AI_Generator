@@ -69,7 +69,7 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
           <button
             key={label}
             type="button"
-            className={`rounded-sm border px-3 py-1 font-ui text-[12.5px] font-[550] transition-colors ${FAMILY_CHIP_CLASS[family]}`}
+            className={`rounded-sm border px-3 py-1 font-ui text-[12.5px] transition-colors ${FAMILY_CHIP_CLASS[family]}`}
             onClick={() => {
               const cur = form.getValues('user_query').trim()
               const seg = `${n} 道${label}`

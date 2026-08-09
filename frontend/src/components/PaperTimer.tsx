@@ -42,7 +42,7 @@ export function PaperTimer({ minutes, running, onExpire }: PaperTimerProps) {
   return (
     <span
       className={cn(
-        'font-ui text-[13.5px] font-[650] tabular-nums',
+        'font-ui text-[13.5px] font-bold tabular-nums',
         secondsLeft <= 300 ? 'text-accent' : 'text-ink',
       )}
     >

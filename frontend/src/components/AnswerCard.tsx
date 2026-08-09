@@ -47,7 +47,7 @@ export function AnswerCard({ paper, answers, results }: AnswerCardProps) {
         </span>
         <span
           className={cn(
-            'text-[32px] font-[750] leading-none tabular-nums',
+            'text-[32px] font-bold leading-none tabular-nums',
             isReview ? 'text-success' : 'text-ink',
           )}
         >
@@ -83,7 +83,7 @@ export function AnswerCard({ paper, answers, results }: AnswerCardProps) {
                   state === 'done' && 'border-accent bg-wash text-ink',
                   state === 'todo' && 'border-ink-15 text-quiet hover:border-ink-30',
                   state === 'correct' && 'border-success bg-success-wash text-success',
-                  state === 'wrong' && 'border-accent bg-wash font-[650] text-accent',
+                  state === 'wrong' && 'border-accent bg-wash font-bold text-accent',
                 )}
               >
                 {item.index}

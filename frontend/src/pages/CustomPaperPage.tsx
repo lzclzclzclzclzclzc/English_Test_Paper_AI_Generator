@@ -67,7 +67,7 @@ function CountStepper({
       >
         −
       </button>
-      <span className="min-w-14 text-center font-ui text-[15px] font-[650] tabular-nums text-ink">
+      <span className="min-w-14 text-center font-ui text-[15px] font-bold tabular-nums text-ink">
         {value === 0 ? (
           <span className="text-[13px] font-normal text-quiet">不出</span>
         ) : (
@@ -254,7 +254,7 @@ export function CustomPaperPage() {
               <span className="text-[13px] text-muted-ink">合计</span>
               <span
                 className={cn(
-                  'font-ui text-[15px] font-[650] tabular-nums',
+                  'font-ui text-[15px] font-bold tabular-nums',
                   total > MAX_QUESTIONS ? 'text-accent' : 'text-ink',
                 )}
               >

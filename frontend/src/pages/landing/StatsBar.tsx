@@ -11,7 +11,7 @@ export function StatsBar() {
     <section className="grid grid-cols-4 gap-8 border-t border-hairline py-[38px] max-sm:grid-cols-2 max-sm:gap-6">
       {STATS.map((s) => (
         <div key={s.label} className="flex flex-col gap-1.5">
-          <span className="font-ui text-[32px] font-[650] leading-none text-accent tabular-nums">
+          <span className="font-ui text-[32px] font-bold leading-none text-accent tabular-nums">
             {s.value}
           </span>
           <span className="text-[13px] text-quiet">{s.label}</span>

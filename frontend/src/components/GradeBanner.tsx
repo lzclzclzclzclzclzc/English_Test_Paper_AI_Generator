@@ -51,21 +51,21 @@ export function GradeBanner({
     <div className="kk-rise flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-hairline pb-6">
       <div className="flex items-end gap-8 font-ui">
         <div className="flex flex-col gap-1">
-          <span className="text-[11px] font-[550] tracking-[0.1em] text-quiet">答对</span>
-          <span className="text-[54px] font-[750] leading-none tabular-nums text-success">
+          <span className="text-[11px] tracking-[0.1em] text-quiet">答对</span>
+          <span className="text-[54px] font-bold leading-none tabular-nums text-success">
             {correctCount}
             <span className="text-[18px] font-[450] text-quiet"> / {totalCount}</span>
           </span>
         </div>
         <div className="flex flex-col gap-1 pb-1">
-          <span className="text-[11px] font-[550] tracking-[0.1em] text-quiet">错题</span>
-          <span className="text-[28px] font-[650] leading-none tabular-nums text-accent">
+          <span className="text-[11px] tracking-[0.1em] text-quiet">错题</span>
+          <span className="text-[28px] font-bold leading-none tabular-nums text-accent">
             {wrongCount}
           </span>
         </div>
         <div className="flex flex-col gap-1 pb-1">
-          <span className="text-[11px] font-[550] tracking-[0.1em] text-quiet">正确率</span>
-          <span className={`text-[28px] font-[650] leading-none tabular-nums ${rateColor}`}>
+          <span className="text-[11px] tracking-[0.1em] text-quiet">正确率</span>
+          <span className={`text-[28px] font-bold leading-none tabular-nums ${rateColor}`}>
             {Math.round(rate * 100)}
             <span className="text-[14px] font-[450]">%</span>
           </span>

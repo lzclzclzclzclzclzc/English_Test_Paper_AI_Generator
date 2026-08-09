@@ -58,7 +58,7 @@ export function EngineSection() {
         {TIERS.map((t) => (
           <div key={t.tier} className="flex gap-5 border-t border-hairline py-[22px] last:border-b">
             <span
-              className={`h-fit shrink-0 rounded-sm border px-2.5 py-1 font-ui text-[12px] font-[550] ${TIER_CHIP_CLASS[t.tier]}`}
+              className={`h-fit shrink-0 rounded-sm border px-2.5 py-1 font-ui text-[12px] ${TIER_CHIP_CLASS[t.tier]}`}
             >
               {TIER_LABELS[t.tier]}
             </span>

@@ -114,7 +114,7 @@ export function ReviewPage() {
               AI 会围绕勾选错题的考点出全新的题，不是原题重做。
             </p>
 
-            <p className="font-ui text-[15px] font-[650] tabular-nums text-ink">
+            <p className="font-ui text-[15px] font-bold tabular-nums text-ink">
               已选 {selected.size} / 共 {entries.length} 道
             </p>
 

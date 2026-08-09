@@ -29,7 +29,7 @@ export function CountSelector({ presets, max, unit, unitHint, value, onChange }:
               key={n}
               type="button"
               className={cn(
-                'min-w-11 rounded-sm border px-3 py-1.5 font-ui text-[13.5px] font-[550] tabular-nums transition-colors',
+                'min-w-11 rounded-sm border px-3 py-1.5 font-ui text-[13.5px] tabular-nums transition-colors',
                 value === n
                   ? 'border-accent bg-wash text-ink'
                   : 'border-hairline text-muted-ink hover:border-accent hover:text-accent',
@@ -50,7 +50,7 @@ export function CountSelector({ presets, max, unit, unitHint, value, onChange }:
           >
             −
           </button>
-          <span className="min-w-12 text-center font-ui text-[15px] font-[650] tabular-nums text-ink">
+          <span className="min-w-12 text-center font-ui text-[15px] font-bold tabular-nums text-ink">
             {value} <span className="text-[13px] font-normal text-muted-ink">{unit}</span>
           </span>
           <button

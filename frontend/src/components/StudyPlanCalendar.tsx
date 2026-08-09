@@ -76,7 +76,7 @@ export function StudyPlanCalendar({
     <div>
       {/* 月份标题 + 切月 */}
       <div className="mb-3 flex items-baseline justify-between">
-        <span className="font-ui text-[15px] font-[550] text-ink">
+        <span className="font-ui text-[15px] text-ink">
           {year} 年 {month0 + 1} 月
         </span>
         <span className="flex gap-1">

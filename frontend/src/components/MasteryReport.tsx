@@ -88,7 +88,7 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
                 />
               </div>
               <span
-                className={cn('text-right font-mono text-[13px] font-[650]', BAND_TEXT[band])}
+                className={cn('text-right font-mono text-[13px] font-bold', BAND_TEXT[band])}
                 title="稳健掌握度（Wilson 下界）：答题次数越少估计越保守"
               >
                 {kp.mastery.toFixed(2)}
@@ -127,10 +127,10 @@ function Stat({
 }) {
   return (
     <div className="flex flex-col gap-1 font-ui">
-      <span className="text-[11px] font-[550] tracking-[0.1em] text-quiet">{label}</span>
+      <span className="text-[11px] tracking-[0.1em] text-quiet">{label}</span>
       <span
         className={cn(
-          'text-[32px] font-[750] leading-none tabular-nums',
+          'text-[32px] font-bold leading-none tabular-nums',
           accent ? 'text-accent' : 'text-ink',
         )}
       >

@@ -96,7 +96,7 @@ export function PricingSection() {
                 )}
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="font-ui text-[28px] font-[650] leading-none text-accent tabular-nums">
+                <span className="font-ui text-[28px] font-bold leading-none text-accent tabular-nums">
                   {col.price}
                 </span>
                 <span className="text-[13px] text-quiet">{col.suffix}</span>

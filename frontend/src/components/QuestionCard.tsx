@@ -69,12 +69,12 @@ export function QuestionCard({
       className="scroll-mt-10 rounded-[var(--radius-question-card)] border border-soft bg-card-surface p-6 transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] max-md:p-4"
     >
       <div className="flex flex-wrap items-center gap-2 font-ui">
-        <span className="flex h-7 min-w-9 items-center justify-center rounded-md bg-wash px-2 text-[13px] font-[650] tabular-nums text-accent">
+        <span className="flex h-7 min-w-9 items-center justify-center rounded-md bg-wash px-2 text-[13px] font-bold tabular-nums text-accent">
           {String(item.index).padStart(2, '0')}
         </span>
         <span
           className={cn(
-            'rounded-full px-2.5 py-1 text-[12px] font-[550] leading-none',
+            'rounded-full px-2.5 py-1 text-[12px] leading-none',
             FAMILY_PILL[TYPE_FAMILY[question.question_type] ?? 'grammar'],
           )}
         >
@@ -91,7 +91,7 @@ export function QuestionCard({
         {isReview && result && (
           <span
             className={cn(
-              'ml-auto flex size-6 shrink-0 items-center justify-center rounded-full border font-[650] text-[12px] leading-none',
+              'ml-auto flex size-6 shrink-0 items-center justify-center rounded-full border font-bold text-[12px] leading-none',
               result.is_correct
                 ? 'border-success bg-success-wash text-success'
                 : 'border-accent bg-wash text-accent',
