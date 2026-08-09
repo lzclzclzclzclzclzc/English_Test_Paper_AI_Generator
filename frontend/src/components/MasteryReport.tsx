@@ -106,7 +106,7 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
             （掌握度 {weakest.mastery.toFixed(2)}），建议从它开始补
           </span>
           <Button asChild size="sm">
-            <Link to="/review">按薄弱点生成试卷 →</Link>
+            <Link to={PATHS.review}>去错题本重练 →</Link>
           </Button>
         </div>
       )}
