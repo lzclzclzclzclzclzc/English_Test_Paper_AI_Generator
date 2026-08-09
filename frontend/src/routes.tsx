@@ -1,7 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from '@/components/RequireAuth'
 import { AppLayout } from '@/components/AppLayout'
-import { HomeGate } from '@/components/HomeGate'
+import { LandingPage } from '@/pages/LandingPage'
+import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { GeneratePage } from '@/pages/GeneratePage'
 import { PracticePage } from '@/pages/PracticePage'
@@ -30,8 +31,8 @@ import { PATHS } from '@/lib/paths'
 export function AppRoutes() {
   return (
     <Routes>
-      {/* `/` 双态:未登录营销首页 / 已登录工作台(见 HomeGate) */}
-      <Route path={PATHS.home} element={<HomeGate />} />
+      {/* `/` 对所有人都是营销首页(已登录时页眉 CTA 变「进入工作台」→ /home) */}
+      <Route path={PATHS.home} element={<LandingPage />} />
       <Route path={PATHS.welcome} element={<Navigate to={PATHS.home} replace />} />
       <Route path={PATHS.login} element={<LoginPage />} />
       <Route
@@ -41,6 +42,7 @@ export function AppRoutes() {
           </RequireAuth>
         }
       >
+        <Route path={PATHS.dashboard} element={<RedirectIfAdmin><DashboardPage /></RedirectIfAdmin>} />
         <Route path={PATHS.generate} element={<RedirectIfAdmin><GeneratePage /></RedirectIfAdmin>} />
         <Route path={PATHS.practice} element={<RedirectIfAdmin><PracticePage /></RedirectIfAdmin>} />
         <Route path={PATHS.practiceCustom} element={<RedirectIfAdmin><CustomPaperPage /></RedirectIfAdmin>} />

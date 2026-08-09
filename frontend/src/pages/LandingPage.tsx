@@ -11,7 +11,7 @@ import { FaqSection } from './landing/FaqSection'
 import { FooterCta } from './landing/FooterCta'
 
 /**
- * 营销首页(未登录的 `/`,由 HomeGate 渲染)。纯静态:除 useAuth 外零请求。
+ * 营销首页(`/`,对所有人可见;已登录时页眉 CTA 变「进入工作台」)。纯静态:除 useAuth 外零请求。
  * 11 段结构拆在 pages/landing/ 子组件里,本文件只做组装。
  */
 export function LandingPage() {

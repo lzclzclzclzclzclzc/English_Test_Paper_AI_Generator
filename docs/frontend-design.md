@@ -499,7 +499,8 @@ export default defineConfig({
 「结构化选择 → `lib/composeQuery.ts` 确定性拼句(措辞对齐 `ai_engine/prompts/parser.md`)
 → `useGeneratePaper` → `POST /api/papers/generate`」:
 
-- **路由**:`/` 双态(`HomeGate`:匿名=营销首页、登录=工作台、admin 重定向);
+- **路由**:`/` 对所有人都是营销首页(已登录时页眉 CTA「进入工作台 →」);
+  工作台在 `/home`,登录后落点即 `/home`(admin 落 `/admin`);
   原生成页迁 `/generate`(一句话出卷);新增 `/practice`(练习中心 hub)、
   `/practice/:slug`(题型专项 ×9,`lib/drillConfig.ts` 一模板九配置)、
   `/practice/custom`(自选组卷工坊)、`/mock`(整卷模拟 5 配方 + 纯前端限时);

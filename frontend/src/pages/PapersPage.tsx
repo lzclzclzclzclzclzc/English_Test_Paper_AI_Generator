@@ -99,7 +99,7 @@ function EmptyState() {
         用一句话描述想练的题型或考点，生成你的第一份卷
       </p>
       <Button asChild className="mt-3">
-        <Link to={PATHS.home}>去出卷</Link>
+        <Link to={PATHS.dashboard}>去出卷</Link>
       </Button>
     </div>
   )

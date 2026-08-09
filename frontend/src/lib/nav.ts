@@ -36,7 +36,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     label: '练习',
     items: [
-      { to: PATHS.home, label: '工作台', icon: Home, end: true },
+      { to: PATHS.dashboard, label: '工作台', icon: Home, end: true },
       { to: PATHS.practice, label: '练习中心', icon: LayoutGrid, end: true },
       { to: PATHS.mock, label: '整卷模拟', icon: Timer, end: true },
       { to: PATHS.assistant, label: '学习助手', icon: MessageCircle, end: true },

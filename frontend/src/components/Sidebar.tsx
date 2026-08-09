@@ -56,7 +56,7 @@ export function Sidebar() {
       >
         {!collapsed && (
           <NavLink
-            to={PATHS.home}
+            to={PATHS.dashboard}
             className="whitespace-nowrap text-[17px] tracking-[0.06em] text-ink [font-family:var(--font-display)]"
           >
             试卷生成器

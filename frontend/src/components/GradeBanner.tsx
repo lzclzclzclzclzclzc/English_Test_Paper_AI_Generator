@@ -85,7 +85,7 @@ export function GradeBanner({
           renderRemediateButton()
         ) : (
           <Button size="sm" asChild>
-            <Link to={PATHS.home}>出一份新卷</Link>
+            <Link to={PATHS.dashboard}>出一份新卷</Link>
           </Button>
         )}
       </div>

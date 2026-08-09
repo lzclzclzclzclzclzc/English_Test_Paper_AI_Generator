@@ -62,7 +62,7 @@ export function PricingSection() {
   const ctaFor = (key: string): { label: string; to: string } => {
     if (loggedIn) {
       return key === 'free'
-        ? { label: '进入工作台 →', to: PATHS.home }
+        ? { label: '进入工作台 →', to: PATHS.dashboard }
         : { label: '去开通会员 →', to: PATHS.membership }
     }
     return key === 'free'

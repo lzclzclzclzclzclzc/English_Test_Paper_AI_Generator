@@ -171,7 +171,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         )}
         {notFound ? (
           <Button asChild variant="outline">
-            <Link to={PATHS.home}>去生成新试卷</Link>
+            <Link to={PATHS.dashboard}>去生成新试卷</Link>
           </Button>
         ) : (
           <Button variant="outline" onClick={() => refetch()}>

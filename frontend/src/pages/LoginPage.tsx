@@ -30,7 +30,7 @@ export function LoginPage() {
   const [mode, setMode] = useState<Mode>('login')
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from ?? '/'
+  const from = (location.state as { from?: string } | null)?.from ?? PATHS.dashboard
 
   const form = useForm<Credentials>({
     resolver: zodResolver(credentialsSchema),
@@ -43,7 +43,7 @@ export function LoginPage() {
       const user = mode === 'login' ? await login(values) : await register(values)
       queryClient.setQueryData(['auth', 'me'], user)
       // 管理员未指定返回路径时直达管理后台；否则沿用 from（普通页会被 RedirectIfAdmin 兜回）
-      const dest = from === '/' && user.role === 'admin' ? '/admin' : from
+      const dest = from === PATHS.dashboard && user.role === 'admin' ? PATHS.admin : from
       navigate(dest, { replace: true })
     } catch (err) {
       if (

@@ -19,7 +19,7 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
     )
   }
   if (state === 'redirect') {
-    return <Navigate to={PATHS.home} replace />
+    return <Navigate to={PATHS.dashboard} replace />
   }
   return children
 }

@@ -44,7 +44,7 @@ export function LandingHeader() {
             /* 定宽占位:避免 auth 落定时右侧按钮跳动 */
             <span aria-hidden className="h-[34px] w-[150px]" />
           ) : user ? (
-            <Link to={PATHS.home} className={PRIMARY_BTN}>
+            <Link to={PATHS.dashboard} className={PRIMARY_BTN}>
               进入工作台 →
             </Link>
           ) : (

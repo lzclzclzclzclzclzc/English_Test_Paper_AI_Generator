@@ -1,9 +1,11 @@
 /**
  * 全站路径常量(路由重构后唯一事实来源)。
- * `/` 是双态入口:未登录 = 营销首页,已登录 = 工作台(见 HomeGate)。
+ * `/` 对所有人都是营销首页;登录后的工作台在 `/home`(首页页眉「进入工作台」可达)。
  */
 export const PATHS = {
   home: '/',
+  /** 登录后工作台 */
+  dashboard: '/home',
   /** legacy 营销页地址,路由层重定向到 home */
   welcome: '/welcome',
   login: '/login',

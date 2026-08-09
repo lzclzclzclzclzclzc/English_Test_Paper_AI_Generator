@@ -35,7 +35,7 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
           做几份试卷之后，这里会标出你最需要巩固的考点
         </p>
         <Button asChild>
-          <Link to={PATHS.home}>去生成一份</Link>
+          <Link to={PATHS.dashboard}>去生成一份</Link>
         </Button>
       </div>
     )

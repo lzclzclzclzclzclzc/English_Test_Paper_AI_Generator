@@ -10,6 +10,6 @@ import { PATHS } from '@/lib/paths'
 export function DrillPage() {
   const { slug } = useParams<{ slug: string }>()
   const config = slug ? drillBySlug(slug) : undefined
-  if (!config) return <Navigate to={PATHS.home} replace />
+  if (!config) return <Navigate to={PATHS.dashboard} replace />
   return <DrillPageTemplate key={config.slug} config={config} />
 }

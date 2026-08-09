@@ -66,7 +66,7 @@ export function WrongBookList({
           交卷后答错的题会自动收进来，随时回来复练
         </p>
         <Button asChild className="mt-3">
-          <Link to={PATHS.home}>去出一份卷</Link>
+          <Link to={PATHS.dashboard}>去出一份卷</Link>
         </Button>
       </div>
     )
