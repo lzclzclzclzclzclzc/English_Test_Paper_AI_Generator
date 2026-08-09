@@ -104,17 +104,18 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 
 - 展开 232px / 收起 66px，`transition: width .25s ease-out`，粘顶全高，右侧 1px 细线。
 - 顶部 64px：品牌「试卷生成器」（display 字体，收起时隐藏）+ 30×30 折叠按钮（lucide `panel-left`）。
-- 三组导航（数据在 `lib/nav.ts`），组标签 10.5px/700/0.14em 弱色：
-  **练习**（工作台 `/`、练习中心 `/practice`、整卷模拟 `/mock`、学习助手 `/assistant`）、
-  **复盘**（错题本 `/review`、掌握度 `/mastery`、学习计划 `/study-plan`）、
-  **我的**（历史试卷 `/papers`、会员 `/membership`）。
-  收起时组标签变成一条 1px 细线分隔符。「生成试卷」不再是侧栏项——一句话出卷
-  降级为能力（`/generate`），入口在工作台迷你输入条与各面板脚注。
-- 导航项：lucide 图标 18px（strokeWidth 1.5）+ 14.5px 文字，padding 9/12，圆角
-  0.25rem。当前项 = `--accent-wash` 底 + 赤陶字；非当前 = 透明底 + `--text-muted`。
-  支持 disabled+badge 占位项（未上线入口，quiet 色不可点）。
-- 底部：30×30 头像方块（tint 底）+ 用户名（+ 会员小标）+「设置」/「登出」小字链接
-  （设置自组内移至底部用户区）。
+- 四组十三项导航（2026-08-09 拆满侧栏；数据在 `lib/nav.ts`），组标签 10.5px/700/0.14em 弱色：
+  **练习**（工作台 `/home`、每日一练 `/daily`、练习中心 `/practice`、词汇学习[disabled+即将上线]）、
+  **出卷**（主题出卷 `/themes`、自选组卷 `/practice/custom`、整卷模拟 `/mock`、一句话出卷 `/generate`）、
+  **助手**（学习助手 `/assistant`、学习计划 `/study-plan`）、
+  **复盘**（错题本 `/review`、掌握度 `/mastery`、学情报告 `/report`）。
+  收起时组标签变成一条 1px 细线分隔符。「我的」组撤销——历史试卷/会员收进头像菜单。
+- 导航项：lucide 图标 18px（strokeWidth 1.5）+ 14.5px 文字（font-ui），padding 9/12，
+  圆角 0.25rem。当前项 = `--accent-wash` 底 + 赤陶字；非当前 = 透明底 + `--text-muted`。
+  支持 disabled+badge 占位项（未上线入口，quiet 色不可点）。品牌字点击 → `/` 营销首页。
+- 底部：**头像个人菜单**——点击头像/用户名区域向上弹出（细线边 + `--shadow-overlay`，
+  role=menu，外点/Escape 关闭，collapsed 时从头像旁弹出）：用户名行（会员小标）/
+  历史试卷 / 会员 / 设置（admin 隐藏）/ 登出。
 - 折叠状态持久化 `localStorage['sidebarCollapsed']`。
 
 ~~每个应用内页面顶部保留一个 11px 大写弱色端点小标签~~（2026-07-29 已整体撤下：
@@ -132,15 +133,17 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 | 1 | 营销首页（所有人） | `/`（`/welcome` 重定向至此） | ✅ `LandingPage`：11 段叙事——粘顶磨砂页眉（useAuth 双态 CTA：未登录「登录/免费开始」，已登录「进入工作台 →」）+ hero 打字机出卷演示（`kk-caret`）+ 数据条（1,397/9/55/3）+ `#types` 三族三色题型墙 + `#engine` 四步流程与三档强度 + `#loop` 判分讲解闭环 + `#assistant` 学习助手 + `#parents` 家长区 + `#pricing` 免费列与三档价格（lib/pricing 静态镜像）+ `#faq` + 底部 CTA/页脚 |
 | 2 | 登录 / 注册 | `/login` | ✅ 左右两栏（1.15fr/1fr 竖细线）；左栏品牌/26px 说明句/底部小字，右栏 24rem 表单，tab 选中 2px 赤陶下边框 |
 | 3 | 应用外壳 | — | ✅ 见 § 4 |
-| 4a | 工作台（登录后） | `/home` | ✅ `DashboardPage`：页眉（距中考 N 天 · 免费额度）+ 一句话迷你输入条 + 继续作答 + 今日一练（按星期轮换配方）+ 弱点速览 Top3 + 快捷入口 + 词汇预告；首次使用换三步引导空态。登录后落点即此页 |
+| 4a | 工作台（登录后） | `/home` | ✅ `DashboardPage` 双栏 `minmax(0,1fr) 300px`（2026-08-09 重排）：左栏行动流 = 迷你输入条 → 今日一练卡（消费 `lib/dailyRecipes.ts`，卡尾「查看一周安排 →」）→ 继续作答；右栏粘顶三段 = 弱点速览窄栏版 / 常用竖排链接 / 词汇一行。首次使用左栏换三步引导。登录后落点即此页 |
 | 4b | 一句话出卷 | `/generate` | ✅ 原生成页迁移改名：44rem textarea + 题型 chips + 强度措辞说明折叠行 + `PipelineProgress` 管线面板（见下） |
-| 4c | 练习中心 | `/practice` | ✅ 三族色区行式题型条目 ×9 + 主题出卷条（仅语法）+ 速练一组 + 工坊入口 + 词汇即将上线 |
+| 4c | 练习中心 | `/practice` | ✅ 纯导航页（2026-08-09 简化）：三族色区行式题型条目 ×9 + 语法族尾「去主题出卷 →」引导行 + 页脚两行（自选组卷 / 词汇即将上线）；主题条与速练区已移除 |
+| 4g | 每日一练 | `/daily` | ✅ 今日卡（kicker 今日·周X·配方名 + 结构摘要 + 开始/再练一组按 `dailyDoneKey` 切换）+ 七行一周安排表（今天行 wash 高亮，周日弱点日按掌握度动态摘要）；配方唯一事实源 `lib/dailyRecipes.ts` |
+| 4h | 主题出卷 | `/themes` | ✅ 主题 × 题型结合页：8 场景 chips 单选与自定义输入互斥 + 语法三行勾选/数量档（3/5/8）+ QueryPreview（固定 fresh）+ 页脚双链接；篇章题型不支持主题（页内注明） |
 | 4d | 题型专项 ×9 | `/practice/:slug` | ✅ `DrillPageTemplate` 一模板九配置（`lib/drillConfig.ts`）：题量档位 + 考点 chips（语法族，隐藏 0 题 KP、薄尾预警）+ 强度三档（真题档会员）+ 主题（语法族）+ 拼句预览（`lib/composeQuery.ts`） |
 | 4e | 自选组卷工坊 | `/practice/custom` | ✅ 九行 steppers（语法行展开考点多选）+ 粘顶汇总栏（共 N/30 题、强度、主题、拼句预览） |
 | 4f | 整卷模拟 | `/mock` | ✅ 5 预设配方行（全科 30/语法 25/听力 15/阅读 13/真题检测卷[会员]）+ 限时开关（纯前端倒计时，到时温和提醒） |
 | 5 | 当前试卷 / 作答 | `/papers/:id` | ✅ 两栏 `minmax(0,1fr) 280px`：左 52rem 长卷（PAPER·id 标签、题目 `<article>` 细线分隔、纵向选项列表、下划线填空），右粘顶答题卡（N/12 + 2px 进度条 + 4 列题号格） |
 | 6 | 成绩与解析 | 同上（交卷后） | ✅ 总分 44px / 答对 / 错题（赤陶）统计行 + ✓/✕ 状态圆 + 解析手风琴（kicker `POST /API/SOLUTIONS · 按需生成`） |
-| 7 | 掌握度 | `/mastery` | ✅ 统计行 + 考点行网格 `minmax(0,1fr) 88px 200px 64px`，6px 赤陶进度条按不透明度分级，底部薄弱点总结 + 去错题本链接；「生成学情报告」（会员）——打印友好一页纸（练习量/最弱 5 考点/固定话术建议，`StudyReport.tsx`）；报告之后细线分隔「按薄弱考点复习」区块（2026-08-07 自错题本页迁入）：kicker + 会员 pill + 说明句 + 统计范围分段（近 7/30/90 天，独立于顶部报告窗口，走 `review_window_days`）+「出一份复习卷」主按钮（`mode: 'review'`），无答题记录时 quiet 提示并禁用 |
+| 7 | 掌握度 | `/mastery` | ✅ 统计行 + 考点行网格 `minmax(0,1fr) 88px 200px 64px`，6px 赤陶进度条按不透明度分级，底部薄弱点总结 + 去错题本链接；「学情报告（可打印给家长）→」链接入口（2026-08-09 报告独立成 `/report` 页）；之后细线分隔「按薄弱考点复习」区块（2026-08-07 自错题本页迁入）：kicker + 会员 pill + 说明句 + 统计范围分段（近 7/30/90 天，独立于顶部报告窗口，走 `review_window_days`）+「出一份复习卷」主按钮（`mode: 'review'`），无答题记录时 quiet 提示并禁用 |
 | 8 | 历史试卷 | `/papers` | ✅ 无卡片行式列表 `110px minmax(0,1fr) auto`，整行可点 hover tint |
 | 9 | 错题本 | `/review` | ✅ 单一职责两栏 `minmax(0,1fr) 300px`（2026-08-07 复盘域拆分）：左列 = 过滤芯片行（全部 + 语法/听力/阅读族计数，空族不显示）+ 全选/清空小操作行 + divide-y 错题行（勾选方块［选中 = 赤陶边 + wash + ✓］+ 族色题型 chip + 截断题干 + MM-DD 日期，展开复看/解析/移除）；右栏粘顶「错题巩固」操作卡（细线边）：kicker + 会员 pill + 说明句 + 已选计数 + 补充要求输入 +「生成巩固卷」主按钮（`mode: 'remediation'`，未勾选禁用）。综合复习入口迁往掌握度页 |
 | 10 | 题库浏览 | — | ⏸ 未做：需后端只读检索端点（`GET /api/questions?…`），见 Spec D § 11 |
@@ -148,7 +151,8 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 | 12 | 设置 | `/settings` | ✅ 细线行式列表：账号 / 阅读外观（纸色 Ink · 深墨地 Deep Ink 切换 `.dark`，持久化 `localStorage['theme']`）/ 备考目标（目标中考日期，`lib/examDate.ts`，驱动工作台倒计时）/ 速率限制说明；入口移至侧栏底部用户区 |
 | — | 会员（本仓库特有，不在 handoff 内） | `/membership` | ✅ 按同一语言重做：细线分栏套餐、赤陶价格、细线表格权益对比 |
 | — | 学习助手（dev agent 功能，不在 handoff 内） | `/assistant` | ✅ 对话式：用户消息 = wash 底右对齐，助手回复 = 无框正文 + 底部细线，markdown 用 `.chat-md`（细线表格），思考中 = 赤陶脉冲点 |
-| — | 学习计划（dev agent 功能，不在 handoff 内） | `/study-plan` | ✅ DAY 序号 + 细线行式打卡列表，考点中文名 chips，「开始练习 →」次按钮 |
+| — | 学习计划（dev agent 功能，不在 handoff 内） | `/study-plan` | ✅ 月历视图（`StudyPlanCalendar`，2026-08-09）：周一起 7 列 ink-10 细线网格，计划日 = 主题名 +「N 题」（有卷整格 Link 进卷 / 无卷点击锚点滚到 DAY 行），今天赤陶圆点 + 当天计划格 wash，中考日赤陶细线 chip，‹›切月限计划/中考覆盖范围；日历下保留 DAY 行式列表；全空 date 时只显列表 |
+| — | 学情报告（自掌握度页独立） | `/report` | ✅ 会员 = `StudyReport` 完整复用（近 30 天，打印友好）；非会员 = 居中提示卡（赤陶上边线 + 价值句 + 去开通会员）。掌握度页保留链接入口 |
 
 **管线进度（第 4 屏）**：后端同步返回、无 SSE（Spec C 明确），采用 handoff
 落地方式 (a)——固定时间轴演示四步（Parser 0.8s / Retriever 1.2s / Reviser 2.6s /

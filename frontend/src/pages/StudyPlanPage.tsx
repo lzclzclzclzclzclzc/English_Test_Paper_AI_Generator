@@ -4,6 +4,9 @@ import { getLatestStudyPlan } from '@/api/agent'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/PageHeader'
+import { StudyPlanCalendar } from '@/components/StudyPlanCalendar'
+import { useAuth } from '@/hooks/useAuth'
+import { getExamDate } from '@/lib/examDate'
 import { TYPE_LABELS } from '@/lib/kp'
 import { PATHS } from '@/lib/paths'
 import type { StudyPlanDay } from '@/types/api'
@@ -14,7 +17,10 @@ function DayRow({ day }: { day: StudyPlanDay }) {
     .map((t) => TYPE_LABELS[t] ?? t)
     .join(' / ')
   return (
-    <div className="grid grid-cols-[64px_minmax(0,1fr)_auto] items-start gap-4 border-b border-hairline py-5 max-sm:grid-cols-[minmax(0,1fr)_auto]">
+    <div
+      id={`day-${day.index}`}
+      className="grid scroll-mt-6 grid-cols-[64px_minmax(0,1fr)_auto] items-start gap-4 border-b border-hairline py-5 max-sm:grid-cols-[minmax(0,1fr)_auto]"
+    >
       {/* 第 N 天 */}
       <div className="flex flex-col max-sm:hidden">
         <span className="font-ui text-[11px] tracking-[0.1em] text-accent">DAY</span>
@@ -54,6 +60,8 @@ function DayRow({ day }: { day: StudyPlanDay }) {
 
 /** 学习计划（dev 新功能，喫茶去外观）：按天打卡，每天一份针对性练习。 */
 export function StudyPlanPage() {
+  const { data: user } = useAuth()
+  const userId = user?.id ?? 'anon'
   const { data: plan, isLoading, isError } = useQuery({
     queryKey: ['study-plan', 'latest'],
     queryFn: getLatestStudyPlan,
@@ -64,7 +72,7 @@ export function StudyPlanPage() {
     <div className="max-w-[52rem]">
       <PageHeader
         title="学习计划"
-        intro="在学习助手里说出你的目标，AI 会按天拆成打卡计划，每天一份针对性练习。"
+        intro="计划由学习助手制定，这里按日历跟进——去助手说出目标，AI 按天拆成打卡计划，每天一份针对性练习。"
       />
 
       {isLoading && (
@@ -97,6 +105,11 @@ export function StudyPlanPage() {
 
       {plan && (
         <div className="flex flex-col gap-4">
+          {plan.days.some((d) => d.date) && (
+            <div className="border-b border-hairline pb-6">
+              <StudyPlanCalendar days={plan.days} examDate={getExamDate(userId)} />
+            </div>
+          )}
           <div className="flex items-baseline justify-between border-b border-hairline pb-2.5">
             <span className="text-[13px] text-muted-ink">
               共 <b className="text-ink">{plan.total_days}</b> 天
