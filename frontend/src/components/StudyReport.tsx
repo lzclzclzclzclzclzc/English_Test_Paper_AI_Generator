@@ -40,12 +40,13 @@ function buildAdvice(profile: MasteryProfile): string[] {
 interface StudyReportProps {
   profile: MasteryProfile
   windowLabel: string
-  onClose: () => void
+  /** 内联嵌入时的「收起」;/report 独立页不传,不渲染收起按钮 */
+  onClose?: () => void
 }
 
 /**
  * 学情报告(会员):一页纸给家长——练习量、薄弱考点、下一步建议。
- * 打印时页面其他部分由 MasteryPage 的 print:hidden 隐藏,只留本报告。
+ * 打印时宿主页面(/report)其他部分用 print:hidden 隐藏,只留本报告。
  */
 export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps) {
   // 报告打开时才拉试卷列表,只为统计练卷数(近 100 份)
@@ -75,9 +76,11 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             打印这份报告
           </Button>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            收起
-          </Button>
+          {onClose && (
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              收起
+            </Button>
+          )}
         </div>
       </div>
 

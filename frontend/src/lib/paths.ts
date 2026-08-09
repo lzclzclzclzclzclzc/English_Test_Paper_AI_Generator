@@ -11,6 +11,12 @@ export const PATHS = {
   login: '/login',
   /** 一句话出卷(原生成页,自 `/` 迁出) */
   generate: '/generate',
+  /** 每日一练(今日配方 + 一周安排) */
+  daily: '/daily',
+  /** 主题出卷(话题 × 语法题型) */
+  themes: '/themes',
+  /** 学情报告(会员,打印友好,自掌握度页独立) */
+  report: '/report',
   practice: '/practice',
   practiceType: (slug: string) => `/practice/${slug}`,
   practiceCustom: '/practice/custom',

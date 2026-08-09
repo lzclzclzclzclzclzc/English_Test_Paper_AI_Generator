@@ -5,6 +5,9 @@ import { LandingPage } from '@/pages/LandingPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { GeneratePage } from '@/pages/GeneratePage'
+import { DailyPage } from '@/pages/DailyPage'
+import { ThemesPage } from '@/pages/ThemesPage'
+import { ReportPage } from '@/pages/ReportPage'
 import { PracticePage } from '@/pages/PracticePage'
 import { DrillPage } from '@/pages/DrillPage'
 import { CustomPaperPage } from '@/pages/CustomPaperPage'
@@ -44,6 +47,9 @@ export function AppRoutes() {
       >
         <Route path={PATHS.dashboard} element={<RedirectIfAdmin><DashboardPage /></RedirectIfAdmin>} />
         <Route path={PATHS.generate} element={<RedirectIfAdmin><GeneratePage /></RedirectIfAdmin>} />
+        <Route path={PATHS.daily} element={<RedirectIfAdmin><DailyPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.themes} element={<RedirectIfAdmin><ThemesPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.report} element={<RedirectIfAdmin><ReportPage /></RedirectIfAdmin>} />
         <Route path={PATHS.practice} element={<RedirectIfAdmin><PracticePage /></RedirectIfAdmin>} />
         <Route path={PATHS.practiceCustom} element={<RedirectIfAdmin><CustomPaperPage /></RedirectIfAdmin>} />
         <Route path="/practice/:slug" element={<RedirectIfAdmin><DrillPage /></RedirectIfAdmin>} />

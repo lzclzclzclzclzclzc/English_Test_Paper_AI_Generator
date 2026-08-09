@@ -1,13 +1,18 @@
 import {
   BadgeCheck,
   BarChart3,
+  BookOpen,
   CalendarCheck,
+  CalendarDays,
+  FileText,
   Home,
   LayoutDashboard,
   LayoutGrid,
-  List,
   MessageCircle,
+  PenLine,
   ScrollText,
+  SlidersHorizontal,
+  Tags,
   Timer,
   Users,
   XCircle,
@@ -31,15 +36,41 @@ export interface NavGroup {
   items: readonly NavItem[]
 }
 
-/** 普通用户侧栏:三组九项;设置不在组内,固定在底部用户区。 */
+/**
+ * 普通用户侧栏:四组十三项。
+ * 历史试卷/会员/设置不在组内——收进底部头像个人菜单(Sidebar.tsx)。
+ */
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
     label: '练习',
     items: [
       { to: PATHS.dashboard, label: '工作台', icon: Home, end: true },
+      { to: PATHS.daily, label: '每日一练', icon: CalendarDays, end: true },
       { to: PATHS.practice, label: '练习中心', icon: LayoutGrid, end: true },
+      {
+        to: '/vocabulary',
+        label: '词汇学习',
+        icon: BookOpen,
+        end: true,
+        disabled: true,
+        badge: '即将上线',
+      },
+    ],
+  },
+  {
+    label: '出卷',
+    items: [
+      { to: PATHS.themes, label: '主题出卷', icon: Tags, end: true },
+      { to: PATHS.practiceCustom, label: '自选组卷', icon: SlidersHorizontal, end: true },
       { to: PATHS.mock, label: '整卷模拟', icon: Timer, end: true },
+      { to: PATHS.generate, label: '一句话出卷', icon: PenLine, end: true },
+    ],
+  },
+  {
+    label: '助手',
+    items: [
       { to: PATHS.assistant, label: '学习助手', icon: MessageCircle, end: true },
+      { to: PATHS.studyPlan, label: '学习计划', icon: CalendarCheck, end: true },
     ],
   },
   {
@@ -47,14 +78,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { to: PATHS.review, label: '错题本', icon: XCircle, end: true },
       { to: PATHS.mastery, label: '掌握度', icon: BarChart3, end: true },
-      { to: PATHS.studyPlan, label: '学习计划', icon: CalendarCheck, end: true },
-    ],
-  },
-  {
-    label: '我的',
-    items: [
-      { to: PATHS.papers, label: '历史试卷', icon: List, end: false },
-      { to: PATHS.membership, label: '会员', icon: BadgeCheck, end: true },
+      { to: PATHS.report, label: '学情报告', icon: FileText, end: true },
     ],
   },
 ]
