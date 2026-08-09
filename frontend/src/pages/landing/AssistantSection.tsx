@@ -1,4 +1,4 @@
-/** #assistant 学习助手:左文案(含词汇学习「即将上线」badge),右静态两轮对话摘录。 */
+/** #assistant 学习助手:左文案(含背单词一句),右静态两轮对话摘录。 */
 export function AssistantSection() {
   return (
     <section
@@ -13,11 +13,8 @@ export function AssistantSection() {
           不想自己琢磨练什么，就直接和学习助手聊：它能替你出卷、讲题，也能按你的目标排出一份多天学习计划，每天该练什么、练多少，一条条替你想好。
         </p>
         <p className="mt-6 border-t border-hairline pt-4 text-[14px] leading-[1.9] text-muted-ink">
-          词汇学习
-          <span className="mx-2 rounded-sm border border-hairline px-1.5 py-0.5 font-ui text-[11px] text-quiet">
-            即将上线
-          </span>
-          — 国家核心 1600 词，按间隔重复安排复习节奏。
+          还有<span className="text-ink">背单词</span>
+          — 国家核心 1600 词，按间隔重复安排复习节奏，每天一组今日卡片。
         </p>
       </div>
       {/* 静态对话摘录:用户 = wash 底右对齐,助手 = 无框正文 + 底部细线(同学习助手页) */}

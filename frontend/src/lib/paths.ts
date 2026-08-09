@@ -26,6 +26,9 @@ export const PATHS = {
   review: '/review',
   mastery: '/mastery',
   studyPlan: '/study-plan',
+  /** 背单词(间隔重复;CJN/vocabulary-mvp 合入) */
+  vocabulary: '/vocabulary',
+  vocabularyProgress: '/vocabulary/progress',
   membership: '/membership',
   settings: '/settings',
   assistant: '/assistant',

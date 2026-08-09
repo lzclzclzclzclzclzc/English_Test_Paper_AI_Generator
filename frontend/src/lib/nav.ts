@@ -2,6 +2,7 @@ import {
   BadgeCheck,
   BarChart3,
   BookOpen,
+  BookOpenCheck,
   CalendarCheck,
   CalendarDays,
   FileText,
@@ -47,14 +48,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { to: PATHS.dashboard, label: '工作台', icon: Home, end: true },
       { to: PATHS.daily, label: '每日一练', icon: CalendarDays, end: true },
       { to: PATHS.practice, label: '练习中心', icon: LayoutGrid, end: true },
-      {
-        to: '/vocabulary',
-        label: '词汇学习',
-        icon: BookOpen,
-        end: true,
-        disabled: true,
-        badge: '即将上线',
-      },
+      { to: PATHS.vocabulary, label: '背单词', icon: BookOpen, end: true },
     ],
   },
   {
@@ -78,6 +72,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { to: PATHS.review, label: '错题本', icon: XCircle, end: true },
       { to: PATHS.mastery, label: '掌握度', icon: BarChart3, end: true },
+      { to: PATHS.vocabularyProgress, label: '背词进度', icon: BookOpenCheck, end: true },
       { to: PATHS.report, label: '学情报告', icon: FileText, end: true },
     ],
   },

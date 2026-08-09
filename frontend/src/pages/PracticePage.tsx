@@ -88,10 +88,13 @@ export function PracticePage() {
               →
             </span>
           </Link>
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-2 py-4">
-            <span className="font-ui text-[14.5px] text-quiet">词汇学习（即将上线）</span>
-            <span className="text-[12px] text-quiet">— 国家核心 1600 词，间隔重复</span>
-          </div>
+          <Link
+            to={PATHS.vocabulary}
+            className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-2 py-4 transition-colors hover:bg-tint"
+          >
+            <span className="font-ui text-[14.5px] text-ink">背单词</span>
+            <span className="text-[12px] text-quiet">— 国家核心 1600 词，间隔重复安排复习节奏 →</span>
+          </Link>
         </div>
       </div>
     </div>

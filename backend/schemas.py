@@ -121,6 +121,94 @@ class AgentChatResponse(BaseModel):
     action: dict | None = None
 
 
+# ---- Vocabulary -------------------------------------------------------------
+
+VocabularyRating = Literal["known", "fuzzy", "forgot"]
+
+
+class VocabularyCardPrompt(BaseModel):
+    word_id: str
+    term: str
+    origin: Literal["scheduled_review", "new"]
+    retry_count: int = 0
+
+
+class VocabularyCardDetail(BaseModel):
+    word_id: str
+    term: str
+    part_of_speech: str
+    meanings: list[str]
+    example_en: str
+    example_zh: str
+
+
+class VocabularyTaskCounts(BaseModel):
+    scheduled_review_total: int
+    scheduled_review_completed: int
+    new_total: int
+    new_completed: int
+    retry_total: int
+    retry_completed: int
+    retry_pending: int
+    remaining_count: int
+
+
+class VocabularyTodayResponse(BaseModel):
+    date: str
+    daily_new_limit: int
+    phase: Literal["scheduled_review", "new", "same_day_retry", "completed"]
+    current_card: VocabularyCardPrompt | None
+    counts: VocabularyTaskCounts
+
+
+class VocabularyJudgmentRequest(BaseModel):
+    word_id: str = Field(min_length=1, max_length=80)
+    rating: VocabularyRating
+
+
+class VocabularyJudgmentResponse(BaseModel):
+    word_id: str
+    rating: VocabularyRating
+    detail: VocabularyCardDetail
+    next_due_at: datetime
+    stage: int
+    added_to_same_day_retry: bool
+    phase: Literal["scheduled_review", "new", "same_day_retry", "completed"]
+    counts: VocabularyTaskCounts
+
+
+class VocabularyProgressResponse(BaseModel):
+    date: str
+    daily_new_limit: int
+    new_completed: int
+    review_completed: int
+    same_day_retry_pending: int
+    same_day_retry_completed: int
+    due_count: int
+    learned_count: int
+    mastered_count: int
+    total_words: int
+    streak_days: int
+    wordlist_label: str
+    source_url: str
+    wordlist_sources: list["VocabularyWordlistSource"]
+
+
+class VocabularyWordlistSource(BaseModel):
+    category: Literal["national_core", "shanghai_extension"]
+    label: str
+    source_url: str
+
+
+class VocabularySettingsRequest(BaseModel):
+    daily_new_limit: int = Field(ge=10, le=50)
+
+
+class VocabularySettingsResponse(BaseModel):
+    daily_new_limit: int
+    today_new_cards_added: int
+
+
 class ErrorResponse(BaseModel):
     error_code: str
     message: str

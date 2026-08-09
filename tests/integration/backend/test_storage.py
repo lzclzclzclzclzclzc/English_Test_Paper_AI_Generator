@@ -143,9 +143,12 @@ def test_init_db_records_applied_migrations(client):
         rows = conn.execute("SELECT id FROM schema_migrations ORDER BY id").fetchall()
     assert [row["id"] for row in rows] == [
         storage.MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX,
+        storage.MIGRATION_VOCABULARY_SCHEMA,
         storage.MIGRATION_USERS_ROLE,
         storage.MIGRATION_USERS_STATUS,
         storage.MIGRATION_ATTEMPT_ITEMS_USER_ANSWER,
+        storage.MIGRATION_VOCABULARY_RETRY_QUEUE,
+        storage.MIGRATION_VOCABULARY_WORD_SOURCES,
     ]
 
 

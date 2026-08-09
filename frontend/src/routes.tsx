@@ -29,6 +29,8 @@ import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
 import { AdminMembershipsPage } from '@/pages/admin/AdminMembershipsPage'
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
+import { VocabularyPage } from '@/pages/VocabularyPage'
+import { VocabularyProgressPage } from '@/pages/VocabularyProgressPage'
 import { PATHS } from '@/lib/paths'
 
 export function AppRoutes() {
@@ -63,6 +65,8 @@ export function AppRoutes() {
         />
         <Route path={PATHS.mastery} element={<RedirectIfAdmin><MasteryPage /></RedirectIfAdmin>} />
         <Route path={PATHS.studyPlan} element={<RedirectIfAdmin><StudyPlanPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.vocabulary} element={<RedirectIfAdmin><VocabularyPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.vocabularyProgress} element={<RedirectIfAdmin><VocabularyProgressPage /></RedirectIfAdmin>} />
         <Route path={PATHS.membership} element={<RedirectIfAdmin><MembershipPage /></RedirectIfAdmin>} />
         <Route path={PATHS.settings} element={<RedirectIfAdmin><SettingsPage /></RedirectIfAdmin>} />
         <Route

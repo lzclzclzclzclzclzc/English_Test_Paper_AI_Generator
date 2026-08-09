@@ -203,10 +203,13 @@ export function DashboardPage() {
               </div>
             </section>
 
-            {/* 词汇预告：一行带过 */}
-            <p className="px-2 pt-5 text-[12.5px] leading-[1.8] text-quiet">
-              词汇学习 · 即将上线 — 国家核心 1600 词，间隔重复安排复习节奏
-            </p>
+            {/* 背单词入口：一行带过 */}
+            <Link
+              to={PATHS.vocabulary}
+              className="block px-2 pt-5 text-[12.5px] leading-[1.8] text-quiet transition-colors hover:text-accent"
+            >
+              背单词 — 国家核心 1600 词，间隔重复安排复习节奏 →
+            </Link>
           </div>
         </aside>
       </div>

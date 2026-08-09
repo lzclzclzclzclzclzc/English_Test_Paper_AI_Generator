@@ -1,0 +1,1481 @@
+{
+  "source": "https://dict.cn/",
+  "glosses": {
+    "ice cream": {
+      "part_of_speech": "n.",
+      "meaning": "冰激凌"
+    },
+    "kung fu": {
+      "part_of_speech": "n.",
+      "meaning": "功夫；武术"
+    },
+    "mrs": {
+      "part_of_speech": "n.",
+      "meaning": "夫人；太太"
+    },
+    "o'clock": {
+      "part_of_speech": "adv.",
+      "meaning": "…点钟"
+    },
+    "nod": {
+      "part_of_speech": "v.",
+      "meaning": "点头"
+    },
+    "actor": {
+      "part_of_speech": "n.",
+      "meaning": "演员；行动者"
+    },
+    "a": {
+      "part_of_speech": "art.",
+      "meaning": "一(个)；每一(个)；任一(个)"
+    },
+    "according": {
+      "part_of_speech": "adv.",
+      "meaning": "根据；按照"
+    },
+    "absent": {
+      "part_of_speech": "adj.",
+      "meaning": "缺席的；不在的；缺乏的"
+    },
+    "active": {
+      "part_of_speech": "adj.",
+      "meaning": "活跃的；积极的；起作用的；灵活的"
+    },
+    "ache": {
+      "part_of_speech": "n.",
+      "meaning": "痛；隐痛"
+    },
+    "ability": {
+      "part_of_speech": "n.",
+      "meaning": "能力；才能"
+    },
+    "able": {
+      "part_of_speech": "adj.",
+      "meaning": "能够的；有能力的；能干的"
+    },
+    "action": {
+      "part_of_speech": "n.",
+      "meaning": "行为；活动；措施；效用；交战；情节；事件；姿态；起诉；机能"
+    },
+    "account": {
+      "part_of_speech": "n.",
+      "meaning": "账户；帐目；赊账；老主顾；报告；描述；解释；说明；估计；理由；利益；好处；根据"
+    },
+    "act": {
+      "part_of_speech": "n.",
+      "meaning": "行为；行动；法案；(戏剧、歌剧等的)一幕；假装"
+    },
+    "activity": {
+      "part_of_speech": "n.",
+      "meaning": "活动；活跃"
+    },
+    "aloud": {
+      "part_of_speech": "adv.",
+      "meaning": "出声地；大声地"
+    },
+    "ad": {
+      "part_of_speech": "abbr.",
+      "meaning": "广告 (=advertisement)"
+    },
+    "aid": {
+      "part_of_speech": "n.",
+      "meaning": "援助；帮助；救援；助手；辅助物"
+    },
+    "advise": {
+      "part_of_speech": "vt.",
+      "meaning": "劝告；通知；忠告；建议"
+    },
+    "ai": {
+      "part_of_speech": "abbr.",
+      "meaning": "人工智能=（Artificial Intelligence ）"
+    },
+    "ant": {
+      "part_of_speech": "n.",
+      "meaning": "蚂蚁"
+    },
+    "an": {
+      "part_of_speech": "art.",
+      "meaning": "（用在元音音素前）一"
+    },
+    "age": {
+      "part_of_speech": "n.",
+      "meaning": "年龄；时代；时期；长时间"
+    },
+    "admire": {
+      "part_of_speech": "vt.",
+      "meaning": "钦佩；赞美；羡慕；欣赏"
+    },
+    "add": {
+      "part_of_speech": "v.",
+      "meaning": "加；增加；补充"
+    },
+    "angry": {
+      "part_of_speech": "adj.",
+      "meaning": "生气的；愤怒的；（伤口等）肿痛的，发炎的；（天空或海洋）天昏地暗的，狂风暴雨的"
+    },
+    "anyway": {
+      "part_of_speech": "adv.",
+      "meaning": "不管怎样；无论如何"
+    },
+    "apartment": {
+      "part_of_speech": "n.",
+      "meaning": "一套公寓房间"
+    },
+    "app": {
+      "part_of_speech": "abbr.",
+      "meaning": "应用程序（=application）"
+    },
+    "athlete": {
+      "part_of_speech": "n.",
+      "meaning": "运动员"
+    },
+    "asleep": {
+      "part_of_speech": "adj.",
+      "meaning": "睡着的；已死的；不活跃的；麻木的"
+    },
+    "astronaut": {
+      "part_of_speech": "n.",
+      "meaning": "宇航员"
+    },
+    "apple": {
+      "part_of_speech": "n.",
+      "meaning": "苹果；珍宝；家伙"
+    },
+    "avoid": {
+      "part_of_speech": "vt.",
+      "meaning": "避免；逃避；[律]使无效；撤销"
+    },
+    "aware": {
+      "part_of_speech": "adj.",
+      "meaning": "知道的；意识到的"
+    },
+    "awake": {
+      "part_of_speech": "adj.",
+      "meaning": "醒着的；警觉的"
+    },
+    "appear": {
+      "part_of_speech": "vi.",
+      "meaning": "出现；出版；显得；好像；登场"
+    },
+    "badminton": {
+      "part_of_speech": "n.",
+      "meaning": "羽毛球"
+    },
+    "bamboo": {
+      "part_of_speech": "n.",
+      "meaning": "竹；竹子"
+    },
+    "band": {
+      "part_of_speech": "n.",
+      "meaning": "乐队；队；一群"
+    },
+    "beach": {
+      "part_of_speech": "n.",
+      "meaning": "海滩；海滨；沙滩"
+    },
+    "baseball": {
+      "part_of_speech": "n.",
+      "meaning": "棒球"
+    },
+    "beautiful": {
+      "part_of_speech": "adj.",
+      "meaning": "美丽的；好的；出色的"
+    },
+    "bathroom": {
+      "part_of_speech": "n.",
+      "meaning": "浴室；洗手间"
+    },
+    "bee": {
+      "part_of_speech": "n.",
+      "meaning": "蜜蜂"
+    },
+    "bean": {
+      "part_of_speech": "n.",
+      "meaning": "豆；豆科植物"
+    },
+    "beef": {
+      "part_of_speech": "n.",
+      "meaning": "牛肉；肌肉；力气；牢骚"
+    },
+    "bell": {
+      "part_of_speech": "n.",
+      "meaning": "钟；铃；门铃；钟声；钟状物"
+    },
+    "behave": {
+      "part_of_speech": "v.",
+      "meaning": "表现；行为；举止"
+    },
+    "begin": {
+      "part_of_speech": "v.",
+      "meaning": "开始；着手"
+    },
+    "benefit": {
+      "part_of_speech": "n.",
+      "meaning": "利益；津贴；义演；保险金；借助"
+    },
+    "biology": {
+      "part_of_speech": "n.",
+      "meaning": "生物学；(一个地区的全部)生物；生物群落"
+    },
+    "bike": {
+      "part_of_speech": "n.",
+      "meaning": "自行车；脚踏车；摩托车"
+    },
+    "birth": {
+      "part_of_speech": "n.",
+      "meaning": "分娩；出生；诞生；血统"
+    },
+    "bill": {
+      "part_of_speech": "n.",
+      "meaning": "帐单；钞票；清单；议案；海报；节目单；锚钩；鸟喙；帽舌"
+    },
+    "bleed": {
+      "part_of_speech": "v.",
+      "meaning": "流血；渗色；榨取；放掉（水或气体）；给...抽血"
+    },
+    "blouse": {
+      "part_of_speech": "n.",
+      "meaning": "女衬衫"
+    },
+    "brown": {
+      "part_of_speech": "adj.",
+      "meaning": "棕色的；褐色的"
+    },
+    "blue": {
+      "part_of_speech": "adj.",
+      "meaning": "蓝色的；忧郁的；沮丧的；色情的"
+    },
+    "boss": {
+      "part_of_speech": "n.",
+      "meaning": "老板；上司；首脑"
+    },
+    "bright": {
+      "part_of_speech": "adj.",
+      "meaning": "明亮的；聪明的；阳光的；生动的；有前途的"
+    },
+    "budget": {
+      "part_of_speech": "n.",
+      "meaning": "预算"
+    },
+    "bully": {
+      "part_of_speech": "n.",
+      "meaning": "欺凌弱小者；开球"
+    },
+    "calendar": {
+      "part_of_speech": "n.",
+      "meaning": "日历；历法；日程表；一览表"
+    },
+    "busy": {
+      "part_of_speech": "adj.",
+      "meaning": "忙的；繁忙的；热闹的；(电话)占线的"
+    },
+    "candy": {
+      "part_of_speech": "n.",
+      "meaning": "糖果"
+    },
+    "cancer": {
+      "part_of_speech": "n.",
+      "meaning": "癌；肿瘤；毒瘤"
+    },
+    "business": {
+      "part_of_speech": "n.",
+      "meaning": "商业；事务；生意"
+    },
+    "careful": {
+      "part_of_speech": "adj.",
+      "meaning": "小心谨慎的；慎重的；精心的"
+    },
+    "cash": {
+      "part_of_speech": "n.",
+      "meaning": "现金"
+    },
+    "care": {
+      "part_of_speech": "v.",
+      "meaning": "关心；担忧；照顾；喜爱；介意；倾向于；愿望；在乎"
+    },
+    "case": {
+      "part_of_speech": "n.",
+      "meaning": "例子；情况；案例；（辩论或诉讼）论据；箱"
+    },
+    "central": {
+      "part_of_speech": "adj.",
+      "meaning": "中心的；中央的；主要的；起支配作用的；有控制力的；[语]中央元音的"
+    },
+    "chalk": {
+      "part_of_speech": "n.",
+      "meaning": "粉笔；白垩"
+    },
+    "challenge": {
+      "part_of_speech": "n.",
+      "meaning": "挑战；邀请比赛；盘问；质疑"
+    },
+    "certain": {
+      "part_of_speech": "adj.",
+      "meaning": "确定的；肯定的；某事；某人；某种；（与人名连用；表示不认识此人）一位叫...；特定的；轻微的；微小的"
+    },
+    "champion": {
+      "part_of_speech": "n.",
+      "meaning": "拥护者；冠军；优胜者；勇士"
+    },
+    "characteristic": {
+      "part_of_speech": "n.",
+      "meaning": "特点；特性；特色"
+    },
+    "change": {
+      "part_of_speech": "n.",
+      "meaning": "变化；零钱"
+    },
+    "chance": {
+      "part_of_speech": "n.",
+      "meaning": "可能性；机会；偶然性"
+    },
+    "charity": {
+      "part_of_speech": "n.",
+      "meaning": "慈善；宽厚；慈善机关(团体)；仁慈"
+    },
+    "chemistry": {
+      "part_of_speech": "n.",
+      "meaning": "化学"
+    },
+    "china": {
+      "part_of_speech": "n.",
+      "meaning": "中国"
+    },
+    "cheat": {
+      "part_of_speech": "vt.",
+      "meaning": "欺骗；骗取"
+    },
+    "chip": {
+      "part_of_speech": "n.",
+      "meaning": "缺口；碎屑；油炸土豆条；薄片；筹码；芯片；（足球）高球；（高尔夫球）近穴球"
+    },
+    "chinese": {
+      "part_of_speech": "n.",
+      "meaning": "中国人；汉语"
+    },
+    "choose": {
+      "part_of_speech": "v.",
+      "meaning": "选择；决定"
+    },
+    "chopsticks": {
+      "part_of_speech": "n.",
+      "meaning": "筷子（名词chopstick的复数形式）"
+    },
+    "choice": {
+      "part_of_speech": "n.",
+      "meaning": "选择；挑选；抉择"
+    },
+    "chore": {
+      "part_of_speech": "n.",
+      "meaning": "讨厌的工作；琐事；家务"
+    },
+    "classic": {
+      "part_of_speech": "n.",
+      "meaning": "杰作；古典作品；第一流艺术家"
+    },
+    "clear": {
+      "part_of_speech": "adj.",
+      "meaning": "清楚的；明确的；明白(某事)的；清晰的；清澈的；晴朗的；头脑清醒的"
+    },
+    "click": {
+      "part_of_speech": "n.",
+      "meaning": "咔嗒声；[计]点击"
+    },
+    "cloud": {
+      "part_of_speech": "n.",
+      "meaning": "云；阴影"
+    },
+    "coach": {
+      "part_of_speech": "n.",
+      "meaning": "教练；经济舱；(火车)客车车厢；四轮马车"
+    },
+    "cloudy": {
+      "part_of_speech": "adj.",
+      "meaning": "多云的；阴天的；混浊的；模糊不清的"
+    },
+    "compete": {
+      "part_of_speech": "v.",
+      "meaning": "竞争；比赛；对抗"
+    },
+    "cookie": {
+      "part_of_speech": "n.",
+      "meaning": "饼干；家伙"
+    },
+    "collect": {
+      "part_of_speech": "v.",
+      "meaning": "收集；聚集；募捐；运走；使（自己）镇定"
+    },
+    "cooperate": {
+      "part_of_speech": "vi.",
+      "meaning": "合作；协力；配合"
+    },
+    "condition": {
+      "part_of_speech": "n.",
+      "meaning": "条件；情况"
+    },
+    "countryside": {
+      "part_of_speech": "n.",
+      "meaning": "乡下；农村"
+    },
+    "could": {
+      "part_of_speech": "aux.",
+      "meaning": "可以；能；可能；can的过去式"
+    },
+    "cotton": {
+      "part_of_speech": "n.",
+      "meaning": "棉花；棉制品；棉布"
+    },
+    "creative": {
+      "part_of_speech": "adj.",
+      "meaning": "创造的，创造性的；创作的；产生的，引起…的（后接of）"
+    },
+    "courage": {
+      "part_of_speech": "n.",
+      "meaning": "勇气；胆量"
+    },
+    "corn": {
+      "part_of_speech": "n.",
+      "meaning": "谷物；玉米；伤感平庸作品"
+    },
+    "cucumber": {
+      "part_of_speech": "n.",
+      "meaning": "黄瓜"
+    },
+    "danger": {
+      "part_of_speech": "n.",
+      "meaning": "【U】危险"
+    },
+    "curious": {
+      "part_of_speech": "adj.",
+      "meaning": "好奇的；奇特的"
+    },
+    "dangerous": {
+      "part_of_speech": "adj.",
+      "meaning": "危险的；不安全的"
+    },
+    "dead": {
+      "part_of_speech": "adj.",
+      "meaning": "死的；不起作用的；无趣的；筋疲力尽的；麻木的；完全的；无效的；沉闷的；（指球）界外的"
+    },
+    "day": {
+      "part_of_speech": "n.",
+      "meaning": "白天；一天；时代"
+    },
+    "death": {
+      "part_of_speech": "n.",
+      "meaning": "死；死亡；毁灭；死因"
+    },
+    "decide": {
+      "part_of_speech": "v.",
+      "meaning": "决定；判断；断定"
+    },
+    "die": {
+      "part_of_speech": "v.",
+      "meaning": "死；枯竭；消失；渴望"
+    },
+    "difference": {
+      "part_of_speech": "n.",
+      "meaning": "差异；不同；差额；分歧"
+    },
+    "difficult": {
+      "part_of_speech": "adj.",
+      "meaning": "困难的；艰难的；(人)难对付的；不易相处的"
+    },
+    "digital": {
+      "part_of_speech": "adj.",
+      "meaning": "数字的；数码的；手指的；计数的"
+    },
+    "different": {
+      "part_of_speech": "adj.",
+      "meaning": "不同的；差异的；分别的；各不相同的"
+    },
+    "direct": {
+      "part_of_speech": "adj.",
+      "meaning": "直接的；笔直的；坦白的"
+    },
+    "disappoint": {
+      "part_of_speech": "v.",
+      "meaning": "使失望；使破灭"
+    },
+    "dining": {
+      "part_of_speech": "n.",
+      "meaning": "就餐"
+    },
+    "disease": {
+      "part_of_speech": "n.",
+      "meaning": "疾病"
+    },
+    "doll": {
+      "part_of_speech": "n.",
+      "meaning": "玩具娃娃；美貌女子；有吸引力的人"
+    },
+    "donate": {
+      "part_of_speech": "v.",
+      "meaning": "捐赠；捐献"
+    },
+    "download": {
+      "part_of_speech": "v.",
+      "meaning": "下载"
+    },
+    "doubt": {
+      "part_of_speech": "n.",
+      "meaning": "怀疑；疑惑；悬而未定"
+    },
+    "drama": {
+      "part_of_speech": "n.",
+      "meaning": "戏剧；剧本；戏剧艺术；戏剧性事件"
+    },
+    "dragon": {
+      "part_of_speech": "n.",
+      "meaning": "龙"
+    },
+    "eagle": {
+      "part_of_speech": "n.",
+      "meaning": "鹰"
+    },
+    "early": {
+      "part_of_speech": "adv.",
+      "meaning": "早"
+    },
+    "education": {
+      "part_of_speech": "n.",
+      "meaning": "教育；修养；教育学"
+    },
+    "easy": {
+      "part_of_speech": "adj.",
+      "meaning": "容易的；轻松的；不费力的；舒适的；安逸的；轻微的；随和的；无约束的"
+    },
+    "else": {
+      "part_of_speech": "adv.",
+      "meaning": "其他；此外；(常与or连用)否则、不然"
+    },
+    "email": {
+      "part_of_speech": "vt.",
+      "meaning": "发电子邮件；给……发电子邮件"
+    },
+    "emperor": {
+      "part_of_speech": "n.",
+      "meaning": "皇帝"
+    },
+    "energetic": {
+      "part_of_speech": "adj.",
+      "meaning": "精力旺盛的；有力的；能量的"
+    },
+    "engineer": {
+      "part_of_speech": "n.",
+      "meaning": "工程师；机(械)师"
+    },
+    "era": {
+      "part_of_speech": "n.",
+      "meaning": "纪元；时代；年代"
+    },
+    "fantastic": {
+      "part_of_speech": "adj.",
+      "meaning": "极好的；巨大的；奇异的；难以置信的；幻想的"
+    },
+    "eraser": {
+      "part_of_speech": "n.",
+      "meaning": "橡皮擦；擦除器"
+    },
+    "exam": {
+      "part_of_speech": "n.",
+      "meaning": "考试"
+    },
+    "false": {
+      "part_of_speech": "adj.",
+      "meaning": "假的；人造的；不真实的；错误的；虚伪的"
+    },
+    "expert": {
+      "part_of_speech": "n.",
+      "meaning": "专家；能手"
+    },
+    "field": {
+      "part_of_speech": "n.",
+      "meaning": "田地；领域；运动场；场地；田野；JAVA中的范畴"
+    },
+    "flu": {
+      "part_of_speech": "n.",
+      "meaning": "流行性感冒"
+    },
+    "folk": {
+      "part_of_speech": "n.",
+      "meaning": "人们；（某类或来自某个地方的）人；双亲；大伙儿；民间音乐"
+    },
+    "forest": {
+      "part_of_speech": "n.",
+      "meaning": "森林；林火"
+    },
+    "force": {
+      "part_of_speech": "n.",
+      "meaning": "武力；暴力；力量；影响力；力量大的人或（事物）；权力；（为某目的组织起来的）一群人；军队；部队；武装力量；警察部门；力；风力"
+    },
+    "found": {
+      "part_of_speech": "v.",
+      "meaning": "建立；创立；创办；熔铸；找到，发现（动词find的过去式和过去分词）"
+    },
+    "feeling": {
+      "part_of_speech": "n.",
+      "meaning": "感觉；知觉；气氛；鉴赏力；反感"
+    },
+    "fox": {
+      "part_of_speech": "n.",
+      "meaning": "狐狸；狡猾的人；迷人的时髦女郎"
+    },
+    "giraffe": {
+      "part_of_speech": "n.",
+      "meaning": "长颈鹿"
+    },
+    "grammar": {
+      "part_of_speech": "n.",
+      "meaning": "语法；文法"
+    },
+    "glue": {
+      "part_of_speech": "n.",
+      "meaning": "胶；胶水；胶粘物"
+    },
+    "grey": {
+      "part_of_speech": "adj.",
+      "meaning": "灰色的"
+    },
+    "guard": {
+      "part_of_speech": "v.",
+      "meaning": "看守；守卫；保卫；提防"
+    },
+    "guitar": {
+      "part_of_speech": "n.",
+      "meaning": "吉他"
+    },
+    "gym": {
+      "part_of_speech": "n.",
+      "meaning": "体育馆；健身房；体育课"
+    },
+    "grape": {
+      "part_of_speech": "n.",
+      "meaning": "葡萄；葡萄树；深紫色；[军]葡萄弹"
+    },
+    "harm": {
+      "part_of_speech": "n.",
+      "meaning": "危害；伤害；损害"
+    },
+    "handsome": {
+      "part_of_speech": "adj.",
+      "meaning": "可观的；英俊的；慷慨大方的；灵巧的"
+    },
+    "hand": {
+      "part_of_speech": "n.",
+      "meaning": "手；协助；手艺"
+    },
+    "he": {
+      "part_of_speech": "pron.",
+      "meaning": "他；任何人"
+    },
+    "hers": {
+      "part_of_speech": "pron.",
+      "meaning": "她的（she的物主代词）"
+    },
+    "hen": {
+      "part_of_speech": "n.",
+      "meaning": "母鸡；雌禽"
+    },
+    "her": {
+      "part_of_speech": "pron.",
+      "meaning": "她(宾格)"
+    },
+    "herself": {
+      "part_of_speech": "pron.",
+      "meaning": "她自己；她亲自"
+    },
+    "hi": {
+      "part_of_speech": "int.",
+      "meaning": "嗨(引人注意时的喊声；打招呼)"
+    },
+    "him": {
+      "part_of_speech": "pron.",
+      "meaning": "他(he的宾格)"
+    },
+    "hike": {
+      "part_of_speech": "n.",
+      "meaning": "徒步旅行；远足；涨价"
+    },
+    "his": {
+      "part_of_speech": "adj.",
+      "meaning": "他的"
+    },
+    "honey": {
+      "part_of_speech": "n.",
+      "meaning": "蜂蜜；甜蜜；宝贝"
+    },
+    "himself": {
+      "part_of_speech": "pron.",
+      "meaning": "他自己"
+    },
+    "hope": {
+      "part_of_speech": "v.",
+      "meaning": "希望；期望；盼望"
+    },
+    "influence": {
+      "part_of_speech": "v.",
+      "meaning": "影响；感染；在(饮料)中加烈酒"
+    },
+    "insect": {
+      "part_of_speech": "n.",
+      "meaning": "昆虫；虫子；卑微的人"
+    },
+    "hug": {
+      "part_of_speech": "v.",
+      "meaning": "拥抱；紧抱；抱有；挨着"
+    },
+    "itself": {
+      "part_of_speech": "pron.",
+      "meaning": "它自己"
+    },
+    "instruction": {
+      "part_of_speech": "n.",
+      "meaning": "指令；教学；教诲；说明"
+    },
+    "instrument": {
+      "part_of_speech": "n.",
+      "meaning": "仪器；乐器；工具；器械"
+    },
+    "it": {
+      "part_of_speech": "pron.",
+      "meaning": "它"
+    },
+    "its": {
+      "part_of_speech": "pron.",
+      "meaning": "（it的所有格)它的"
+    },
+    "junior": {
+      "part_of_speech": "adj.",
+      "meaning": "资历较浅的；年少的；下级的"
+    },
+    "jog": {
+      "part_of_speech": "v.",
+      "meaning": "慢跑；轻推；（使）颠簸前行"
+    },
+    "joy": {
+      "part_of_speech": "n.",
+      "meaning": "欢乐；喜悦；乐趣；[大写] 乔伊(女子名)"
+    },
+    "key": {
+      "part_of_speech": "n.",
+      "meaning": "键；关键；钥匙；答案"
+    },
+    "kiss": {
+      "part_of_speech": "n.",
+      "meaning": "吻；轻触"
+    },
+    "king": {
+      "part_of_speech": "n.",
+      "meaning": "国王；（纸牌）老K"
+    },
+    "lake": {
+      "part_of_speech": "n.",
+      "meaning": "湖；湖泊"
+    },
+    "least": {
+      "part_of_speech": "adj.",
+      "meaning": "最小的；最少的"
+    },
+    "laptop": {
+      "part_of_speech": "n.",
+      "meaning": "便携式电脑；笔记本电脑"
+    },
+    "leaf": {
+      "part_of_speech": "n.",
+      "meaning": "页；叶；金属薄片"
+    },
+    "lay": {
+      "part_of_speech": "v.",
+      "meaning": "放置；躺下；打赌；设计；击倒；产卵；使平静；压平"
+    },
+    "landscape": {
+      "part_of_speech": "n.",
+      "meaning": "风景；风景画；山水；[计]横向"
+    },
+    "less": {
+      "part_of_speech": "adj.",
+      "meaning": "更少的；较少的"
+    },
+    "lightning": {
+      "part_of_speech": "n.",
+      "meaning": "闪电；意外的幸运"
+    },
+    "lemon": {
+      "part_of_speech": "n.",
+      "meaning": "柠檬；柠檬色；次品；令人讨厌的人"
+    },
+    "literature": {
+      "part_of_speech": "n.",
+      "meaning": "文学；文献；印刷品"
+    },
+    "lively": {
+      "part_of_speech": "adj.",
+      "meaning": "活泼的； 活跃的； 栩栩如生的； 真实的"
+    },
+    "long": {
+      "part_of_speech": "adj.",
+      "meaning": "长的；冗长的；久的；长音的"
+    },
+    "loss": {
+      "part_of_speech": "n.",
+      "meaning": "遗失；丧失；损失；失败；失落；死亡"
+    },
+    "master": {
+      "part_of_speech": "n.",
+      "meaning": "主人；硕士；专家"
+    },
+    "love": {
+      "part_of_speech": "v.",
+      "meaning": "爱；热爱；喜欢"
+    },
+    "me": {
+      "part_of_speech": "pron.",
+      "meaning": "我(宾格)"
+    },
+    "may": {
+      "part_of_speech": "aux.",
+      "meaning": "可以，能够；可能，也许；祝，愿；会，能"
+    },
+    "mark": {
+      "part_of_speech": "n.",
+      "meaning": "记号；痕迹；分数；商标"
+    },
+    "medal": {
+      "part_of_speech": "n.",
+      "meaning": "奖章；勋章；纪念章"
+    },
+    "meaning": {
+      "part_of_speech": "n.",
+      "meaning": "意义；含义；重要性；价值"
+    },
+    "mine": {
+      "part_of_speech": "pron.",
+      "meaning": "我的"
+    },
+    "might": {
+      "part_of_speech": "aux.",
+      "meaning": "可能；也许；may的过去式"
+    },
+    "mess": {
+      "part_of_speech": "n.",
+      "meaning": "混乱；混杂；脏乱；一份食品；粪便；（军队的）食堂"
+    },
+    "mr": {
+      "part_of_speech": "n.",
+      "meaning": "先生(Mister的缩写)"
+    },
+    "mobile": {
+      "part_of_speech": "adj.",
+      "meaning": "移动的；易变的；活动的"
+    },
+    "ms": {
+      "part_of_speech": "abbr.",
+      "meaning": "毫秒（=millisecond）"
+    },
+    "my": {
+      "part_of_speech": "adj.",
+      "meaning": "我的（I的所有格形式）"
+    },
+    "mutton": {
+      "part_of_speech": "n.",
+      "meaning": "羊肉"
+    },
+    "myself": {
+      "part_of_speech": "pron.",
+      "meaning": "我自己"
+    },
+    "neck": {
+      "part_of_speech": "n.",
+      "meaning": "颈；脖子"
+    },
+    "negative": {
+      "part_of_speech": "adj.",
+      "meaning": "否定的；消极的；负面的；负的"
+    },
+    "noon": {
+      "part_of_speech": "n.",
+      "meaning": "正午；中午；全盛期；顶点"
+    },
+    "normal": {
+      "part_of_speech": "adj.",
+      "meaning": "正常的；正规的；精神健全的"
+    },
+    "notebook": {
+      "part_of_speech": "n.",
+      "meaning": "笔记本；笔记本电脑"
+    },
+    "object": {
+      "part_of_speech": "n.",
+      "meaning": "物体；目标；对象；宾语"
+    },
+    "onion": {
+      "part_of_speech": "n.",
+      "meaning": "洋葱"
+    },
+    "opera": {
+      "part_of_speech": "n.",
+      "meaning": "歌剧"
+    },
+    "organise": {
+      "part_of_speech": "v.",
+      "meaning": "组织；有机化；安排"
+    },
+    "our": {
+      "part_of_speech": "adj.",
+      "meaning": "我们的"
+    },
+    "ourselves": {
+      "part_of_speech": "pron.",
+      "meaning": "我们自己"
+    },
+    "packet": {
+      "part_of_speech": "n.",
+      "meaning": "小袋；邮船；数据包"
+    },
+    "page": {
+      "part_of_speech": "n.",
+      "meaning": "页；页码；侍从"
+    },
+    "pancake": {
+      "part_of_speech": "n.",
+      "meaning": "薄煎饼"
+    },
+    "ours": {
+      "part_of_speech": "pron.",
+      "meaning": "我们的"
+    },
+    "paragraph": {
+      "part_of_speech": "n.",
+      "meaning": "段落；节"
+    },
+    "park": {
+      "part_of_speech": "n.",
+      "meaning": "停车场；公园；园区；(球类)运动场"
+    },
+    "pardon": {
+      "part_of_speech": "n.",
+      "meaning": "原谅，宽恕，饶恕；赦免，赦免状"
+    },
+    "pepper": {
+      "part_of_speech": "n.",
+      "meaning": "胡椒粉；辣椒"
+    },
+    "penguin": {
+      "part_of_speech": "n.",
+      "meaning": "企鹅"
+    },
+    "per cent": {
+      "part_of_speech": "n.",
+      "meaning": "百分之 ..."
+    },
+    "perform": {
+      "part_of_speech": "v.",
+      "meaning": "执行；履行；表演；运转；举行"
+    },
+    "pie": {
+      "part_of_speech": "n.",
+      "meaning": "馅饼；饼图"
+    },
+    "ping-pong": {
+      "part_of_speech": "n.",
+      "meaning": "乒乓；桌球"
+    },
+    "porridge": {
+      "part_of_speech": "n.",
+      "meaning": "粥；麦片粥"
+    },
+    "police": {
+      "part_of_speech": "n.",
+      "meaning": "警察；警方"
+    },
+    "period": {
+      "part_of_speech": "n.",
+      "meaning": "一段时间；周期；时期；课时；学时；句号；月经"
+    },
+    "position": {
+      "part_of_speech": "n.",
+      "meaning": "位置；职位；立场；状态"
+    },
+    "positive": {
+      "part_of_speech": "adj.",
+      "meaning": "积极的；肯定的；明确的；正面的；正数的；阳性的"
+    },
+    "pride": {
+      "part_of_speech": "n.",
+      "meaning": "骄傲；自豪；自尊心；引以自豪的东西"
+    },
+    "pour": {
+      "part_of_speech": "v.",
+      "meaning": "不断流动；倒；倾泻；蜂涌而来"
+    },
+    "practise": {
+      "part_of_speech": "v.",
+      "meaning": "练习；实践；实行；开业"
+    },
+    "pressure": {
+      "part_of_speech": "n.",
+      "meaning": "压强；压力；压迫"
+    },
+    "proper": {
+      "part_of_speech": "adj.",
+      "meaning": "合适的；正当的；真正的"
+    },
+    "prince": {
+      "part_of_speech": "n.",
+      "meaning": "王子；亲王；诸侯"
+    },
+    "punish": {
+      "part_of_speech": "vt.",
+      "meaning": "惩罚；粗暴对待"
+    },
+    "rabbit": {
+      "part_of_speech": "n.",
+      "meaning": "兔子"
+    },
+    "quality": {
+      "part_of_speech": "n.",
+      "meaning": "品质；才能；特质"
+    },
+    "purple": {
+      "part_of_speech": "adj.",
+      "meaning": "紫色的；辞藻华丽的"
+    },
+    "rainbow": {
+      "part_of_speech": "n.",
+      "meaning": "彩虹；五彩缤纷的排列；幻想"
+    },
+    "realise": {
+      "part_of_speech": "v.",
+      "meaning": "意识到；实现；明白；变现"
+    },
+    "recognise": {
+      "part_of_speech": "v.",
+      "meaning": "承认；识别，认出；认可"
+    },
+    "rapid": {
+      "part_of_speech": "adj.",
+      "meaning": "短时间发生的；急速的；迅速的；快的；险峻的"
+    },
+    "recommend": {
+      "part_of_speech": "vt.",
+      "meaning": "推荐；建议；劝告；使受欢迎；使可取"
+    },
+    "remain": {
+      "part_of_speech": "v.",
+      "meaning": "剩余；逗留；留下；依然；保持"
+    },
+    "regret": {
+      "part_of_speech": "v.",
+      "meaning": "后悔；惋惜；为 ... 感到遗憾"
+    },
+    "recycle": {
+      "part_of_speech": "vt.",
+      "meaning": "再利用；使再循环；再制"
+    },
+    "read": {
+      "part_of_speech": "v.",
+      "meaning": "识字；阅读；朗读；理解；读到；猜测；读唇语；写着；读起来（给人以某种印象）；显示；看读数；听到；将...改为；攻读；（计算机）读盘"
+    },
+    "rich": {
+      "part_of_speech": "adj.",
+      "meaning": "富有的；富饶的；丰富的"
+    },
+    "remind": {
+      "part_of_speech": "vt.",
+      "meaning": "使想起；提醒"
+    },
+    "ring": {
+      "part_of_speech": "n.",
+      "meaning": "戒指；环；圈；拳击场；马戏场；帮派"
+    },
+    "risk": {
+      "part_of_speech": "n.",
+      "meaning": "危险；风险；投资报酬的风险"
+    },
+    "rose": {
+      "part_of_speech": "n.",
+      "meaning": "玫瑰；蔷薇"
+    },
+    "role": {
+      "part_of_speech": "n.",
+      "meaning": "作用；角色"
+    },
+    "rock": {
+      "part_of_speech": "n.",
+      "meaning": "岩石；摇滚乐；困境"
+    },
+    "sand": {
+      "part_of_speech": "n.",
+      "meaning": "沙；沙子；沙滩；黄灰色"
+    },
+    "rush": {
+      "part_of_speech": "v.",
+      "meaning": "冲；仓促行事；突袭；奔；急速流动"
+    },
+    "scissors": {
+      "part_of_speech": "n.",
+      "meaning": "剪刀"
+    },
+    "satisfy": {
+      "part_of_speech": "v.",
+      "meaning": "使满意；满足；使信服；清偿"
+    },
+    "separate": {
+      "part_of_speech": "adj.",
+      "meaning": "分开的；不同的；单独的；各自的"
+    },
+    "schoolbag": {
+      "part_of_speech": "n.",
+      "meaning": "书包"
+    },
+    "shark": {
+      "part_of_speech": "n.",
+      "meaning": "鲨鱼"
+    },
+    "scare": {
+      "part_of_speech": "v.",
+      "meaning": "受惊吓；恐吓；吓走"
+    },
+    "she": {
+      "part_of_speech": "pron.",
+      "meaning": "她（主格）"
+    },
+    "shock": {
+      "part_of_speech": "n.",
+      "meaning": "震惊；震动；冲击；休克"
+    },
+    "ski": {
+      "part_of_speech": "v.",
+      "meaning": "滑雪"
+    },
+    "shoot": {
+      "part_of_speech": "v.",
+      "meaning": "发射；开枪；疾驰；拍照"
+    },
+    "silver": {
+      "part_of_speech": "n.",
+      "meaning": "银币；银器；银；银灰色"
+    },
+    "shoulder": {
+      "part_of_speech": "n.",
+      "meaning": "肩膀；肩部"
+    },
+    "socialism": {
+      "part_of_speech": "n.",
+      "meaning": "社会主义"
+    },
+    "slim": {
+      "part_of_speech": "adj.",
+      "meaning": "苗条的；微小的；细长的"
+    },
+    "snake": {
+      "part_of_speech": "n.",
+      "meaning": "蛇；狡诈的人"
+    },
+    "social": {
+      "part_of_speech": "adj.",
+      "meaning": "社会的；社会阶层的；群居的；社交的；好交际的；合群的"
+    },
+    "smooth": {
+      "part_of_speech": "adj.",
+      "meaning": "光滑的；平稳的；流畅的；圆滑的；可口的；安祥的；均匀的"
+    },
+    "snow": {
+      "part_of_speech": "n.",
+      "meaning": "雪；积雪；下雪"
+    },
+    "sofa": {
+      "part_of_speech": "n.",
+      "meaning": "沙发"
+    },
+    "soil": {
+      "part_of_speech": "n.",
+      "meaning": "土地；土壤；污物，粪便"
+    },
+    "spirit": {
+      "part_of_speech": "n.",
+      "meaning": "精神；心灵；幽灵；精灵"
+    },
+    "spring": {
+      "part_of_speech": "n.",
+      "meaning": "春天；春季；弹簧；弹力；跳；泉水；源头"
+    },
+    "sore": {
+      "part_of_speech": "adj.",
+      "meaning": "疼痛的；痛心的；恼火的；严重的"
+    },
+    "somewhere": {
+      "part_of_speech": "adv.",
+      "meaning": "在某处；到某种程度；大约"
+    },
+    "stage": {
+      "part_of_speech": "n.",
+      "meaning": "舞台；戏剧；阶段；步骤；行程"
+    },
+    "standard": {
+      "part_of_speech": "n.",
+      "meaning": "标准；规格；水准；军旗"
+    },
+    "stone": {
+      "part_of_speech": "n.",
+      "meaning": "【U】石料"
+    },
+    "stomach": {
+      "part_of_speech": "n.",
+      "meaning": "胃；胃口；腹部"
+    },
+    "stress": {
+      "part_of_speech": "n.",
+      "meaning": "压力；强调；重音"
+    },
+    "strawberry": {
+      "part_of_speech": "n.",
+      "meaning": "草莓"
+    },
+    "strong": {
+      "part_of_speech": "adj.",
+      "meaning": "强烈的；坚强的；强壮的；强劲的；强大的；确凿的；有影响力的；坚定的；浓的；浓烈的；结实的；可能性大的；擅长的；大量的；稳固的；坚挺的；景气的；强硬的；重读的"
+    },
+    "sudden": {
+      "part_of_speech": "adj.",
+      "meaning": "突然的；出乎意料的"
+    },
+    "style": {
+      "part_of_speech": "n.",
+      "meaning": "文体；风格；式样；时尚；类型"
+    },
+    "summer": {
+      "part_of_speech": "n.",
+      "meaning": "夏天；夏季"
+    },
+    "sunny": {
+      "part_of_speech": "adj.",
+      "meaning": "阳光充足的；晴朗的；明媚的；快活的"
+    },
+    "suit": {
+      "part_of_speech": "n.",
+      "meaning": "套装；诉讼；请求"
+    },
+    "talent": {
+      "part_of_speech": "n.",
+      "meaning": "天赋；才能，才艺；天才；人才；美人"
+    },
+    "t-shirt": {
+      "part_of_speech": "n.",
+      "meaning": "T恤衫"
+    },
+    "sweater": {
+      "part_of_speech": "n.",
+      "meaning": "毛衣；出汗者"
+    },
+    "tent": {
+      "part_of_speech": "n.",
+      "meaning": "帐篷"
+    },
+    "teamwork": {
+      "part_of_speech": "n.",
+      "meaning": "合作；协同工作"
+    },
+    "their": {
+      "part_of_speech": "adj.",
+      "meaning": "他们的；她们的；它们的"
+    },
+    "the": {
+      "part_of_speech": "art.",
+      "meaning": "那；这；这些；那些"
+    },
+    "themselves": {
+      "part_of_speech": "pron.",
+      "meaning": "他/她/它们自己；他/她/它们亲自；指性别不详的人时用以代替himself或herself"
+    },
+    "them": {
+      "part_of_speech": "pron.",
+      "meaning": "他们；她们；它们；性别不详的人（代替him或her）"
+    },
+    "they": {
+      "part_of_speech": "pron.",
+      "meaning": "他们"
+    },
+    "therefore": {
+      "part_of_speech": "adv.",
+      "meaning": "因此；所以"
+    },
+    "theirs": {
+      "part_of_speech": "pron.",
+      "meaning": "他(她；它)们的"
+    },
+    "though": {
+      "part_of_speech": "conj.",
+      "meaning": "虽然；尽管；然而；可是"
+    },
+    "tofu": {
+      "part_of_speech": "n.",
+      "meaning": "豆腐"
+    },
+    "throat": {
+      "part_of_speech": "n.",
+      "meaning": "嗓子；喉咙；颈部；嗓音"
+    },
+    "thunder": {
+      "part_of_speech": "n.",
+      "meaning": "雷；雷声"
+    },
+    "tiny": {
+      "part_of_speech": "adj.",
+      "meaning": "极小的；微小的"
+    },
+    "toilet": {
+      "part_of_speech": "n.",
+      "meaning": "厕所；盥洗室；卫生间"
+    },
+    "ton": {
+      "part_of_speech": "n.",
+      "meaning": "吨；大量"
+    },
+    "trade": {
+      "part_of_speech": "n.",
+      "meaning": "贸易；交易；行业；同行；顾客；营业额；交易量"
+    },
+    "total": {
+      "part_of_speech": "adj.",
+      "meaning": "总的；全体的；完全的"
+    },
+    "training": {
+      "part_of_speech": "n.",
+      "meaning": "训练；培养"
+    },
+    "treat": {
+      "part_of_speech": "v.",
+      "meaning": "对待；视为；探讨；治疗；处理；请客"
+    },
+    "treasure": {
+      "part_of_speech": "n.",
+      "meaning": "财富；宝物"
+    },
+    "trust": {
+      "part_of_speech": "n.",
+      "meaning": "信任；信托"
+    },
+    "tv": {
+      "part_of_speech": "abbr.",
+      "meaning": "(=television) 电视；电视机"
+    },
+    "universe": {
+      "part_of_speech": "n.",
+      "meaning": "宇宙；万物；世界"
+    },
+    "vacation": {
+      "part_of_speech": "n.",
+      "meaning": "假期；休假；腾出"
+    },
+    "upon": {
+      "part_of_speech": "prep.",
+      "meaning": "在 ... 上；紧接着；逼近"
+    },
+    "us": {
+      "part_of_speech": "pron.",
+      "meaning": "我们(we的宾格)"
+    },
+    "virus": {
+      "part_of_speech": "n.",
+      "meaning": "病毒；病原体"
+    },
+    "voluntary": {
+      "part_of_speech": "adj.",
+      "meaning": "自愿的；志愿的"
+    },
+    "value": {
+      "part_of_speech": "n.",
+      "meaning": "价值；价格；重要性；(pl)价值观；数值"
+    },
+    "wallet": {
+      "part_of_speech": "n.",
+      "meaning": "皮夹；钱包"
+    },
+    "watermelon": {
+      "part_of_speech": "n.",
+      "meaning": "西瓜"
+    },
+    "wall": {
+      "part_of_speech": "n.",
+      "meaning": "墙壁；垣；墙状物"
+    },
+    "we": {
+      "part_of_speech": "pron.",
+      "meaning": "我们"
+    },
+    "west": {
+      "part_of_speech": "n.",
+      "meaning": "西；西方；西部；西方国家"
+    },
+    "vote": {
+      "part_of_speech": "n.",
+      "meaning": "选举权；投票；选举；投票结果"
+    },
+    "whenever": {
+      "part_of_speech": "adv.",
+      "meaning": "无论何时"
+    },
+    "whatever": {
+      "part_of_speech": "pron.",
+      "meaning": "无论什么；任何事物"
+    },
+    "whale": {
+      "part_of_speech": "n.",
+      "meaning": "鲸"
+    },
+    "wheel": {
+      "part_of_speech": "n.",
+      "meaning": "方向盘；车轮；旋转；周期"
+    },
+    "worse": {
+      "part_of_speech": "adj.",
+      "meaning": "更坏的；更差的；更严重的"
+    },
+    "will": {
+      "part_of_speech": "n.",
+      "meaning": "决心；意志；遗嘱；愿望"
+    },
+    "wood": {
+      "part_of_speech": "n.",
+      "meaning": "木材；木头；树林"
+    },
+    "wolf": {
+      "part_of_speech": "n.",
+      "meaning": "狼；特立独行的人"
+    },
+    "winter": {
+      "part_of_speech": "n.",
+      "meaning": "冬季；冬天"
+    },
+    "x-ray": {
+      "part_of_speech": "n.",
+      "meaning": "X射线；光机；X光照片"
+    },
+    "worst": {
+      "part_of_speech": "adj.",
+      "meaning": "最坏的；最差的；最不利的"
+    },
+    "you": {
+      "part_of_speech": "pron.",
+      "meaning": "你；你们；(泛指)任何人"
+    },
+    "young": {
+      "part_of_speech": "adj.",
+      "meaning": "年轻的；初期的；没有经验的"
+    },
+    "yourself": {
+      "part_of_speech": "pron.",
+      "meaning": "你(们)自己；你(们)亲自"
+    },
+    "your": {
+      "part_of_speech": "adj.",
+      "meaning": "你的；你们的"
+    },
+    "yours": {
+      "part_of_speech": "pron.",
+      "meaning": "你的；你们的"
+    }
+  }
+}
