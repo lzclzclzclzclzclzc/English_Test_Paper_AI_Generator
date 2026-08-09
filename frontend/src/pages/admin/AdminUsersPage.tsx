@@ -18,13 +18,13 @@ export function AdminUsersPage() {
       />
       <div className="overflow-hidden rounded-md border border-hairline">
         <table className="w-full text-[13px]">
-          <thead className="bg-wash/60 text-left text-muted-ink">
+          <thead className="bg-wash/60 text-left font-ui text-muted-ink">
             <tr>
-              <th className="px-3 py-2 font-medium">用户名</th>
-              <th className="px-3 py-2 font-medium">注册</th>
-              <th className="px-3 py-2 font-medium">角色</th>
-              <th className="px-3 py-2 font-medium">状态</th>
-              <th className="px-3 py-2 font-medium">试卷</th>
+              <th className="px-3 py-2 font-[550]">用户名</th>
+              <th className="px-3 py-2 font-[550]">注册</th>
+              <th className="px-3 py-2 font-[550]">角色</th>
+              <th className="px-3 py-2 font-[550]">状态</th>
+              <th className="px-3 py-2 font-[550]">试卷</th>
               <th className="px-3 py-2"></th>
             </tr>
           </thead>

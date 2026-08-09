@@ -35,7 +35,7 @@ export function LandingHeader() {
               key={item.id}
               href={`#${item.id}`}
               onClick={(e) => scrollToAnchor(e, item.id)}
-              className="text-[14px] text-muted-ink transition-colors hover:text-accent max-sm:hidden"
+              className="font-ui text-[14px] text-muted-ink transition-colors hover:text-accent max-sm:hidden"
             >
               {item.label}
             </a>
@@ -51,7 +51,7 @@ export function LandingHeader() {
             <>
               <Link
                 to={PATHS.login}
-                className="text-[14px] text-muted-ink transition-colors hover:text-accent"
+                className="font-ui text-[14px] text-muted-ink transition-colors hover:text-accent"
               >
                 登录
               </Link>

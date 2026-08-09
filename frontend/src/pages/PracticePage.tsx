@@ -107,7 +107,7 @@ export function PracticePage() {
                 >
                   <span className="text-[15.5px] text-ink">{config.label}</span>
                   <span className="text-[12.5px] text-quiet">{config.bankLabel}</span>
-                  <span className="ml-auto shrink-0 text-[13px] text-quiet transition-colors group-hover:text-accent">
+                  <span className="ml-auto shrink-0 font-ui text-[13px] text-quiet transition-colors group-hover:text-accent">
                     开始 →
                   </span>
                 </Link>
@@ -171,7 +171,7 @@ export function PracticePage() {
             </button>
           </div>
           {serverError && <p className="text-[12px] text-accent">{serverError}</p>}
-          {quotaNotice && <p className="text-[12px] text-quiet">{quotaNotice}</p>}
+          {quotaNotice && <p className="font-ui text-[12px] tabular-nums text-quiet">{quotaNotice}</p>}
         </section>
 
         {/* 速练一组：点击即出，默认强度 */}
@@ -205,13 +205,13 @@ export function PracticePage() {
             <span className="text-[13.5px] text-muted-ink">
               — 九种题型自由配比，考点、强度、主题一次配好
             </span>
-            <span className="ml-auto shrink-0 text-[13px] text-quiet transition-colors group-hover:text-accent">
+            <span className="ml-auto shrink-0 font-ui text-[13px] text-quiet transition-colors group-hover:text-accent">
               →
             </span>
           </Link>
           <div className="flex flex-wrap items-baseline gap-2 px-2 py-5 text-[13px] text-quiet">
             <span>词汇学习</span>
-            <span className="rounded-sm border border-hairline px-1.5 py-px text-[10.5px] leading-relaxed">
+            <span className="rounded-sm border border-hairline px-1.5 py-px font-ui text-[10.5px] leading-relaxed">
               即将上线
             </span>
             <span>— 国家核心 1600 词，间隔重复安排复习节奏</span>

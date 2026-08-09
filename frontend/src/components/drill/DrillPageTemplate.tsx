@@ -111,17 +111,17 @@ export function DrillPageTemplate({ config }: DrillPageTemplateProps) {
             <button
               type="button"
               disabled={isPending || hasError}
-              className="rounded-sm border border-accent bg-wash px-8 py-3 text-[16px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
+              className="rounded-sm border border-accent bg-wash px-8 py-3 font-ui text-[16px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
               onClick={handleSubmit}
             >
               {isPending ? '生成中…' : '生成练习'}
             </button>
-            <span className="text-[12.5px] text-quiet">
+            <span className="font-ui text-[12.5px] text-quiet">
               {isPending ? '生成中，请勿关闭页面' : '通常 4–6 秒'}
             </span>
           </div>
           {serverError && <p className="text-[12px] text-accent">{serverError}</p>}
-          {quotaNotice && <p className="text-[12px] text-quiet">{quotaNotice}</p>}
+          {quotaNotice && <p className="font-ui text-[12px] tabular-nums text-quiet">{quotaNotice}</p>}
         </div>
 
         {isPending && <PipelineProgress />}

@@ -293,13 +293,13 @@ export function CustomPaperPage() {
               <button
                 type="button"
                 disabled={isPending || hasError}
-                className="rounded-sm border border-accent bg-wash px-6 py-2.5 text-[15px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
+                className="rounded-sm border border-accent bg-wash px-6 py-2.5 font-ui text-[15px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
                 onClick={handleSubmit}
               >
                 {isPending ? '生成中…' : '生成试卷'}
               </button>
               {serverError && <p className="text-[12px] text-accent">{serverError}</p>}
-              {quotaNotice && <p className="text-[12px] text-quiet">{quotaNotice}</p>}
+              {quotaNotice && <p className="font-ui text-[12px] tabular-nums text-quiet">{quotaNotice}</p>}
             </div>
           </div>
         </aside>

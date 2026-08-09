@@ -17,8 +17,8 @@ function DayRow({ day }: { day: StudyPlanDay }) {
     <div className="grid grid-cols-[64px_minmax(0,1fr)_auto] items-start gap-4 border-b border-hairline py-5 max-sm:grid-cols-[minmax(0,1fr)_auto]">
       {/* 第 N 天 */}
       <div className="flex flex-col max-sm:hidden">
-        <span className="text-[11px] tracking-[0.1em] text-accent">DAY</span>
-        <span className="text-[24px] leading-tight text-ink">
+        <span className="font-ui text-[11px] tracking-[0.1em] text-accent">DAY</span>
+        <span className="font-ui text-[24px] leading-tight tabular-nums text-ink">
           {String(day.index).padStart(2, '0')}
         </span>
       </div>
@@ -26,7 +26,7 @@ function DayRow({ day }: { day: StudyPlanDay }) {
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           {day.theme && <span className="text-[15.5px] text-ink">{day.theme}</span>}
-          <span className="text-[12.5px] text-quiet">
+          <span className="font-ui text-[12.5px] tabular-nums text-quiet">
             {[typeLabels, `${day.total_questions} 道`, day.date].filter(Boolean).join(' · ')}
           </span>
         </div>
@@ -35,7 +35,7 @@ function DayRow({ day }: { day: StudyPlanDay }) {
             {day.kp_names.map((name, i) => (
               <span
                 key={i}
-                className="rounded-sm border border-hairline px-2 py-0.5 text-[11.5px] text-muted-ink"
+                className="rounded-sm border border-hairline px-2 py-0.5 font-ui text-[11.5px] text-muted-ink"
               >
                 {name}
               </span>

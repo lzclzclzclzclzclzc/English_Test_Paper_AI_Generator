@@ -54,7 +54,7 @@ function BlankInput({
 }) {
   return (
     <span className="whitespace-nowrap">
-      <span className="font-semibold text-accent">{letter}</span>
+      <span className="font-bold text-accent">{letter}</span>
       <input
         type="text"
         aria-label={ariaLabel}
@@ -71,12 +71,12 @@ function BlankValue({ letter, value }: { letter: string; value: string }) {
   const filled = value.trim() !== ''
   return (
     <span className="whitespace-nowrap">
-      <span className="font-semibold text-accent">{letter}</span>
+      <span className="font-bold text-accent">{letter}</span>
       <span
         className={cn(
           'mx-0.5 inline-block min-w-[4rem] rounded-md px-2 py-0.5 text-center',
           filled
-            ? 'bg-tint font-semibold text-ink'
+            ? 'bg-tint font-bold text-ink'
             : 'border border-dashed border-ink-30 text-[13px] text-quiet',
         )}
       >

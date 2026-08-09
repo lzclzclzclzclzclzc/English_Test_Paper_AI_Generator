@@ -134,7 +134,7 @@ export function AssistantPage() {
             type="button"
             disabled={clearMutation.isPending || chatMutation.isPending}
             onClick={startNewChat}
-            className="text-[12.5px] text-quiet transition-colors hover:text-accent disabled:opacity-50"
+            className="font-ui text-[12.5px] text-quiet transition-colors hover:text-accent disabled:opacity-50"
           >
             {clearMutation.isPending ? '清空中…' : '＋ 新对话'}
           </button>
@@ -157,7 +157,7 @@ export function AssistantPage() {
                 <button
                   key={s}
                   type="button"
-                  className="rounded-sm border border-hairline px-3 py-1 text-[12.5px] text-muted-ink transition-colors hover:border-accent hover:bg-tint hover:text-accent"
+                  className="rounded-sm border border-hairline px-3 py-1 font-ui text-[12.5px] text-muted-ink transition-colors hover:border-accent hover:bg-tint hover:text-accent"
                   onClick={() => send(s)}
                 >
                   {s}
@@ -199,7 +199,7 @@ export function AssistantPage() {
 
           {/* 思考中：赤陶脉冲点 */}
           {isPending && (
-            <div className="flex items-center gap-2 text-[13px] text-quiet">
+            <div className="flex items-center gap-2 font-ui text-[13px] text-quiet">
               <span className="kk-pulse size-2 rounded-full bg-accent" />
               思考中…
             </div>
@@ -224,7 +224,7 @@ export function AssistantPage() {
             type="button"
             disabled={isPending || !input.trim()}
             onClick={() => send(input)}
-            className="shrink-0 rounded-sm border border-accent bg-wash px-5 py-2.5 text-[14.5px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-50"
+            className="shrink-0 rounded-sm border border-accent bg-wash px-5 py-2.5 font-ui text-[14.5px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-50"
           >
             {chatMutation.isPending ? '思考中…' : '发送'}
           </button>

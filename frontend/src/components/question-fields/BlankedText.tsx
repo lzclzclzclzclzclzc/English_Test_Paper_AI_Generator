@@ -37,7 +37,7 @@ function BlankValue({ text }: { text: string }) {
   const filled = text.trim() !== ''
   if (filled) {
     return (
-      <span className="mx-1 inline-block min-w-[6rem] rounded-md bg-tint px-3 py-1 text-center font-semibold text-ink">
+      <span className="mx-1 inline-block min-w-[6rem] rounded-md bg-tint px-3 py-1 text-center font-bold text-ink">
         {text}
       </span>
     )

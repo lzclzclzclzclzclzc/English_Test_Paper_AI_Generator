@@ -27,7 +27,7 @@ export function ContinueList({ items }: { items: PaperListItem[] }) {
             <span className="shrink-0 font-mono text-[12px] text-quiet">
               {fmtDate(p.generated_at)}
             </span>
-            <span className="shrink-0 text-[13px] text-quiet transition-colors group-hover:text-accent">
+            <span className="shrink-0 font-ui text-[13px] text-quiet transition-colors group-hover:text-accent">
               继续 →
             </span>
           </Link>

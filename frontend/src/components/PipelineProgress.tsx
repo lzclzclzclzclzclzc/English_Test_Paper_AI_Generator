@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 const STEPS = [
   {
     name: 'Parser · 解析意图',
-    detail: '现在完成时 · single_choice · 12 题 · 难度 medium · revision_intensity=light',
+    detail: '现在完成时 · 单项选择 · 12 题 · 改编力度：轻改',
     duration: 0.8,
   },
   {
@@ -24,7 +24,7 @@ const STEPS = [
   },
   {
     name: 'Assemble · 组卷落库',
-    detail: '写入 papers 表，payload 18 KB',
+    detail: '12 题成卷，已存入历史试卷',
     duration: 0.3,
   },
 ] as const
@@ -46,7 +46,7 @@ export function PipelineProgress() {
   return (
     <div className="kk-rise mt-8 max-w-[44rem]">
       <div className="flex items-baseline justify-between border-b border-hairline pb-2.5">
-        <span className="text-[11px] font-bold tracking-[0.14em] text-quiet">PIPELINE</span>
+        <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">PIPELINE</span>
         <span className="font-mono text-[13px] text-muted-ink">{elapsed.toFixed(1)}s</span>
       </div>
       <div className="flex flex-col">
@@ -72,11 +72,11 @@ export function PipelineProgress() {
                 {done ? '✓' : '·'}
               </span>
               <div className="flex min-w-0 flex-col gap-1">
-                <span className={cn('text-[14px]', done || active ? 'text-ink' : 'text-quiet')}>
+                <span className={cn('font-ui text-[14px]', done || active ? 'text-ink' : 'text-quiet')}>
                   {step.name}
                 </span>
                 {(done || active) && (
-                  <span className="text-[12px] leading-relaxed text-quiet">{step.detail}</span>
+                  <span className="font-ui text-[12px] leading-relaxed tabular-nums text-quiet">{step.detail}</span>
                 )}
                 <div className="mt-1 h-[2px] w-full overflow-hidden bg-ink-10">
                   <div

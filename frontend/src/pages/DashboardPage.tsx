@@ -97,7 +97,7 @@ export function DashboardPage() {
             <span className="font-ui tabular-nums">距中考 {examDays} 天</span>
           )}
           {isMember ? (
-            <span>会员 · 出卷不限次</span>
+            <span className="font-ui">会员 · 出卷不限次</span>
           ) : locked ? (
             <span
               className={cn('font-ui tabular-nums', freeRemaining === 0 && 'text-accent')}
@@ -125,13 +125,13 @@ export function DashboardPage() {
             />
             <Link
               to={PATHS.generate}
-              className="shrink-0 text-[13px] text-quiet transition-colors hover:text-accent"
+              className="shrink-0 font-ui text-[13px] text-quiet transition-colors hover:text-accent"
             >
               展开完整版 →
             </Link>
           </div>
           {serverError && <p className="text-[12px] text-accent">{serverError}</p>}
-          {quotaNotice && <p className="text-[12px] text-quiet">{quotaNotice}</p>}
+          {quotaNotice && <p className="font-ui text-[12px] tabular-nums text-quiet">{quotaNotice}</p>}
         </section>
 
         {firstUse ? (
@@ -185,7 +185,7 @@ export function DashboardPage() {
               to={s.to}
               className="flex flex-col gap-1 px-5 py-4 transition-colors hover:bg-tint"
             >
-              <span className="text-[15px] text-ink">{s.title}</span>
+              <span className="font-ui text-[15px] text-ink">{s.title}</span>
               <span className="text-[12.5px] text-quiet">{s.desc}</span>
             </Link>
           ))}
@@ -194,7 +194,7 @@ export function DashboardPage() {
         {/* 词汇预告行 */}
         <div className="flex flex-wrap items-baseline gap-2 px-2 text-[13px] text-quiet">
           <span>词汇学习</span>
-          <span className="rounded-sm border border-hairline px-1.5 py-px text-[10.5px] leading-relaxed">
+          <span className="rounded-sm border border-hairline px-1.5 py-px font-ui text-[10.5px] leading-relaxed">
             即将上线
           </span>
           <span>— 国家核心 1600 词，间隔重复安排复习节奏</span>

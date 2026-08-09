@@ -44,7 +44,7 @@ export function WeakSpots({ mastery, isPending, onDrill }: WeakSpotsProps) {
         {!empty && (
           <Link
             to={PATHS.mastery}
-            className="text-[12.5px] text-quiet transition-colors hover:text-accent"
+            className="font-ui text-[12.5px] text-quiet transition-colors hover:text-accent"
           >
             完整报告 →
           </Link>
@@ -56,7 +56,7 @@ export function WeakSpots({ mastery, isPending, onDrill }: WeakSpotsProps) {
           <p className="text-[14px] text-ink">先做一份卷，这里会标出你的薄弱考点</p>
           <Link
             to={PATHS.practice}
-            className="text-[13px] text-accent underline underline-offset-2"
+            className="font-ui text-[13px] text-accent underline underline-offset-2"
           >
             去练习中心 →
           </Link>
@@ -97,7 +97,7 @@ export function WeakSpots({ mastery, isPending, onDrill }: WeakSpotsProps) {
                   <button
                     type="button"
                     disabled={isPending}
-                    className="text-[13px] text-quiet transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
+                    className="font-ui text-[13px] text-quiet transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
                     onClick={() =>
                       onDrill({ entries: [{ type: cat.level1, count: 8, kps: [cat.level2] }] })
                     }
@@ -105,7 +105,7 @@ export function WeakSpots({ mastery, isPending, onDrill }: WeakSpotsProps) {
                     专练 →
                   </button>
                 ) : (
-                  <span aria-hidden className="text-[13px] text-transparent">
+                  <span aria-hidden className="font-ui text-[13px] text-transparent">
                     专练 →
                   </span>
                 )}

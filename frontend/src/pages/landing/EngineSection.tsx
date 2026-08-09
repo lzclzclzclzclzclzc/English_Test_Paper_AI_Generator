@@ -46,7 +46,7 @@ export function EngineSection() {
             key={step.num}
             className="flex flex-col gap-3 py-8 pr-6 [&:not(:first-child)]:pl-6 max-md:pl-0"
           >
-            <span className="text-[11px] tracking-[0.1em] text-accent">{step.num}</span>
+            <span className="font-ui text-[11px] tracking-[0.1em] text-accent">{step.num}</span>
             <span className="text-[18px] text-ink">{step.title}</span>
             <p className="text-[14px] leading-[1.8] text-muted-ink">{step.desc}</p>
           </div>

@@ -241,13 +241,13 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     <div className="mx-auto flex w-full max-w-[1104px] justify-center gap-10">
       {/* 左：760px 内容列（大屏与右栏一起居中，窄屏右栏折叠后单列居中） */}
       <div className="min-w-0 max-w-[760px] flex-1">
-        <p className="text-[11px] tracking-[0.1em] text-quiet">
+        <p className="font-ui text-[11px] tracking-[0.1em] text-quiet">
           PAPER · {paper.paper_id.slice(0, 8)}
         </p>
         <h1 className="mt-3 text-[38px] font-normal leading-snug text-ink [font-family:var(--font-display)] [text-wrap:balance]">
           {paper.title}
         </h1>
-        <p className="mt-2 text-[13px] text-quiet">
+        <p className="mt-2 font-ui text-[13px] tabular-nums text-quiet">
           {generatedAt} · 共 {paper.items.length} 题
         </p>
 
@@ -298,15 +298,15 @@ function PaperPageInner({ paperId }: { paperId: string }) {
               running={phase === 'answering'}
               onExpire={() => setTimeUpOpen(true)}
             />
-            <span className="text-[12px] text-quiet">限时模式 · 到时提醒，不强制收卷</span>
+            <span className="font-ui text-[12px] text-quiet">限时模式 · 到时提醒，不强制收卷</span>
           </div>
         )}
 
         {/* 重新生成面板（handoff 第 5 屏）：细线圆角框，POST /api/papers/revise */}
         {reviseOpen && (
           <div className="kk-rise mt-6 flex max-w-[44rem] flex-col gap-3 rounded-md border border-hairline p-5 print:hidden">
-            <span className="text-[10.5px] font-bold tracking-[0.14em] text-quiet">
-              POST /API/PAPERS/REVISE
+            <span className="font-ui text-[10.5px] font-bold tracking-[0.14em] text-quiet">
+              重新出卷 · 原卷保留
             </span>
             <textarea
               rows={2}
@@ -329,7 +329,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
                   })
                 }
               >
-                {revise.isPending ? '正在组卷…' : '重新生成（新 paper_id）'}
+                {revise.isPending ? '正在组卷…' : '重新生成一份新卷'}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setReviseOpen(false)}>
                 取消
@@ -458,11 +458,11 @@ function PaperPageInner({ paperId }: { paperId: string }) {
               type="button"
               disabled={phase === 'submitting'}
               onClick={handleSubmitClick}
-              className="rounded-sm border border-accent bg-wash px-7 py-3 text-[15px] tracking-[0.06em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
+              className="rounded-sm border border-accent bg-wash px-7 py-3 font-ui text-[15px] tracking-[0.06em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
             >
               {phase === 'submitting' ? '判分中…' : '提交判分'}
             </button>
-            <span className="text-[13px] text-quiet">
+            <span className="font-ui text-[13px] tabular-nums text-quiet">
               已答 {answeredCount} 题，未答 {unanswered.length} 题
             </span>
           </div>

@@ -131,7 +131,7 @@ function HeroDemo() {
           {showChecking && (
             <>
               <span className="kk-pulse size-2 rounded-full bg-accent" />
-              <span className="text-[13px] text-quiet">检索题库 · 校验中</span>
+              <span className="font-ui text-[13px] text-quiet">检索题库 · 校验中</span>
             </>
           )}
         </div>
@@ -179,7 +179,7 @@ export function HeroSection() {
   return (
     <section className="grid grid-cols-[1.1fr_1fr] gap-[72px] pb-[80px] pt-[96px] max-md:grid-cols-1 max-md:gap-12 max-md:pb-14 max-md:pt-14">
       <div>
-        <p className="text-[12px] tracking-[0.1em] text-accent">
+        <p className="font-ui text-[12px] tracking-[0.1em] text-accent">
           真题库 + AI 引擎 · 上海中考英语 · 九大题型
         </p>
         <h1 className="mt-6 text-[58px] font-normal leading-[1.32] text-ink [font-family:var(--font-display)] max-md:text-[36px]">

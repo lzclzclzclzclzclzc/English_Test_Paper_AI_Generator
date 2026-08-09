@@ -26,7 +26,7 @@ export function PapersPage() {
     <div className="max-w-[56rem]">
       <PageHeader
         title="历史试卷"
-        intro="生成过的卷都在这里，未交的随时开卷，交过的回来复盘。重新生成会产生新 paper_id，旧试卷保留。"
+        intro="生成过的卷都在这里，未交的随时开卷，交过的回来复盘。重新生成会得到一份新卷，旧试卷保留。"
       />
 
       {query.isLoading ? (
@@ -76,11 +76,11 @@ function PaperRow({ paper }: { paper: PaperListItem }) {
       <span className="font-mono text-[12.5px] text-quiet max-sm:hidden">{date}</span>
       <div className="flex min-w-0 flex-col gap-1">
         <span className="truncate text-[15.5px] text-ink">{paper.title}</span>
-        <span className="text-[12.5px] text-quiet">{paper.total_questions} 题</span>
+        <span className="font-ui text-[12.5px] tabular-nums text-quiet">{paper.total_questions} 题</span>
       </div>
       <span
         className={cn(
-          'shrink-0 text-[13px]',
+          'shrink-0 font-ui text-[13px]',
           paper.submitted ? 'text-ink' : 'text-quiet',
         )}
       >

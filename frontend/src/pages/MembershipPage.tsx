@@ -75,7 +75,7 @@ export function MembershipPage() {
           {plansQuery.data?.map((plan) => (
             <div key={plan.id} className="flex flex-col gap-3 px-8 py-7 first:pl-2 last:pr-2 max-sm:px-2">
               <span className="text-[15px] text-ink">{plan.name}</span>
-              <span className="text-[28px] leading-none text-accent">
+              <span className="font-ui text-[28px] font-[650] leading-none tabular-nums text-accent">
                 {formatYuan(plan.amount_cents)}
               </span>
               <span className="text-[12.5px] leading-relaxed text-quiet">{plan.description}</span>
@@ -98,13 +98,13 @@ export function MembershipPage() {
         <table className="w-full text-[13.5px]">
           <thead>
             <tr className="border-b border-ink-20 text-left">
-              <th className="py-2.5 pr-4 text-[11px] font-bold tracking-[0.1em] text-quiet">
+              <th className="py-2.5 pr-4 font-ui text-[11px] font-bold tracking-[0.1em] text-quiet">
                 功能
               </th>
-              <th className="w-28 py-2.5 text-center text-[11px] font-bold tracking-[0.1em] text-quiet">
+              <th className="w-28 py-2.5 text-center font-ui text-[11px] font-bold tracking-[0.1em] text-quiet">
                 免费
               </th>
-              <th className="w-28 py-2.5 text-center text-[11px] font-bold tracking-[0.1em] text-accent">
+              <th className="w-28 py-2.5 text-center font-ui text-[11px] font-bold tracking-[0.1em] text-accent">
                 会员
               </th>
             </tr>

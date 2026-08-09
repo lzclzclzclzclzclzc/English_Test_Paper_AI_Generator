@@ -68,7 +68,7 @@ export function SettingsPage() {
                   applyTheme(value)
                 }}
                 className={cn(
-                  'rounded-sm border px-4 py-2 text-[13.5px] transition-colors',
+                  'rounded-sm border px-4 py-2 font-ui text-[13.5px] transition-colors',
                   theme === value
                     ? 'border-accent bg-wash text-ink'
                     : 'border-hairline text-muted-ink hover:bg-tint hover:text-ink',
@@ -78,7 +78,7 @@ export function SettingsPage() {
               </button>
             ))}
           </div>
-          <p className="text-[13px] text-quiet">深色为暖炭墨地、亮赤陶强调，token 已内建，两套外观同一套组件。</p>
+          <p className="text-[13px] text-quiet">深色为暖炭墨地、亮赤陶强调，两套外观一键切换。</p>
         </section>
 
         {/* 备考目标 */}
@@ -99,7 +99,7 @@ export function SettingsPage() {
               <button
                 type="button"
                 onClick={() => updateExamDate('')}
-                className="text-[12.5px] text-quiet transition-colors hover:text-accent"
+                className="font-ui text-[12.5px] text-quiet transition-colors hover:text-accent"
               >
                 清除
               </button>

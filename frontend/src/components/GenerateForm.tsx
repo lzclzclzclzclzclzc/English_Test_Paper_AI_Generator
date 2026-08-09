@@ -87,16 +87,16 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-sm border border-accent bg-wash px-8 py-3 text-[16px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
+          className="rounded-sm border border-accent bg-wash px-8 py-3 font-ui text-[16px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
         >
           {isPending ? '生成中…' : '生成试卷'}
         </button>
-        <span className="text-[12.5px] text-quiet">
+        <span className="font-ui text-[12.5px] text-quiet">
           {isPending ? '生成中，请勿关闭页面' : '通常 4–6 秒'}
         </span>
       </div>
 
-      {quotaNotice && <p className="text-[12px] text-quiet">{quotaNotice}</p>}
+      {quotaNotice && <p className="font-ui text-[12px] tabular-nums text-quiet">{quotaNotice}</p>}
 
       <p className="text-[12.5px] text-quiet">
         想练错题或综合复习？去{' '}

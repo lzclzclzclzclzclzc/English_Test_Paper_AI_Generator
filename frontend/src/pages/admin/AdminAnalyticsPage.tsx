@@ -30,7 +30,7 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-md border border-hairline bg-wash/40 px-4 py-3">
       <div className="text-[12px] text-quiet">{label}</div>
-      <div className="mt-1 text-[22px] text-ink [font-family:var(--font-display)]">{value}</div>
+      <div className="mt-1 font-ui text-[22px] font-[650] tabular-nums text-ink">{value}</div>
     </div>
   )
 }
@@ -87,7 +87,7 @@ export function AdminAnalyticsPage() {
               key={w.days}
               onClick={() => setDays(w.days)}
               className={cn(
-                'h-8 rounded-lg border px-3 text-[13px] transition-colors',
+                'h-8 rounded-lg border px-3 font-ui text-[13px] transition-colors',
                 days === w.days
                   ? 'border-accent bg-wash text-accent'
                   : 'border-hairline text-muted-ink hover:bg-tint/40',

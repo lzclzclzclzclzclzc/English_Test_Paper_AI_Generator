@@ -61,7 +61,7 @@ export function GeneratePage() {
 
       {/* 强度措辞暗号:教会用户用自然语言控制真题/改编/全新三档 */}
       <details className="mt-8 max-w-[44rem] text-[12.5px] text-quiet">
-        <summary className="cursor-pointer list-none transition-colors hover:text-accent">
+        <summary className="cursor-pointer list-none font-ui transition-colors hover:text-accent">
           出题强度的措辞暗号(真题 / 改编 / 全新)▾
         </summary>
         <ul className="mt-2 flex flex-col gap-1 border-l border-hairline pl-4 leading-[1.9]">

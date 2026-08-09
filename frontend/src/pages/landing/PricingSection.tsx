@@ -118,13 +118,13 @@ export function PricingSection() {
         <table className="w-full text-[13.5px]">
           <thead>
             <tr className="border-b border-ink-20 text-left">
-              <th className="py-2.5 pr-4 text-[11px] font-bold tracking-[0.1em] text-quiet">
+              <th className="py-2.5 pr-4 font-ui text-[11px] font-bold tracking-[0.1em] text-quiet">
                 功能
               </th>
-              <th className="w-28 py-2.5 text-center text-[11px] font-bold tracking-[0.1em] text-quiet">
+              <th className="w-28 py-2.5 text-center font-ui text-[11px] font-bold tracking-[0.1em] text-quiet">
                 免费
               </th>
-              <th className="w-28 py-2.5 text-center text-[11px] font-bold tracking-[0.1em] text-accent">
+              <th className="w-28 py-2.5 text-center font-ui text-[11px] font-bold tracking-[0.1em] text-accent">
                 会员
               </th>
             </tr>

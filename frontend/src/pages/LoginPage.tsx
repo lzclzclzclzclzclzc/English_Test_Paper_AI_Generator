@@ -90,7 +90,7 @@ export function LoginPage() {
                 type="button"
                 onClick={() => setMode(value)}
                 className={cn(
-                  '-mb-px border-b-2 pb-2.5 text-[15px] transition-colors',
+                  '-mb-px border-b-2 pb-2.5 font-ui text-[15px] transition-colors',
                   mode === value
                     ? 'border-accent text-ink'
                     : 'border-transparent text-quiet hover:text-ink',
@@ -103,7 +103,7 @@ export function LoginPage() {
 
           <form className="flex flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="username" className="text-[13px] text-muted-ink">
+              <label htmlFor="username" className="font-ui text-[13px] text-muted-ink">
                 用户名
               </label>
               <input
@@ -120,7 +120,7 @@ export function LoginPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-[13px] text-muted-ink">
+              <label htmlFor="password" className="font-ui text-[13px] text-muted-ink">
                 密码
               </label>
               <input
@@ -137,7 +137,7 @@ export function LoginPage() {
               )}
             </div>
 
-            <p className="text-[12px] text-quiet">3–32 位字母数字下划线 · 密码 6–128 位</p>
+            <p className="font-ui text-[12px] tabular-nums text-quiet">3–32 位字母数字下划线 · 密码 6–128 位</p>
 
             {form.formState.errors.root && (
               <p className="text-[12px] text-accent">{form.formState.errors.root.message}</p>
@@ -146,7 +146,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={form.formState.isSubmitting}
-              className="rounded-sm border border-accent bg-wash py-2.5 text-[15px] tracking-[0.06em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-50"
+              className="rounded-sm border border-accent bg-wash py-2.5 font-ui text-[15px] tracking-[0.06em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-50"
             >
               {form.formState.isSubmitting
                 ? mode === 'login'
@@ -159,7 +159,7 @@ export function LoginPage() {
 
             <Link
               to={PATHS.home}
-              className="self-start text-[13px] text-quiet transition-colors hover:text-accent"
+              className="self-start font-ui text-[13px] text-quiet transition-colors hover:text-accent"
             >
               返回首页
             </Link>

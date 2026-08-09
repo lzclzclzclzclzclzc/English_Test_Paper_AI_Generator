@@ -184,7 +184,7 @@ export function MockPage() {
         </div>
 
         {serverError && <p className="text-[12px] text-accent">{serverError}</p>}
-        {quotaNotice && <p className="text-[12px] text-quiet">{quotaNotice}</p>}
+        {quotaNotice && <p className="font-ui text-[12px] tabular-nums text-quiet">{quotaNotice}</p>}
 
         {isPending && <PipelineProgress />}
 

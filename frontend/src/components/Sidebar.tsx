@@ -78,7 +78,7 @@ export function Sidebar() {
             {collapsed ? (
               <div aria-hidden className="mx-1 my-2.5 border-t border-hairline" />
             ) : (
-              <div className="px-3 pb-1 pt-4 text-[10.5px] font-bold tracking-[0.14em] text-quiet">
+              <div className="px-3 pb-1 pt-4 font-ui text-[10.5px] font-bold tracking-[0.14em] text-quiet">
                 {group.label}
               </div>
             )}
@@ -89,7 +89,7 @@ export function Sidebar() {
                   key={to}
                   title={collapsed ? label : undefined}
                   className={cn(
-                    'flex cursor-default items-center gap-3 rounded-sm px-3 py-[9px] text-[14.5px] text-quiet',
+                    'flex cursor-default items-center gap-3 rounded-sm px-3 py-[9px] font-ui text-[14.5px] text-quiet',
                     collapsed && 'justify-center px-0',
                   )}
                 >
@@ -98,7 +98,7 @@ export function Sidebar() {
                     <span className="flex items-center gap-1.5 whitespace-nowrap">
                       {label}
                       {badge && (
-                        <span className="rounded-sm border border-hairline px-1 py-px text-[10px] leading-none">
+                        <span className="rounded-sm border border-hairline px-1 py-px font-ui text-[10px] leading-none">
                           {badge}
                         </span>
                       )}
@@ -113,7 +113,7 @@ export function Sidebar() {
                   title={collapsed ? label : undefined}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-3 rounded-sm px-3 py-[9px] text-[14.5px] transition-colors',
+                      'flex items-center gap-3 rounded-sm px-3 py-[9px] font-ui text-[14.5px] transition-colors',
                       collapsed && 'justify-center px-0',
                       isActive
                         ? 'bg-wash text-accent'
@@ -137,16 +137,16 @@ export function Sidebar() {
           collapsed && 'justify-center px-0',
         )}
       >
-        <span className="flex size-[30px] shrink-0 items-center justify-center rounded-md bg-tint text-[13px] text-muted-ink">
+        <span className="flex size-[30px] shrink-0 items-center justify-center rounded-md bg-tint font-ui text-[13px] text-muted-ink">
           {(user?.username ?? '?').slice(0, 1).toUpperCase()}
         </span>
         {!collapsed && (
           <div className="flex min-w-0 flex-col">
-            <span className="flex items-center gap-1.5 truncate text-[14px] text-ink">
+            <span className="flex items-center gap-1.5 truncate font-ui text-[14px] text-ink">
               {user?.username}
               {isMember && (
                 <span
-                  className="rounded-sm border border-accent/40 px-1 py-px text-[10px] leading-none text-accent"
+                  className="rounded-sm border border-accent/40 px-1 py-px font-ui text-[10px] leading-none text-accent"
                   title={expiresAt ? `会员有效期至 ${expiresAt.slice(0, 10)}` : undefined}
                 >
                   会员
@@ -159,7 +159,7 @@ export function Sidebar() {
                   to={PATHS.settings}
                   className={({ isActive }) =>
                     cn(
-                      'text-[12px] transition-colors hover:text-accent',
+                      'font-ui text-[12px] transition-colors hover:text-accent',
                       isActive ? 'text-accent' : 'text-quiet',
                     )
                   }
@@ -171,7 +171,7 @@ export function Sidebar() {
                 type="button"
                 onClick={() => logoutMutation.mutate()}
                 disabled={logoutMutation.isPending}
-                className="self-start text-[12px] text-quiet transition-colors hover:text-accent"
+                className="self-start font-ui text-[12px] text-quiet transition-colors hover:text-accent"
               >
                 登出
               </button>
