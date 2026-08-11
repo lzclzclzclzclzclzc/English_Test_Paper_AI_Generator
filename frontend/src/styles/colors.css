@@ -67,6 +67,8 @@
   --listening-wash: color-mix(in oklab, var(--listening) 12%, transparent);
   --reading: oklch(46% 0.09 195);
   --reading-wash: color-mix(in oklab, var(--reading) 12%, transparent);
+  --writing: oklch(48% 0.1 330);
+  --writing-wash: color-mix(in oklab, var(--writing) 13%, transparent);
 }
 
 /* ── Dark mode — warm charcoal ground, warm off-white ink, brighter coral.
@@ -106,4 +108,6 @@
   --listening-wash: color-mix(in oklab, var(--listening) 16%, transparent);
   --reading: oklch(76% 0.09 195);
   --reading-wash: color-mix(in oklab, var(--reading) 16%, transparent);
+  --writing: oklch(77% 0.1 330);
+  --writing-wash: color-mix(in oklab, var(--writing) 16%, transparent);
 }

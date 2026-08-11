@@ -53,6 +53,8 @@
     --color-listening-wash: var(--listening-wash);
     --color-reading: var(--reading);
     --color-reading-wash: var(--reading-wash);
+    --color-writing: var(--writing);
+    --color-writing-wash: var(--writing-wash);
 
     /* ── shadcn 映射：组件自动进入喫茶去外观 ── */
     --color-background: var(--surface-page);

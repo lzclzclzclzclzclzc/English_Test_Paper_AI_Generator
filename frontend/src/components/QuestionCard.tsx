@@ -53,6 +53,7 @@ const FAMILY_PILL: Record<TypeFamily, string> = {
   grammar: 'bg-grammar-wash text-grammar',
   listening: 'bg-listening-wash text-listening',
   reading: 'bg-reading-wash text-reading',
+  writing: 'bg-writing-wash text-writing',
 }
 
 /**

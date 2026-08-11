@@ -12,13 +12,14 @@ export const TYPE_LABELS: Record<string, string> = {
   writing: '英语作文',
 }
 
-/** 题型 → 分科家族（Spec F v2.2 分科色）：语法=赭黄、听力=靛蓝、阅读=墨青。 */
-export type TypeFamily = 'grammar' | 'listening' | 'reading'
+/** 题型 → 分科家族（Spec F v2.2 分科色）：语法=赭黄、听力=靛蓝、阅读=墨青、写作=品红。 */
+export type TypeFamily = 'grammar' | 'listening' | 'reading' | 'writing'
 
 export const FAMILY_LABELS: Record<TypeFamily, string> = {
   grammar: '语法',
   listening: '听力',
   reading: '阅读',
+  writing: '写作',
 }
 
 /** 族色 chip 类(wash 底 + 同色字,永不实心填充)。GenerateForm 与专项页共用。 */
@@ -26,6 +27,7 @@ export const FAMILY_CHIP_CLASS: Record<TypeFamily, string> = {
   grammar: 'border-transparent bg-grammar-wash text-grammar hover:border-grammar',
   listening: 'border-transparent bg-listening-wash text-listening hover:border-listening',
   reading: 'border-transparent bg-reading-wash text-reading hover:border-reading',
+  writing: 'border-transparent bg-writing-wash text-writing hover:border-writing',
 }
 
 /** 族色文字类(分区标题等) */
@@ -33,6 +35,7 @@ export const FAMILY_TEXT_CLASS: Record<TypeFamily, string> = {
   grammar: 'text-grammar',
   listening: 'text-listening',
   reading: 'text-reading',
+  writing: 'text-writing',
 }
 
 export const TYPE_FAMILY: Record<string, TypeFamily> = {
@@ -45,8 +48,7 @@ export const TYPE_FAMILY: Record<string, TypeFamily> = {
   reading_longtext_single_choice: 'reading',
   cloze_single_choice: 'reading',
   reading_first_blank: 'reading',
-  // 作文属"语言表达/输出"类，与语法同族（听/读为输入类）；避免引入第四族色导致 UI 断裂
-  writing: 'grammar',
+  writing: 'writing',
 }
 
 /**

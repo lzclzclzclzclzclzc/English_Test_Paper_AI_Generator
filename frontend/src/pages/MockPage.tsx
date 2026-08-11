@@ -28,7 +28,7 @@ interface MockRecipe {
   intensity?: Intensity
 }
 
-/** 全科检测卷结构（配方 1 与配方 5 共用）：折算 2+2+2+6+3+3+6+6 = 30 题 */
+/** 全科检测卷结构（配方 1 与配方 5 共用）：折算 2+2+2+6+3+3+6+6+1 = 31 题 */
 const FULL_EXAM_ENTRIES: ComposeEntry[] = [
   { type: 'listening_single_choice', count: 2 },
   { type: 'listening_true_false', count: 2 },
@@ -38,17 +38,18 @@ const FULL_EXAM_ENTRIES: ComposeEntry[] = [
   { type: 'sentence_rewriting', count: 3 },
   { type: 'cloze_single_choice', count: 1 },
   { type: 'reading_longtext_single_choice', count: 1 },
+  { type: 'writing', count: 1 },
 ]
 
 /**
  * 5 个配方常量。折算题数（每篇完形/阅读 = 6 题，首字母 1 篇 = 1 题）：
- * 全科 30 / 语法 25 / 听力 15 / 阅读 13 / 真题 30，全部 ≤ MAX_QUESTIONS(30)。
+ * 全科 31 / 语法 25 / 听力 15 / 阅读 13 / 真题 31，全部 ≤ MAX_QUESTIONS(31)。
  */
 const MOCK_RECIPES: MockRecipe[] = [
   {
     id: 'full',
     name: '全科检测卷',
-    structure: '听力 2+2+2 · 单选 6 · 词形 3 · 句改 3 · 完形 1 篇 · 阅读 1 篇',
+    structure: '听力 2+2+2 · 单选 6 · 词形 3 · 句改 3 · 完形 1 篇 · 阅读 1 篇 · 作文 1 篇',
     minutes: 40,
     entries: FULL_EXAM_ENTRIES,
   },
@@ -189,7 +190,7 @@ export function MockPage() {
         {isPending && <PipelineProgress />}
 
         <p className="text-[12.5px] text-quiet">
-          模拟卷基于真题库组卷，不含写作；听力为语音朗读。
+          模拟卷基于真题库组卷，含写作（AI 从内容 / 语言 / 组织三维度批改）；听力为语音朗读。
         </p>
       </div>
 

@@ -55,6 +55,7 @@ const FAMILY_RULE_CLASS: Record<TypeFamily, string> = {
   grammar: 'border-grammar/30',
   listening: 'border-listening/30',
   reading: 'border-reading/30',
+  writing: 'border-writing/30',
 }
 
 /** #types 九大题型:三列一族(族色列头细线),行 = 题型 chip + 一句描述。 */

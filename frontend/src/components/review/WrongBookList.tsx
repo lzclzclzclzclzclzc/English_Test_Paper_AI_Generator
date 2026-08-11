@@ -28,9 +28,10 @@ const FAMILY_PILL: Record<TypeFamily, string> = {
   grammar: 'bg-grammar-wash text-grammar',
   listening: 'bg-listening-wash text-listening',
   reading: 'bg-reading-wash text-reading',
+  writing: 'bg-writing-wash text-writing',
 }
 
-const FAMILY_ORDER: readonly TypeFamily[] = ['grammar', 'listening', 'reading']
+const FAMILY_ORDER: readonly TypeFamily[] = ['grammar', 'listening', 'reading', 'writing']
 
 const familyOf = (entry: WrongBookEntry): TypeFamily =>
   TYPE_FAMILY[entry.question.question_type] ?? 'grammar'
@@ -119,7 +120,7 @@ export function WrongBookList({
     )
   }
 
-  const counts: Record<TypeFamily, number> = { grammar: 0, listening: 0, reading: 0 }
+  const counts: Record<TypeFamily, number> = { grammar: 0, listening: 0, reading: 0, writing: 0 }
   for (const entry of entries) counts[familyOf(entry)] += 1
   // 当前族的错题被移光时芯片会消失，回退到「全部」
   const activeFamily = family !== 'all' && counts[family] === 0 ? 'all' : family

@@ -35,6 +35,7 @@ const FAMILY_BORDER_CLASS: Record<TypeFamily, string> = {
   grammar: 'border-grammar/30',
   listening: 'border-listening/30',
   reading: 'border-reading/30',
+  writing: 'border-writing/30',
 }
 
 const GRAMMAR_TYPES: readonly QuestionType[] = ['single_choice', 'word_form', 'sentence_rewriting']

@@ -10,12 +10,14 @@ const FAMILY_BORDER_CLASS: Record<TypeFamily, string> = {
   grammar: 'border-grammar/30',
   listening: 'border-listening/30',
   reading: 'border-reading/30',
+  writing: 'border-writing/30',
 }
 
 const FAMILY_DESC: Record<TypeFamily, string> = {
   grammar: '打牢语法基本功，三类题占中考笔试大头',
   listening: 'AI 朗读，可反复听',
   reading: '长文、完形与首字母，按篇成组',
+  writing: '成篇写作，AI 从内容 / 语言 / 组织三维批改评分',
 }
 
 /**

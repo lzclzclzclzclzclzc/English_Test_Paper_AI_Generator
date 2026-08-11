@@ -15,7 +15,7 @@ import { TYPE_LABELS } from '@/lib/kp'
 export type Intensity = RevisionMode
 
 /** 与 ai_engine/parser.py MAX_QUESTIONS 对齐 */
-export const MAX_QUESTIONS = 30
+export const MAX_QUESTIONS = 31
 
 export interface ComposeEntry {
   type: QuestionType
