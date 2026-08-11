@@ -13,8 +13,8 @@ import { cn } from '@/lib/utils'
 /**
  * 左侧可折叠导航（handoff 第 3 屏）：展开 232px / 收起 66px，粘顶全高，
  * 右侧 1px 细线。当前项 = accent-wash 底 + 赤陶字；收起时组标签变细线。
- * 导航数据在 lib/nav.ts(四组十三项);历史试卷/会员/设置/登出收进底部
- * 头像个人菜单(向上弹出,collapsed 时从头像旁弹出)。
+ * 导航数据在 lib/nav.ts（两个顶级项 主页/学习助手 + 四组 练习/出卷/背词/复盘）；
+ * 会员/设置/登出收进底部头像个人菜单(向上弹出,collapsed 时从头像旁弹出)。
  * 管理员登录时主导航替换为管理后台菜单（不显示普通功能）。
  */
 export function Sidebar() {
@@ -105,15 +105,16 @@ export function Sidebar() {
       </div>
 
       <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3.5 pb-4">
-        {groups.map((group) => (
-          <div key={group.label} className="flex flex-col gap-0.5">
-            {collapsed ? (
-              <div aria-hidden className="mx-1 my-2.5 border-t border-hairline" />
-            ) : (
-              <div className="px-3 pb-1 pt-4 font-ui text-[10.5px] font-bold tracking-[0.14em] text-quiet">
-                {group.label}
-              </div>
-            )}
+        {groups.map((group, groupIndex) => (
+          <div key={group.label || `top-${groupIndex}`} className="flex flex-col gap-0.5">
+            {group.label &&
+              (collapsed ? (
+                <div aria-hidden className="mx-1 my-2.5 border-t border-hairline" />
+              ) : (
+                <div className="px-3 pb-1 pt-4 font-ui text-[10.5px] font-bold tracking-[0.14em] text-quiet">
+                  {group.label}
+                </div>
+              ))}
             {group.items.map(({ to, label, icon: Icon, end, disabled, badge }) =>
               disabled ? (
                 // 未上线入口：不可点占位（不用赤陶——不可交互处不给强调色）
@@ -207,14 +208,6 @@ export function Sidebar() {
               {memberPill}
             </div>
             <div aria-hidden className="my-1 border-t border-hairline" />
-            <NavLink
-              to={PATHS.papers}
-              role="menuitem"
-              className={menuItemClass}
-              onClick={() => setMenuOpen(false)}
-            >
-              历史试卷
-            </NavLink>
             <NavLink
               to={PATHS.membership}
               role="menuitem"
