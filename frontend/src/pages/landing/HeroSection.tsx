@@ -180,13 +180,13 @@ export function HeroSection() {
     <section className="grid grid-cols-[1.1fr_1fr] gap-[72px] pb-[80px] pt-[96px] max-md:grid-cols-1 max-md:gap-12 max-md:pb-14 max-md:pt-14">
       <div>
         <p className="font-ui text-[12px] tracking-[0.1em] text-accent">
-          真题库 + AI 引擎 · 上海中考英语 · 九大题型
+          真题库 + AI 引擎 · 上海中考英语 · 十大题型
         </p>
         <h1 className="mt-6 text-[58px] font-normal leading-[1.32] text-ink [font-family:var(--font-display)] max-md:text-[36px]">
           说一句你想练什么，<mark>出一份能直接做的卷子</mark>
         </h1>
         <p className="mt-8 max-w-[42rem] text-[16px] leading-[1.9] text-muted-ink">
-          从上海一模二模真题书里建起的题库，配上能听懂你需求的出题引擎：单选、词形、句改、听力、阅读九大题型，按考点几秒组成一份即出即做的卷子——做完当场判分、逐题讲解、记入你的掌握度。
+          题目全部来自上海中考一模二模真题——<span className="text-ink">每道题都有真题出处、标注考点，不是 AI 凭空编造</span>。配上能听懂你需求的出题引擎：单选、词形、句改、听力、阅读、完形、作文十大真实题型，覆盖 56 个中考考点，按需几秒组成一份即出即做的卷子——做完当场判分、逐题讲解、记入你的掌握度。
         </p>
         <div className="mt-10 flex flex-wrap items-center gap-4">
           <Link

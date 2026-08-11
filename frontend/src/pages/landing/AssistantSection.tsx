@@ -10,7 +10,18 @@ export function AssistantSection() {
           一个会安排学习的 AI 教练
         </h2>
         <p className="mt-4 max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
-          不想自己琢磨练什么，就直接和学习助手聊：它能替你出卷、讲题，也能按你的目标排出一份多天学习计划，每天该练什么、练多少，一条条替你想好。
+          不想自己琢磨练什么，直接和学习助手聊。它主要替你做两件事：
+        </p>
+        <ul className="mt-4 flex max-w-[42rem] flex-col gap-3">
+          <li className="text-[15px] leading-[1.8] text-muted-ink">
+            <span className="text-ink">一句话出卷</span> — 说出想练的题型、考点、题量，它当场从真题库出一份能直接做的卷子，同样每题标注真题出处。
+          </li>
+          <li className="text-[15px] leading-[1.8] text-muted-ink">
+            <span className="text-ink">排学习计划</span> — 按你的考试日期和薄弱环节，排出一份多天计划，每天该练什么、练多少一条条想好，点一下就能逐日出卷开练。
+          </li>
+        </ul>
+        <p className="mt-4 max-w-[42rem] text-[14px] leading-[1.9] text-quiet">
+          也能随时找它讲题、查某个考点的例题。
         </p>
         <p className="mt-6 border-t border-hairline pt-4 text-[14px] leading-[1.9] text-muted-ink">
           还有<span className="text-ink">背单词</span>
