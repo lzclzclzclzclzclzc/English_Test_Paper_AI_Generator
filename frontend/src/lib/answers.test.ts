@@ -21,8 +21,6 @@ const q = (over: Partial<RevisedQuestion>): RevisedQuestion => ({
   passage_json: null,
   answer: [{ blank1: ['x'] }],
   solution: null,
-  passage_id: null,
-  passage_json: null,
   knowledge_point_ids: [],
   ...over,
 })
