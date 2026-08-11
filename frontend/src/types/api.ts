@@ -11,7 +11,7 @@
 
 // ---- 字面量联合（schemas.py 顶部 Literal） ----
 
-export type QuestionType = 'single_choice' | 'word_form' | 'sentence_rewriting' | 'listening_single_choice' | 'listening_true_false' | 'listening_fill_blank' | 'reading_longtext_single_choice' | 'cloze_single_choice' | 'reading_first_blank'
+export type QuestionType = 'single_choice' | 'word_form' | 'sentence_rewriting' | 'listening_single_choice' | 'listening_true_false' | 'listening_fill_blank' | 'reading_longtext_single_choice' | 'cloze_single_choice' | 'reading_first_blank' | 'writing'
 export type GenerationMode = 'fresh' | 'remediation' | 'review'
 export type RevisionMode = 'fresh' | 'light' | 'original'
 
@@ -21,8 +21,9 @@ export type RevisionMode = 'fresh' | 'light' | 'original'
  * - word_form / sentence_rewriting：候选组合列表。
  *   外层数组 = 多种可接受填法（OR）；每个对象的 blankN -> 同义候选数组（OR）。
  *   例：[{ blank1: ["didn't"], blank2: ["cost"] }]
+ * - writing：null（作文题无标准答案）
  */
-export type AnswerValue = string | Array<Record<string, string[]>>
+export type AnswerValue = string | Array<Record<string, string[]>> | null
 
 /**
  * 用户提交的答案：
@@ -54,11 +55,11 @@ export interface RevisedQuestion {
   question_type: QuestionType
   /** single_choice 有值（A-D 四项）；其余题型为 null */
   options: Option[] | null
-  /** word_form：待变形的提示词，如 "proof" */
+  /** word_form：待变形的提示词，如 "proof"；writing：写作提示 */
   hint: string | null
   /** sentence_rewriting：原句 */
   original_sentence: string | null
-  /** sentence_rewriting：中文改写指令，如 "改为否定句" */
+  /** sentence_rewriting：中文改写指令，如 "改为否定句"；writing：英文指令 */
   instruction: string | null
   /** sentence_rewriting：带空模板。注意下划线连串数 ≠ 空数，空数以 answer[0] 键数为准 */
   template: string | null
@@ -66,6 +67,10 @@ export interface RevisedQuestion {
   passage_id: string | null
   /** listening_true_false：共享材料对象（同组小题冗余存储） */
   passage_json: Passage | null
+  /** writing：参考表达，如 "have difficulty in..." */
+  reference_expressions: string | null
+  /** writing：最低词数要求，如 60 */
+  min_words: number | null
   answer: AnswerValue
   solution: string | null
   knowledge_point_ids: string[]
@@ -276,6 +281,45 @@ export interface ErrorResponse {
   message: string
   detail: unknown
   trace_id: string
+}
+
+// ---- 作文批改（Spec J） ----
+
+/** POST /api/writing/grade 的请求体 */
+export interface WritingGradeRequest {
+  paper_id: string
+  items: WritingGradeItem[]
+}
+
+export interface WritingGradeItem {
+  index: number
+  user_essay: string
+}
+
+/** POST /api/writing/grade 的响应体 */
+export interface WritingGradeResponse {
+  paper_id: string
+  results: WritingGradeResultItem[]
+}
+
+/** 单篇作文的批改结果（三维度评分）。
+ *  POST /writing/grade 响应不返回 user_essay；
+ *  GET /writing/by-paper 历史回显接口会额外返回 user_essay。 */
+export interface WritingGradeResultItem {
+  index: number
+  total_score: number        // 总分（0-20）
+  content_score: number      // 内容得分（0-8）
+  language_score: number     // 语言得分（0-8）
+  organization_score: number // 组织结构得分（0-4）
+  word_count: number         // 词数统计
+  level: string              // 档次：优秀/良好/合格/待提升
+  user_essay?: string        // 仅历史回显接口携带：用户提交的作文原文
+  // 以下字段为会员专属，非会员为 null
+  content_analysis: string | null      // 内容评析
+  language_analysis: string | null     // 语言评析（含语法/拼写错误）
+  organization_analysis: string | null // 组织结构评析
+  overall_comment: string | null       // 总体评价
+  revised_version: string | null       // 修改范文
 }
 
 // ---- 管理后台 ----

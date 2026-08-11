@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.api import attempts, health, mastery, papers, solutions
+from backend.api import attempts, health, mastery, papers, solutions, writing
 from backend.api import admin as admin_api
 from backend.api import agent as agent_api
 from backend.api import knowledge_points as kp_api
@@ -56,6 +56,7 @@ def create_app() -> FastAPI:
     app.include_router(papers.router, prefix="/api")
     app.include_router(solutions.router, prefix="/api")
     app.include_router(attempts.router, prefix="/api")
+    app.include_router(writing.router, prefix="/api")
     app.include_router(mastery.router, prefix="/api")
     app.include_router(agent_api.router, prefix="/api")
     app.include_router(kp_api.router, prefix="/api")
@@ -65,6 +66,18 @@ def create_app() -> FastAPI:
         from backend.api import _test
 
         app.include_router(_test.router, prefix="/api/test")
+
+    # Force eager route resolution before mounting static files.
+    # Without this, included APIRouters (e.g. /api/writing/*) may not be
+    # expanded by FastAPI's lazy _IncludedRouter before the static-files
+    # mount at "/" captures the request and returns 404 for unknown paths.
+    # Accessing app.openapi() internally triggers route resolution.
+    try:
+        app.openapi()
+    except Exception:
+        # If schema generation fails (rare), still attempt to walk routes
+        for _r in list(app.routes):
+            getattr(_r, "path", None)
 
     static_dir = Path(config.static_dir)
     if static_dir.exists():

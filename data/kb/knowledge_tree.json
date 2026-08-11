@@ -350,6 +350,12 @@
       "level1": "reading_first_blank",
       "level2": "阅读首字母填空",
       "aliases": ["首字母填空", "阅读首字母", "短文首字母"]
+    },
+    {
+      "id": "kp_writing",
+      "level1": "writing",
+      "level2": "书面表达",
+      "aliases": ["作文", "英语写作", "书面表达", "作文批改"]
     }
   ],
   "chapter_to_kp": {
@@ -553,6 +559,9 @@
     ],
     "reading_first_blank / 3 阅读理解 / None": [
       "kp_reading_first_blank"
+    ],
+    "writing / 5 书面表达 / None": [
+      "kp_writing"
     ]
   }
 }

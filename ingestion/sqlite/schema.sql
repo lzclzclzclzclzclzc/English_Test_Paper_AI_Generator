@@ -26,7 +26,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS knowledge_points (
     id            TEXT PRIMARY KEY,
     level1        TEXT NOT NULL
-                    CHECK (level1 IN ('single_choice', 'word_form', 'sentence_rewriting', 'listening_single_choice', 'listening_true_false', 'listening_fill_blank', 'reading_longtext_single_choice', 'cloze_single_choice', 'reading_first_blank')),
+                    CHECK (level1 IN ('single_choice', 'word_form', 'sentence_rewriting', 'listening_single_choice', 'listening_true_false', 'listening_fill_blank', 'reading_longtext_single_choice', 'cloze_single_choice', 'reading_first_blank', 'writing')),
     level2        TEXT NOT NULL,
     aliases_json  TEXT NOT NULL DEFAULT '[]'
 );
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS questions (
     id                  TEXT PRIMARY KEY,       -- q_00001
     book                TEXT NOT NULL,
     question_type       TEXT NOT NULL
-                          CHECK (question_type IN ('single_choice', 'word_form', 'sentence_rewriting', 'listening_single_choice', 'listening_true_false', 'listening_fill_blank', 'reading_longtext_single_choice', 'cloze_single_choice', 'reading_first_blank')),
+                          CHECK (question_type IN ('single_choice', 'word_form', 'sentence_rewriting', 'listening_single_choice', 'listening_true_false', 'listening_fill_blank', 'reading_longtext_single_choice', 'cloze_single_choice', 'reading_first_blank', 'writing')),
     chapter_l1          TEXT NOT NULL,          -- "1 单项选择"
     chapter_l2          TEXT NOT NULL,          -- "1.4 不定代词"
     number              TEXT NOT NULL,          -- "1" or "1-3"
@@ -53,8 +53,11 @@ CREATE TABLE IF NOT EXISTS questions (
     passage_id          TEXT,                   -- passage group id (e.g. psg_2026_c_001)
     passage_json        TEXT,                   -- JSON Passage object {kind,title,content,audio_url}
 
-    answer_json         TEXT NOT NULL,          -- single_choice: JSON string "\"B\""
-                                                 -- fill-in: JSON list-of-dict
+    -- Writing-specific fields (null for non-writing types)
+    reference_expressions  TEXT,                 -- 参考表达，如 "have difficulty in..."
+    min_words             INTEGER,               -- 最低词数要求，如 60
+
+    answer_json         TEXT,                   -- writing: null; single_choice: JSON string "\"B\""; fill-in: JSON list-of-dict
     solution            TEXT,                   -- nullable; filled on demand by Solutioner
 
     source_md           TEXT NOT NULL,          -- provenance

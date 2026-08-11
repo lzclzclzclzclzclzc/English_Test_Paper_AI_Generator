@@ -9,7 +9,8 @@ from ai_engine.pipeline import (
     generate_solution as run_generate_solution,
     revise_paper as run_revise_paper,
 )
-from shared.schemas import MasteryProfile, Paper, RevisedQuestion, WrongItemRef
+from ai_engine.writing_grader import grade_writing as run_grade_writing
+from shared.schemas import MasteryProfile, Paper, RevisedQuestion, WritingGradeResult, WrongItemRef
 
 def generate_paper(
     user_query: str,
@@ -53,3 +54,8 @@ def build_profile(user_id: str, window_days: int | None = None) -> MasteryProfil
 
 def build_site_profile(window_days: int | None = None) -> MasteryProfile:
     return run_build_site_profile(window_days)
+
+
+def grade_writing(question: RevisedQuestion, user_essay: str) -> WritingGradeResult:
+    """Grade an essay using LLM-based multi-dimensional scoring."""
+    return run_grade_writing(question, user_essay)

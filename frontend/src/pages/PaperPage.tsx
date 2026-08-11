@@ -7,6 +7,7 @@ import { useMembership } from '@/hooks/useMembership'
 import { recordGrade } from '@/lib/wrongBook'
 import { revisePaper, generatePaper } from '@/api/papers'
 import { submitAttempt, getAttemptByPaper } from '@/api/attempts'
+import { gradeWriting, getWritingGradeHistory } from '@/api/writing'
 import { ApiError } from '@/api/client'
 import { toastApiError } from '@/lib/errors'
 import { queryClient } from '@/lib/queryClient'
@@ -31,7 +32,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { GradeSubmissionResponse, PaperItem } from '@/types/api'
+import type { GradeSubmissionResponse, PaperItem, WritingGradeResultItem } from '@/types/api'
 
 /** 按 passage_id 分组：同组小题共享一段材料，PassageBlock 只渲染一次。 */
 function groupByPassage(items: PaperItem[]): Array<{ key: string; passageId: string | null; items: PaperItem[] }> {
@@ -77,6 +78,8 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
   // 点「再做一遍」后置 true，强制忽略历史结果、回到答题态
   const [redoing, setRedoing] = useState(false)
+  // 作文批改结果（独立于客观题判分结果）
+  const [writingGradeResults, setWritingGradeResults] = useState<Map<number, WritingGradeResultItem>>(new Map())
 
   const { locked } = useMembership()
   const { data: user } = useAuth()
@@ -99,6 +102,13 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     staleTime: 30_000,
   })
 
+  // 打开时拉取历史写作批改结果（含用户作文文本、分数、会员可见详情）
+  const writingHistory = useQuery({
+    queryKey: ['writing', 'by-paper', paperId],
+    queryFn: () => getWritingGradeHistory(paperId),
+    staleTime: 30_000,
+  })
+
   // D4：本次交卷成绩活在 mutation state
   const grade = useMutation({
     mutationFn: submitAttempt,
@@ -115,10 +125,57 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     onError: toastApiError,
   })
 
+  // 作文批改（独立于客观题判分，走 /api/writing/grade）
+  const gradeWritingMutation = useMutation({
+    mutationFn: gradeWriting,
+    onSuccess: (result) => {
+      const map = new Map<number, WritingGradeResultItem>()
+      for (const r of result.results) {
+        map.set(r.index, r)
+      }
+      setWritingGradeResults(map)
+      // 写入历史缓存，刷新后仍可回填
+      queryClient.setQueryData(['writing', 'by-paper', paperId], result)
+      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+    },
+    onError: toastApiError,
+  })
+
+  // 历史写作结果加载完成（非重做模式）后，回填 answers + writingGradeResults
+  useEffect(() => {
+    if (redoing) return
+    const data = gradeWritingMutation.data ?? writingHistory.data
+    if (!data) return
+    const results = data.results
+    if (!results?.length) return
+    const map = new Map<number, WritingGradeResultItem>()
+    for (const r of results) {
+      map.set(r.index, r)
+    }
+    // 无条件用新数据覆盖 — 避免 stale state 保护导致真实 history 被忽略
+    setWritingGradeResults(map)
+    // 把用户作文文本回填成 answers，让输入框/AnswerCard 显示为已作答
+    setAnswers((prev) => {
+      const next: Record<number, AnswerDraft> = { ...prev }
+      for (const r of results) {
+        if (r.user_essay) {
+          next[r.index] = r.user_essay
+        }
+      }
+      return next
+    })
+  }, [redoing, writingHistory.data, gradeWritingMutation.data])
+
   // 展示用结果：本次交卷优先，否则用历史结果（正在重做时忽略历史）
   const shownResult: GradeSubmissionResponse | null | undefined =
     grade.data ?? (redoing ? null : history.data)
-  const phase = grade.isPending ? 'submitting' : shownResult ? 'submitted' : 'answering'
+  const hasWriting = paper?.items.some((item) => item.question.question_type === 'writing') ?? false
+  const phase =
+    grade.isPending || gradeWritingMutation.isPending
+      ? 'submitting'
+      : (shownResult || writingGradeResults.size > 0)
+        ? 'submitted'
+        : 'answering'
 
   const revise = useMutation({
     mutationFn: revisePaper,
@@ -135,7 +192,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     [shownResult],
   )
 
-  if (isLoading || history.isLoading) {
+  if (isLoading || history.isLoading || writingHistory.isLoading) {
     return (
       <div className="flex max-w-[52rem] flex-col gap-4">
         <Skeleton className="h-9 w-2/3" />
@@ -170,21 +227,67 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   }
 
   const submitted = phase === 'submitted'
-  const correctCount = paper.items.filter(
+  const objectiveItems = paper.items.filter((item) => item.question.question_type !== 'writing')
+  const correctCount = objectiveItems.filter(
     (item) => resultByIndex.get(item.index)?.is_correct,
   ).length
-  const wrongCount = paper.items.filter(
+  const wrongCount = objectiveItems.filter(
     (item) => resultByIndex.get(item.index)?.is_correct === false,
   ).length
+  const writingScore = writingGradeResults.size > 0
+    ? Array.from(writingGradeResults.values()).reduce((sum, r) => sum + r.total_score, 0)
+    : null
 
   const doSubmit = () => {
     setConfirmOpen(false)
     stopTTS()
-    grade.mutate({ paper_id: paper.paper_id, items: buildSubmission(paper, answers) })
+    // 分离客观题和作文题
+    const writingItems = paper.items.filter((item) => item.question.question_type === 'writing')
+    const objectiveItems = paper.items.filter((item) => item.question.question_type !== 'writing')
+
+    // 客观题走原有提交流程
+    if (objectiveItems.length > 0) {
+      grade.mutate({
+        paper_id: paper.paper_id,
+        items: buildSubmission(
+          { ...paper, items: objectiveItems },
+          answers,
+        ),
+      })
+    } else {
+      // 只有作文题时，直接标记为已提交
+      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+    }
+
+    // 作文题走独立批改流程
+    if (writingItems.length > 0) {
+      gradeWritingMutation.mutate({
+        paper_id: paper.paper_id,
+        items: writingItems.map((item) => ({
+          index: item.index,
+          user_essay: typeof answers[item.index] === 'string' ? (answers[item.index] as string) : '',
+        })),
+      })
+    }
   }
 
   const handleSubmitClick = () => {
-    if (listUnanswered(paper, answers).length > 0) {
+    // 检查未答的客观题
+    const unansweredObjective = listUnanswered(
+      { ...paper, items: paper.items.filter((item) => item.question.question_type !== 'writing') },
+      answers,
+    )
+    // 检查作文题（空作文视为未答）
+    const unansweredWriting = paper.items
+      .filter((item) => item.question.question_type === 'writing')
+      .filter((item) => {
+        const draft = answers[item.index]
+        return !(typeof draft === 'string' && draft.trim() !== '')
+      })
+      .map((item) => item.index)
+
+    const allUnanswered = [...unansweredObjective, ...unansweredWriting]
+    if (allUnanswered.length > 0) {
       setConfirmOpen(true)
     } else {
       doSubmit()
@@ -303,12 +406,15 @@ function PaperPageInner({ paperId }: { paperId: string }) {
           <div className="mt-6">
             <GradeBanner
               correctCount={correctCount}
-              totalCount={paper.items.length}
+              totalCount={objectiveItems.length}
               wrongCount={wrongCount}
+              writingScore={writingScore}
               onRetry={() => {
                 grade.reset()
+                gradeWritingMutation.reset()
                 remediation.reset()
                 setAnswers({})
+                setWritingGradeResults(new Map())
                 setRedoing(true)
               }}
               onRemediate={handleRemediate}
@@ -364,8 +470,9 @@ function PaperPageInner({ paperId }: { paperId: string }) {
                     value={answers[item.index]}
                     onChange={(v) => setAnswers((prev) => ({ ...prev, [item.index]: v }))}
                     result={resultByIndex.get(item.index)}
+                    writingGradeResult={writingGradeResults.get(item.index)}
                     solutionSlot={
-                      submitted ? (
+                      submitted && item.question.question_type !== 'writing' ? (
                         <SolutionBlock
                           question={item.question}
                           sourceQuestionId={item.source_question_id}
@@ -422,6 +529,11 @@ function PaperPageInner({ paperId }: { paperId: string }) {
             <span className="text-[13px] text-quiet">
               已答 {answeredCount} 题，未答 {unanswered.length} 题
             </span>
+            {hasWriting && (
+              <span className="text-[12px] text-quiet">
+                · 作文将单独批改
+              </span>
+            )}
           </div>
         )}
       </div>

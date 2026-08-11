@@ -68,6 +68,8 @@ def _copy_question(q: Question) -> RevisedQuestion:
         template=q.template,
         passage_id=q.passage_id,
         passage_json=q.passage_json,
+        reference_expressions=q.reference_expressions,
+        min_words=q.min_words,
         answer=q.answer,
     )
 
@@ -147,6 +149,11 @@ def _revise_one(
     if question.question_type == "reading_first_blank":
         # 阅读首字母填空题型复杂，revise（light/fresh）极易导致答案与原题 7 空
         # 错位、拼写错误等问题。硬性约束：一律按原题出，不做任何改写。
+        return _copy_question(question), False
+
+    if question.question_type == "writing":
+        # 作文题没有标准答案（answer=null），不需要改写题目。
+        # 直接使用原题，保持 stem/hint/instruction/reference_expressions/min_words 不变。
         return _copy_question(question), False
 
     if intensity == "original":
@@ -242,11 +249,12 @@ def build_paper(req: GenerateRequest, retrieval: RetrievalResult) -> Paper:
     # attempted (fallbacks still incurred a call unless the call itself raised,
     # but we report attempts as the observable count — matches Spec B §5.4).
     # 阅读首字母填空恒按原题出，从不调用 LLM，故不计入。
+    # 作文题同样按原题出，不调用 LLM。
     llm_calls = sum(
         1
         for retrieved in chosen
         if req.revision_intensity != "original"
-        and retrieved.question.question_type != "reading_first_blank"
+        and retrieved.question.question_type not in ("reading_first_blank", "writing")
     )
 
     return Paper(

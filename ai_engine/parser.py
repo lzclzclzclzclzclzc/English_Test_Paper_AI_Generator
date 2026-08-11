@@ -74,6 +74,7 @@ def _build_prompt(
         "- reading_longtext_single_choice: 阅读理解（一段短文后跟多道 4 选项单选题）",
         "- cloze_single_choice: 完形填空（一段短文含多处空格，每空 4 选项单选）",
         "- reading_first_blank: 阅读首字母填空（一篇短文，内嵌 7 个首字母填空，每空限填一词）",
+        "- writing: 英语作文（给出作文题目，由用户写作并由 AI 批改评分）",
     ])
     
     wrong_items_text = ""
@@ -107,7 +108,7 @@ def _local_validate(
     """
     warnings = []
     valid_kp_ids = {kp.id for kp in kps}
-    valid_question_types = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice", "listening_true_false", "listening_fill_blank", "reading_first_blank"}
+    valid_question_types = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice", "listening_true_false", "listening_fill_blank", "reading_first_blank", "writing"}
 
     # Filter invalid KP ids
     valid_kps = []

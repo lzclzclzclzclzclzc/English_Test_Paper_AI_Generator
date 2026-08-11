@@ -101,6 +101,12 @@ def _stem_hash(q: dict) -> str:
         payload["orig"]     = q.get("original_sentence")
         payload["instr"]    = q.get("instruction")
         payload["template"] = q.get("template")
+    elif qt == "writing":
+        # 作文题：stem + hint + instruction（无 answer）
+        payload["stem"] = q.get("stem")
+        payload["hint"] = q.get("hint")
+        payload["instruction"] = q.get("instruction")
+        # answer 为 null，不参与 hash
     else:
         raise ValueError(f"unknown question_type: {qt!r}")
     blob = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -166,9 +172,13 @@ def _load_questions(
 
     for q in all_questions:
         # Serialize the two structured columns as JSON TEXT (Spec §3.7).
-        # answer is always present; single_choice's answer is a bare string,
-        # so we still json.dumps it — round-trip gives back that same string.
-        answer_json  = json.dumps(q["answer"],   ensure_ascii=False)
+        # answer is always present except for writing (null); single_choice's
+        # answer is a bare string, so we still json.dumps it — round-trip gives
+        # back that same string. For writing questions, answer is null.
+        answer_json  = (
+            json.dumps(q["answer"], ensure_ascii=False)
+            if q.get("answer") is not None else None
+        )
         options_json = (
             json.dumps(q["options"], ensure_ascii=False)
             if q.get("options") is not None else None
@@ -186,6 +196,7 @@ def _load_questions(
                 hint,
                 original_sentence, instruction, template,
                 passage_id, passage_json,
+                reference_expressions, min_words,
                 answer_json, solution,
                 source_md, source_line, stem_hash,
                 created_at, version
@@ -193,6 +204,7 @@ def _load_questions(
                       ?, ?,
                       ?,
                       ?, ?, ?,
+                      ?, ?,
                       ?, ?,
                       ?, ?,
                       ?, ?, ?,
@@ -205,6 +217,7 @@ def _load_questions(
                 q.get("hint"),
                 q.get("original_sentence"), q.get("instruction"), q.get("template"),
                 q.get("passage_id"), passage_json,
+                q.get("reference_expressions"), q.get("min_words"),
                 answer_json, None,             # solution is None on ingestion (§1.5)
                 q["source_md"] or "", q["source_line"], _stem_hash(q),
                 now, 1,

@@ -43,6 +43,7 @@ QuestionType = Literal[
     "reading_longtext_single_choice",
     "cloze_single_choice",
     "reading_first_blank",
+    "writing",
 ]
 RevisionMode = Literal["fresh", "light", "original"]
 GenerateMode = Literal["fresh", "remediation", "review"]
@@ -75,7 +76,7 @@ VECTOR_INDEXED_QUESTION_TYPES: frozenset[str] = frozenset(
 # model — the blank keys are dynamic ("blank1"/"blank2"/...) and the backend's
 # grading logic iterates them positionally, so a typed wrapper adds no value.
 BlankGroup = dict[str, list[str]]
-Answer = str | list[BlankGroup]
+Answer = str | list[BlankGroup] | None  # writing questions have null answer
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -142,6 +143,10 @@ class Question(BaseModel):
     # Shared material for listening_true_false (null for non-passage types)
     passage_id: str | None = None
     passage_json: Passage | None = None
+
+    # Writing-specific fields (null for non-writing types)
+    reference_expressions: str | None = None  # 参考表达，如 "have difficulty in..."
+    min_words: int | None = None               # 最低词数要求，如 60
 
     answer: Answer
     solution: str | None = None          # None until Solutioner fills it on demand
@@ -239,6 +244,8 @@ class RevisedQuestion(BaseModel):
     template: str | None = None
     passage_id: str | None = None
     passage_json: Passage | None = None
+    reference_expressions: str | None = None
+    min_words: int | None = None
     answer: Answer
     solution: str | None = None
     knowledge_point_ids: list[str] = Field(default_factory=list)
@@ -301,3 +308,22 @@ class MasteryProfile(BaseModel):
     weak_kps: list[KPMastery]            # ascending mastery, top N
     dominant_types: list[str]            # question types with most wrong answers
     total_attempts_considered: int
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Writing grading result (Spec J) — Writing Grader produces
+# ─────────────────────────────────────────────────────────────────────────────
+class WritingGradeResult(BaseModel):
+    """单篇作文的批改结果（三维度评分）"""
+    total_score: float              # 总分（0-20）
+    content_score: float            # 内容得分（0-8）
+    language_score: float           # 语言得分（0-8）
+    organization_score: float       # 组织结构得分（0-4）
+    word_count: int                 # 词数统计
+    level: str                      # 档次描述：优秀/良好/合格/待提升
+    # 以下字段为会员专属，非会员为 null
+    content_analysis: str | None = None      # 内容评析
+    language_analysis: str | None = None     # 语言评析（含语法/拼写错误）
+    organization_analysis: str | None = None # 组织结构评析
+    overall_comment: str | None = None       # 总体评价
+    revised_version: str | None = None       # 修改范文

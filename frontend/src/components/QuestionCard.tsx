@@ -9,8 +9,10 @@ import { ListeningFillBlankField } from '@/components/question-fields/ListeningF
 import { ReadingFirstBlankField } from '@/components/question-fields/ReadingFirstBlankField'
 import { WordFormField } from '@/components/question-fields/WordFormField'
 import { SentenceRewritingField } from '@/components/question-fields/SentenceRewritingField'
+import { WritingField } from '@/components/question-fields/WritingField'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
+import { useMembership } from '@/hooks/useMembership'
 import { cn } from '@/lib/utils'
 
 interface QuestionCardProps {
@@ -22,6 +24,21 @@ interface QuestionCardProps {
   result?: GradeResultItem
   /** review 态注入的解析区（按需请求由父级管理） */
   solutionSlot?: ReactNode
+  /** review 态：作文批改结果（仅 writing 题型使用） */
+  writingGradeResult?: {
+    index: number
+    total_score: number
+    content_score: number
+    language_score: number
+    organization_score: number
+    word_count: number
+    level: string
+    content_analysis: string | null
+    language_analysis: string | null
+    organization_analysis: string | null
+    overall_comment: string | null
+    revised_version: string | null
+  }
 }
 
 const REVISION_LABELS: Record<PaperItem['revision_mode'], string> = {
@@ -41,8 +58,10 @@ export function QuestionCard({
   onChange,
   result,
   solutionSlot,
+  writingGradeResult,
 }: QuestionCardProps) {
   useKnowledgePoints() // 目录到达后重渲染，考点标签显示为中文名
+  const { locked } = useMembership()
   const { question } = item
   const isReview = mode === 'review'
 
@@ -123,6 +142,15 @@ export function QuestionCard({
             onChange={onChange}
             result={result}
           />
+        ) : question.question_type === 'writing' ? (
+          <WritingField
+            question={question}
+            mode={mode}
+            value={typeof value === 'string' ? value : undefined}
+            onChange={onChange}
+            gradeResult={writingGradeResult}
+            isMember={!locked}
+          />
         ) : (
           <SentenceRewritingField
             question={question}
@@ -133,8 +161,8 @@ export function QuestionCard({
           />
         )}
 
-        {/* review 态：答错时的答案比对（单选/听力/判断/阅读已在选项上标注，不重复） */}
-        {isReview && result && !result.is_correct && question.question_type !== 'single_choice' && question.question_type !== 'listening_single_choice' && question.question_type !== 'listening_true_false' && question.question_type !== 'reading_longtext_single_choice' && question.question_type !== 'cloze_single_choice' && (
+        {/* review 态：答错时的答案比对（单选/听力/判断/阅读已在选项上标注，不重复；writing无标准答案，跳过） */}
+        {isReview && result && !result.is_correct && question.question_type !== 'single_choice' && question.question_type !== 'listening_single_choice' && question.question_type !== 'listening_true_false' && question.question_type !== 'reading_longtext_single_choice' && question.question_type !== 'cloze_single_choice' && question.question_type !== 'writing' && (
           <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-[13px]">
             <span className="text-accent">
               你的答案：{formatUserAnswer(result.user_answer)}

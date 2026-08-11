@@ -5,7 +5,7 @@ from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, Field
 
-from shared.schemas import Answer, GenerateMode, MasteryProfile, Paper, QuestionType, RevisedQuestion, RevisionMode, WrongItemRef
+from shared.schemas import Answer, GenerateMode, MasteryProfile, Paper, QuestionType, RevisedQuestion, RevisionMode, WrongItemRef, WritingGradeResult
 
 
 UserAnswerValue: TypeAlias = str | list[str] | dict[str, str]
@@ -80,6 +80,36 @@ class GradeResultItem(BaseModel):
 class GradeSubmissionResponse(BaseModel):
     attempt_id: str
     items: list[GradeResultItem]
+
+
+class WritingGradeItem(BaseModel):
+    index: int = Field(ge=1)
+    user_essay: str = Field(min_length=1, max_length=2000)
+
+
+class WritingGradeRequest(BaseModel):
+    paper_id: str
+    items: list[WritingGradeItem] = Field(min_length=1)
+
+
+class WritingGradeResultItem(BaseModel):
+    index: int
+    total_score: float
+    content_score: float
+    language_score: float
+    organization_score: float
+    word_count: int
+    level: str
+    content_analysis: str | None = None
+    language_analysis: str | None = None
+    organization_analysis: str | None = None
+    overall_comment: str | None = None
+    revised_version: str | None = None
+
+
+class WritingGradeResponse(BaseModel):
+    paper_id: str
+    results: list[WritingGradeResultItem]
 
 
 class StoredAttemptItem(BaseModel):
