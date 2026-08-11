@@ -38,6 +38,7 @@ from typing import Any
 
 from ingestion.chromadb.embedder import EmbedderConfig, QwenEmbedder
 from ingestion.chromadb.embedding_text import build_embedding_text
+from shared.schemas import VECTOR_INDEXED_QUESTION_TYPES
 
 log = logging.getLogger(__name__)
 
@@ -184,7 +185,7 @@ def load(
     to_embed = [
         q for q in all_qs
         if q["id"] not in already_have
-        and q["question_type"] not in ("listening_true_false", "reading_longtext_single_choice", "cloze_single_choice", "listening_fill_blank", "reading_first_blank")
+        and q["question_type"] in VECTOR_INDEXED_QUESTION_TYPES
     ]
     if not to_embed:
         log.info("nothing to do — all %d questions already embedded", stats.total_in_sqlite)

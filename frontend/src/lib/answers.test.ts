@@ -17,6 +17,8 @@ const q = (over: Partial<RevisedQuestion>): RevisedQuestion => ({
   original_sentence: null,
   instruction: null,
   template: null,
+  passage_id: null,
+  passage_json: null,
   answer: [{ blank1: ['x'] }],
   solution: null,
   knowledge_point_ids: [],

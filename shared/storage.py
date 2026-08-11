@@ -23,6 +23,7 @@ from shared.schemas import (
 )
 
 DB_PATH_OVERRIDE: Path | None = None
+BANK_DB_PATH_OVERRIDE: Path | None = None
 MIGRATION_ATTEMPT_ITEMS_ITEM_INDEX = "20260709_001_attempt_items_item_index"
 MIGRATION_USERS_ROLE = "20260801_001_users_role"
 MIGRATION_USERS_STATUS = "20260801_002_users_status"
@@ -44,11 +45,44 @@ def set_db_path(path: str | Path | None) -> None:
 
 
 def get_db_path() -> Path:
-    return DB_PATH_OVERRIDE or get_config().db_path
+    # This is the APP/user DB (users, papers, attempts, …). The question bank
+    # lives at config.db_path — reached via get_bank_db_path()/connect_bank().
+    return DB_PATH_OVERRIDE or get_config().app_db_path
 
 
 def get_chroma_path() -> Path:
     return get_config().chroma_path
+
+
+def set_bank_db_path(path: str | Path | None) -> None:
+    global BANK_DB_PATH_OVERRIDE
+    BANK_DB_PATH_OVERRIDE = Path(path) if path is not None else None
+
+
+def get_bank_db_path() -> Path:
+    return BANK_DB_PATH_OVERRIDE or get_config().db_path
+
+
+@contextmanager
+def connect_bank() -> Iterator[sqlite3.Connection]:
+    """Read-only-in-practice connection to the question bank DB.
+
+    The bank is built offline by ingestion; the app never creates its tables,
+    so — unlike connect() — this does not run init_db()/migrations. Callers
+    guard with _table_exists() for the not-yet-built case.
+    """
+    path = get_bank_db_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(path)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 @contextmanager
@@ -502,8 +536,7 @@ def mark_paper_submitted(paper_id: str) -> None:
 
 
 def list_knowledge_points() -> list[KnowledgePoint]:
-    init_db()
-    with connect() as conn:
+    with connect_bank() as conn:
         if not _table_exists(conn, "knowledge_points"):
             return []
         rows = conn.execute(
@@ -521,8 +554,7 @@ def list_knowledge_points() -> list[KnowledgePoint]:
 
 
 def get_question(question_id: str) -> Question | None:
-    init_db()
-    with connect() as conn:
+    with connect_bank() as conn:
         if not _table_exists(conn, "questions"):
             return None
         row = conn.execute("SELECT * FROM questions WHERE id = ?", (question_id,)).fetchone()
@@ -539,8 +571,7 @@ def list_questions(
     limit: int = 50,
     offset: int = 0,
 ) -> list[Question]:
-    init_db()
-    with connect() as conn:
+    with connect_bank() as conn:
         if not _table_exists(conn, "questions"):
             return []
         clauses: list[str] = []
@@ -573,8 +604,7 @@ def list_questions(
 
 
 def write_question_solution(question_id: str, solution: str) -> bool:
-    init_db()
-    with connect() as conn:
+    with connect_bank() as conn:
         if not _table_exists(conn, "questions"):
             return False
         cur = conn.execute(

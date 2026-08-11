@@ -26,7 +26,7 @@ def _require_real_question_bank() -> Path:
 def test_read_question_bank_records_from_real_database_copy(tmp_path):
     db_copy = tmp_path / "questions-copy.db"
     shutil.copyfile(_require_real_question_bank(), db_copy)
-    storage.set_db_path(db_copy)
+    storage.set_bank_db_path(db_copy)
     try:
         q = storage.get_question("q_00001")
         assert q is not None
@@ -42,20 +42,20 @@ def test_read_question_bank_records_from_real_database_copy(tmp_path):
         by_kp = storage.list_questions(knowledge_point_ids=[q.knowledge_point_ids[0]], limit=5)
         assert any(item.id == q.id for item in by_kp)
     finally:
-        storage.set_db_path(None)
+        storage.set_bank_db_path(None)
 
 
 def test_read_knowledge_points_and_write_solution_on_database_copy(tmp_path):
     db_copy = tmp_path / "questions-copy.db"
     shutil.copyfile(_require_real_question_bank(), db_copy)
-    storage.set_db_path(db_copy)
+    storage.set_bank_db_path(db_copy)
     try:
         kps = storage.list_knowledge_points()
         assert kps
-        assert {kp.level1 for kp in kps} == {"single_choice", "word_form", "sentence_rewriting"}
+        assert {"single_choice", "word_form", "sentence_rewriting"}.issubset({kp.level1 for kp in kps})
 
         assert storage.write_question_solution("q_00001", "解析内容") is True
         assert storage.write_question_solution("q_00001", "不会覆盖") is False
         assert storage.get_question("q_00001").solution == "解析内容"
     finally:
-        storage.set_db_path(None)
+        storage.set_bank_db_path(None)

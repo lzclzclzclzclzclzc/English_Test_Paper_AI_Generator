@@ -124,15 +124,20 @@ def test_readiness_accepts_real_question_bank_copy(tmp_path, monkeypatch):
     db_copy = tmp_path / "questions-copy.db"
     shutil.copyfile(source_db, db_copy)
 
+    app_db = tmp_path / "app.db"
     monkeypatch.setenv("BACKEND_ENV", "test")
     monkeypatch.setenv("BCRYPT_ROUNDS", "4")
+    monkeypatch.setenv("SQLITE_PATH", str(db_copy))
+    monkeypatch.setenv("APP_DB_PATH", str(app_db))
     reset_config_cache()
-    storage.set_db_path(db_copy)
+    storage.set_db_path(app_db)
+    storage.set_bank_db_path(db_copy)
 
     from backend.main import create_app
 
     try:
         get_config()
+        storage.init_db()  # belt-and-suspenders: create_app() also inits the app DB
         with TestClient(create_app(), raise_server_exceptions=False) as real_db_client:
             response = real_db_client.get("/api/health/ready")
         body = response.json()
@@ -146,4 +151,5 @@ def test_readiness_accepts_real_question_bank_copy(tmp_path, monkeypatch):
         }
     finally:
         storage.set_db_path(None)
+        storage.set_bank_db_path(None)
         reset_config_cache()

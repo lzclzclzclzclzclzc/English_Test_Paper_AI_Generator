@@ -25,6 +25,7 @@ from pathlib import Path
 _ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(_ROOT))
 
+from shared import storage
 from shared.config import get_config
 
 KP_PLAN: list[tuple[str, float, int]] = [
@@ -67,7 +68,7 @@ def clear_user(conn: sqlite3.Connection, user_id: str) -> int:
     return len(old_ids)
 
 
-def seed_user(conn: sqlite3.Connection, user_id: str, seed: int = 42) -> dict:
+def seed_user(conn: sqlite3.Connection, bank_conn: sqlite3.Connection, user_id: str, seed: int = 42) -> dict:
     rng = random.Random(seed)
     base_ts = int(time.time())
 
@@ -90,8 +91,9 @@ def seed_user(conn: sqlite3.Connection, user_id: str, seed: int = 42) -> dict:
     stats: list[dict] = []
     for kp_id, target_acc, n in KP_PLAN:
         qtype = _kp_to_type(kp_id)
-        # fetch distinct question ids for this KP
-        rows = conn.execute(
+        # fetch distinct question ids for this KP — questions/question_knowledge_points
+        # live in the bank DB, so this read uses the bank connection.
+        rows = bank_conn.execute(
             """
             SELECT q.id FROM questions q
             JOIN question_knowledge_points qk ON q.id = qk.question_id
@@ -142,8 +144,14 @@ def main() -> None:
     args = parser.parse_args()
 
     cfg = get_config()
-    conn = sqlite3.connect(str(cfg.db_path))
+    # User data (attempts/attempt_items) lives in the app DB; questions live in
+    # the bank DB. Ensure the app user tables exist, then open one connection
+    # per DB.
+    storage.init_db()
+    conn = sqlite3.connect(str(cfg.app_db_path))
     conn.row_factory = sqlite3.Row
+    bank_conn = sqlite3.connect(str(cfg.db_path))
+    bank_conn.row_factory = sqlite3.Row
 
     try:
         cleared = clear_user(conn, args.user)
@@ -155,7 +163,7 @@ def main() -> None:
             print("完成（仅清除）")
             return
 
-        result = seed_user(conn, args.user)
+        result = seed_user(conn, bank_conn, args.user)
         conn.commit()
 
         print(f"\n✅ 注入完成：用户={args.user}，覆盖 {result['kp_count']} 个知识点\n")
@@ -169,6 +177,7 @@ def main() -> None:
 
     finally:
         conn.close()
+        bank_conn.close()
 
 
 if __name__ == "__main__":

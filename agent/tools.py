@@ -37,8 +37,14 @@ def _require_user_id() -> str:
     return uid
 
 
-def _connect() -> sqlite3.Connection:
+def _connect_app() -> sqlite3.Connection:
     conn = sqlite3.connect(str(storage.get_db_path()))
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _connect_bank() -> sqlite3.Connection:
+    conn = sqlite3.connect(str(storage.get_bank_db_path()))
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -53,7 +59,7 @@ def get_user_history(window_days: int = 30) -> str:
     按正确率升序排列（最薄弱的在最前面）。
     """
     user_id = _require_user_id()
-    conn = _connect()
+    conn = _connect_app()
     try:
         rows = conn.execute(
             """
@@ -92,7 +98,7 @@ def get_user_history(window_days: int = 30) -> str:
                           ensure_ascii=False)
 
     # resolve level2 names
-    conn2 = _connect()
+    conn2 = _connect_bank()
     try:
         ph = ",".join("?" * len(kp_attempts))
         kp_names = {
@@ -135,7 +141,12 @@ def get_example_questions(knowledge_point_id: str, count: int = 3) -> str:
       hint（词性转换提示词）, original_sentence（改写原句）,
       instruction（改写要求）, answer（正确答案）
     """
-    conn = _connect()
+    return _example_questions(knowledge_point_id, count)
+
+
+def _example_questions(knowledge_point_id: str, count: int = 3) -> str:
+    """Plain implementation of get_example_questions (unwrapped for testing)."""
+    conn = _connect_bank()
     try:
         rows = conn.execute(
             """

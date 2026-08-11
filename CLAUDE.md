@@ -64,6 +64,15 @@ original spec):
 - The Qwen embedding model lives at `models/Qwen3-Embedding-4B/` (7.6 GB,
   gitignored). Retrieval's vector path loads it lazily — pure quota requests
   don't touch it.
+- **Two SQLite files, split by ownership.** `data/questions.db` is the
+  read-only, git-tracked question bank (`questions` / `knowledge_points` /
+  `question_knowledge_points`). User data (`users` / `sessions` / `papers` /
+  `attempts` / `attempt_items` / `study_plans` / `schema_migrations`) lives in
+  `data/app.db`, which is **gitignored** — created fresh by
+  `python -m backend.cli init-db` on first run. Bank reads go through
+  `storage.connect_bank()` (env `SQLITE_PATH`, `config.db_path`); user reads
+  go through `storage.connect()` (env `APP_DB_PATH`, `config.app_db_path`). No
+  query JOINs across the two.
 
 ### Ingestion CLI (offline bank building)
 
@@ -101,6 +110,8 @@ L2-normalised so cosine == dot product. See Spec B §4.4 for why.
   English, user-facing strings often Chinese.
 - Prefer editing specs alongside code (specs track reality here).
 - Data/runtime artifacts (`data/`, `models/`, `*.egg-info/`) are gitignored
-  except the built `data/questions.db` and `data/chroma/` which are committed.
+  except the built `data/questions.db` (question bank, read-only) and
+  `data/chroma/` which are committed. `data/app.db` (user/session/paper data)
+  is **gitignored** — never committed.
 - Git remote is named `main` (not `origin`); branches: `master` / `dev` (integration)
   / per-feature (`retriever`, etc.). Team merges feature branches into `dev` via PR.

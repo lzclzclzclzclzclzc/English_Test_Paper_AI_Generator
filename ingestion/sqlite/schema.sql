@@ -12,6 +12,10 @@
 --     for word_form and sentence_rewriting layouts
 --   * `attempt_items.difficulty` dropped (mastery is per-KP, not per-difficulty)
 --
+-- Scope: this schema is the QUESTION BANK only. User-data tables (attempts /
+-- attempt_items / users / sessions / papers / study_plans) live in the separate
+-- app DB (data/app.db), created by storage.init_db() — not here.
+--
 -- Everything writable by ingestion; ai_engine will only SELECT (except
 -- Solutioner filling `questions.solution` — Spec §1.5).
 
@@ -76,24 +80,7 @@ CREATE TABLE IF NOT EXISTS question_knowledge_points (
 
 CREATE INDEX IF NOT EXISTS idx_qkp_kp ON question_knowledge_points(knowledge_point_id);
 
--- ─── attempts (future FastAPI backend will populate; empty for now) ───
-CREATE TABLE IF NOT EXISTS attempts (
-    id            TEXT PRIMARY KEY,             -- UUID
-    user_id       TEXT NOT NULL,
-    paper_id      TEXT NOT NULL,
-    answered_at   TIMESTAMP NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_att_user     ON attempts(user_id);
-CREATE INDEX IF NOT EXISTS idx_att_answered ON attempts(answered_at);
-
-CREATE TABLE IF NOT EXISTS attempt_items (
-    attempt_id             TEXT NOT NULL REFERENCES attempts(id),
-    source_question_id     TEXT NOT NULL,
-    question_type          TEXT NOT NULL,
-    is_correct             INTEGER NOT NULL CHECK (is_correct IN (0, 1)),
-    kps_json               TEXT NOT NULL,       -- redundant: KP id list at answer time
-    PRIMARY KEY (attempt_id, source_question_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_att_it_source ON attempt_items(source_question_id);
+-- NOTE: user-data tables (attempts / attempt_items / users / sessions /
+-- papers / study_plans) do NOT live here. Since the DB split they belong to
+-- the separate app DB (data/app.db) and are created by storage.init_db();
+-- the question bank is bank-only.
