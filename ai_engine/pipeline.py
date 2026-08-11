@@ -115,6 +115,13 @@ def revise_paper(current_paper: Paper, user_instruction: str) -> Paper:
         "single_choice": "单项选择",
         "word_form": "词性转换",
         "sentence_rewriting": "改写句子",
+        "listening_single_choice": "听力选择",
+        "listening_true_false": "听力判断",
+        "listening_fill_blank": "听力填词",
+        "reading_longtext_single_choice": "阅读理解",
+        "cloze_single_choice": "完形填空",
+        "reading_first_blank": "阅读首字母填空",
+        "writing": "英语作文",
     }
     context_parts = [f"共 {orig.total_questions} 题"]
     if orig.question_types:

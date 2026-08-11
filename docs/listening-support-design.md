@@ -38,7 +38,15 @@
 在 `shared/schemas.py` 的 `QuestionType` 中新增：
 
 ```python
-QuestionType = Literal["single_choice", "word_form", "sentence_rewriting", "listening_single_choice"]
+QuestionType = Literal[
+    "single_choice", "word_form", "sentence_rewriting", "listening_single_choice",
+    "listening_true_false",
+    "listening_fill_blank",
+    "reading_longtext_single_choice",
+    "cloze_single_choice",
+    "reading_first_blank",
+    "writing",
+]
 ```
 
 ### 1.2 听力选择题数据结构
@@ -103,6 +111,12 @@ question_types = "\n".join([
     "- word_form: 词性转换",
     "- sentence_rewriting: 改写句子",
     "- listening_single_choice: 听力选择",
+    "- listening_true_false: 听力判断题（一段长文本/对话后跟多道 True/False 判断题）",
+    "- listening_fill_blank: 听力填词（一段听力材料后跟多道小题，每空限填一词，题号连续）",
+    "- reading_longtext_single_choice: 阅读理解（一段短文后跟多道 4 选项单选题）",
+    "- cloze_single_choice: 完形填空（一段短文含多处空格，每空 4 选项单选）",
+    "- reading_first_blank: 阅读首字母填空（一篇短文，内嵌 7 个首字母填空，每空限填一词）",
+    "- writing: 英语作文（给出作文题目，由用户写作并由 AI 批改评分）",
 ])
 ```
 
@@ -110,7 +124,7 @@ question_types = "\n".join([
 
 ```python
 # _local_validate 函数中，校验 type_distribution 的 key 是否为合法题型
-VALID_QUESTION_TYPES = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice"}
+VALID_QUESTION_TYPES = {"single_choice", "word_form", "sentence_rewriting", "listening_single_choice", "listening_true_false", "listening_fill_blank", "reading_longtext_single_choice", "cloze_single_choice", "reading_first_blank", "writing"}
 ```
 
 **Prompt 修改**：`ai_engine/prompts/parser.md`
@@ -195,8 +209,8 @@ Solutioner 对 `listening_single_choice` 的支持与 `single_choice` 类似，�
 
 ```python
 def compare(user_answer, correct_answer, question_type):
-    # 单选和听力选择：大小写无关比较
-    if question_type in {"single_choice", "listening_single_choice"}:
+    # 单选类题型：大小写无关比较
+    if question_type in {"single_choice", "listening_single_choice", "listening_true_false", "reading_longtext_single_choice", "cloze_single_choice"}:
         return isinstance(user_answer, str) and user_answer.strip().upper() == correct_answer.strip().upper()
     # ... 其他逻辑不变
 ```
@@ -214,12 +228,16 @@ def compare(user_answer, correct_answer, question_type):
 **修改文件**：`frontend/src/types/api.ts`
 
 ```typescript
-export type QuestionType = "single_choice" | "word_form" | "sentence_rewriting" | "listening_single_choice";
+export type QuestionType = "single_choice" | "word_form" | "sentence_rewriting" | "listening_single_choice" | "listening_true_false" | "listening_fill_blank" | "reading_longtext_single_choice" | "cloze_single_choice" | "reading_first_blank" | "writing";
 ```
 
 ### 4.2 新增题目组件
 
 **新增文件**：`frontend/src/components/question-fields/ListeningSingleChoiceField.tsx`
+
+**听力原文的呈现分模式**（贴近真实听力考试）：
+- **答题模式（`mode === "answering"`）**：只显示播放控件（播放/播放中按钮），不显示听力原文——用户只能靠听。
+- **复盘模式（`mode === "review"`）**：显示播放控件 + 完整听力原文，每行以 M/W 说话者标签区分（`♂ M` / `♀ W`），非台词行（如 `Question:`）加粗呈现。
 
 组件结构：
 
@@ -227,174 +245,137 @@ export type QuestionType = "single_choice" | "word_form" | "sentence_rewriting" 
 interface ListeningSingleChoiceFieldProps {
   question: RevisedQuestion;
   mode: "answering" | "review";
-  value: string | undefined;
-  onChange: (value: string) => void;
-  correctLabel?: string;
-  userAnswer?: string;
+  value?: string;
+  onChange?: (v: string) => void;
+  result?: GradeResultItem;
 }
 
-export function ListeningSingleChoiceField({ question, mode, value, onChange, correctLabel, userAnswer }: ListeningSingleChoiceFieldProps) {
+export function ListeningSingleChoiceField({ question, mode, value, onChange, result }: ListeningSingleChoiceFieldProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  // 订阅全局播放锁：同一时间只允许一段听力播放
+  const globallyPlaying = useSyncExternalStore(subscribePlayingState, isGloballyPlaying);
   const options = question.options ?? [];
-  
+
   const handlePlay = async () => {
-    // TTS 播放逻辑
+    if (!question.stem) return;
     setIsPlaying(true);
     try {
-      await speakStem(question.stem ?? "");
+      await speakStem(question.stem);
     } finally {
       setIsPlaying(false);
     }
   };
-  
+
   return (
-    <div className="space-y-4">
-      {/* 播放控件 */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handlePlay}
-          disabled={isPlaying}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
-        >
-          {isPlaying ? (
-            <Pause className="w-4 h-4" />
-          ) : (
-            <Play className="w-4 h-4" />
-          )}
-          <span>{isPlaying ? "播放中..." : "播放听力"}</span>
-        </button>
-      </div>
-      
-      {/* 题干（听力原文） */}
-      <div className="text-sm text-text-mid space-y-1">
-        {(question.stem ?? "").split("\n").map((line, index) => {
-          const speakerMatch = line.match(/^(M|W):\s*(.*)$/);
-          if (speakerMatch) {
-            const [, speaker, text] = speakerMatch;
-            return (
-              <p key={index}>
-                <span className={speaker === "M" ? "text-blue-600 font-medium" : "text-pink-600 font-medium"}>
-                  {speaker === "M" ? "男" : "女"}:
-                </span>
-                <span className="ml-2">{text}</span>
-              </p>
-            );
-          }
-          return <p key={index} className="font-medium">{line}</p>;
-        })}
-      </div>
-      
-      {/* 选项（参考单项选择题） */}
-      <div className="grid grid-cols-2 gap-2 max-sm:grid-cols-1">
-        {options.map((opt) => {
-          const isUser = userAnswer === opt.label;
-          const isCorrect = correctLabel === opt.label;
-          
-          if (mode === "answering") {
-            return (
-              <label key={opt.label} className="flex cursor-pointer items-center gap-2.5 p-3 rounded-lg border-2 border-line-light hover:border-primary/50">
-                <RadioGroupItem value={opt.label} checked={value === opt.label} onCheckedChange={(checked) => checked && onChange(opt.label)} />
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-line-strong text-xs">
-                  {opt.label}
-                </span>
-                <span className="font-question">{opt.text}</span>
-              </label>
-            );
-          } else {
-            // review mode
-            return (
-              <div key={opt.label} className={cn(
-                "flex items-center gap-2.5 p-3 rounded-lg border-2",
-                isCorrect ? "border-correct bg-correct/5" :
-                isUser ? "border-wrong bg-wrong/5" :
-                "border-line-light opacity-70"
-              )}>
-                <span className={cn(
-                  "flex size-5 shrink-0 items-center justify-center rounded-full text-xs",
-                  isCorrect ? "bg-correct text-white" :
-                  isUser ? "bg-wrong text-white" :
-                  "border border-line-strong"
-                )}>
-                  {opt.label}
-                </span>
-                <span className="font-question">{opt.text}</span>
-                {isCorrect && <span className="ml-auto text-correct">✓</span>}
-                {isUser && !isCorrect && <span className="ml-auto text-wrong">✗</span>}
-              </div>
-            );
-          }
-        })}
-      </div>
+    <div className="flex flex-col gap-3.5">
+      {/* 播放控件（全局播放中时禁用） */}
+      <button onClick={handlePlay} disabled={isPlaying || globallyPlaying}>
+        {/* play / pause 图标 */}
+        <span>{isPlaying ? "播放中..." : "播放听力"}</span>
+      </button>
+
+      {/* 听力原文：做题态隐藏（仅靠听），交卷后 review 态才呈现 */}
+      {mode === "review" && question.stem && (
+        <div>
+          {question.stem.split("\n").map((line, index) => {
+            const speakerMatch = line.match(/^(M|W):\s*(.*)$/);
+            if (speakerMatch) {
+              const [, speaker, text] = speakerMatch;
+              return (
+                <p key={index}>
+                  <span>{speaker === "M" ? "♂ M" : "♀ W"}</span>
+                  <span>{text}</span>
+                </p>
+              );
+            }
+            return <p key={index} className="font-bold">{line}</p>;
+          })}
+        </div>
+      )}
+
+      {/* 选项（与 SingleChoiceField 一致的纵向布局），answering 用 RadioGroup，review 用只读态高亮对错 */}
+      {/* ... */}
     </div>
   );
 }
 ```
 
+**注意**：M/W 仅用文字标签（`♂ M` / `♀ W`）区分，遵循 Kissaten 设计系统的 one-chroma rule，不使用 blue/pink 双色。
+
 ### 4.3 TTS 工具函数
 
 **新增文件**：`frontend/src/lib/tts.ts`
 
+**设计要点**：
+- **全局播放锁**：模块级变量 `_playing` 保证同一时间只有一段听力在播放。`isGloballyPlaying()` / `subscribePlayingState()` 供组件通过 `useSyncExternalStore` 订阅播放状态（其它听力题的播放按钮据此禁用）。
+- **token 取消机制**：每次 `speakStem` 递增 `_cancelToken` 并记住自己的 `myToken`；`stopAll()` 通过再次递增 `_cancelToken` 使正在串行播放的循环在下一句前中断。
+- `speakStem` 返回 `Promise<boolean>`：`true` = 已开始播放，`false` = 被阻止（已有播放进行中）。
+- `preloadVoices()` 注册 `onvoiceschanged` 监听器并立即调用一次 `getVoices()`，解决某些浏览器首次调用时 voices 列表为空的问题。
+- 男/女声匹配抽为 `getMaleVoice()` / `getFemaleVoice()`，优先系统语音（`localService`），按常见英文名称清单匹配，回退到第一个英语语音。
+
 ```typescript
-/**
- * TTS 播放听力原文
- * @param stem 听力原文，格式：M: xxx\nW: xxx\nQuestion: xxx
- */
-export async function speakStem(stem: string): Promise<void> {
-  // 停止之前的播放
-  window.speechSynthesis.cancel();
-  
-  const lines = stem.split("\n");
-  const utterances: SpeechSynthesisUtterance[] = [];
-  
-  for (const line of lines) {
-    const speakerMatch = line.match(/^(M|W):\s*(.*)$/);
-    if (speakerMatch) {
-      const [, speaker, text] = speakerMatch;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      utterance.rate = 0.85; // 稍慢，便于听力理解
-      // 根据说话者设置不同的 voice（尝试区分男女声）
-      const voices = window.speechSynthesis.getVoices();
-      if (speaker === "M") {
-        // 优先选择男声
-        const maleVoice = voices.find(v => v.name.includes("Male") || v.name.includes("male") || v.name.includes("Brian") || v.name.includes("Alex"));
-        if (maleVoice) {
-          utterance.voice = maleVoice;
-        }
-      } else {
-        // 优先选择女声
-        const femaleVoice = voices.find(v => v.name.includes("Female") || v.name.includes("female") || v.name.includes("Samantha") || v.name.includes("Google US English Female"));
-        if (femaleVoice) {
-          utterance.voice = femaleVoice;
-        }
-      }
-      utterances.push(utterance);
-    } else {
-      // Question: 或其他内容，用默认 voice
-      const utterance = new SpeechSynthesisUtterance(line);
-      utterance.lang = "en-US";
-      utterance.rate = 0.9;
-      utterances.push(utterance);
-    }
-  }
-  
-  // 串行播放所有语句
-  for (const utterance of utterances) {
-    await new Promise<void>((resolve) => {
-      utterance.onend = () => resolve();
-      utterance.onerror = () => resolve(); // 出错时继续下一句
-      window.speechSynthesis.speak(utterance);
-    });
-  }
+// 全局播放锁 + 取消 token（模块级单例）
+let _playing = false;
+let _cancelToken = 0;
+const _listeners = new Set<() => void>();
+
+export function isGloballyPlaying(): boolean {
+  return _playing;
+}
+
+export function subscribePlayingState(callback: () => void): () => void {
+  _listeners.add(callback);
+  return () => { _listeners.delete(callback); };
 }
 
 /**
- * 预加载 voices（解决某些浏览器首次调用时 voices 列表为空的问题）
+ * TTS 播放听力原文。
+ * 如果已有播放进行中，直接返回不播放。
+ * @returns true=已开始播放，false=被阻止（已有播放中）
  */
+export async function speakStem(stem: string): Promise<boolean> {
+  if (_playing) return false;
+  _setPlaying(true);
+  const myToken = ++_cancelToken;
+
+  try {
+    window.speechSynthesis.cancel();
+    const lines = stem.split("\n");
+    const maleVoice = getMaleVoice();
+    const femaleVoice = getFemaleVoice();
+    const utterances = lines.map((line) => {
+      const m = line.match(/^(M|W):\s*(.*)$/);
+      const u = new SpeechSynthesisUtterance(m ? m[2] : line);
+      u.lang = "en-US";
+      u.rate = m ? 0.85 : 0.9; // 台词稍慢，便于听力理解
+      if (m) u.voice = (m[1] === "M" ? maleVoice : femaleVoice) ?? u.voice;
+      return u;
+    });
+
+    for (const utterance of utterances) {
+      if (myToken !== _cancelToken) break; // 被 stopAll 取消，立即退出
+      await new Promise<void>((resolve) => {
+        utterance.onend = () => resolve();
+        utterance.onerror = () => resolve();
+        window.speechSynthesis.speak(utterance);
+      });
+    }
+  } finally {
+    if (myToken === _cancelToken) _setPlaying(false); // 未被外部取消才复位
+  }
+  return true;
+}
+
+/** 停止所有播放并重置全局锁（递增 token 使运行中的循环中断） */
+export function stopAll(): void {
+  _cancelToken++;
+  window.speechSynthesis.cancel();
+  _setPlaying(false);
+}
+
+/** 预加载 voices（解决某些浏览器首次调用时 voices 列表为空的问题） */
 export function preloadVoices(): void {
-  const loadVoices = () => {
-    window.speechSynthesis.getVoices();
-  };
+  const loadVoices = () => { window.speechSynthesis.getVoices(); };
   window.speechSynthesis.onvoiceschanged = loadVoices;
   loadVoices();
 }

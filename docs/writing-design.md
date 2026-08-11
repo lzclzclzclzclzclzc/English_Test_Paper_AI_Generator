@@ -193,8 +193,10 @@ question_types = "\n".join([
     "- word_form: 词性转换",
     "- sentence_rewriting: 改写句子",
     "- listening_single_choice: 听力选择",
-    "- listening_longtext_truefalse: 听力长文判断题",
+    "- listening_true_false: 听力判断",
+    "- listening_fill_blank: 听力填词",
     "- reading_longtext_single_choice: 阅读理解",
+    "- cloze_single_choice: 完形填空",
     "- reading_first_blank: 阅读首字母填空",
     "- writing: 英语作文",
 ])
@@ -205,10 +207,9 @@ question_types = "\n".join([
 ```python
 VALID_QUESTION_TYPES = {
     "single_choice", "word_form", "sentence_rewriting",
-    "listening_single_choice",
-    "listening_longtext_truefalse", "reading_longtext_single_choice",
-    "reading_first_blank",
-    "writing",   # 新增
+    "listening_single_choice", "listening_true_false", "listening_fill_blank",
+    "reading_longtext_single_choice", "cloze_single_choice",
+    "reading_first_blank", "writing",   # writing 为本次新增
 }
 ```
 
@@ -228,18 +229,20 @@ VALID_QUESTION_TYPES = {
 
 **修改文件**：`ai_engine/retriever.py`
 
-作文题与阅读长文、听力长文同属**不进向量库**的题型：
+作文题与阅读长文、听力长文同属**不进向量库**的题型，统一归入 `PASSAGE_TYPES`（共享材料 / SQL-only、按 `passage_id` 分组检索的题型集合）：
 
 ```python
-NON_VECTOR_TYPES = {
-    "listening_longtext_truefalse",
+PASSAGE_TYPES = {
+    "listening_true_false",
     "reading_longtext_single_choice",
+    "cloze_single_choice",
+    "listening_fill_blank",
     "reading_first_blank",
-    "writing",   # 新增：作文题不进向量库
+    "writing",   # 作文题也不进向量库（无标准答案可嵌入）
 }
 ```
 
-作文题检索走 SQL 路径：按 `question_type='writing'` 过滤，随机抽取指定数量的作文题。
+作文题检索复用这条**按材料分组的 SQL 路径**（`passage-group` path）：按 `question_type='writing'` 过滤，随机抽取指定数量的作文题，不走向量检索。
 
 ### 2.3 Reviser 扩展
 
@@ -370,34 +373,40 @@ async def grade_writing(
 
 **请求/响应模型**（`backend/schemas.py`）：
 
+后端定义**两个**类，需与 §1.3 的 `shared/schemas.py` 中的 `WritingGradeResult` 区分：
+
+- `WritingGradeResultItem`：**单篇作文**的批改结果（HTTP 响应里的每一项，带 `index`）
+- `WritingGradeResponse`：**HTTP 响应体**（`paper_id` + `results` 列表）
+- 而 `shared/schemas.py` 的 `WritingGradeResult` 是 **AI Engine 内部类型**，由 `writing_grader.py` 产出（无 `index`），后端在 handler 里把它逐字段映射到 `WritingGradeResultItem`
+
 ```python
 class WritingGradeItem(BaseModel):
-    index: int                          # 试卷中的题号
-    user_essay: str                     # 用户作文内容
+    index: int = Field(ge=1)            # 试卷中的题号
+    user_essay: str = Field(min_length=1, max_length=2000)  # 用户作文内容
 
 class WritingGradeRequest(BaseModel):
     paper_id: str
-    items: list[WritingGradeItem]       # 通常只有 1 篇作文
+    items: list[WritingGradeItem] = Field(min_length=1)     # 通常只有 1 篇作文
 
-class WritingGradeResponse(BaseModel):
-    paper_id: str
-    results: list[WritingGradeResult]  # 与 items 一一对应
-    # 会员信息由前端另接口查询判断
-
-class WritingGradeResult(BaseModel):
-    index: int
+class WritingGradeResultItem(BaseModel):
+    index: int                          # 试卷中的题号（对应请求的 item.index）
     total_score: float                  # 0-20
     content_score: float                # 0-8
     language_score: float               # 0-8
     organization_score: float           # 0-4
     word_count: int
     level: str
-    # 详细评析（会员专属，非会员为 null）
+    # 详细评析（会员专属，非会员时后端在 handler 内置为 null）
     content_analysis: str | None = None
     language_analysis: str | None = None
     organization_analysis: str | None = None
     overall_comment: str | None = None
     revised_version: str | None = None
+
+class WritingGradeResponse(BaseModel):
+    paper_id: str
+    results: list[WritingGradeResultItem]  # 与请求 items 一一对应
+    # 会员信息由 handler 内 _check_membership_via_payment_service 判断
 ```
 
 ### 3.2 批改流程
@@ -422,38 +431,45 @@ LLM 三维度评分 → 返回 WritingGradeResult
 
 ### 3.3 会员判定逻辑
 
-在 `backend/deps.py` 中新增会员依赖：
+会员判定**不使用依赖装饰器**，而是在批改端点的 handler 内部直接调用支付服务查询：
 
 ```python
-async def require_member(user: User = Depends(current_user)) -> User:
-    """要求用户为会员，否则返回 403。"""
-    # 查询 membership 状态
-    is_member = storage.check_membership(user.id)
-    if not is_member:
-        raise AuthorizationError("membership required")
-    return user
+def _check_membership_via_payment_service(user_id: str) -> bool:
+    """调用支付服务查询会员状态。语义与前端 useMembership hook 对齐：
+    - 200 且 active=true  → 会员（返回 True）
+    - 200 且 active=false → 非会员（返回 False）
+    - 网络错误 / 401 / 其他异常状态 → 视为支付服务未启用，
+      按「未锁定」处理（返回 True），与前端 locked = isSuccess && !isMember 一致。
+    """
+    ...
 ```
 
-作文批改端点对所有登录用户开放（可看分数），但**详细评析的获取**需要会员：
+作文批改端点对所有登录用户开放（都能拿到分数与档次），但**详细评析字段**仅会员可见。判定发生在 handler 内部：先查一次会员状态，再对**每篇作文**按会员与否条件性地把详细评析字段置为 `None`：
 
 ```python
 @router.post("/grade", response_model=WritingGradeResponse)
-async def grade_writing(body: WritingGradeRequest, user: User = Depends(current_user)):
+async def grade_writing(body: WritingGradeRequest, user: User = Depends(...)):
     # 1. 批改对所有用户开放
-    results = ai_gateway.grade_writing(...)
-    
-    # 2. 仅会员保留详细评析
-    is_member = storage.check_membership(user.id)
-    if not is_member:
-        for r in results:
-            r.content_analysis = None
-            r.language_analysis = None
-            r.organization_analysis = None
-            r.overall_comment = None
-            r.revised_version = None
-    
-    return WritingGradeResponse(paper_id=..., results=results)
+    is_member = _check_membership_via_payment_service(user.id)
+    for item in body.items:
+        grade_result = ai_gateway.grade_writing(q, item.user_essay)
+        # 完整结果落库（save_items 保存全部字段）；
+        # 仅响应体按会员身份裁剪详细评析
+        result = WritingGradeResultItem(
+            index=item.index,
+            total_score=grade_result.total_score,
+            # ... 分数字段无条件返回 ...
+            content_analysis=grade_result.content_analysis if is_member else None,
+            language_analysis=grade_result.language_analysis if is_member else None,
+            organization_analysis=grade_result.organization_analysis if is_member else None,
+            overall_comment=grade_result.overall_comment if is_member else None,
+            revised_version=grade_result.revised_version if is_member else None,
+        )
+        results.append(result)
+    return WritingGradeResponse(paper_id=body.paper_id, results=results)
 ```
+
+注意：详细评析**完整落库**（`save_writing_grade_results` 存全部字段），仅在响应体中按会员身份裁剪；历史回看端点 `GET /writing/by-paper/{paper_id}` 沿用同一 `_check_membership_via_payment_service` 判定。
 
 ### 3.4 路由注册
 
@@ -466,22 +482,23 @@ app.include_router(writing_api.router, prefix="/api")
 
 ### 3.5 存储扩展
 
-在 `shared/storage.py` 中新增作文批改记录方法：
+在 `shared/storage.py` 中新增作文批改记录方法（注意方法名为复数 `results`，且以 `items` 列表批量落库）：
 
 ```python
-def save_writing_grade(
+def save_writing_grade_results(
     user_id: str,
     paper_id: str,
-    index: int,
-    result: WritingGradeResult,
+    items: list[dict],
 ) -> None:
-    """保存作文批改记录，供'我的作文'回看。"""
+    """批量保存作文批改记录（每篇一条），供'我的作文'回看。
+    items 中每项含 index/user_essay + 三维度分数 + 词数/档次 + 详细评析字段。
+    按 (user_id, paper_id, item_index) upsert。"""
 
-def get_writing_grades(
-    user_id: str,
+def get_writing_grade_results(
     paper_id: str,
-) -> list[WritingGradeResult]:
-    """获取某份试卷的所有作文批改结果。"""
+    user_id: str,
+) -> list[dict]:
+    """获取某份试卷已保存的作文批改结果（按 item_index 排序的 dict 列表）。"""
 ```
 
 ---
@@ -628,96 +645,41 @@ export function WritingField({ question, mode, value, onChange }: WritingFieldPr
 
 ### 4.4 批改结果展示组件
 
-**新增文件**：`frontend/src/components/WritingGradeResult.tsx`
+批改结果**不是独立组件文件**，而是内嵌在 `WritingField.tsx` 中的一个 `WritingGradeDisplay` 函数组件，由 `WritingField` 在 `review` 态下渲染（`gradeResult` 存在时）：
+
+**所在文件**：`frontend/src/components/question-fields/WritingField.tsx`
 
 ```tsx
-import type { WritingGradeResult } from '@/types/api'
-import { useMembership } from '@/hooks/useMembership'
-
-interface WritingGradeResultProps {
-  result: WritingGradeResult
-  question: RevisedQuestion
-}
-
-/** 作文批改结果展示：总分表 + 会员专属详细评析。 */
-export function WritingGradeResult({ result, question }: WritingGradeResultProps) {
-  const { locked } = useMembership()
-  
-  return (
-    <div className="space-y-6">
-      {/* 1. 总分表（所有用户可见） */}
-      <div className="rounded-md border border-accent/30 bg-wash p-5">
-        <h3 className="text-center text-[24px] font-medium text-ink">
-          {result.total_score} / 20 <span className="text-[16px] text-quiet">分</span>
-        </h3>
-        <p className="mt-1 text-center text-[13px] text-quiet">
-          {result.level} · 词数 {result.word_count}
-        </p>
-        <div className="mt-4 grid grid-cols-3 gap-3">
-          <ScoreCard label="内容" score={result.content_score} max={8} />
-          <ScoreCard label="语言" score={result.language_score} max={8} />
-          <ScoreCard label="组织结构" score={result.organization_score} max={4} />
-        </div>
-      </div>
-      
-      {/* 2. 详细评析（会员专属） */}
-      {!locked && (
-        <div className="space-y-4">
-          {result.content_analysis && (
-            <Section title="📝 内容评析" content={result.content_analysis} />
-          )}
-          {result.language_analysis && (
-            <Section title="✍️ 语言评析" content={result.language_analysis} />
-          )}
-          {result.organization_analysis && (
-            <Section title="🏗️ 组织结构评析" content={result.organization_analysis} />
-          )}
-          {result.overall_comment && (
-            <Section title="🌟 总体评价" content={result.overall_comment} />
-          )}
-          {result.revised_version && (
-            <Section title="🔧 修改范文" content={result.revised_version} />
-          )}
-        </div>
-      )}
-      {locked && (
-        <div className="rounded-md border border-hairline bg-wash p-4 text-center">
-          <p className="text-[13px] text-quiet">
-            详细评析、错误分析与修改范文为会员功能
-          </p>
-          <UpgradeButton reason="解锁作文详细评析、错误定位、修改范文" />
-        </div>
-      )}
-    </div>
+/** 批改结果展示：总分表 + 详细评析。
+ *  分数与档次对所有用户可见；详细评析区：
+ *   - 会员：直接显示
+ *   - 非会员：内容正常渲染在 blur 层下，上方叠加「开通会员查看」遮罩
+ *   - 后端若为非会员已将 content_analysis 等字段置空，则渲染示例占位内容 + 遮罩
+ */
+function WritingGradeDisplay({
+  result,
+  isMember,
+}: {
+  result: { total_score: number; content_score: number; /* ...三维度分数、词数、档次... */
+            content_analysis: string | null; /* ...其余详细评析字段... */ }
+  isMember: boolean
+}) {
+  const hasDetail = Boolean(
+    result.content_analysis || result.language_analysis ||
+    result.organization_analysis || result.overall_comment || result.revised_version,
   )
-}
-
-function ScoreCard({ label, score, max }: { label: string; score: number; max: number }) {
-  const pct = (score / max) * 100
   return (
-    <div className="rounded-sm border border-hairline p-3 text-center">
-      <p className="text-[12px] text-quiet">{label}</p>
-      <p className="mt-1 text-[20px] font-medium text-ink">
-        {score} <span className="text-[13px] text-quiet">/ {max}</span>
-      </p>
-      <div className="mt-2 h-1 rounded-full bg-hairline">
-        <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  )
-}
-
-function Section({ title, content }: { title: string; content: string }) {
-  return (
-    <div className="rounded-md border border-hairline p-4">
-      <h4 className="mb-2 text-[14px] font-medium text-ink">{title}</h4>
-      <div className="whitespace-pre-wrap text-[13.5px] leading-[1.8] text-ink">
-        {content}
-      </div>
+    <div className="space-y-4 rounded-md border border-accent/30 bg-accent/5 p-5">
+      {/* 总分 + 三维度 ScoreCard — 所有人可见 */}
+      {/* 详细评析区：始终渲染；非会员用 blur + 遮罩层，遮罩内含 <Link to="/membership"> */}
     </div>
   )
 }
 ```
+
+`WritingField` 在 review 态收到 `gradeResult` / `isMember` props 后调用 `<WritingGradeDisplay ... />`。辅助子组件 `ScoreCard`（单维度得分卡）与 `Section`（评析段落）同样定义在该文件内。
+
+会员遮罩策略与 §3.3 呼应：后端对非会员已把详细评析字段置为 `null`，此时组件渲染示例占位文案并叠加毛玻璃遮罩，引导「开通会员」。
 
 ### 4.5 PaperPage 适配
 
@@ -994,5 +956,5 @@ python -m ingestion.cli build-sqlite
 - **Spec A**：扩展 `Question` / `RevisedQuestion` 数据契约（加 `reference_expressions` / `min_words` 字段）；扩展 SQLite schema（加列 + CHECK）
 - **Spec B**：Parser 加题型枚举；Retriever 加 SQL-only 路径；Reviser 加不做改写逻辑；新增 `writing_grader.py`
 - **Spec C**：新增 `POST /api/writing/grade` 端点；扩展存储层
-- **Spec D**：前端加 `WritingField` / `WritingGradeResult` 组件；PaperPage 适配作文题提交流程
-- **会员系统**：复用 `useMembership` / `require_member` 模式控制详细评析的可见性
+- **Spec D**：前端加 `WritingField` 组件（内含 `WritingGradeDisplay` 批改结果展示函数）；PaperPage 适配作文题提交流程
+- **会员系统**：复用前端 `useMembership` hook 控制详细评析可见性；后端在 handler 内调用 `_check_membership_via_payment_service` 判定（非依赖装饰器）

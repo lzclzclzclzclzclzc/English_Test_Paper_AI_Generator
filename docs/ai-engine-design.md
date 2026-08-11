@@ -11,6 +11,7 @@
 **本 spec 定义 AI Engine 子系统**，包括：
 
 - 五个业务模块：Parser / Retriever / Reviser / Solutioner / Analyzer
+  - > **注记**（2026-08）：作文题型落地后新增第 6 个专用模块 **WritingGrader**（`ai_engine/writing_grader.py`），对学生作文做三维度评分。它不在主 pipeline 内，而是像 Solutioner 一样的独立入口，由后端在用户提交作文时调用。见 § 10.4 Writing prompt 说明。
 - 顶层编排：`generate_paper` / `revise_paper` / `generate_solution` / `build_profile`
 - LLM 稳定输出栈的完整设计（三层防御 + 观测 + Prompt 组织）
 - Golden set 回归测试
@@ -563,6 +564,8 @@ Analyzer 只查表不写；不修改任何持久化状态。
    ```
 
 2. **Parser**：`parser.parse(query, mode="fresh")` → 新的 `GenerateRequest`；从原 `request` 继承 `user_id` / `review_window_days`。改题尺度仍由 Parser 内的 LLM 从指令语义推断，不显式传入
+
+   > **实现注记**（题型扩展后）：拼接上下文查询时用于把 `question_type` 英文 id 翻成中文名的 `type_names` 字典目前只映射了 3 个语义题型（`single_choice` / `word_form` / `sentence_rewriting`），并未覆盖全部 10 种题型。未映射的题型经 `type_names.get(t, t)` 回退为其**英文 id** 原样拼进查询——不影响正确性（Parser 仍能解析），只是提示文案里显示英文。若要更友好的中文提示，应把 `type_names` 补齐到全部 10 种。
 3. **Retriever → Reviser**：`retriever.retrieve(req)` → `reviser.build_paper(req, retrieval)`，与 `generate_paper` 完全一致
 4. **溯源**：新 `Paper` 的 `metadata["revised_from"]` 记录 `current_paper.paper_id`，供前端链接回原卷
 
@@ -671,7 +674,8 @@ ai_engine/prompts/
 ├── parser.md
 ├── reviser_light.md
 ├── reviser_fresh.md
-└── solutioner.md
+├── solutioner.md
+└── writing.md                           # 作文批改（WritingGrader，见 § 10.4）
 ```
 
 `revise_paper` **没有独立 prompt**——它复用 `parser.md`（§ 8 把原试卷上下文拼进 `user_query` 后走 Parser）。
@@ -742,6 +746,15 @@ def load(name: str, **vars) -> tuple[str, str]:
 - 三段式：`【关键考点】/【解题思路】/`——第三段随 `wrong_answer` 变量切换：为空 → `【易错点】`，非空 → `【错误原因】`（针对该错误作答）
 - 词性转换/改写句子必须解释语法根据
 - vars：`question, kp_names, options_text, answer, wrong_answer`
+
+**Writing** (`writing.md`)：
+- 与其它 prompt 不同，**输出严格 JSON**（不是纯文本）——由 WritingGrader（`ai_engine/writing_grader.py::grade_writing`）经 `structured()` 调用，`response_model=WritingGradeResult`（`shared/schemas.py`），`temperature=0.3`（低温保证评分一致性）
+- 角色：资深上海中考英语阅卷教师，依《上海市初中毕业统一学业考试英语作文评分标准》评分
+- **三维度评分（总分 20 分）**：内容（Content）8 分 + 语言（Language）8 分 + 组织结构（Organization）4 分
+  - 组织结构分有前提：内容 + 语言 ≥ 14 分方可评，否则该项 0 分
+- 输出字段含分项得分、`word_count`、`level`（优秀/良好/合格/待提升）、三段评析（`content_analysis` / `language_analysis` / `organization_analysis`）、`overall_comment` 及 `revised_version`（75-100 词修改范文）
+- WritingGrader 侧做本地兜底：分数按各维度上限 clamp，`level` 缺失或非法时按 `total_score` 回填
+- vars：`stem, hint, instruction, reference_expressions, min_words, user_essay`
 
 **Revise paper**：无独立 prompt，复用 `parser.md`（见 § 8）。
 
@@ -856,7 +869,13 @@ from shared.schemas import (
 # 未来 FastAPI 从 shared.schemas 直接导入。
 ```
 
-FastAPI 未来只做：请求验证 → 调这 5 个函数 → 序列化响应。**AI Engine 不知道 HTTP 的存在。**
+FastAPI 未来只做：请求验证 → 调这几个函数 → 序列化响应。**AI Engine 不知道 HTTP 的存在。**
+
+**可用的 pipeline 函数**（除上表 4 个 AI Engine 函数外）：
+
+- `build_site_profile(window_days=None) -> MasteryProfile`（`pipeline.py`）：全站掌握度画像（跨所有用户，只读、无 LLM），供管理端分析（admin analytics）使用。委托 `analyzer.build_site_profile()`。
+
+> **实现现状注记**（2026-08）：上面的 `__init__.py` 代码块是**目标态**导出面。当前 `ai_engine/__init__.py` 只 re-export 了 `parser.parse` 和 `errors` 里的异常类，尚未 re-export `generate_paper` / `revise_paper` / `generate_solution` / `build_profile` / `build_site_profile`。这些函数都在 `pipeline.py`（`build_profile` / `build_site_profile` 委托 `analyzer`）中实现、可直接从各自模块调用，只是尚未统一到 `__init__.py` 的公开导出面。待 FastAPI 接入时补齐即可。
 
 ---
 
@@ -908,9 +927,9 @@ CLI 是**开发者友好接口**，未来前端不通过 CLI。
 前置：Spec A 的 M1 完成（题库已入库，`shared/` 基础设施可用）。
 
 1. ✅ `ai_engine/errors.py`（统一异常层次）
-2. `ai_engine/parser.py` + prompt + 单元测试（进行中）
+2. ✅ `ai_engine/parser.py` + prompt + 单元测试（自然语言 → `GenerateRequest`；本地二次校验丢非法 KP / 截断题数 / 清洗 `type_distribution`；`revision_intensity` 由 LLM 推断；已实现并测试通过）
 3. ✅ `ai_engine/retriever.py` + `question_repo.py` + 单元测试（混合检索：SQL 硬过滤 + 桶配额 + 先SQL后向量的本地相似度排序 + shortfall 兜底；15 个测试 + 10 样例 demo 报告）
-4. `ai_engine/reviser.py` + `reviser_light.md` / `reviser_fresh.md` + 单元测试（三档策略、失败 fallback、答案格式硬约束）（进行中）
+4. ✅ `ai_engine/reviser.py` + `reviser_light.md` / `reviser_fresh.md` + 单元测试（三档策略、失败 fallback、答案格式硬约束；已实现并测试通过）
 5. ✅ `ai_engine/pipeline.py` 顶层编排（懒 import；待 Parser/Reviser 落地后端到端集成测试）
 6. `ai_engine/solutioner.py` + prompt + 单元测试（每次调 LLM，无缓存；支持 `user_answer` 解释错因）
 7. `ai_engine/analyzer.py` + 单元测试（Wilson 公式验证、边界处理）
