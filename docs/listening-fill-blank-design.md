@@ -10,6 +10,8 @@
 - [Spec D（前端）](./2026-07-07-frontend-design.md)
 - [Spec G（听力选择）](./listening-support-design.md)
 
+> **说明**：本 spec 为 feature 分支时期的单题型（听力填词）设计文档；`writing`（作文）与 `reading_first_blank`（阅读首字母填空）为后续合并新增题型。当前完整的 10 类题型枚举以 `shared/schemas.py` 的 `QuestionType` 为准。
+
 ---
 
 ## 0. 范围与产出
@@ -25,6 +27,7 @@
 
 - 其他听力题型（如听力听写、听力填空长句）——留待未来
 - 真实音频文件支持——当前使用浏览器 TTS 合成（复用 Spec G 的 `tts.ts`）
+- 阅读首字母填空（`reading_first_blank`）已在后续合并中实现，见当前 `shared/schemas.py` 的 `QuestionType`。
 
 ### 0.3 核心需求
 
@@ -48,6 +51,8 @@ QuestionType = Literal[
     "listening_fill_blank",          # 新增
     "reading_longtext_single_choice",
     "cloze_single_choice",
+    "reading_first_blank",
+    "writing",
 ]
 ```
 
@@ -182,8 +187,8 @@ Reviser 三档策略（original / light / fresh）对 `listening_fill_blank` 兼
 
 ```python
 def _validate_revision(question, revised):
-    # 听力填词与改写句子共享空位校验：answer 为非空 list[BlankGroup]
-    if question.question_type in {"sentence_rewriting", "listening_fill_blank"}:
+    # 听力填词与改写句子/词性转换/阅读首字母填空共享空位校验：answer 为非空 list[BlankGroup]
+    if question.question_type in {"word_form", "sentence_rewriting", "listening_fill_blank", "reading_first_blank"}:
         if not isinstance(revised.answer, list) or not revised.answer:
             return False, "answer must be a non-empty list[BlankGroup]"
         # 每个 BlankGroup 至少含一个非空键
@@ -391,16 +396,16 @@ python -m ingestion.cli build-vec --model models/qwen3-embedding-4b
 
 | 步骤 | 内容 | 状态 |
 |------|------|------|
-| 1 | 数据契约扩展（QuestionType、知识点） | 待实现 |
-| 2 | AI Engine Parser 扩展 | 待实现 |
-| 3 | AI Engine Reviser 扩展 | 待实现 |
-| 4 | AI Engine Solutioner 扩展 | 待实现 |
-| 5 | 后端判对错（复用 `_compare_blank_answers`） | 待实现 |
-| 6 | 前端 ListeningFillBlankField 组件 | 待实现 |
-| 7 | 前端 QuestionCard 分派扩展 | 待实现 |
-| 8 | 前端 TYPE_LABELS 扩展 | 待实现 |
-| 9 | 题库数据加载 | 待实现 |
-| 10 | 测试 | 待实现 |
+| 1 | 数据契约扩展（QuestionType、知识点） | 已完成 |
+| 2 | AI Engine Parser 扩展 | 已完成 |
+| 3 | AI Engine Reviser 扩展 | 已完成 |
+| 4 | AI Engine Solutioner 扩展 | 已完成 |
+| 5 | 后端判对错（复用 `_compare_blank_answers`） | 已完成 |
+| 6 | 前端 ListeningFillBlankField 组件 | 已完成 |
+| 7 | 前端 QuestionCard 分派扩展 | 已完成 |
+| 8 | 前端 TYPE_LABELS 扩展 | 已完成 |
+| 9 | 题库数据加载 | 已完成 |
+| 10 | 测试 | 已完成 |
 
 ---
 

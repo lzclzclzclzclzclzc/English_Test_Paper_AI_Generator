@@ -161,7 +161,8 @@ async def require_admin(user: User = Depends(current_user)) -> User:
 | 方法 | 路径 | 作用 | 关键行为 |
 |---|---|---|---|
 | GET | `/api/admin/users?q=&limit=&offset=` | 用户列表 | 按用户名模糊搜索 `q`；分页；返回 id/username/created_at/role/status + 试卷数 + 做题数（attempts 计数） |
-| GET | `/api/admin/users/{user_id}` | 用户详情 | 基础信息 + 试卷数 + 做题正确率 + 掌握度概览（复用 `build_mastery_profile`）+ 会员到期（拼装自 payment，见 § 5.4） |
+| GET | `/api/admin/users/{user_id}` | 用户详情 | 返回 id/username/created_at/role/status + 试卷数 + 做题正确率 + 会员到期（拼装自 payment，见 § 5.4）。**掌握度不内嵌**，另走下面的 mastery 端点单独拉取 |
+| GET | `/api/admin/users/{user_id}/mastery` | 掌握度概览 | 返回该用户的 `MasteryProfile`（知识点掌握度，只读、不走 LLM，复用 `build_profile`）；前端在用户详情页单独请求 |
 | POST | `/api/admin/users/{user_id}/role` | 改 role | body `{"role":"admin"\|"user"}`；**禁止改自己**（`user_id == 当前 admin.id` → 400/403）；改为 `user` 时是"取消管理员" |
 | POST | `/api/admin/users/{user_id}/reset-password` | 重置密码 | body `{"new_password":...}`（复用 `UserCredentials` 的 password 校验规则）；`hash_password` 重新哈希写入；**清除该用户所有 session**（强制重登） |
 | POST | `/api/admin/users/{user_id}/ban` | 封禁 | `status='banned'` + 删除该用户所有 session；**禁止封自己** |
@@ -189,6 +190,7 @@ payment 的 `payment.db` **只存 `user_id`，没有 username**（见 § 5）。
 |---|---|---|
 | GET | `/api/admin/stats/overview` | 聚合：`total_users`、`new_users_today`、`active_members`（需向 payment 查，见 § 5.4）、`total_papers`、`total_attempts` |
 | GET | `/api/admin/stats/timeseries?days=30` | 每日序列：`users_by_day`（按 `users.created_at`）、`papers_by_day`（按 `papers.generated_at`），供前端画折线图 |
+| GET | `/api/admin/analytics?days=30` | 全站做题分析（供 AdminAnalyticsPage）：`site_mastery`（全体用户掌握度概览，复用 `build_site_profile`）、`attempts_by_day`（每日做题量 + 正确率趋势）、`type_accuracy`（按题型正确率）。`days<=0` 表示全部历史（掌握度窗口 `window_days=None`），趋势仍需有限跨度，回退到很宽的窗口 |
 
 `active_members` 若 payment 不可用则返回 `null`，前端显示"暂不可用"，不阻塞其余指标。
 
@@ -279,6 +281,7 @@ RequireAuth（已登录?）
 在受保护块内加一组（可用嵌套布局路由承载左侧子导航）：
 ```
 /admin             → 概览看板（默认）
+/admin/analytics   → 分析看板
 /admin/users       → 用户列表
 /admin/users/:id   → 用户详情
 /admin/memberships → 会员管理
@@ -294,6 +297,7 @@ RequireAuth（已登录?）
 
 - **后台布局**：沿用 `AppLayout` 整体框架；`/admin` 下用**左侧竖向子导航 + 右侧内容区**。卡片/表格/按钮沿用 shadcn + 现有设计 token（`bg-sheet` / `border-line` / `ink-wash`，6px 圆角，衬线页头 `font-serif`）。表格样式对齐 MembershipPage/PapersPage 现有模式（`rounded-md border border-line bg-sheet`，表头 `bg-ink-wash/60`，`text-[13px]`）。
 - **概览看板**：一排指标卡（总用户/今日新增/活跃会员/试卷总数）+ 两张折线图（每日新增用户、每日生成试卷）。**遵守 PRODUCT.md 禁令**——不做"黑底霓虹、密集指标"的冷监控风；用墨卷暖白纸面 + 藏青（`--ink`）线条，图表克制留白。
+- **分析看板**（AdminAnalyticsPage）：全站做题分析——全站掌握度概览（复用 `build_site_profile`）+ 每日做题量/正确率趋势折线图 + 按题型正确率柱状图。同样**遵守 PRODUCT.md 禁令**，用墨卷暖白纸面 + 藏青线条。
 - **用户列表**：搜索框 + 分页表格（用户名/注册时间/role/status/试卷数）；行内操作（详情/封禁·解封/重置密码/设为管理员·取消）。危险操作走二次确认弹窗（复用现有 `components/ui/dialog`）。
 - **用户详情**：基础信息 + 做题正确率/掌握度概览 + 会员到期（拼装自 payment）+ 操作区。
 - **会员管理**：会员列表 + "手动开通 N 天 / 取消"（带确认）。

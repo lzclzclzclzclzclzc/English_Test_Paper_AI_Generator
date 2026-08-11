@@ -130,7 +130,7 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 
 | # | 屏幕 | 路由 | 状态 |
 |---|------|------|------|
-| 1 | 营销首页（所有人） | `/`（`/welcome` 重定向至此） | ✅ `LandingPage`：11 段叙事——粘顶磨砂页眉（useAuth 双态 CTA：未登录「登录/免费开始」，已登录「进入工作台 →」）+ hero 打字机出卷演示（`kk-caret`）+ 数据条（1,397/9/55/3）+ `#types` 三族三色题型墙 + `#engine` 四步流程与三档强度 + `#loop` 判分讲解闭环 + `#assistant` 学习助手 + `#parents` 家长区 + `#pricing` 免费列与三档价格（lib/pricing 静态镜像）+ `#faq` + 底部 CTA/页脚 |
+| 1 | 营销首页（所有人） | `/`（`/welcome` 重定向至此） | ✅ `LandingPage`：11 段叙事——粘顶磨砂页眉（useAuth 双态 CTA：未登录「登录/免费开始」，已登录「进入工作台 →」）+ hero 打字机出卷演示（`kk-caret`）+ 数据条（1,428/10/56/3）+ `#types` 三族三色题型墙 + `#engine` 四步流程与三档强度 + `#loop` 判分讲解闭环 + `#assistant` 学习助手 + `#parents` 家长区 + `#pricing` 免费列与三档价格（lib/pricing 静态镜像）+ `#faq` + 底部 CTA/页脚 |
 | 2 | 登录 / 注册 | `/login` | ✅ 左右两栏（1.15fr/1fr 竖细线）；左栏品牌/26px 说明句/底部小字，右栏 24rem 表单，tab 选中 2px 赤陶下边框 |
 | 3 | 应用外壳 | — | ✅ 见 § 4 |
 | 4a | 工作台（登录后） | `/home` | ✅ `DashboardPage` 双栏 `minmax(0,1fr) 300px`（2026-08-09 重排）：左栏行动流 = 迷你输入条 → 今日一练卡（消费 `lib/dailyRecipes.ts`，卡尾「查看一周安排 →」）→ 继续作答；右栏粘顶三段 = 弱点速览窄栏版 / 常用竖排链接 / 词汇一行。首次使用左栏换三步引导。登录后落点即此页 |
@@ -138,8 +138,8 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 | 4c | 练习中心 | `/practice` | ✅ 纯导航页（2026-08-09 简化）：三族色区行式题型条目 ×9 + 语法族尾「去主题出卷 →」引导行 + 页脚两行（自选组卷 / 词汇即将上线）；主题条与速练区已移除 |
 | 4g | 每日一练 | `/daily` | ✅ 今日卡（kicker 今日·周X·配方名 + 结构摘要 + 开始/再练一组按 `dailyDoneKey` 切换）+ 七行一周安排表（今天行 wash 高亮，周日弱点日按掌握度动态摘要）；配方唯一事实源 `lib/dailyRecipes.ts` |
 | 4h | 主题出卷 | `/themes` | ✅ 主题 × 题型结合页：8 场景 chips 单选与自定义输入互斥 + 语法三行勾选/数量档（3/5/8）+ QueryPreview（固定 fresh）+ 页脚双链接；篇章题型不支持主题（页内注明） |
-| 4d | 题型专项 ×9 | `/practice/:slug` | ✅ `DrillPageTemplate` 一模板九配置（`lib/drillConfig.ts`）：题量档位 + 考点 chips（语法族，隐藏 0 题 KP、薄尾预警）+ 强度三档（真题档会员）+ 主题（语法族）+ 拼句预览（`lib/composeQuery.ts`） |
-| 4e | 自选组卷工坊 | `/practice/custom` | ✅ 九行 steppers（语法行展开考点多选）+ 粘顶汇总栏（共 N/30 题、强度、主题、拼句预览） |
+| 4d | 题型专项 ×10 | `/practice/:slug` | ✅ `DrillPageTemplate` 一模板十配置（`lib/drillConfig.ts`）：题量档位 + 考点 chips（语法族，隐藏 0 题 KP、薄尾预警）+ 强度三档（真题档会员）+ 主题（语法族）+ 拼句预览（`lib/composeQuery.ts`） |
+| 4e | 自选组卷工坊 | `/practice/custom` | ✅ 十行 steppers（作文并入语法族，语法行展开考点多选）+ 粘顶汇总栏（共 N/30 题、强度、主题、拼句预览） |
 | 4f | 整卷模拟 | `/mock` | ✅ 5 预设配方行（全科 30/语法 25/听力 15/阅读 13/真题检测卷[会员]）+ 限时开关（纯前端倒计时，到时温和提醒） |
 | 5 | 当前试卷 / 作答 | `/papers/:id` | ✅ 两栏 `minmax(0,1fr) 280px`：左 52rem 长卷（PAPER·id 标签、题目 `<article>` 细线分隔、纵向选项列表、下划线填空），右粘顶答题卡（N/12 + 2px 进度条 + 4 列题号格） |
 | 6 | 成绩与解析 | 同上（交卷后） | ✅ 总分 44px / 答对 / 错题（赤陶）统计行 + ✓/✕ 状态圆 + 解析手风琴（kicker `POST /API/SOLUTIONS · 按需生成`） |

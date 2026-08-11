@@ -10,18 +10,22 @@
 
 ## 用户能做什么
 
-登录后（默认演示账号 `demo / demo123`），顶部导航有六个入口：
+登录后（默认演示账号 `demo / demo123`），`/` 是营销首页、工作台在 `/home`；左侧导航分四组（练习 / 出卷 / 助手 / 复盘）。主要能做的事：
 
 | 页面 | 你能做的事 |
 |------|-----------|
-| **学习助手**（首页） | 和 AI 对话：说一句话让它出题、查某个考点的例题、或制定学习计划。出题完成后点「开始做题」直接进入试卷 |
+| **出卷**（一句话 / 主题 / 自选 / 整卷模拟） | 用一句话或结构化面板出卷；题型专项练习覆盖全部 10 题型（含作文），按语法/听力/阅读分色；整卷模拟支持限时 |
+| **学习助手** | 和 AI 对话：说一句话让它出题、查某个考点的例题、或制定学习计划。出题完成后点「开始做题」直接进入试卷 |
+| **背单词** | 间隔重复（SM-2）记忆中考词汇：每日新词 + 到期复习 + 当日重试队列，拼写作答后自评认识/模糊/忘了，另有背词进度画像 |
 | **错题复习** | 做错的题会自动收进错题本，可勾选若干题让 AI 出一份针对性巩固卷，也可以按最近 N 天的答题记录出综合复习卷 |
 | **学习计划** | 让 AI 根据你的历史正确率排出未来几天的每日练习，每天一份针对薄弱考点的卷子，点进去就能练 |
 | **我的试卷** | 生成过的卷都在这里。没做完的随时接着做，做过的点进去直接看**上次的作答结果**（对错、你的答案 vs 正确答案、解析），也能一键重做 |
-| **掌握度** | 按知识点展示你的掌握程度（Wilson 分数），颜色标出薄弱点 |
-| **会员** | 扫码开通会员（支付宝沙盒 / 离线演示模式），解锁错题巩固、综合复习、不限量 AI 解析等功能 |
+| **掌握度 / 学情报告** | 按知识点展示你的掌握程度（Wilson 分数），颜色标出薄弱点；学情报告打印友好 |
+| **会员** | 扫码开通会员（支付宝沙盒 / 离线演示模式），解锁作文批改详情、错题巩固、综合复习、不限量 AI 解析等功能 |
 
-**做题体验**：交卷后每题标 ✓/✗，卷面右上角盖"对/总"红章；点每题下方「查看解析」由 AI 讲解——**答错的题会专门解释你选的那个选项为什么错**。
+> 管理员账号登录后左侧多出「管理后台」（`/admin`）：用户管理、做题分析看板、会员与订单。
+
+**做题体验**：交卷后每题标 ✓/✗，卷面右上角盖"对/总"红章；点每题下方「查看解析」由 AI 讲解——**答错的题会专门解释你选的那个选项为什么错**。作文交卷后给出内容/语言/组织三维评分与修改范文。
 
 ---
 
@@ -41,11 +45,12 @@
 
 | 覆盖 | 不覆盖 |
 |------|--------|
-| 单项选择、词性转换、改写句子 | 阅读理解、作文 |
-| 纯文本题目 | 含图片的题目 |
-| AI 对话出题 / 错题巩固 / 学习计划 | 多用户高并发 |
+| 单项选择、词性转换、改写句子、听力（选择/判断/填词）、阅读理解、完形填空、阅读首字母填空、英语作文（共 10 题型） | 含图片的题目 |
+| 背单词（间隔重复 SM-2） | 口语 / 手写识别 |
+| 纯文本题目 | 多用户高并发 |
+| AI 对话出题 / 错题巩固 / 学习计划 | 分布式部署、多进程 session 共享 |
 | 用户名+密码本地登录 + 会员订阅 | OAuth/SSO/邮箱验证 |
-| 后端持久化试卷、答题、掌握度 | 分布式部署、多进程 session 共享 |
+| 后端持久化试卷、答题、掌握度 | — |
 
 ---
 
@@ -67,7 +72,10 @@
 │  /api/papers/*     生成、重出、读取、列表                                  │
 │  /api/solutions    按需生成单题解析（含"为何选错"）                        │
 │  /api/attempts     提交答题 + 判对错 + 落库 + 按试卷取历史结果             │
+│  /api/writing/*    英语作文批改评分（内容/语言/组织三维度）                │
+│  /api/vocabulary/* 间隔重复背单词（今日卡片 / 评分 / 进度 / 设置）         │
 │  /api/users/me/mastery  掌握度画像                                         │
+│  /api/admin/*      管理后台（用户 / 统计分析 / 会员 / 订单，需 admin）     │
 │                                                                          │
 │  职责：鉴权、试卷持久化、答题记录、规范化字符串判对错、错误统一封装        │
 └──────────┬───────────────────┬──────────────────┬────────────────────────┘
@@ -87,15 +95,21 @@
                                                     │
                                                     ▼
                                      ┌──────────────────────────┐
-                                     │  SQLite  +  ChromaDB     │
+                                     │  两个 SQLite + ChromaDB  │
                                      │  ─────────────────────── │
-                                     │  questions               │
-                                     │  knowledge_points        │
-                                     │  question_kp_map         │
-                                     │  users / sessions        │
-                                     │  papers                  │
-                                     │  attempts / attempt_items│
-                                     │  chroma/ (向量)           │
+                                     │  questions.db（只读题库） │
+                                     │   questions              │
+                                     │   knowledge_points       │
+                                     │   question_kp_map        │
+                                     │   chroma/ (3 类题型向量)  │
+                                     │  ──────────────────────  │
+                                     │  app.db（用户数据,忽略） │
+                                     │   users / sessions       │
+                                     │   papers                 │
+                                     │   attempts / attempt_items│
+                                     │   study_plans            │
+                                     │   writing_grade_results  │
+                                     │   vocabulary_*（7 表）    │
                                      └──────────────────────────┘
                                                     ▲
                                                     │ 只写（离线）
@@ -103,7 +117,7 @@
                                      │  ingestion/（题库摄入）    │
                                      │  EPUB → md → 章节树 →     │
                                      │  ★人工审核知识点树 →       │
-                                     │  LLM 抽题 → Loader        │
+                                     │  脚本抽题 → Loader        │
                                      └──────────────────────────┘
 ```
 
@@ -284,14 +298,16 @@ const isMember = query.isError || query.data?.active === true
 
 ### 1. `ingestion/` — 题库摄入（离线）
 
-从 EPUB 教辅书构建题库。六阶段管线 + 一次人工审核关卡：
+从 EPUB 教辅书构建题库。脚本 + 一次人工审核关卡（**ingestion 阶段不调用 LLM**——原设计的 LLM 抽题/归并已被脚本+人工取代）：
 
-1. `epub_to_md` — 脚本转换（无 LLM）
-2. `chapter_splitter` — 按标题层级切树（无 LLM）
-3. `knowledge_tree_builder` — LLM 归并出**两级知识点树**（一级=题型、二级=具体考点）
-4. **★ 人工审核** `knowledge_tree_draft.json` → 固化为 `knowledge_tree.json`
-5. `question_extractor` — LLM 逐章节结构化抽题
-6. `loader` — 双写 SQLite + Chroma，`(book, chapter, stem_hash)` 幂等
+1. `epub_to_md` — 脚本转换
+2. `chapter_splitter` — 按标题层级切树
+3. **★ 人工归并知识点树** → 固化为 `knowledge_tree.json`
+4. `apply-kp` / `assign-ids` — 回填知识点、分配全库稳定 id
+5. `build-sqlite` — 写入 `data/questions.db`（bank-only）
+6. `build-vec` — 3 类自由题型写入 Chroma（`single_choice`/`word_form`/`sentence_rewriting`）
+
+另有背单词词表构建脚本（`build_vocabulary_wordlist.py` / `build_merged_vocabulary.py`），产出词表种子导入 `data/app.db`，详见 [`docs/vocabulary-design.md`](./docs/vocabulary-design.md)。
 
 题库入库后此子系统不再运行；AI Engine 只读。
 
@@ -299,15 +315,16 @@ const isMember = query.isError || query.data?.active === true
 
 ### 2. `ai_engine/` — AI 引擎
 
-纯函数、无状态。五个模块：
+纯函数、无状态。核心五模块 + 作文批改：
 
 | 模块 | 职责 |
 |------|------|
 | **Parser** | `user_query` → `GenerateRequest`；`revision_intensity` 由 LLM 从自然语言推断（不暴露给用户面板） |
 | **Retriever** | 属性硬过滤（SQL）+ 语义向量检索（Chroma，取 Top-M 与硬过滤集在 Python 端求交） |
-| **Reviser** | 三档改题：`original`（拷贝）/ `light`（保留结构改词汇）/ `fresh`（按 KP+难度新出题）；三层防御 + fallback |
+| **Reviser** | 三档改题：`original`（拷贝）/ `light`（保留结构改词汇）/ `fresh`（按 KP 新出题）；三层防御 + fallback |
 | **Solutioner** | 单题按需生成解析；答错时额外解释用户所选选项为何错误（每次实时调 LLM，不缓存） |
-| **Analyzer** | 用 Wilson score lower bound 计算 KP 掌握度，输出薄弱点画像 |
+| **Analyzer** | 用 Wilson score lower bound 计算 KP 掌握度，输出薄弱点画像（含全站画像 `build_site_profile`，供管理后台分析） |
+| **WritingGrader** | 英语作文三维批改（内容 8 / 语言 8 / 组织 4，共 20 分）+ 修改范文；`ai_engine/writing_grader.py`，由 `/api/writing/grade` 调用 |
 
 **关键设计**：
 - 无 Verifier（答案唯一，LLM 直接产出新答案 + 后端字符串判等）
@@ -318,13 +335,14 @@ const isMember = query.isError || query.data?.active === true
 
 ### 3. `backend/` — FastAPI 后端
 
-11 个 HTTP 端点，把 AI Engine 封装为浏览器可用的接口。
+11 组路由（含 writing / vocabulary / admin），把 AI Engine 与各功能封装为浏览器可用的接口。
 
-- **鉴权**：用户名+密码 + bcrypt + SQLite session + httpOnly Cookie
-- **持久化**：`papers` 表存整份 `Paper` 的 JSON（AI Engine 依然保持无状态，后端负责持久化）
+- **鉴权**：用户名+密码 + bcrypt + SQLite session + httpOnly Cookie；用户含 `role`/`status`（管理后台需 `role=admin`）
+- **持久化**：`papers` 表存整份 `Paper` 的 JSON（AI Engine 依然保持无状态，后端负责持久化）；用户数据在 `data/app.db`
 - **判对错**：`backend/services/grading.py` 做规范化字符串比较（小写、trim、空白折叠、末尾标点忽略）
-- **错误体统一**：`{ error_code, message, detail, trace_id }`；11 个稳定 `error_code` 供前端精确分派
-- **速率限制**：软限制 `/papers/generate` 30/min、`/solutions` 60/min（个人项目、防意外循环）
+- **错误体统一**：`{ error_code, message, detail, trace_id }`；稳定 `error_code` 供前端精确分派
+- **速率限制**：软限制 `/papers/generate` 30/min、`/solutions` 60/min、`/writing/grade` 10/min（个人项目、防意外循环）
+- **会员校验**：作文批改的详情字段、管理后台会员视图经独立支付服务（`:8001`）校验
 
 详见 [`docs/backend-design.md`](./docs/backend-design.md)（Spec C）。
 
@@ -338,14 +356,22 @@ const isMember = query.isError || query.data?.active === true
 
 ### 5. `frontend/` — React + Vite 前端
 
-产品名「墨卷」。登录后是六个功能页（详见开头「用户能做什么」）：
+产品名「墨卷」。`/` 是营销首页，登录后工作台在 `/home`；侧边栏分四组（练习 / 出卷 / 助手 / 复盘）共 21 个用户页 + 7 个管理页。主要页面：
 
-- **学习助手**（`/`）— 多轮对话 UI，Markdown 渲染（支持表格），出题后给「开始做题」入口
-- **错题复习**（`/review`）— 本地错题本 + 错题巩固 / 综合复习两个出卷入口
+- **工作台**（`/home`）— 登录后主入口
+- **一句话出卷 / 主题出卷 / 自选组卷 / 整卷模拟**（`/generate`、`/themes`、`/practice/custom`、`/mock`）
+- **题型专项练习**（`/practice`、`/practice/:slug`）— 一模板 10 配置（含作文），按语法/听力/阅读分色
+- **每日一练**（`/daily`）
+- **学习助手**（`/assistant`）— 多轮对话 UI，Markdown 渲染，出题后给「开始做题」入口
+- **背单词 / 背词进度**（`/vocabulary`、`/vocabulary/progress`）— 间隔重复 SM-2
+- **错题复习**（`/review`）— 本地错题本 + 错题巩固 / 综合复习出卷入口
 - **学习计划**（`/study-plan`）— 每日卡片，逐日进入练习
-- **我的试卷**（`/papers`、`/papers/:id`）— 列表 + 做题/复盘页；已交卷的直接回放上次结果，可重做，可从错题一键组巩固卷
-- **掌握度**（`/mastery`）— 知识点树 + Wilson 分数条形 + 颜色标记
-- **会员**（`/membership`）— 扫码订阅
+- **我的试卷**（`/papers`、`/papers/:id`）— 列表 + 做题/复盘页；已交卷直接回放，可重做
+- **掌握度 / 学情报告**（`/mastery`、`/report`）— 知识点树 + Wilson 分数
+- **会员 / 设置**（`/membership`、`/settings`）
+- **管理后台**（`/admin/*`）— 概览 / 分析 / 用户 / 会员 / 订单（需 admin）
+
+做题页支持全部 10 题型（选择/填空/听力/阅读/首字母/作文），作文交卷后展示三维批改分数与范文。
 
 技术栈：Vite + React + TypeScript + shadcn/ui + TanStack Query + React Router。所有 HTTP 走一个 `apiFetch` 薄封装；`ApiError` 按 `error_code` 分派处理（401 跳登录、429 toast、其它显 message）。
 
@@ -366,6 +392,8 @@ const isMember = query.isError || query.data?.active === true
 
 一个共享的 `ScriptedDeepSeekClient` 在 L2 与 L4 复用；e2e 通过测试专用端点 `/api/test/llm-scripts` 注入脚本。每晚跑一次 `live-smoke`（真 DeepSeek）探测契约漂移。
 
+> 现状：L1/L2 已落地（`tests/` 下 pytest + Vitest 单元/集成），根目录另有 `test_writing_e2e.py` 等即席脚本；L4 Playwright e2e（`tests_e2e/`、`ScriptedDeepSeekClient`、`LLM_CLIENT_MODE`、CI 分层）是 Spec E 的目标设计，**尚未实现**，`/api/test/llm-scripts` 目前为占位（返回 noop）。
+
 详见 [`docs/testing-design.md`](./docs/testing-design.md)（Spec E）。
 
 ---
@@ -381,7 +409,7 @@ const isMember = query.isError || query.data?.active === true
 | 结构化 LLM 输出 | `instructor` + JSON Mode + pydantic + 重试 | 三层防御，避免自研 200 行解析代码 |
 | 后端 | FastAPI | pydantic 契约天然复用；OpenAPI 免费 |
 | 前端 | Vite + React + shadcn/ui | AI 生成代码模板成熟；shadcn 组件质量高且可拷贝 |
-| 部署 | 前后端合并（FastAPI StaticFiles 挂 `dist/`） | 单进程、单端口、零 CORS |
+| 部署 | 生产用 Caddy 直服前端静态 + 反代 `/api`、`/payapi`（开发用 Vite dev） | 同源零 CORS；少一层转发 |
 
 ---
 
@@ -390,13 +418,18 @@ const isMember = query.isError || query.data?.active === true
 ```
 English_Test_Paper_AI_Generator/
 ├── README.md                  # 本文件
-├── docs/                      # 6 份设计 spec
-│   ├── question-bank-ingestion-design.md  # Spec A
-│   ├── ai-engine-design.md                # Spec B
-│   ├── backend-design.md                  # Spec C
-│   ├── frontend-design.md                 # Spec D
-│   ├── testing-design.md                  # Spec E
-│   └── frontend-visual-spec.md            # Spec F
+├── docs/                      # 设计 spec
+│   ├── question-bank-ingestion-design.md  # Spec A（题库摄入）
+│   ├── ai-engine-design.md                # Spec B（AI 引擎）
+│   ├── backend-design.md                  # Spec C（后端）
+│   ├── frontend-design.md                 # Spec D（前端功能）
+│   ├── testing-design.md                  # Spec E（测试）
+│   ├── frontend-visual-spec.md            # Spec F（视觉规范）
+│   ├── admin-design.md                    # 管理后台
+│   ├── agent-design.md                    # AI 学习助手
+│   ├── vocabulary-design.md               # 背单词（间隔重复）
+│   ├── writing-design.md                  # 英语作文批改
+│   └── *-support-design.md                # 各题型（听力/长文/首字母填空）
 │
 ├── shared/                    # 跨子系统共享层（唯一的依赖交汇点）
 │   ├── schemas.py             # 全部 pydantic 契约
@@ -413,13 +446,15 @@ English_Test_Paper_AI_Generator/
 ├── payment/                   # 附加：模拟支付服务（:8001）
 ├── tests/ tests_e2e/          # 子系统 6：单元 / 集成 / 跨系统 e2e（Spec E）
 │
-└── data/                      # 运行时产物（gitignored）
+└── data/                      # 数据（题库与 chroma 已跟踪，其余 gitignored）
     ├── raw_md/                # EPUB 转出的 md
-    ├── chapters/              # 章节树 JSON
+    ├── chapters/              # 章节树 JSON（含各题型）
     ├── kb/knowledge_tree.json # 审核后的知识点树
-    ├── extracted/             # LLM 抽出的题目 JSON
-    ├── questions.db           # SQLite 主库
-    ├── chroma/                # Chroma 向量持久化
+    ├── vocabulary/            # 背单词词表种子（moe core / shanghai basic）
+    ├── questions.db           # SQLite 题库（只读、已跟踪）
+    ├── app.db                 # 用户数据（gitignored，backend.cli init-db 创建）
+    ├── agent_sessions.db      # 学习助手对话历史（gitignored）
+    ├── chroma/                # Chroma 向量持久化（已跟踪）
     └── llm_traces/            # LLM 调用观测
 ```
 
@@ -436,6 +471,8 @@ English_Test_Paper_AI_Generator/
 | M5 | Backend MVP（11 端点 + 鉴权 + 持久化 + 集成测试） | M4 |
 | M6 | Frontend MVP（三页 + 组件测试） | M5 |
 | M7 | Cross-system e2e（10 用例 + CI 分层 + live-smoke） | M6 |
+| M8 | 题型扩展（听力/阅读/完形/首字母/作文）+ 前端重构（营销页、题型专项、整卷模拟、管理后台） | M6 |
+| M9 | 背单词模块（SM-2 间隔重复）+ 用户库/题库分离（app.db / questions.db） | M8 |
 
 ## 核心原则
 
@@ -445,6 +482,6 @@ English_Test_Paper_AI_Generator/
 2. **AI Engine 无状态**——一切持久化在后端层；`generate_paper` 是纯函数
 3. **数据契约 pydantic 定义一次，全体复用**——契约变更 = 一次跨 spec 同步（有明确清单）
 4. **知识点 id 一旦入库不变**——改 id 意味着级联重算所有引用，第一版不支持
-5. **改题不改 `question_type` / `knowledge_point_ids` / `difficulty`**——否则答题记录的 KP 归属会错乱
+5. **改题不改 `question_type` / `knowledge_point_ids`**——否则答题记录的 KP 归属会错乱（注：`difficulty` 字段已废弃，全系统不使用）
 6. **判对错永远是纯字符串比较，不调 LLM**——答案唯一无歧义（用户已确认）
 7. **测试专用端点只在 test env 挂载**——生产构建永不暴露 `/api/test/*`

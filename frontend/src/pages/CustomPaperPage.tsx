@@ -90,7 +90,7 @@ function CountStepper({
 }
 
 /**
- * 自选组卷工坊：九种题型自由配比（0 = 不出），语法行可各自选考点，
+ * 自选组卷工坊：十种题型自由配比（0 = 不出），语法行可各自选考点，
  * 右栏汇总 + 强度/主题/预览——最终仍走 composeQuery 拼句、fresh 通道出卷。
  */
 export function CustomPaperPage() {
@@ -147,7 +147,7 @@ export function CustomPaperPage() {
         <div className="min-w-0">
           <PageHeader
             title="自选组卷"
-            intro="像点菜一样配一份卷：九种题型自由配比，考点、强度、主题一次配好。"
+            intro="像点菜一样配一份卷：十种题型自由配比，考点、强度、主题一次配好。"
           />
 
           <div className="flex flex-col gap-10">
