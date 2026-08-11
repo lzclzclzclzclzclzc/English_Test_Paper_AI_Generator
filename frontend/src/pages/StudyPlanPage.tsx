@@ -4,7 +4,11 @@ import { getLatestStudyPlan } from '@/api/agent'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/PageHeader'
+import { StudyPlanCalendar } from '@/components/StudyPlanCalendar'
+import { useAuth } from '@/hooks/useAuth'
+import { getExamDate } from '@/lib/examDate'
 import { TYPE_LABELS } from '@/lib/kp'
+import { PATHS } from '@/lib/paths'
 import type { StudyPlanDay } from '@/types/api'
 
 /** 学习计划单日行（喫茶去）：细线分隔的行式列表，无卡片。 */
@@ -13,11 +17,14 @@ function DayRow({ day }: { day: StudyPlanDay }) {
     .map((t) => TYPE_LABELS[t] ?? t)
     .join(' / ')
   return (
-    <div className="grid grid-cols-[64px_minmax(0,1fr)_auto] items-start gap-4 border-b border-hairline py-5 max-sm:grid-cols-[minmax(0,1fr)_auto]">
+    <div
+      id={`day-${day.index}`}
+      className="grid scroll-mt-6 grid-cols-[64px_minmax(0,1fr)_auto] items-start gap-4 border-b border-hairline py-5 max-sm:grid-cols-[minmax(0,1fr)_auto]"
+    >
       {/* 第 N 天 */}
       <div className="flex flex-col max-sm:hidden">
-        <span className="text-[11px] tracking-[0.1em] text-accent">DAY</span>
-        <span className="text-[24px] leading-tight text-ink">
+        <span className="font-ui text-[11px] tracking-[0.1em] text-accent">DAY</span>
+        <span className="font-ui text-[24px] leading-tight tabular-nums text-ink">
           {String(day.index).padStart(2, '0')}
         </span>
       </div>
@@ -25,7 +32,7 @@ function DayRow({ day }: { day: StudyPlanDay }) {
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           {day.theme && <span className="text-[15.5px] text-ink">{day.theme}</span>}
-          <span className="text-[12.5px] text-quiet">
+          <span className="font-ui text-[12.5px] tabular-nums text-quiet">
             {[typeLabels, `${day.total_questions} 道`, day.date].filter(Boolean).join(' · ')}
           </span>
         </div>
@@ -34,7 +41,7 @@ function DayRow({ day }: { day: StudyPlanDay }) {
             {day.kp_names.map((name, i) => (
               <span
                 key={i}
-                className="rounded-sm border border-hairline px-2 py-0.5 text-[11.5px] text-muted-ink"
+                className="rounded-sm border border-hairline px-2 py-0.5 font-ui text-[11.5px] text-muted-ink"
               >
                 {name}
               </span>
@@ -45,7 +52,7 @@ function DayRow({ day }: { day: StudyPlanDay }) {
       </div>
 
       <Button asChild size="sm" variant="outline" className="mt-1 shrink-0">
-        <Link to={`/papers/${day.paper_id}`}>开始练习 →</Link>
+        <Link to={PATHS.paper(day.paper_id)}>开始练习 →</Link>
       </Button>
     </div>
   )
@@ -53,6 +60,8 @@ function DayRow({ day }: { day: StudyPlanDay }) {
 
 /** 学习计划（dev 新功能，喫茶去外观）：按天打卡，每天一份针对性练习。 */
 export function StudyPlanPage() {
+  const { data: user } = useAuth()
+  const userId = user?.id ?? 'anon'
   const { data: plan, isLoading, isError } = useQuery({
     queryKey: ['study-plan', 'latest'],
     queryFn: getLatestStudyPlan,
@@ -63,7 +72,7 @@ export function StudyPlanPage() {
     <div className="max-w-[52rem]">
       <PageHeader
         title="学习计划"
-        intro="在学习助手里说出你的目标，AI 会按天拆成打卡计划，每天一份针对性练习。"
+        intro="计划由学习助手制定，这里按日历跟进——去助手说出目标，AI 按天拆成打卡计划，每天一份针对性练习。"
       />
 
       {isLoading && (
@@ -87,13 +96,20 @@ export function StudyPlanPage() {
             去学习助手告诉我你的目标（比如「帮我制定 7 天学习计划」），我来安排每天练什么
           </p>
           <Button asChild className="mt-3">
-            <Link to="/assistant">去学习助手</Link>
+            <Link to={PATHS.assistant} state={{ prefill: '帮我制定一个 7 天学习计划' }}>
+              让学习助手帮我制定计划
+            </Link>
           </Button>
         </div>
       )}
 
       {plan && (
         <div className="flex flex-col gap-4">
+          {plan.days.some((d) => d.date) && (
+            <div className="border-b border-hairline pb-6">
+              <StudyPlanCalendar days={plan.days} examDate={getExamDate(userId)} />
+            </div>
+          )}
           <div className="flex items-baseline justify-between border-b border-hairline pb-2.5">
             <span className="text-[13px] text-muted-ink">
               共 <b className="text-ink">{plan.total_days}</b> 天

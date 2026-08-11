@@ -31,7 +31,9 @@ export function SentenceRewritingField({
         </p>
       )}
       {question.instruction && (
-        <p className="text-[13px] text-quiet">（{question.instruction}）</p>
+        <span className="self-start rounded-md bg-wash px-2.5 py-1 font-ui text-[13px] leading-normal text-accent">
+          {question.instruction}
+        </span>
       )}
       {question.template && (
         <BlankedText

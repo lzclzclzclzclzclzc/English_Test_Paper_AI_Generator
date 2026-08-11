@@ -39,9 +39,9 @@ export function PassageBlock({ passage, mode }: PassageBlockProps) {
   }
 
   return (
-    <div className="kk-rise mb-2 rounded-md border border-hairline p-5">
+    <div className="kk-rise rounded-[var(--radius-question-card)] border border-soft bg-card-surface p-6 max-md:p-4">
       {passage.title && (
-        <p className="text-[11px] tracking-[0.1em] text-quiet">{passage.title}</p>
+        <p className="font-ui text-[11px] tracking-[0.1em] text-quiet">{passage.title}</p>
       )}
 
       {isListening && (
@@ -49,7 +49,7 @@ export function PassageBlock({ passage, mode }: PassageBlockProps) {
           onClick={handlePlay}
           disabled={!isPlaying && globallyPlaying}
           className={cn(
-            'mt-2 flex w-fit items-center gap-2 rounded-sm border px-4 py-2 text-[14px] transition-colors',
+            'mt-2 flex w-fit items-center gap-2 rounded-sm border px-4 py-2 font-ui text-[14px] transition-colors',
             isPlaying || globallyPlaying
               ? 'cursor-not-allowed border-ink-15 text-quiet'
               : 'border-accent bg-wash text-accent hover:bg-accent hover:text-paper',

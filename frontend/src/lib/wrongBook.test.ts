@@ -33,6 +33,8 @@ function question(overrides: Partial<RevisedQuestion> = {}): RevisedQuestion {
     passage_json: null,
     answer: 'B',
     solution: null,
+    passage_id: null,
+    passage_json: null,
     knowledge_point_ids: ['kp_single_choice_basic'],
     ...overrides,
   }

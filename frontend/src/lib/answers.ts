@@ -166,9 +166,10 @@ export function formatCorrectAnswer(a: AnswerValue): string {
   if (a.length > 1 && a.every((c) => c && Object.keys(c).length === 1)) {
     return a
       .map((cand) => {
-        const k = Object.keys(cand)[0] ?? 'blank1'
-        return `${blankLabel(k)}: ${(cand[k] ?? []).join(' / ')}`
+        const k = Object.keys(cand)[0]
+        return k === undefined ? '' : `${blankLabel(k)}: ${(cand[k] ?? []).join(' / ')}`
       })
+      .filter(Boolean)
       .join('；')
   }
   if (a.length === 1 && a[0] !== undefined) return formatCandidate(a[0])

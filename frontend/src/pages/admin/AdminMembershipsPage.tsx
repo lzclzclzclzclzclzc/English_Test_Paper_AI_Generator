@@ -191,12 +191,12 @@ export function AdminMembershipsPage() {
 
       <div className="overflow-hidden rounded-md border border-hairline">
         <table className="w-full text-[13px]">
-          <thead className="bg-wash/60 text-left text-muted-ink">
+          <thead className="bg-wash/60 text-left font-ui text-muted-ink">
             <tr>
-              <th className="px-3 py-2 font-medium">用户</th>
-              <th className="px-3 py-2 font-medium">到期时间</th>
-              <th className="px-3 py-2 font-medium">状态</th>
-              <th className="px-3 py-2 font-medium">操作</th>
+              <th className="px-3 py-2">用户</th>
+              <th className="px-3 py-2">到期时间</th>
+              <th className="px-3 py-2">状态</th>
+              <th className="px-3 py-2">操作</th>
             </tr>
           </thead>
           <tbody>

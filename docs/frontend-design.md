@@ -228,6 +228,10 @@ frontend/
   - 颜色分级（One Chroma Rule，Spec F v2 § 6）：进度条一律赤陶——`mastery` < 0.4 全饱和（薄弱点更醒目），≥ 0.4 降到 0.45 不透明度；**不用绿/黄/红**。
   - `MasteryProfile` 只含薄弱 KP 概览（`weak_kps` / `dominant_types` / `total_attempts_considered`），不含全部 KP 统计。
 - 数据来源：`GET /api/users/me/mastery?window_days=`，TanStack Query key: `['mastery','me',windowKey]`。
+- 报告之后（2026-08-07 复盘域拆分，自错题本页迁入）：「按薄弱考点复习」区块——
+  **综合复习**（`mode: 'review'`）出卷入口，统计范围本地分段（近 7/30/90 天，默认 30，
+  走 `review_window_days`，独立于顶部报告窗口）；无答题记录时提示先做卷并禁用按钮；
+  会员功能，非会员触发 `UpgradeDialog`，页面自持 `useGeneratePaper` + `PipelineProgress`。
 
 ### 3.8 PapersPage（`/papers`）与 ReviewPage（`/review`）
 
@@ -237,12 +241,12 @@ frontend/
 - 失效时机：生成成功、重新出卷成功、交卷成功三处 `invalidateQueries(['papers','list'])`。
 - 空态引导去首页出第一份卷；视觉规则见 Spec F § 5「试卷列表页」。
 
-**ReviewPage（错题复习）**
-- 本地错题本：`lib/wrongBook.ts` 按用户存做错的题（交卷时 `recordGrade` 记账，答对清账）；`WrongBookList` 展示，可勾选、删除，并可就地看解析。
-- 两个显式出卷入口（`ReviewGeneratePanel` 细线分栏 + `useGeneratePaper`）：
-  - **错题巩固**（`mode: 'remediation'`）：以错题本里选中的题定向组卷。
-  - **综合复习**（`mode: 'review'`）：按 `review_window_days` 时间窗内答题记录出复习卷。
-- 两者都是会员功能：非会员触发 `UpgradeDialog`；出卷共享逻辑与配额见 § 4.4。
+**ReviewPage（错题本，2026-08-07 复盘域拆分后单一职责）**
+- 本地错题本：`lib/wrongBook.ts` 按用户存做错的题（交卷时 `recordGrade` 记账，答对清账）；`WrongBookList` 为左列（过滤芯片按题型三族计数 + 全选/清空 + 行式列表），可勾选、展开复看、就地看解析、移除。
+- 唯一出卷入口 = 右栏粘顶「错题巩固」操作卡（页面内联 + `useGeneratePaper`）：
+  **错题巩固**（`mode: 'remediation'`）以错题本里选中的题定向组卷，可附一句补充要求。
+  会员功能：非会员触发 `UpgradeDialog`；出卷共享逻辑与配额见 § 4.4。
+- **综合复习**（`mode: 'review'`）已迁入 MasteryPage（见 § 3.7）；`ReviewGeneratePanel` 组件随之删除。
 - 顶部依据 `GET /api/health/ready`（题库就绪探针）在未就绪时提示「题库正在准备中」。
 
 ### 3.9 支撑机制：知识点中文名、解析、学习计划
@@ -410,7 +414,7 @@ if (error instanceof ApiError && error.status === 401) {
 - `Sidebar` / `AppLayout`（左侧可折叠导航外壳）、`GenerateForm`、`PipelineProgress`、
   `QuestionCard`（+ `question-fields/*`）、`AnswerCard`（粘顶答题卡）、`GradeBanner`、
   `SolutionBlock`、`MasteryReport`、`RequestSummary`、`RequireAuth`、
-  `review/WrongBookList`、`review/ReviewGeneratePanel`、`UpgradeDialog`（含 `MemberPill`）、`PayQrDialog`。
+  `review/WrongBookList`、`UpgradeDialog`（含 `MemberPill`）、`PayQrDialog`。
 - 所有自定义组件禁止直接调用 `fetch`，只通过 hooks 消费 `api/` 层。
 
 ### 7.3 样式（2026-07-27 随喫茶去改版更新）
@@ -490,6 +494,42 @@ export default defineConfig({
 7. 富文本 / LaTeX（英语题目全部纯文本）。
 8. 无障碍（accessibility）深度优化，只做 shadcn/ui 内置的 ARIA。
 9. 埋点 / 分析（Sentry、GA 等）。
+
+---
+
+## 10.5 功能拆分改版（2026-08-06）
+
+单一自然语言入口拆为分层多入口,全部出卷入口共用一根管道
+「结构化选择 → `lib/composeQuery.ts` 确定性拼句(措辞对齐 `ai_engine/prompts/parser.md`)
+→ `useGeneratePaper` → `POST /api/papers/generate`」:
+
+- **路由**:`/` 对所有人都是营销首页(已登录时页眉 CTA「进入工作台 →」);
+  工作台在 `/home`,登录后落点即 `/home`(admin 落 `/admin`);
+  原生成页迁 `/generate`(一句话出卷);新增 `/practice`(练习中心 hub)、
+  `/practice/:slug`(题型专项 ×9,`lib/drillConfig.ts` 一模板九配置)、
+  `/practice/custom`(自选组卷工坊)、`/mock`(整卷模拟 5 配方 + 纯前端限时);
+  `/welcome` 重定向 `/`。路径常量集中 `lib/paths.ts`,侧栏数据 `lib/nav.ts`(三组九项)。
+- **新增能力**:强度三档显式控件(真题档会员)、按考点专练(隐藏 0 题 KP、
+  8 个薄尾 KP 预警)、主题出卷(仅语法,自动升 fresh)、每日一练(按星期配方)、
+  中考倒计时(`lib/examDate.ts` + 设置页)、打印分版(学生卷免费/教师版含参考答案
+  会员,Tailwind `print:` 变体)、学情报告(会员,`StudyReport.tsx`)、
+  shortfall 行动提示(试卷页)、学习计划空态预填学习助手。
+- **定价单一来源**:`lib/pricing.ts` 静态镜像 payment PLANS + 共享 BENEFITS
+  (营销首页匿名展示与会员页共用;购买路径仍走 `getPlans()` 实时数据)。
+- **配额**:所有 fresh 入口共享一个 `'generate'` 池(3 次/天,不按入口拆分)。
+- 前置后端修复:`ai_engine/parser.py` 白名单补齐两个阅读题型(独立提交)。
+- 2026-08-07 复盘域拆分:错题本页单一职责(列表+巩固卷右栏),综合复习迁入掌握度页;删除 ReviewGeneratePanel。
+- 2026-08-09(晚)词汇模块合入:merge `CJN/vocabulary-mvp`——`/vocabulary`(间隔重复
+  今日卡片)与 `/vocabulary/progress`(统计+每日目标)接入四组导航(练习「背单词」、
+  复盘「背词进度」),工作台/练习中心/营销页的「即将上线」占位全部点亮为真实入口;
+  空库需 `python -m backend.cli seed-vocabulary` 导入词表(2,047 词)。
+- 2026-08-09 信息架构扩展(用户反馈驱动):侧栏拆为四组十三项(练习/出卷/助手/复盘),
+  「我的」组收进底部头像弹出菜单(历史试卷/会员/设置/登出);新增 `/daily` 每日一练
+  (配方唯一事实源 `lib/dailyRecipes.ts`,与工作台今日一练卡共用)、`/themes` 主题出卷
+  (主题×语法题型结合页)、`/report` 学情报告独立页(会员;掌握度页留链接);工作台改
+  双栏(左行动流/右粘顶信息栏),练习中心简化为纯导航页;`/study-plan` 增月历视图
+  (`StudyPlanCalendar`:计划日进卷、今天与中考日标记);全站字体分层统一
+  (控件 font-ui/正文衬线,开发者文案人话化)。
 
 ---
 

@@ -13,9 +13,11 @@ import { toastApiError } from '@/lib/errors'
 import { queryClient } from '@/lib/queryClient'
 import { stopAll as stopTTS } from '@/lib/tts'
 import type { AnswerDraft } from '@/lib/answers'
-import { buildSubmission, listUnanswered } from '@/lib/answers'
+import { buildSubmission, formatCorrectAnswer, listUnanswered } from '@/lib/answers'
 import { buildPaperNotices } from '@/lib/paperNotices'
+import { claimPendingTimer } from '@/lib/paperTimer'
 import { AnswerCard } from '@/components/AnswerCard'
+import { PaperTimer } from '@/components/PaperTimer'
 import { PassageBlock } from '@/components/PassageBlock'
 import { QuestionCard } from '@/components/QuestionCard'
 import { GradeBanner } from '@/components/GradeBanner'
@@ -33,6 +35,7 @@ import {
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { GradeSubmissionResponse, PaperItem, WritingGradeResultItem } from '@/types/api'
+import { PATHS } from '@/lib/paths'
 
 /** 按 passage_id 分组：同组小题共享一段材料，PassageBlock 只渲染一次。 */
 function groupByPassage(items: PaperItem[]): Array<{ key: string; passageId: string | null; items: PaperItem[] }> {
@@ -80,6 +83,17 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   const [redoing, setRedoing] = useState(false)
   // 作文批改结果（独立于客观题判分结果）
   const [writingGradeResults, setWritingGradeResults] = useState<Map<number, WritingGradeResultItem>>(new Map())
+  // 教师版打印：先渲染 print-only 的参考答案区，再触发 window.print
+  const [teacherPrint, setTeacherPrint] = useState(false)
+  // 限时模式：挂载时一次性取走出卷入口登记的分钟数（刷新不重启计时）
+  const [timerMinutes] = useState(() => claimPendingTimer())
+  const [timeUpOpen, setTimeUpOpen] = useState(false)
+
+  useEffect(() => {
+    if (!teacherPrint) return
+    window.print()
+    setTeacherPrint(false)
+  }, [teacherPrint])
 
   const { locked } = useMembership()
   const { data: user } = useAuth()
@@ -194,7 +208,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
 
   if (isLoading || history.isLoading || writingHistory.isLoading) {
     return (
-      <div className="flex max-w-[52rem] flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[760px] flex-col gap-4">
         <Skeleton className="h-9 w-2/3" />
         <Skeleton className="h-72 w-full" />
       </div>
@@ -204,7 +218,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   if (error || !paper) {
     const notFound = error instanceof ApiError && error.status === 404
     return (
-      <div className="flex max-w-[52rem] flex-col items-start gap-4 pt-10">
+      <div className="mx-auto flex w-full max-w-[760px] flex-col items-start gap-4 pt-10">
         <p className="text-[18px] text-ink">
           {notFound ? '没有找到这份试卷' : '试卷加载失败'}
         </p>
@@ -215,7 +229,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         )}
         {notFound ? (
           <Button asChild variant="outline">
-            <Link to="/">去生成新试卷</Link>
+            <Link to={PATHS.dashboard}>去生成新试卷</Link>
           </Button>
         ) : (
           <Button variant="outline" onClick={() => refetch()}>
@@ -328,20 +342,20 @@ function PaperPageInner({ paperId }: { paperId: string }) {
   })
 
   return (
-    <div className="flex gap-12">
-      {/* 左：52rem 长卷 */}
-      <div className="min-w-0 max-w-[52rem] flex-1">
-        <p className="text-[11px] tracking-[0.1em] text-quiet">
+    <div className="mx-auto flex w-full max-w-[1104px] justify-center gap-10">
+      {/* 左：760px 内容列（大屏与右栏一起居中，窄屏右栏折叠后单列居中） */}
+      <div className="min-w-0 max-w-[760px] flex-1">
+        <p className="font-ui text-[11px] tracking-[0.1em] text-quiet">
           PAPER · {paper.paper_id.slice(0, 8)}
         </p>
-        <h1 className="mt-3 text-[34px] font-normal leading-snug text-ink [font-family:var(--font-display)] [text-wrap:balance]">
+        <h1 className="mt-3 text-[38px] font-normal leading-snug text-ink [font-family:var(--font-display)] [text-wrap:balance]">
           {paper.title}
         </h1>
-        <p className="mt-2 text-[13px] text-quiet">
+        <p className="mt-2 font-ui text-[13px] tabular-nums text-quiet">
           {generatedAt} · 共 {paper.items.length} 题
         </p>
 
-        <div className="mt-5 flex items-center gap-2.5 border-b border-hairline pb-6">
+        <div className="mt-5 flex items-center gap-2.5 border-b border-hairline pb-6 print:hidden">
           <Button variant="outline" size="sm" asChild>
             <Link to="/papers">← 历史试卷</Link>
           </Button>
@@ -362,15 +376,41 @@ function PaperPageInner({ paperId }: { paperId: string }) {
             {locked && <MemberPill className="ml-1.5" />}
           </Button>
           <Button variant="outline" size="sm" onClick={() => window.print()}>
-            打印 / 导出
+            打印学生卷
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (locked) {
+                setUpgradeReason('教师版试卷含完整参考答案，是会员功能。')
+              } else {
+                setTeacherPrint(true)
+              }
+            }}
+          >
+            打印教师版
+            {locked && <MemberPill className="ml-1.5" />}
           </Button>
         </div>
 
+        {/* 限时模式：细线一行（提醒制，不强制收卷）；交卷后整行消失 */}
+        {timerMinutes !== null && phase !== 'submitted' && (
+          <div className="mt-4 inline-flex items-center gap-3 rounded-sm border border-hairline px-3 py-2 print:hidden">
+            <PaperTimer
+              minutes={timerMinutes}
+              running={phase === 'answering'}
+              onExpire={() => setTimeUpOpen(true)}
+            />
+            <span className="font-ui text-[12px] text-quiet">限时模式 · 到时提醒，不强制收卷</span>
+          </div>
+        )}
+
         {/* 重新生成面板（handoff 第 5 屏）：细线圆角框，POST /api/papers/revise */}
         {reviseOpen && (
-          <div className="kk-rise mt-6 flex max-w-[44rem] flex-col gap-3 rounded-md border border-hairline p-5">
-            <span className="text-[10.5px] font-bold tracking-[0.14em] text-quiet">
-              POST /API/PAPERS/REVISE
+          <div className="kk-rise mt-6 flex max-w-[44rem] flex-col gap-3 rounded-md border border-hairline p-5 print:hidden">
+            <span className="font-ui text-[10.5px] font-bold tracking-[0.14em] text-quiet">
+              重新出卷 · 原卷保留
             </span>
             <textarea
               rows={2}
@@ -393,7 +433,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
                   })
                 }
               >
-                {revise.isPending ? '正在组卷…' : '重新生成（新 paper_id）'}
+                {revise.isPending ? '正在组卷…' : '重新生成一份新卷'}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setReviseOpen(false)}>
                 取消
@@ -403,7 +443,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         )}
 
         {submitted && (
-          <div className="mt-6">
+          <div className="mt-6 print:hidden">
             <GradeBanner
               correctCount={correctCount}
               totalCount={objectiveItems.length}
@@ -428,7 +468,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         )}
 
         {/* 生成说明（request 回显 + metadata 里的检索/改写降级提示）：只陈述事实，不打断做题 */}
-        <div className="mt-5 flex flex-col gap-1.5">
+        <div className="mt-5 flex flex-col gap-1.5 print:hidden">
           <RequestSummary request={paper.request} />
           {revisedFrom && (
             <p className="text-[12.5px] text-quiet">
@@ -448,9 +488,15 @@ function PaperPageInner({ paperId }: { paperId: string }) {
               ))}
             </ul>
           )}
+          {paper.request.total_questions > paper.items.length && (
+            <p className="text-[12.5px] leading-relaxed text-quiet">
+              本卷实际组入 {paper.items.length} 题（要求 {paper.request.total_questions} 题）
+              ——该考点真题库存有限，已如实组卷；想要足量可点「重新生成」换成全新出题。
+            </p>
+          )}
         </div>
 
-        <div className="mt-4 divide-y divide-ink-10">
+        <div className="mt-6 flex flex-col gap-4">
           {groupByPassage(paper.items).map((group) => {
             const firstItem = group.items[0]
             if (!firstItem) return null
@@ -461,7 +507,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
             const isFirstBlank = firstItem.question.question_type === 'reading_first_blank'
             const mode = submitted ? 'review' : 'answering'
             const questionList = (
-              <div className={isReading ? 'flex flex-col gap-3' : 'divide-y divide-ink-10'}>
+              <div className="flex min-w-0 flex-col gap-4">
                 {group.items.map((item) => (
                   <QuestionCard
                     key={item.index}
@@ -473,42 +519,42 @@ function PaperPageInner({ paperId }: { paperId: string }) {
                     writingGradeResult={writingGradeResults.get(item.index)}
                     solutionSlot={
                       submitted && item.question.question_type !== 'writing' ? (
-                        <SolutionBlock
-                          question={item.question}
-                          sourceQuestionId={item.source_question_id}
-                          revisionMode={item.revision_mode}
-                          cacheKey={['solution', paper.paper_id, item.index]}
-                          locked={locked}
-                          userId={userId}
-                          userAnswer={(() => {
-                            const r = resultByIndex.get(item.index)
-                            if (!r || r.is_correct) return null
-                            return r.user_answer ?? null
-                          })()}
-                        />
+                        <div className="print:hidden">
+                          <SolutionBlock
+                            question={item.question}
+                            sourceQuestionId={item.source_question_id}
+                            revisionMode={item.revision_mode}
+                            cacheKey={['solution', paper.paper_id, item.index]}
+                            locked={locked}
+                            userId={userId}
+                            userAnswer={(() => {
+                              const r = resultByIndex.get(item.index)
+                              if (!r || r.is_correct) return null
+                              return r.user_answer ?? null
+                            })()}
+                          />
+                        </div>
                       ) : undefined
                     }
                   />
                 ))}
               </div>
             )
-            // 阅读理解：左右分栏（左 sticky 文章，右题目）
+            // 阅读理解：左右分栏（左 sticky 文章卡，右题目卡列）
             // 阅读首字母填空除外——其文章已由 ReadingFirstBlankField 内联渲染
             if (isReading && !isFirstBlank && passage) {
               return (
-                <div key={group.key} className="py-2 first:pt-0">
-                  <div className="lg:grid lg:grid-cols-[5fr_4fr] lg:gap-6">
-                    <div className="lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-y-auto">
-                      <PassageBlock passage={passage} mode={mode} />
-                    </div>
-                    {questionList}
+                <div key={group.key} className="lg:grid lg:grid-cols-[5fr_4fr] lg:gap-4 max-lg:flex max-lg:flex-col max-lg:gap-4">
+                  <div className="lg:sticky lg:top-10 lg:max-h-[calc(100vh-5rem)] lg:self-start lg:overflow-y-auto">
+                    <PassageBlock passage={passage} mode={mode} />
                   </div>
+                  {questionList}
                 </div>
               )
             }
-            // 听力 / 无材料：上下垂直布局
+            // 听力 / 无材料：上下垂直布局（材料卡在题目卡上方）
             return (
-              <div key={group.key} className="py-2 first:pt-0">
+              <div key={group.key} className="flex flex-col gap-4">
                 {passage && !isFirstBlank && <PassageBlock passage={passage} mode={mode} />}
                 {questionList}
               </div>
@@ -517,16 +563,16 @@ function PaperPageInner({ paperId }: { paperId: string }) {
         </div>
 
         {!submitted && (
-          <div className="mt-4 flex items-center gap-4 border-t border-hairline pt-8">
+          <div className="mt-8 flex items-center gap-4 print:hidden">
             <button
               type="button"
               disabled={phase === 'submitting'}
               onClick={handleSubmitClick}
-              className="rounded-sm border border-accent bg-wash px-7 py-3 text-[15px] tracking-[0.06em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
+              className="rounded-sm border border-accent bg-wash px-7 py-3 font-ui text-[15px] tracking-[0.06em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
             >
               {phase === 'submitting' ? '判分中…' : '提交判分'}
             </button>
-            <span className="text-[13px] text-quiet">
+            <span className="font-ui text-[13px] tabular-nums text-quiet">
               已答 {answeredCount} 题，未答 {unanswered.length} 题
             </span>
             {hasWriting && (
@@ -536,10 +582,27 @@ function PaperPageInner({ paperId }: { paperId: string }) {
             )}
           </div>
         )}
+        {/* 教师版打印专用：参考答案汇总（屏幕上不渲染） */}
+        {teacherPrint && (
+          <section className="hidden print:block">
+            <h2 className="mt-10 border-t border-hairline pt-6 text-[20px] text-ink [font-family:var(--font-display)]">
+              参考答案（教师版）
+            </h2>
+            <ol className="mt-3 flex flex-col gap-1 text-[13.5px] leading-[1.9] text-ink">
+              {paper.items.map((item) => (
+                <li key={item.index}>
+                  {item.index}. {formatCorrectAnswer(item.question.answer)}
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
       </div>
 
-      {/* 右：280px 粘顶答题卡（作答态） */}
-      {!submitted && <AnswerCard paper={paper} answers={answers} />}
+      {/* 右：280px 粘顶答题卡。作答态标已答/未答，复盘态标对/错 + 元信息 */}
+      <div className="contents print:hidden">
+        <AnswerCard paper={paper} answers={answers} results={submitted ? resultByIndex : null} />
+      </div>
 
       {/* 漏答确认 */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -555,6 +618,29 @@ function PaperPageInner({ paperId }: { paperId: string }) {
               继续作答
             </Button>
             <Button onClick={doSubmit}>仍要交卷</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 限时到点提醒：可交可续，不强制 */}
+      <Dialog open={timeUpOpen} onOpenChange={setTimeUpOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>时间到了</DialogTitle>
+            <DialogDescription>可以现在交卷，也可以继续作答。</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTimeUpOpen(false)}>
+              继续作答
+            </Button>
+            <Button
+              onClick={() => {
+                setTimeUpOpen(false)
+                handleSubmitClick()
+              }}
+            >
+              现在交卷
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

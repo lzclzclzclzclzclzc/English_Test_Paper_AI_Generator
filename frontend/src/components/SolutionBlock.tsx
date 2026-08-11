@@ -21,7 +21,7 @@ interface SolutionBlockProps {
 
 /**
  * 单题解析（handoff 第 6 屏）：「查看解析」下划线文字按钮 → kk-rise 展开
- * 细线圆角框，顶部小标签 `POST /API/SOLUTIONS · 按需生成`。
+ * 细线圆角框，顶部小标签「AI 讲解 · 按需生成」。
  * question.solution 有值直接展示（不请求、不计配额）；否则按需 POST /api/solutions，
  * enabled:false 的 query 缓存住——反复展开/收起不重复请求（解析限流 60/min）。
  * 非会员每天限 FREE_SOLUTION_PER_DAY 次 AI 解析。
@@ -69,7 +69,7 @@ export function SolutionBlock({
 
   if (exhausted) {
     return (
-      <div className="rounded-md border border-hairline px-4 py-3 text-[13px] text-muted-ink">
+      <div className="rounded-md border border-hairline px-4 py-3 font-ui text-[13px] tabular-nums text-muted-ink">
         今日 {FREE_SOLUTION_PER_DAY} 次免费 AI 解析已用完，
         <Link to="/membership" className="text-accent underline underline-offset-2">
           开通会员
@@ -84,7 +84,7 @@ export function SolutionBlock({
       <button
         type="button"
         onClick={handleOpen}
-        className="self-start text-[13px] text-muted-ink underline decoration-ink-30 underline-offset-4 transition-colors hover:text-accent hover:decoration-accent"
+        className="self-start font-ui text-[13px] text-muted-ink underline decoration-ink-30 underline-offset-4 transition-colors hover:text-accent hover:decoration-accent"
       >
         查看解析
       </button>
@@ -94,13 +94,13 @@ export function SolutionBlock({
   return (
     <div className="kk-rise rounded-md border border-hairline px-5 py-4">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-[10.5px] font-bold tracking-[0.14em] text-quiet">
-          POST /API/SOLUTIONS · 按需生成
+        <span className="font-ui text-[10.5px] font-bold tracking-[0.14em] text-quiet">
+          AI 讲解 · 按需生成
         </span>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-[12px] text-quiet transition-colors hover:text-accent"
+          className="font-ui text-[12px] text-quiet transition-colors hover:text-accent"
         >
           收起解析
         </button>
@@ -120,7 +120,7 @@ export function SolutionBlock({
         </p>
       ) : (
         <div className="flex flex-col gap-1.5">
-          <p className="text-[12px] text-muted-ink">AI 正在撰写解析…</p>
+          <p className="font-ui text-[12px] text-muted-ink">AI 正在撰写解析…</p>
           <Skeleton className="h-4 w-3/4" />
         </div>
       )}
