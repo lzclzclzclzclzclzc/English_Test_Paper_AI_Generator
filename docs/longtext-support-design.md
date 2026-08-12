@@ -15,7 +15,7 @@
 ## 0. 范围与产出
 
 ### 0.1 本 spec 定义
-- 新增题型 `listening_longtext_truefalse`（听力长文·判断 T/F）的数据契约与全链路支持
+- 新增题型 `listening_true_false`（听力长文·判断 T/F）的数据契约与全链路支持
 - 新增题型 `reading_longtext_single_choice`（阅读理解·4 选项单选）的数据契约与全链路支持
 - 共享材料（passage）的字段设计与前端分组渲染
 - 听力长文复用浏览器 TTS（男女声区分，与 Spec G 一致）
@@ -62,7 +62,7 @@ QuestionType = Literal[
     "word_form",
     "sentence_rewriting",
     "listening_single_choice",
-    "listening_longtext_truefalse",      # 新增：听力长文·判断 T/F
+    "listening_true_false",      # 新增：听力长文·判断 T/F
     "reading_longtext_single_choice",   # 新增：阅读理解·4 选项单选
 ]
 ```
@@ -105,7 +105,7 @@ class Passage(BaseModel):
 {
   "id": "q_11001",
   "book": "shanghai_2026_yimo",
-  "question_type": "listening_longtext_truefalse",
+  "question_type": "listening_true_false",
   "chapter_l1": "2 听力长文",
   "chapter_l2": null,
   "number": "11",
@@ -182,7 +182,7 @@ class Passage(BaseModel):
 ```json
 {
   "id": "kp_listening_passage",
-  "level1": "listening_longtext_truefalse",
+  "level1": "listening_true_false",
   "level2": "听力长文理解",
   "aliases": ["听力长对话", "听力短文", "听力篇章"]
 },
@@ -197,7 +197,7 @@ class Passage(BaseModel):
 并在 `chapter_to_kp` 中添加映射（`chapter_l2` 为 null 时 key 末段用字符串 "null" 或保持与现有听力一致的写法）：
 
 ```json
-"listening_longtext_truefalse / 2 听力长文 / None": ["kp_listening_passage"],
+"listening_true_false / 2 听力长文 / None": ["kp_listening_passage"],
 "reading_longtext_single_choice / 3 阅读理解 / None": ["kp_reading_passage"]
 ```
 
@@ -253,7 +253,7 @@ question_types = "\n".join([
     "- word_form: 词性转换",
     "- sentence_rewriting: 改写句子",
     "- listening_single_choice: 听力选择",
-    "- listening_longtext_truefalse: 听力长文判断题",
+    "- listening_true_false: 听力长文判断题",
     "- reading_longtext_single_choice: 阅读理解",
 ])
 ```
@@ -264,12 +264,12 @@ question_types = "\n".join([
 VALID_QUESTION_TYPES = {
     "single_choice", "word_form", "sentence_rewriting",
     "listening_single_choice",
-    "listening_longtext_truefalse", "reading_longtext_single_choice",
+    "listening_true_false", "reading_longtext_single_choice",
 }
 ```
 
 **revision_intensity 触发词**（遵循 Spec B 优先级）：
-- `listening_longtext_truefalse` 和 `reading_longtext_single_choice` 触发词遵循通用规则：
+- `listening_true_false` 和 `reading_longtext_single_choice` 触发词遵循通用规则：
   - 原题档（original）：含"原题"、"真题"、"一模"、"二模"
   - 重新出（fresh）：含"重新出"、"场景"、"主题"、"情境"、"关于"、"结合"
   - 默认 light 档：含"练习"、"巩固"、"复习"、知识点名称
@@ -278,12 +278,12 @@ VALID_QUESTION_TYPES = {
 
 在题型枚举与 few-shot 示例中添加：
 ```
-- listening_longtext_truefalse: 听力长文判断题（一段长对话/短文 + 多道 True/False 判断题）
+- listening_true_false: 听力长文判断题（一段长对话/短文 + 多道 True/False 判断题）
 - reading_longtext_single_choice: 阅读理解（一段短文 + 多道 4 选项单选题）
 
 示例：
 输入："来 1 篇听力长文，3 道判断题"
-输出：{"question_types": ["listening_longtext_truefalse"], "total_questions": 3, ...}
+输出：{"question_types": ["listening_true_false"], "total_questions": 3, ...}
 
 输入："出 2 篇阅读理解，每篇 4 题"
 输出：{"question_types": ["reading_longtext_single_choice"], "total_questions": 8, ...}
@@ -293,24 +293,24 @@ VALID_QUESTION_TYPES = {
 
 **修改文件**：`ai_engine/retriever.py`
 
-**核心策略**：对 `listening_longtext_truefalse` 和 `reading_longtext_single_choice` **跳过向量检索路径**，仅走 SQL：
+**核心策略**：对 `listening_true_false` 和 `reading_longtext_single_choice` **跳过向量检索路径**，仅走 SQL：
 
 ```python
-NON_VECTOR_TYPES = {
-    "listening_longtext_truefalse",
+PASSAGE_TYPES = {
+    "listening_true_false",
     "reading_longtext_single_choice",
 }
 
 def retrieve(req: GenerateRequest) -> RetrievalResult:
-    # 向量路径只处理 NON_VECTOR_TYPES 之外的题型
-    vector_types = [qt for qt in req.question_types if qt not in NON_VECTOR_TYPES]
-    non_vector_types = [qt for qt in req.question_types if qt in NON_VECTOR_TYPES]
+    # 向量路径只处理 PASSAGE_TYPES 之外的题型
+    vector_types = [qt for qt in req.question_types if qt not in PASSAGE_TYPES]
+    non_vector_types = [qt for qt in req.question_types if qt in PASSAGE_TYPES]
 
     items = []
     # 向量检索（仅对 vector_types）
     if vector_types:
         items.extend(_vector_retrieve(req, vector_types))
-    # SQL 检索（对所有题型，但 NON_VECTOR_TYPES 只走这里）
+    # SQL 检索（对所有题型，但 PASSAGE_TYPES 只走这里）
     items.extend(_sql_retrieve(req, non_vector_types))
     return RetrievalResult(items=items, ...)
 ```
@@ -320,7 +320,7 @@ def retrieve(req: GenerateRequest) -> RetrievalResult:
 ```python
 def _sql_retrieve(req, question_types):
     # 对长文本题型：先选 passage_id，再取该 passage 下全部小题
-    if set(question_types) & NON_VECTOR_TYPES:
+    if set(question_types) & PASSAGE_TYPES:
         # 随机选 N 个 passage_id
         passage_ids = _random_passage_ids(question_types, req.total_questions)
         # 取这些 passage 下的全部小题
@@ -351,7 +351,7 @@ def _validate_revision(question, revised):
         if labels != {"A", "B", "C", "D"}:
             return False, "options labels must be A/B/C/D without duplicates"
     # 听力长文判断题：answer 为 T/F，options 必须为 None
-    elif qt == "listening_longtext_truefalse":
+    elif qt == "listening_true_false":
         if revised.answer not in {"T", "F"}:
             return False, "answer must be T/F"
         if revised.options is not None:
@@ -368,7 +368,7 @@ def _validate_revision(question, revised):
 
 在不变约束中添加：
 ```
-- 听力长文判断题（listening_longtext_truefalse）：
+- 听力长文判断题（listening_true_false）：
   - answer 必须是 "T" 或 "F"
   - options 必须为 null
   - passage_json.content 的每行必须以 M: 或 W: 开头（与听力原文格式一致）
@@ -389,7 +389,7 @@ def _validate_revision(question, revised):
 
 在特别要求中添加：
 ```
-- 听力长文判断题（listening_longtext_truefalse）：
+- 听力长文判断题（listening_true_false）：
   - 必须引用 passage 中的关键语句说明判断依据
   - 指出干扰点（如时间、地点、人物关系的反转）
   - 说明 T/F 判断的关键信息在 passage 哪一段
@@ -414,7 +414,7 @@ def compare(user_answer, correct_answer, question_type):
     if question_type in {"single_choice", "listening_single_choice", "reading_longtext_single_choice"}:
         return isinstance(user_answer, str) and user_answer.strip().upper() == correct_answer.strip().upper()
     # 听力长文判断题：T/F 大小写无关
-    if question_type == "listening_longtext_truefalse":
+    if question_type == "listening_true_false":
         if not isinstance(user_answer, str):
             return False
         u = user_answer.strip().upper()
@@ -446,7 +446,7 @@ export type QuestionType =
   | "word_form"
   | "sentence_rewriting"
   | "listening_single_choice"
-  | "listening_longtext_truefalse"
+  | "listening_true_false"
   | "reading_longtext_single_choice";
 
 export interface Passage {
@@ -586,7 +586,7 @@ export function PassageBlock({ passage }: PassageBlockProps) {
 
 ### 4.4 听力长文判断题组件（TF）
 
-**新增文件**：`frontend/src/components/question-fields/ListeningLongtextField.tsx`
+**新增文件**：`frontend/src/components/question-fields/ListeningTrueFalseField.tsx`
 
 ```tsx
 import { cn } from "@/lib/utils";
@@ -664,7 +664,7 @@ export { SingleChoiceField as ReadingLongtextField } from "./SingleChoiceField";
   <SingleChoiceField ... />
 ) : question.question_type === "listening_single_choice" ? (
   <ListeningSingleChoiceField ... />
-) : question.question_type === "listening_longtext_truefalse" ? (
+) : question.question_type === "listening_true_false" ? (
   <ListeningLongtextField ... />
 ) : question.question_type === "reading_longtext_single_choice" ? (
   <ReadingLongtextField ... />
@@ -700,10 +700,12 @@ TF 题答案为裸字符串 `"T"`/`"F"`，与单选的裸字符串 `"A"`-`"D"` �
 
 | 文件 | 题型 | ID 范围 | 起始 passage_id |
 |---|---|---|---|
-| `data/chapters/shanghai_2026_yimo_listening_longtext.json` | `listening_longtext_truefalse` | `q_11001` 起 | `psg_2026_l_001` |
+| `data/chapters/shanghai_2026_yimo_listening_c.json` | `listening_true_false` | `q_12001` 起 | `psg_2026_c_001` |
 | `data/chapters/shanghai_2026_yimo_reading.json` | `reading_longtext_single_choice` | `q_20001` 起 | `psg_2026_r_001` |
 
-> ⚠️ 已创建的 `shanghai_2026_yimo_listening_longtext.json` 模板当前为 4 选项单选结构，**需按本 spec §1.3 调整为 TF 结构**（`options: null`，`answer: "T"/"F"`）。
+> 📌 实际听力题库按 B/C/D 三部分分文件存储：`shanghai_2026_yimo_listening_b.json`（`listening_single_choice`）、`shanghai_2026_yimo_listening_c.json`（`listening_true_false`）、`shanghai_2026_yimo_listening_d.json`（`listening_fill_blank`）。本 spec 关注的 `listening_true_false` 位于 `_listening_c.json`。
+
+> ⚠️ 已创建的 `shanghai_2026_yimo_listening_c.json` 模板当前为 4 选项单选结构，**需按本 spec §1.3 调整为 TF 结构**（`options: null`，`answer: "T"/"F"`）。
 
 ### 5.2 知识点树
 
@@ -721,7 +723,7 @@ CREATE TABLE IF NOT EXISTS knowledge_points (
                     CHECK (level1 IN (
                         'single_choice', 'word_form', 'sentence_rewriting',
                         'listening_single_choice',
-                        'listening_longtext_truefalse',
+                        'listening_true_false',
                         'reading_longtext_single_choice'
                     )),
     level2        TEXT NOT NULL,
@@ -736,7 +738,7 @@ CREATE TABLE IF NOT EXISTS questions (
                           CHECK (question_type IN (
                               'single_choice', 'word_form', 'sentence_rewriting',
                               'listening_single_choice',
-                              'listening_longtext_truefalse',
+                              'listening_true_false',
                               'reading_longtext_single_choice'
                           )),
     chapter_l1          TEXT NOT NULL,
@@ -795,7 +797,7 @@ def _stem_hash(q: dict) -> str:
         payload["stem"]       = q.get("stem")
         payload["passage_id"] = q.get("passage_id")
         payload["options"]    = q.get("options")
-    elif qt == "listening_longtext_truefalse":
+    elif qt == "listening_true_false":
         # 听力长文 TF：stem + passage_id + answer（无 options）
         payload["stem"]       = q.get("stem")
         payload["passage_id"] = q.get("passage_id")
@@ -853,7 +855,7 @@ cur = conn.execute(
 
 ```python
 NON_VECTOR_TYPES = {
-    "listening_longtext_truefalse",
+    "listening_true_false",
     "reading_longtext_single_choice",
 }
 
@@ -909,7 +911,7 @@ def _build_embeddings(rows):
 | 3 | SQLite schema.sql 加 passage 列 + CHECK 约束 | 待实现 |
 | 4 | loader.py 扩展（_stem_hash + INSERT） | 待实现 |
 | 5 | chromadb/loader.py 跳过两类题型 | 待实现 |
-| 6 | 修正 listening_longtext JSON 模板为 TF 结构 | 待实现 |
+| 6 | 修正 listening_c JSON 模板为 TF 结构 | 待实现 |
 | 7 | AI Engine Parser 扩展 | 待实现 |
 | 8 | AI Engine Retriever 扩展（SQL only + passage 整组） | 待实现 |
 | 9 | AI Engine Reviser 扩展 | 待实现 |
@@ -946,7 +948,7 @@ def _build_embeddings(rows):
 
 3. **passage 同组一致性**：同 `passage_id` 的所有小题，其 `passage_json` 内容必须完全一致（冗余存储的一致性约束，loader 不强制校验，由数据生产端保证）。
 
-4. **两类题型不进向量库**：`listening_longtext_truefalse` 和 `reading_longtext_single_choice` 永远不写入 ChromaDB 集合，Retriever 对它们只走 SQL 路径。
+4. **两类题型不进向量库**：`listening_true_false` 和 `reading_longtext_single_choice` 永远不写入 ChromaDB 集合，Retriever 对它们只走 SQL 路径。
 
 5. **passage 整组出卷**：Retriever 检索长文本题时必须按 `passage_id` 整组返回，不允许只取某 passage 的部分小题。
 

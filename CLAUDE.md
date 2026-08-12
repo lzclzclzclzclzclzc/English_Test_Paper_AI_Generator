@@ -17,14 +17,19 @@ code. Vector retrieval (RAG) bridges the two.**
 
 | Dir | Role | Status |
 |-----|------|--------|
-| `ingestion/` | Offline: EPUB → question bank (SQLite + ChromaDB) | ✅ done |
-| `shared/` | Cross-subsystem contracts (`schemas.py`) | schemas done; storage/embedding/config/llm not yet extracted |
-| `ai_engine/` | Parser / Retriever / Reviser / Solutioner / Analyzer + `pipeline.py` | Retriever + pipeline done; Parser/Reviser in progress; Analyzer/Solutioner not started |
-| `backend/` | FastAPI (11 endpoints, auth, persistence, grading) | not started |
-| `frontend/` | React + Vite (3 pages) | static demo only |
+| `ingestion/` | Offline: EPUB → question bank (SQLite + ChromaDB) + vocabulary wordlist build | ✅ done |
+| `shared/` | Cross-subsystem contracts (`schemas.py`), `storage.py`, `config.py` | ✅ done — schemas / storage / config / embedding / llm all extracted |
+| `ai_engine/` | Parser / Retriever / Reviser / Solutioner / Analyzer / WritingGrader + `pipeline.py` | ✅ done — all modules integrated into `pipeline.py` |
+| `backend/` | FastAPI (11 router groups, auth, persistence, grading) | ✅ done |
+| `frontend/` | React + Vite (21 user pages + 7 admin pages) | ✅ done — full app: drill system, writing grading UI, vocabulary SRS UI |
+| `payment/` | Standalone FastAPI (:8001) — Alipay-sandbox mock membership payment (qr/web), poll-based confirmation | ✅ done |
 
 Specs live in `docs/` (`question-bank-ingestion-design.md` = Spec A,
-`ai-engine-design.md` = Spec B, plus backend/frontend/testing). **Specs are kept
+`ai-engine-design.md` = Spec B, plus `backend-design.md`, `frontend-design.md`,
+`testing-design.md`, `admin-design.md`, `agent-design.md`, per-question-type
+specs (`writing-design.md`, `listening-support-design.md`,
+`listening-fill-blank-design.md`, `longtext-support-design.md`,
+`reading-first-blank-design.md`), and `vocabulary-design.md`). **Specs are kept
 aligned with the actual implementation — when you change code that a spec
 describes, update the spec too.**
 
@@ -64,6 +69,17 @@ original spec):
 - The Qwen embedding model lives at `models/Qwen3-Embedding-4B/` (7.6 GB,
   gitignored). Retrieval's vector path loads it lazily — pure quota requests
   don't touch it.
+- **Two SQLite files, split by ownership.** `data/questions.db` is the
+  read-only, git-tracked question bank (`questions` / `knowledge_points` /
+  `question_knowledge_points`). User data (`users` / `sessions` / `papers` /
+  `attempts` / `attempt_items` / `study_plans` / `writing_grade_results` /
+  the 7 `vocabulary_*` tables / `schema_migrations`) lives in `data/app.db`,
+  which is **gitignored** — created fresh by `python -m backend.cli init-db`
+  on first run. Bank reads go through `storage.connect_bank()` (env
+  `SQLITE_PATH`, `config.db_path`); user reads go through `storage.connect()`
+  (env `APP_DB_PATH`, `config.app_db_path`). No query JOINs across the two.
+  A third file, `data/agent_sessions.db` (gitignored), holds agent
+  conversation history and is separate from both.
 
 ### Ingestion CLI (offline bank building)
 
@@ -77,6 +93,11 @@ python -m ingestion.cli build-vec                               # stage 5 → da
 python -m ingestion.cli search-vec "query" --qt single_choice   # sanity check
 ```
 
+Vocabulary wordlist prep (offline, populates `vocabulary_wordlists` /
+`vocabulary_words` in `data/app.db`): `ingestion/build_vocabulary_wordlist.py`
+and `ingestion/build_merged_vocabulary.py` (national-core + Shanghai-extension
+merge). See `docs/vocabulary-design.md`.
+
 ## Critical: the question bank is a hand-patched steady state
 
 `data/chapters/*.json` is **NOT** purely regenerable from markdown. It's
@@ -84,9 +105,15 @@ python -m ingestion.cli search-vec "query" --qt single_choice   # sanity check
 multi-candidate answer structuring, KP merging). **Never re-run `split` to
 overwrite the JSON** — it would lose the patches. See Spec A §3.11.
 
-The bank currently holds **1066 questions** (2 Shanghai 2021 mock books) across
-`single_choice` / `word_form` / `sentence_rewriting`, mapped to **49 knowledge
-points**.
+The bank currently holds **1428 questions** across **10 question types**
+(`single_choice` 606 / `word_form` 245 / `sentence_rewriting` 215 /
+`cloze_single_choice` 126 / `reading_longtext_single_choice` 54 /
+`listening_fill_blank` 42 / `listening_true_false` 41 /
+`listening_single_choice` 37 / `reading_first_blank` 31 / `writing` 31),
+mapped to **56 knowledge points**. Only the 3 free-form types
+(`single_choice` / `word_form` / `sentence_rewriting`) get ChromaDB vectors
+(`VECTOR_INDEXED_QUESTION_TYPES` in `shared/schemas.py`); everything else is
+SQL-only.
 
 ## Retriever specifics (the RAG piece)
 
@@ -101,6 +128,8 @@ L2-normalised so cosine == dot product. See Spec B §4.4 for why.
   English, user-facing strings often Chinese.
 - Prefer editing specs alongside code (specs track reality here).
 - Data/runtime artifacts (`data/`, `models/`, `*.egg-info/`) are gitignored
-  except the built `data/questions.db` and `data/chroma/` which are committed.
+  except the built `data/questions.db` (question bank, read-only) and
+  `data/chroma/` which are committed. `data/app.db` (user/session/paper data)
+  is **gitignored** — never committed.
 - Git remote is named `main` (not `origin`); branches: `master` / `dev` (integration)
   / per-feature (`retriever`, etc.). Team merges feature branches into `dev` via PR.

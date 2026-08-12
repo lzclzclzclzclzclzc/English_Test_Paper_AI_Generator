@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.api import attempts, health, mastery, papers, solutions, writing
+from backend.api import attempts, health, mastery, papers, solutions, vocabulary, writing
 from backend.api import admin as admin_api
 from backend.api import agent as agent_api
 from backend.api import knowledge_points as kp_api
@@ -61,6 +61,7 @@ def create_app() -> FastAPI:
     app.include_router(agent_api.router, prefix="/api")
     app.include_router(kp_api.router, prefix="/api")
     app.include_router(admin_api.router, prefix="/api")
+    app.include_router(vocabulary.router, prefix="/api")
 
     if config.env == "test":
         from backend.api import _test

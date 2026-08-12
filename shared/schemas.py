@@ -48,6 +48,16 @@ QuestionType = Literal[
 RevisionMode = Literal["fresh", "light", "original"]
 GenerateMode = Literal["fresh", "remediation", "review"]
 
+# The ONLY question types carried in the ChromaDB vector store. These are the
+# free-form types worth semantic search; everything else (listening_*, cloze,
+# reading_longtext, reading_first_blank) is matched by exact SQL and is
+# intentionally SQL-only — it never gets a vector. This is the single source of
+# truth for "what belongs in the vector bank", used by the ingestion loader
+# (build-vec) and the backend readiness check alike, so they can never drift.
+VECTOR_INDEXED_QUESTION_TYPES: frozenset[str] = frozenset(
+    {"single_choice", "word_form", "sentence_rewriting"}
+)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Answer structure (Spec A §2.2)

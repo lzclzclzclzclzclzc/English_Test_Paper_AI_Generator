@@ -41,14 +41,14 @@ export function AdminOrdersPage() {
 
       <div className="overflow-hidden rounded-md border border-hairline">
         <table className="w-full text-[13px]">
-          <thead className="bg-wash/60 text-left text-muted-ink">
+          <thead className="bg-wash/60 text-left font-ui text-muted-ink">
             <tr>
-              <th className="px-3 py-2 font-medium">订单号</th>
-              <th className="px-3 py-2 font-medium">用户</th>
-              <th className="px-3 py-2 font-medium">套餐</th>
-              <th className="px-3 py-2 font-medium">金额</th>
-              <th className="px-3 py-2 font-medium">状态</th>
-              <th className="px-3 py-2 font-medium">创建时间</th>
+              <th className="px-3 py-2">订单号</th>
+              <th className="px-3 py-2">用户</th>
+              <th className="px-3 py-2">套餐</th>
+              <th className="px-3 py-2">金额</th>
+              <th className="px-3 py-2">状态</th>
+              <th className="px-3 py-2">创建时间</th>
             </tr>
           </thead>
           <tbody>

@@ -30,7 +30,7 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-md border border-hairline bg-wash/40 px-4 py-3">
       <div className="text-[12px] text-quiet">{label}</div>
-      <div className="mt-1 text-[22px] text-ink [font-family:var(--font-display)]">{value}</div>
+      <div className="mt-1 font-ui text-[22px] font-bold tabular-nums text-ink">{value}</div>
     </div>
   )
 }
@@ -87,7 +87,7 @@ export function AdminAnalyticsPage() {
               key={w.days}
               onClick={() => setDays(w.days)}
               className={cn(
-                'h-8 rounded-lg border px-3 text-[13px] transition-colors',
+                'h-8 rounded-lg border px-3 font-ui text-[13px] transition-colors',
                 days === w.days
                   ? 'border-accent bg-wash text-accent'
                   : 'border-hairline text-muted-ink hover:bg-tint/40',
@@ -124,7 +124,7 @@ export function AdminAnalyticsPage() {
           <ChartCard title="每日做题量 / 正确率">
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#00000010" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-10)" />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis yAxisId="vol" allowDecimals={false} tick={{ fontSize: 11 }} width={32} />
                 <YAxis
@@ -150,7 +150,7 @@ export function AdminAnalyticsPage() {
                   type="monotone"
                   dataKey="rate"
                   name="正确率(%)"
-                  stroke="#8a8a8a"
+                  stroke="var(--text-quiet)"
                   strokeWidth={2}
                   strokeDasharray="4 3"
                   dot={false}

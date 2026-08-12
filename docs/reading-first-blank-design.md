@@ -205,47 +205,78 @@ NON_VECTOR_TYPES = {
 
 **修改文件**：`ai_engine/reviser.py`
 
-**答案格式校验扩展**：
+**核心行为：阅读首字母填空一律跳过 LLM 改写。**
+
+`reading_first_blank` 题型复杂，light/fresh 改写极易导致答案与原题 7 空错位、
+拼写错误等问题。因此 `_revise_one` 在函数开头做硬性拦截：无论 `revision_intensity`
+是 light / fresh / original，一律调用 `_copy_question(question)` 原样返回（`is_fallback=False`），
+**从不调用 LLM**。作文题（`writing`）同样在此处被拦截——作文无标准答案（`answer=None`），
+也按原题拷贝返回、不调用 LLM。
 
 ```python
-def _validate_revision(question, revised):
-    # 听力填词与阅读首字母填空共享空位校验：answer 为非空 list[BlankGroup]
-    if question.question_type in {"sentence_rewriting", "listening_fill_blank", "reading_first_blank"}:
-        if not isinstance(revised.answer, list) or not revised.answer:
-            return False, "answer must be a non-empty list[BlankGroup]"
-        if any(not grp or not all(v for v in grp.values()) for grp in revised.answer):
-            return False, "each blank must have non-empty candidates"
-    return True, None
+def _revise_one(question, intensity, free_text):
+    if question.question_type == "reading_first_blank":
+        # 一律按原题出，不做任何改写（避免答案与 7 空错位、拼写错误）
+        return _copy_question(question), False
+    if question.question_type == "writing":
+        # 作文题没有标准答案（answer=None），直接使用原题
+        return _copy_question(question), False
+    if intensity == "original":
+        return _copy_question(question), False
+    # ... light / fresh 才走 LLM ...
 ```
 
-**Prompt 修改**：`ai_engine/prompts/reviser_light.md` 和 `ai_engine/prompts/reviser_fresh.md`
+因为始终走原题路径，`reading_first_blank` 和 `writing` 都不计入 `metadata.llm_calls`。
 
-在不变约束中补充：
+**答案格式校验（防御性）**：即便阅读首字母填空不走 LLM，`_validate_revision`
+仍对填空类题型（`word_form` / `sentence_rewriting` / `listening_fill_blank` /
+`reading_first_blank`）复用 `_is_valid_blank_answer`（要求 answer 为非空
+`list[BlankGroup]`、每空至少一个非空候选词）。针对 `reading_first_blank`，额外校验
+**修订后答案的空位数必须与原题一致**（`len(revised.answer) == len(original.answer)`），
+否则会出现"文章有 7 空、答案只有 1 空"的错位，导致文章下方额外渲染填空框——此时
+拒绝修订并回退到原题拷贝：
 
+```python
+elif qt in ("word_form", "sentence_rewriting", "listening_fill_blank", "reading_first_blank"):
+    if not _is_valid_blank_answer(revised.answer):
+        return False
+    if qt == "reading_first_blank" and len(revised.answer) != len(original.answer):
+        return False
 ```
-- 阅读首字母填空（reading_first_blank）：
-  - stem 必须为 null
-  - passage_json.content 内必须保留 7 个空位标记 {首字母}{下划线}({题号}){下划线}，
-    题号 (1)-(7) 与 answer 的 blank1..blank7 一一对应；每空限填一词
-  - answer 为 list[BlankGroup]，值为完整单词（含首字母），首字母必须与内容标记一致
-  - 示例：技能内容 "... a______(1)____ of the problems."
-        answer = [{"blank1": ["aware"]}, ...]
-```
+
+**Prompt 修改**：由于阅读首字母填空不走 LLM 改写，`reviser_light.md` /
+`reviser_fresh.md` 的 prompt 对该题型不生效；无需为其新增 prompt 约束。
 
 ### 2.4 Solutioner 扩展
 
 **修改文件**：`ai_engine/solutioner.py`
 
-**Prompt 修改**：`ai_engine/prompts/solutioner.md`
+**实际行为：阅读首字母填空走通用解析路径，没有该题型专属的 prompt 分支。**
 
-在特别要求中添加：
+`generate_solution` 对所有题型统一加载同一个 `solutioner` prompt（`ai_engine/prompts/solutioner.md`），
+不按 `question_type` 分派、不为 `reading_first_blank` 注入专门的解析要求。唯一与该题型
+相关的特殊处理在 `_format_answer`：它按 **answer 的结构形状**（而非题型名）识别"多个单空
+dict"（`[{blank1},{blank2},…]`，每个 dict 只有一个键），将其**逐空分行展示**
+（`blank1: aware` 换行 `blank2: advantages` …），避免 LLM 把这些当作"或"关系的候选组合而
+只解析其中一个空。
 
+```python
+def _format_answer(answer):
+    if isinstance(answer, str):
+        return answer
+    # 逐空分行（阅读首字母填空的 [{blank1},{blank2},…] 命中此分支）
+    if answer and all(isinstance(g, dict) and len(g) == 1 for g in answer):
+        lines = []
+        for g in answer:
+            blank, cands = next(iter(g.items()))
+            lines.append(f"{blank}: {' / '.join(cands)}")
+        return "\n".join(lines)
+    # 其它填空类：候选组以"或"连接
+    ...
 ```
-- 阅读首字母填空（reading_first_blank）：
-  - 必须指出该词在文章中的上下文线索（前后句含义、词性、搭配、句子结构）
-  - 说明首字母给出的提示词干（词根/词族）如何帮助锁定该词
-  - 若因拼写错误，指出正确词与其在文章中的位置
-```
+
+> 注：此分支基于答案形状触发，对任何"每空一个单键 dict"的答案生效，并非专为
+> `reading_first_blank` 硬编码。解析文本本身由通用 prompt 生成，无题型专属提示。
 
 ---
 
@@ -255,7 +286,30 @@ def _validate_revision(question, revised):
 
 **修改文件**：`backend/services/grading.py`
 
-`compare()` 已兼容：`reading_first_blank` 的 `answer` 是 `list[BlankGroup]`，会命中 `isinstance(correct_answer, list)` 分支走 `_compare_blank_answers`（按空逐一比对、候选组任一命中即对）。**无需改动**，仅需在本文件注释中补充该题型说明。
+`compare()` 已兼容：`reading_first_blank` 的 `answer` 是 `list[BlankGroup]`，会命中
+`isinstance(correct_answer, list)` 分支走 `_compare_blank_answers`（按空逐一比对、候选组任一
+命中即对）。**无需改动**，仅需在本文件注释中补充该题型说明。
+
+**特殊处理：`_normalize_candidates` 合并单空 dict。** 阅读首字母填空的 answer 形如
+`[{blank1},{blank2},…]`——每个空一个 dict、各只含一个键，语义是"所有空必须**一起**正确"，
+而非"多个可替换的候选组合"。`_compare_blank_answers` 在比对前先调用 `_normalize_candidates`：
+当 `correct_answers` 全部是单键 dict 时，把它们 `merge` 成**单个整体候选**
+`[{blank1, blank2, …, blank7}]`。否则（如 `word_form` / `sentence_rewriting` /
+`listening_fill_blank` 的候选元素含多个键，或本身即单元素）保持原样。
+
+合并的必要性：若不合并，逐候选比对时用户填满 7 空的键集合（`{blank1..blank7}`）永远不等于
+任一单键候选，整道题会**恒判错**。合并后，比对要求用户键集合与合并候选完全一致，且每个空
+都命中该空的候选词集合——因此**所有空必须同时正确，任一空错误即整题判错，无按空部分给分**。
+
+```python
+def _normalize_candidates(correct_answers):
+    if correct_answers and all(isinstance(c, dict) and len(c) == 1 for c in correct_answers):
+        merged = {}
+        for c in correct_answers:
+            merged.update(c)
+        return [merged]           # 7 个单空 dict → 1 个整体候选
+    return correct_answers
+```
 
 ### 3.2 知识点目录
 
@@ -436,19 +490,21 @@ python -m ingestion.cli build-sqlite
 
 ## 7. 里程碑
 
+> 本 spec 现记录**已完成**的工作：`reading_first_blank` 全链路已实现，题库中含 31 道阅读首字母填空题。
+
 | 步骤 | 内容 | 状态 |
 |------|------|------|
-| 1 | 数据契约扩展（QuestionType、知识点） | 待实现 |
-| 2 | AI Engine Parser 扩展 | 待实现 |
-| 3 | AI Engine Retriever 扩展（SQL only + passage 整组） | 待实现 |
-| 4 | AI Engine Reviser 扩展 | 待实现 |
-| 5 | AI Engine Solutioner 扩展 | 待实现 |
-| 6 | 后端判对错（复用 `_compare_blank_answers`） | 待实现 |
-| 7 | 前端 ReadingFirstBlankField 组件 | 待实现 |
-| 8 | 前端 QuestionCard 分派扩展 | 待实现 |
-| 9 | 前端 TYPE_LABELS 扩展 | 待实现 |
-| 10 | 题库数据加载（schema / loader / 跳过向量库） | 待实现 |
-| 11 | 测试 | 待实现 |
+| 1 | 数据契约扩展（QuestionType、知识点） | 完成 |
+| 2 | AI Engine Parser 扩展 | 完成 |
+| 3 | AI Engine Retriever 扩展（SQL only + passage 整组） | 完成 |
+| 4 | AI Engine Reviser 扩展 | 完成 |
+| 5 | AI Engine Solutioner 扩展 | 完成 |
+| 6 | 后端判对错（复用 `_compare_blank_answers`） | 完成 |
+| 7 | 前端 ReadingFirstBlankField 组件 | 完成 |
+| 8 | 前端 QuestionCard 分派扩展 | 完成 |
+| 9 | 前端 TYPE_LABELS 扩展 | 完成 |
+| 10 | 题库数据加载（schema / loader / 跳过向量库） | 完成 |
+| 11 | 测试 | 完成 |
 
 ---
 

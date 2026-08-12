@@ -29,6 +29,14 @@ export function quotaRemaining(userId: string, feature: QuotaFeature, limit: num
   return Math.max(0, limit - used(userId, feature))
 }
 
+/** 非会员的免费出卷提示文案;会员返回 null。一句话出卷与各专项面板共用。 */
+export function generateQuotaNotice(locked: boolean, remaining: number): string | null {
+  if (!locked) return null
+  return remaining > 0
+    ? `今日免费出卷剩 ${remaining} 次，开通会员不限次数`
+    : `今日 ${FREE_GENERATE_PER_DAY} 次免费出卷已用完，开通会员后不限次数`
+}
+
 /** 计一次用量，并顺手清掉往日的计数键。 */
 export function consumeQuota(userId: string, feature: QuotaFeature): void {
   localStorage.setItem(keyOf(userId, feature), String(used(userId, feature) + 1))

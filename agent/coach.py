@@ -65,6 +65,12 @@ def _load_kp_catalog() -> str:
         "word_form": "词形转换",
         "sentence_rewriting": "改写句子",
         "listening_single_choice": "听力选择",
+        "listening_true_false": "听力判断",
+        "listening_fill_blank": "听力填词",
+        "reading_longtext_single_choice": "阅读理解",
+        "cloze_single_choice": "完形填空",
+        "reading_first_blank": "阅读首字母填空",
+        "writing": "英语作文",
     }
     db_path = str(get_config().db_path)
     conn = sqlite3.connect(db_path)

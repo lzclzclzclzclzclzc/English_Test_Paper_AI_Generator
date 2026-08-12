@@ -17,12 +17,14 @@ from shared.schemas import KPMastery, MasteryProfile
 
 
 def _db_path() -> str:
-    """Resolve the question DB path, honouring a storage test override.
+    """Resolve the APP/user DB path, honouring a storage test override.
 
-    analyzer reads the same DB storage writes to; when a caller (tests, or a
-    future multi-tenant setup) overrides the path via storage.set_db_path, we
-    must follow it — otherwise admin/mastery reads hit the default DB while
-    writes go to the override. Falls back to get_config().db_path."""
+    analyzer reads attempts / attempt_items, which live in the APP/user DB, so
+    this returns storage.get_db_path() (the app DB, not the bank). When a caller
+    (tests, or a future multi-tenant setup) overrides the path via
+    storage.set_db_path, we must follow it — otherwise admin/mastery reads hit
+    the default DB while writes go to the override. Falls back to
+    config.app_db_path."""
     from shared import storage
 
     return str(storage.get_db_path())

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { GradeResultItem, RevisedQuestion } from '@/types/api'
 import type { BlankMap } from '@/lib/answers'
 import { getBlankKeys, toBlankMap } from '@/lib/answers'
+import { cn } from '@/lib/utils'
 
 interface ReadingFirstBlankFieldProps {
   question: RevisedQuestion
@@ -39,7 +40,7 @@ function parseMarkers(content: string): BlankMarker[] {
   return markers
 }
 
-/** 答题态：首字母 + 填空线输入框（输入空位剩余部分）。 */
+/** 答题态：首字母 + 浅底输入框（输入空位剩余部分），focus 描边转赤陶。 */
 function BlankInput({
   letter,
   value,
@@ -53,25 +54,33 @@ function BlankInput({
 }) {
   return (
     <span className="whitespace-nowrap">
-      <span className="text-accent">{letter}</span>
+      <span className="font-bold text-accent">{letter}</span>
       <input
         type="text"
         aria-label={ariaLabel}
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
-        className="inline-block min-w-[6rem] border-0 border-b border-ink-30 bg-transparent px-2 text-center text-ink outline-none transition-colors focus:border-accent"
+        className="mx-0.5 inline-block min-w-[6rem] rounded-md border border-ink-15 bg-tint px-2 py-0.5 text-center text-ink outline-none transition-colors focus:border-accent focus:bg-card-surface focus:ring-2 focus:ring-accent/15"
       />
     </span>
   )
 }
 
-/** 复盘态：首字母 + 静态剩余部分。 */
+/** 复盘态：首字母 + 剩余部分。已填 = 深色字薄底框，未填 = 虚线框占位灰。 */
 function BlankValue({ letter, value }: { letter: string; value: string }) {
+  const filled = value.trim() !== ''
   return (
     <span className="whitespace-nowrap">
-      <span className="text-accent">{letter}</span>
-      <span className="inline-block min-w-[4rem] border-b border-ink-30 px-2 text-center text-ink">
-        {value.trim() === '' ? ' ' : value}
+      <span className="font-bold text-accent">{letter}</span>
+      <span
+        className={cn(
+          'mx-0.5 inline-block min-w-[4rem] rounded-md px-2 py-0.5 text-center',
+          filled
+            ? 'bg-tint font-bold text-ink'
+            : 'border border-dashed border-ink-30 text-[13px] text-quiet',
+        )}
+      >
+        {filled ? value : '未填'}
       </span>
     </span>
   )

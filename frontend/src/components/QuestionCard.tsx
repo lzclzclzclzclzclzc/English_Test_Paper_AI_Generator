@@ -10,7 +10,7 @@ import { ReadingFirstBlankField } from '@/components/question-fields/ReadingFirs
 import { WordFormField } from '@/components/question-fields/WordFormField'
 import { SentenceRewritingField } from '@/components/question-fields/SentenceRewritingField'
 import { WritingField } from '@/components/question-fields/WritingField'
-import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
+import { TYPE_LABELS, TYPE_FAMILY, prettifyKp, type TypeFamily } from '@/lib/kp'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { useMembership } from '@/hooks/useMembership'
 import { cn } from '@/lib/utils'
@@ -41,15 +41,24 @@ interface QuestionCardProps {
   }
 }
 
-const REVISION_LABELS: Record<PaperItem['revision_mode'], string> = {
-  fresh: 'FRESH 新出',
-  light: 'LIGHT 轻改',
-  original: 'ORIGINAL 原题',
+/** 改题档位：原题 = 中性墨、轻改 = 绿、新出 = 赤陶（AI 介入程度递增） */
+const REVISION_META: Record<PaperItem['revision_mode'], { label: string; className: string }> = {
+  original: { label: '原题', className: 'bg-tint text-muted-ink' },
+  light: { label: '轻改', className: 'bg-success-wash text-success' },
+  fresh: { label: 'AI 新出', className: 'bg-wash text-accent' },
+}
+
+/** 分科色胶囊（v2.2）：语法 = 赭黄、听力 = 靛蓝、阅读 = 墨青 */
+const FAMILY_PILL: Record<TypeFamily, string> = {
+  grammar: 'bg-grammar-wash text-grammar',
+  listening: 'bg-listening-wash text-listening',
+  reading: 'bg-reading-wash text-reading',
 }
 
 /**
- * 单题（handoff 第 5 屏）：`<article>` + 底部细线；题号等宽弱色 +
- * 题型/知识点/改题档位 11px 大写标签；review 态状态圆 ✓ 墨色边 / ✕ 赤陶。
+ * 单题卡片（2026-08 卡片化改版）：近白卡底 + 1px 浅边 + 8px 圆角，
+ * hover 轻阴影；题头 = 赤陶序号块 + 题型胶囊 + 档位色胶囊；
+ * review 态右侧 ✓ 墨色 / ✕ 赤陶。
  */
 export function QuestionCard({
   item,
@@ -65,35 +74,54 @@ export function QuestionCard({
   const { question } = item
   const isReview = mode === 'review'
 
-  const labels: string[] = [
-    (TYPE_LABELS[question.question_type] ?? question.question_type).toUpperCase(),
-  ]
-  // 答题态不展示考点标签（避免提示答案），review 态补上
-  if (isReview) {
-    labels.push(...question.knowledge_point_ids.map(prettifyKp))
+  const typeLabel = TYPE_LABELS[question.question_type] ?? question.question_type
+  const revision = REVISION_META[item.revision_mode] ?? {
+    label: item.revision_mode,
+    className: 'bg-tint text-muted-ink',
   }
-  labels.push(REVISION_LABELS[item.revision_mode] ?? item.revision_mode)
+  // 答题态不展示考点标签（避免提示答案），review 态补上
+  const kpLabels = isReview ? question.knowledge_point_ids.map(prettifyKp) : []
 
   return (
-    <article id={`q-${item.index}`} className="flex scroll-mt-10 flex-col gap-3 py-10 first:pt-6">
-      <div className="flex items-center gap-3">
+    <article
+      id={`q-${item.index}`}
+      className="scroll-mt-10 rounded-[var(--radius-question-card)] border border-soft bg-card-surface p-6 transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] max-md:p-4"
+    >
+      <div className="flex flex-wrap items-center gap-2 font-ui">
+        <span className="flex h-7 min-w-9 items-center justify-center rounded-md bg-wash px-2 text-[13px] font-bold tabular-nums text-accent">
+          {String(item.index).padStart(2, '0')}
+        </span>
+        <span
+          className={cn(
+            'rounded-full px-2.5 py-1 text-[12px] leading-none',
+            FAMILY_PILL[TYPE_FAMILY[question.question_type] ?? 'grammar'],
+          )}
+        >
+          {typeLabel}
+        </span>
+        <span
+          className={cn('rounded-full px-2.5 py-1 text-[12px] leading-none', revision.className)}
+        >
+          {revision.label}
+        </span>
+        {kpLabels.length > 0 && (
+          <span className="min-w-0 truncate text-[12px] text-quiet">{kpLabels.join(' · ')}</span>
+        )}
         {isReview && result && (
           <span
             className={cn(
-              'flex size-[22px] shrink-0 items-center justify-center rounded-full border text-[12px] leading-none',
-              result.is_correct ? 'border-ink-30 text-ink' : 'border-accent text-accent',
+              'ml-auto flex size-6 shrink-0 items-center justify-center rounded-full border font-bold text-[12px] leading-none',
+              result.is_correct
+                ? 'border-success bg-success-wash text-success'
+                : 'border-accent bg-wash text-accent',
             )}
           >
             {result.is_correct ? '✓' : '✕'}
           </span>
         )}
-        <span className="font-mono text-[13px] text-quiet">
-          {String(item.index).padStart(2, '0')}
-        </span>
-        <span className="text-[11px] tracking-[0.1em] text-quiet">{labels.join(' · ')}</span>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-3">
+      <div className="mt-4 flex min-w-0 flex-col gap-3">
         {question.question_type === 'single_choice' || question.question_type === 'reading_longtext_single_choice' || question.question_type === 'cloze_single_choice' ? (
           <SingleChoiceField
             question={question}
@@ -163,7 +191,7 @@ export function QuestionCard({
 
         {/* review 态：答错时的答案比对（单选/听力/判断/阅读已在选项上标注，不重复；writing无标准答案，跳过） */}
         {isReview && result && !result.is_correct && question.question_type !== 'single_choice' && question.question_type !== 'listening_single_choice' && question.question_type !== 'listening_true_false' && question.question_type !== 'reading_longtext_single_choice' && question.question_type !== 'cloze_single_choice' && question.question_type !== 'writing' && (
-          <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-[13px]">
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
             <span className="text-accent">
               你的答案：{formatUserAnswer(result.user_answer)}
             </span>

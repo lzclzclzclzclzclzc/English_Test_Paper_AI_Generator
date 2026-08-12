@@ -64,13 +64,13 @@ export interface RevisedQuestion {
   /** sentence_rewriting：带空模板。注意下划线连串数 ≠ 空数，空数以 answer[0] 键数为准 */
   template: string | null
   /** listening_true_false：共享材料组 id（同组小题相同） */
-  passage_id: string | null
+  passage_id?: string | null
   /** listening_true_false：共享材料对象（同组小题冗余存储） */
-  passage_json: Passage | null
+  passage_json?: Passage | null
   /** writing：参考表达，如 "have difficulty in..." */
-  reference_expressions: string | null
+  reference_expressions?: string | null
   /** writing：最低词数要求，如 60 */
-  min_words: number | null
+  min_words?: number | null
   answer: AnswerValue
   solution: string | null
   knowledge_point_ids: string[]
@@ -266,6 +266,79 @@ export interface StudyPlan {
   total_days: number
   created_at: string
   days: StudyPlanDay[]
+}
+
+// ---- 背单词 ----
+
+export type VocabularyRating = 'known' | 'fuzzy' | 'forgot'
+
+export interface VocabularyCardPrompt {
+  word_id: string
+  term: string
+  origin: 'scheduled_review' | 'new'
+  retry_count: number
+}
+
+export interface VocabularyCardDetail {
+  word_id: string
+  term: string
+  part_of_speech: string
+  meanings: string[]
+  example_en: string
+  example_zh: string
+}
+
+export interface VocabularyTaskCounts {
+  scheduled_review_total: number
+  scheduled_review_completed: number
+  new_total: number
+  new_completed: number
+  retry_total: number
+  retry_completed: number
+  retry_pending: number
+  remaining_count: number
+}
+
+export interface VocabularyToday {
+  date: string
+  daily_new_limit: number
+  phase: 'scheduled_review' | 'new' | 'same_day_retry' | 'completed'
+  current_card: VocabularyCardPrompt | null
+  counts: VocabularyTaskCounts
+}
+
+export interface VocabularyJudgmentResponse {
+  word_id: string
+  rating: VocabularyRating
+  detail: VocabularyCardDetail
+  next_due_at: string
+  stage: number
+  added_to_same_day_retry: boolean
+  phase: VocabularyToday['phase']
+  counts: VocabularyTaskCounts
+}
+
+export interface VocabularyProgress {
+  date: string
+  daily_new_limit: number
+  new_completed: number
+  review_completed: number
+  same_day_retry_pending: number
+  same_day_retry_completed: number
+  due_count: number
+  learned_count: number
+  mastered_count: number
+  total_words: number
+  streak_days: number
+  wordlist_label: string
+  source_url: string
+  wordlist_sources: VocabularyWordlistSource[]
+}
+
+export interface VocabularyWordlistSource {
+  category: 'national_core' | 'shanghai_extension'
+  label: string
+  source_url: string
 }
 
 

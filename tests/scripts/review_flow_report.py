@@ -10,10 +10,10 @@ Usage
 
 Output: tests/scripts/review_flow_report_<YYYYMMDD_HHMMSS>.md
 
-Note: this WRITES to data/questions.db (attempts / attempt_items tables).
-That file is under `git update-index --skip-worktree`, so the writes won't
-show up in `git status`. The demo user's rows are cleared and re-seeded on
-each run, so it's idempotent.
+Note: attempt history is written to the app DB (data/app.db, via APP_DB_PATH);
+questions are read from the bank (data/questions.db). The demo user's rows are
+cleared and re-seeded on each run, so it's idempotent — the tracked bank is
+never written.
 """
 from __future__ import annotations
 
@@ -29,6 +29,7 @@ _PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT))
 
 from ai_engine import analyzer, parser, retriever, reviser
+from shared import storage
 from shared.config import get_config
 from shared.schemas import PaperItem
 
@@ -88,14 +89,18 @@ def _pick_source_questions(conn: sqlite3.Connection, kp_id: str, n: int) -> list
     return ids
 
 
-def seed_history(db_path: str, rng: random.Random) -> list[dict]:
+def seed_history(app_db_path: str, bank_db_path: str, rng: random.Random) -> list[dict]:
     """Wipe + re-seed the demo user's attempt history. Returns the per-KP
     injected summary for the report.
 
     attempt_items has UNIQUE(attempt_id, source_question_id); to record N
     answers for a KP we distribute them across enough attempts that no
-    (attempt, question) pair repeats."""
-    conn = sqlite3.connect(db_path)
+    (attempt, question) pair repeats.
+
+    User tables (attempts/attempt_items) live in the app DB; questions live in
+    the bank DB, so source-question lookups use a separate bank connection."""
+    conn = sqlite3.connect(app_db_path)
+    bank_conn = sqlite3.connect(bank_db_path)
     try:
         # clear previous demo rows (idempotent)
         old = conn.execute(
@@ -127,7 +132,7 @@ def seed_history(db_path: str, rng: random.Random) -> list[dict]:
         summary: list[dict] = []
         for kp_id, target_acc, n in KP_PLAN:
             qtype = _kp_to_type(kp_id)
-            source_ids = _pick_source_questions(conn, kp_id, n)
+            source_ids = _pick_source_questions(bank_conn, kp_id, n)
             correct = 0
             for i in range(n):
                 source_id = source_ids[i % len(source_ids)]
@@ -162,6 +167,7 @@ def seed_history(db_path: str, rng: random.Random) -> list[dict]:
         return summary
     finally:
         conn.close()
+        bank_conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -284,14 +290,17 @@ def build_report(summary, profile, req, paper, timings) -> str:
 def main() -> None:
     rng = random.Random(SEED)
     cfg = get_config()
-    db_path = str(cfg.db_path)
+    # attempts/attempt_items live in the app DB; questions in the bank DB.
+    storage.init_db()  # ensure app user tables exist
+    app_db_path = str(cfg.app_db_path)
+    bank_db_path = str(cfg.db_path)
 
     print("=" * 60)
     print("  Review 全流程演示")
     print("=" * 60)
 
     print("  [1/5] 注入历史做题记录 ...", end="", flush=True)
-    summary = seed_history(db_path, rng)
+    summary = seed_history(app_db_path, bank_db_path, rng)
     print(f" ✓  {len(summary)} 个知识点")
 
     t = {}

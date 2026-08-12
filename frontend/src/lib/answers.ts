@@ -32,7 +32,7 @@ const sortBlankKeys = (keys: string[]) =>
  * 单选（answer 为字符串）返回 []；异常数据兜底为单空 ['blank1']。
  */
 export function getBlankKeys(answer: AnswerValue): string[] {
-  if (typeof answer === 'string') return []
+  if (answer === null || typeof answer === 'string') return []
   const keys: string[] = []
   for (const item of answer) {
     if (item && typeof item === 'object') {
@@ -153,6 +153,7 @@ export function formatUserAnswer(v: UserAnswerValue): string {
  * - 多候选组合 → "① …　② …"（组合间为"或"的关系）
  */
 export function formatCorrectAnswer(a: AnswerValue): string {
+  if (a === null) return ''
   if (typeof a === 'string') return a
   const formatCandidate = (cand: Record<string, string[]>) => {
     const keys = sortBlankKeys(Object.keys(cand))
@@ -167,8 +168,9 @@ export function formatCorrectAnswer(a: AnswerValue): string {
     return a
       .map((cand) => {
         const k = Object.keys(cand)[0]
-        return `${blankLabel(k)}: ${(cand[k] ?? []).join(' / ')}`
+        return k === undefined ? '' : `${blankLabel(k)}: ${(cand[k] ?? []).join(' / ')}`
       })
+      .filter(Boolean)
       .join('；')
   }
   if (a.length === 1 && a[0] !== undefined) return formatCandidate(a[0])

@@ -15,7 +15,7 @@ export function MemberPill({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        'rounded-sm border border-accent/40 px-1.5 py-px text-[10px] leading-none text-accent',
+        'rounded-sm border border-accent/40 px-1.5 py-px font-ui text-[10px] leading-none text-accent',
         className,
       )}
     >

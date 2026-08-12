@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useMembership } from '@/hooks/useMembership'
 import { PageHeader } from '@/components/PageHeader'
+import { getExamDate, setExamDate } from '@/lib/examDate'
 import { cn } from '@/lib/utils'
 
 type Theme = 'light' | 'dark'
@@ -22,6 +23,13 @@ export function SettingsPage() {
   const registeredAt = user
     ? new Date(user.created_at).toLocaleDateString('zh-CN', { dateStyle: 'medium' })
     : ''
+
+  const userId = user?.id ?? 'anon'
+  const [examDate, setExamDateState] = useState<string>(() => getExamDate(userId) ?? '')
+  const updateExamDate = (value: string) => {
+    setExamDateState(value)
+    setExamDate(userId, value || null)
+  }
 
   return (
     <div className="max-w-[44rem]">
@@ -60,7 +68,7 @@ export function SettingsPage() {
                   applyTheme(value)
                 }}
                 className={cn(
-                  'rounded-sm border px-4 py-2 text-[13.5px] transition-colors',
+                  'rounded-sm border px-4 py-2 font-ui text-[13.5px] transition-colors',
                   theme === value
                     ? 'border-accent bg-wash text-ink'
                     : 'border-hairline text-muted-ink hover:bg-tint hover:text-ink',
@@ -70,7 +78,36 @@ export function SettingsPage() {
               </button>
             ))}
           </div>
-          <p className="text-[13px] text-quiet">深色为暖炭墨地、亮赤陶强调，token 已内建，两套外观同一套组件。</p>
+          <p className="text-[13px] text-quiet">深色为暖炭墨地、亮赤陶强调，两套外观一键切换。</p>
+        </section>
+
+        {/* 备考目标 */}
+        <section className="flex flex-col gap-3 border-t border-hairline py-7">
+          <h2 className="text-[17px] text-ink">备考目标</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="text-[14px] text-muted-ink" htmlFor="exam-date">
+              目标中考日期
+            </label>
+            <input
+              id="exam-date"
+              type="date"
+              value={examDate}
+              onChange={(e) => updateExamDate(e.target.value)}
+              className="rounded-[3px] border border-ink-20 bg-transparent px-3 py-1.5 font-ui text-[13.5px] text-ink outline-none transition-colors focus:border-accent"
+            />
+            {examDate && (
+              <button
+                type="button"
+                onClick={() => updateExamDate('')}
+                className="font-ui text-[12.5px] text-quiet transition-colors hover:text-accent"
+              >
+                清除
+              </button>
+            )}
+          </div>
+          <p className="text-[13px] text-quiet">
+            设置后工作台会显示距中考的天数。只保存在本浏览器。
+          </p>
         </section>
 
         {/* 速率限制（只读） */}

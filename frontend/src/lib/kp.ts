@@ -12,6 +12,43 @@ export const TYPE_LABELS: Record<string, string> = {
   writing: '英语作文',
 }
 
+/** 题型 → 分科家族（Spec F v2.2 分科色）：语法=赭黄、听力=靛蓝、阅读=墨青。 */
+export type TypeFamily = 'grammar' | 'listening' | 'reading'
+
+export const FAMILY_LABELS: Record<TypeFamily, string> = {
+  grammar: '语法',
+  listening: '听力',
+  reading: '阅读',
+}
+
+/** 族色 chip 类(wash 底 + 同色字,永不实心填充)。GenerateForm 与专项页共用。 */
+export const FAMILY_CHIP_CLASS: Record<TypeFamily, string> = {
+  grammar: 'border-transparent bg-grammar-wash text-grammar hover:border-grammar',
+  listening: 'border-transparent bg-listening-wash text-listening hover:border-listening',
+  reading: 'border-transparent bg-reading-wash text-reading hover:border-reading',
+}
+
+/** 族色文字类(分区标题等) */
+export const FAMILY_TEXT_CLASS: Record<TypeFamily, string> = {
+  grammar: 'text-grammar',
+  listening: 'text-listening',
+  reading: 'text-reading',
+}
+
+export const TYPE_FAMILY: Record<string, TypeFamily> = {
+  single_choice: 'grammar',
+  word_form: 'grammar',
+  sentence_rewriting: 'grammar',
+  listening_single_choice: 'listening',
+  listening_true_false: 'listening',
+  listening_fill_blank: 'listening',
+  reading_longtext_single_choice: 'reading',
+  cloze_single_choice: 'reading',
+  reading_first_blank: 'reading',
+  // 作文属"语言表达/输出"类，与语法同族（听/读为输入类）；避免引入第四族色导致 UI 断裂
+  writing: 'grammar',
+}
+
 /**
  * 知识点 id → 中文名（level2）的运行时映射。
  * 由 useKnowledgePoints() 在 App 启动时从后端 /api/knowledge-points 填充，

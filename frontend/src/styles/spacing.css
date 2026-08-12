@@ -26,6 +26,12 @@
   --control-stroke: 1.5px;         /* icon stroke weight */
   --hit-target-min: 44px;          /* minimum touch target */
 
+  /* ── Question cards（2026-08 试卷页卡片化改版）──
+     8px 圆角；阴影只在 hover 出现，静置仍是平的 1px 边线。 */
+  --radius-question-card: 0.5rem;
+  --shadow-card-hover: 0 2px 6px -1px color-mix(in oklab, var(--ink) 10%, transparent),
+                       0 8px 20px -8px color-mix(in oklab, var(--ink) 8%, transparent);
+
   /* ── Elevation — overlays only (the one legitimate shadow + blur) ── */
   --shadow-overlay: 0 10px 15px -3px color-mix(in oklab, var(--ink) 12%, transparent),
                     0 4px 6px -4px color-mix(in oklab, var(--ink) 10%, transparent);

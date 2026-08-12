@@ -30,6 +30,8 @@
 - AI Engine 内部逻辑（见 Spec B）
 - 题库入库流程（见 Spec A）
 
+> **更新**：作文批改（writing）与背单词（vocabulary）子系统**现已实现**并在本 spec 中记录端点契约（§ 5.1 / § 5.2）。背单词的完整表结构与业务规则另见 `docs/vocabulary-design.md`；本 spec 只覆盖其 HTTP 契约与所依赖的 app.db 表清单。
+
 ### 0.3 对 Spec A/B 决策的撤销
 
 **本 spec 撤销以下两条 Spec A/B 中的决策**，在里程碑 M5 完成后需一次性同步更新 Spec A/B 文本（见 § 14）：
@@ -125,9 +127,12 @@ backend/
 │   ├── papers.py               # /papers/generate /papers/revise /papers/{id} /papers
 │   ├── solutions.py            # /solutions
 │   ├── attempts.py             # /attempts /attempts/by-paper/{paper_id}
+│   ├── writing.py              # /writing/grade /writing/by-paper/{paper_id}（作文批改，LLM 多维评分）
+│   ├── vocabulary.py           # /vocabulary/today /judgments /progress /settings（背单词，见 vocabulary-design.md）
 │   ├── mastery.py              # /users/me/mastery
 │   ├── agent.py                # /agent/chat /agent/chat/clear /agent/study-plans/latest
 │   ├── knowledge_points.py     # /knowledge-points
+│   ├── admin.py                # /admin/*（管理后台，全部要求 require_admin）
 │   └── _test.py                # 仅 test 环境挂载（见 § 5.5）
 ├── services/
 │   ├── __init__.py
@@ -172,6 +177,8 @@ class User(BaseModel):
     id: str                          # UUID hex
     username: str                    # 3-32 字符，字母数字下划线
     created_at: datetime
+    role: Literal["user", "admin"] = "user"      # 权限角色（Spec G 引入）
+    status: Literal["active", "banned"] = "active"  # 封禁状态；banned 用户鉴权即被拒（403）
 
 class UserRecord(User):
     """内部用：多带一个 password_hash 字段；绝不返回给前端。"""
@@ -304,6 +311,17 @@ class ErrorResponse(BaseModel):
 
 ## 3. 数据库扩展
 
+### 3.0 两个 SQLite 文件
+
+自 Task 9 起，SQLite 存储拆分为两个文件，职责互不重叠：
+
+| 文件 | 用途 | Git 状态 | 连接方法 | 环境变量 | 配置字段 |
+|---|---|---|---|---|---|
+| `data/questions.db` | 只读题库（`questions` / `knowledge_points` / `question_knowledge_points`） | **已提交** | `storage.connect_bank()` | `SQLITE_PATH` | `config.db_path` |
+| `data/app.db` | 用户/应用数据（`users` / `sessions` / `papers` / `attempts` / `attempt_items` / `study_plans` / `writing_grade_results` / 7 张 `vocabulary_*` 表 / `schema_migrations`） | **gitignored** | `storage.connect()` | `APP_DB_PATH` | `config.app_db_path` |
+
+`data/app.db` 由 `python -m backend.cli init-db`（或 `create_app()` 启动时调 `storage.init_db()`）自动创建；首次部署前必须执行一次。题库与用户表之间**没有跨文件 JOIN**，无需 `ATTACH`——`connect_bank()` 不跑 `init_db()`/迁移，只读题库；`connect()` 每次都保证 app.db schema 最新。`/api/health/ready` 就绪探针会同时打开两个连接以验证双库可达。
+
 ### 3.1 新增表（追加到 Spec A § 3.7 的 SQL）
 
 ```sql
@@ -349,7 +367,38 @@ CREATE TABLE study_plans (
     plan_json   TEXT NOT NULL           -- 完整计划（days[] 等）序列化
 );
 CREATE INDEX idx_study_plans_user ON study_plans(user_id, status);
+
+-- 作文批改结果（见 § 5.2 POST /api/writing/grade）
+-- 存整份提交的原文 + 多维评分 + LLM 分析文本，供历史复盘回放
+CREATE TABLE writing_grade_results (
+    id                    TEXT PRIMARY KEY,      -- UUID hex
+    user_id               TEXT NOT NULL REFERENCES users(id),
+    paper_id              TEXT NOT NULL,
+    item_index            INTEGER NOT NULL,      -- 对应 PaperItem.index
+    user_essay            TEXT NOT NULL,         -- 学生作文原文
+    total_score           REAL NOT NULL,
+    content_score         REAL NOT NULL,
+    language_score        REAL NOT NULL,
+    organization_score    REAL NOT NULL,
+    word_count            INTEGER NOT NULL,
+    level                 TEXT NOT NULL,         -- 评级标签
+    content_analysis      TEXT,                  -- 会员可见的分析文本；下同
+    language_analysis     TEXT,
+    organization_analysis TEXT,
+    overall_comment       TEXT,
+    revised_version       TEXT,                  -- LLM 改写范文
+    graded_at             TIMESTAMP NOT NULL,
+    UNIQUE(user_id, paper_id, item_index)        -- 同一题重复提交覆盖旧结果
+);
+CREATE INDEX idx_writing_grade_user_paper ON writing_grade_results(user_id, paper_id);
 ```
+
+**背单词的 7 张表**（`vocabulary_wordlists` / `vocabulary_words` / `vocabulary_settings` /
+`vocabulary_progress` / `vocabulary_daily_cards` / `vocabulary_review_logs` /
+`vocabulary_daily_retry_queue` / `vocabulary_wordlist_sources`）同样落在 `data/app.db`，
+由迁移脚本创建。它们承载词表导入、每日新词/复习卡、SM-2 风格间隔复习进度、当日重试队列与
+词表来源溯源。**完整列定义与业务规则见 `docs/vocabulary-design.md`**；本 spec 只列出它们归属
+app.db，不重复其 schema 细节。相关 HTTP 端点见 § 5.1 / § 5.2 的 vocabulary 小节。
 
 **关于 `study_plans`**：每个用户同一时刻只有一个 `active` 计划——`save_study_plan`
 先把该用户已有的 `active` 计划标记为 `superseded`，再插入新的 `active` 行；
@@ -522,6 +571,11 @@ GET  /api/auth/me                                           → User（当前登
 
 其他所有 `/api/*` 路由都强制鉴权。
 
+**管理后台的额外守卫**：所有 `/api/admin/*` 端点在 `current_user` 之上再挂 `require_admin`
+依赖（`backend/deps.py`）——`user.role != "admin"` 抛 `AuthorizationError` → **403 `auth.forbidden`**。
+另外 `current_user` 本身会拒绝 `status == "banned"` 的用户（同样 403），封禁后台在 ban/reset-password
+时会一并 `delete_sessions_by_user` 强制其重新登录。
+
 ---
 
 ## 5. HTTP 端点契约
@@ -546,14 +600,36 @@ GET  /api/auth/me                                           → User（当前登
 | POST | `/api/solutions` | `SolutionRequest` | `SolutionResponse` | 单题按需解析 |
 | POST | `/api/attempts` | `GradeSubmissionRequest` | `GradeSubmissionResponse` | 提交答题 + 判对错 + 写库 |
 | GET | `/api/attempts/by-paper/{paper_id}` | — | `GradeSubmissionResponse \| null` | 一份试卷最近一次答题结果（复盘回放） |
+| POST | `/api/writing/grade` | `WritingGradeRequest` | `WritingGradeResponse` | 作文批改（LLM 多维评分，分析字段按会员门控） |
+| GET | `/api/writing/by-paper/{paper_id}` | — | `StoredWritingGradeHistoryResponse \| null` | 一份试卷已存的作文批改历史（复盘） |
+| GET | `/api/vocabulary/today` | — | `VocabularyTodayResponse` | 今日背单词任务（当前卡 + 计数） |
+| POST | `/api/vocabulary/judgments` | `VocabularyJudgmentRequest` | `VocabularyJudgmentResponse` | 提交一张卡的自评（known/fuzzy/forgot） |
+| GET | `/api/vocabulary/progress` | — | `VocabularyProgressResponse` | 背单词进度总览 |
+| PATCH | `/api/vocabulary/settings` | `VocabularySettingsRequest` | `VocabularySettingsResponse` | 调整每日新词上限（10-50） |
 | GET | `/api/users/me/mastery` | — | `MasteryProfile` | 掌握度画像 |
 | GET | `/api/knowledge-points` | — | `list[KnowledgePoint]` | 知识点目录（前端中文名显示） |
 | POST | `/api/agent/chat` | `AgentChatRequest` | `AgentChatResponse` | 与 AI 学习教练对话 |
 | POST | `/api/agent/chat/clear` | — | 204 | 开始新对话（清空该用户会话历史） |
 | GET | `/api/agent/study-plans/latest` | — | `StudyPlanOut \| null` | 当前用户最新学习计划 |
+| GET | `/api/admin/users` | — (query `q`/`limit`/`offset`) | `AdminUserList` | 用户列表（含题数/答题数） |
+| GET | `/api/admin/users/{id}` | — | `AdminUserDetail` | 单用户详情（含会员到期、正确率） |
+| GET | `/api/admin/users/{id}/mastery` | — | `MasteryProfile` | 单用户掌握度画像（只读，无 LLM） |
+| POST | `/api/admin/users/{id}/role` | `SetRoleRequest` | `User` | 设角色（不可改自己） |
+| POST | `/api/admin/users/{id}/reset-password` | `ResetPasswordRequest` | `User` | 重置密码 + 踢下线 |
+| POST | `/api/admin/users/{id}/ban` | — | `User` | 封禁（不可封自己）+ 踢下线 |
+| POST | `/api/admin/users/{id}/unban` | — | `User` | 解封 + 踢下线 |
+| GET | `/api/admin/stats/overview` | — | `AdminOverview` | 全站计数概览（含活跃会员数） |
+| GET | `/api/admin/stats/timeseries` | — (query `days`) | `AdminTimeseries` | 用户/试卷按天时间序列 |
+| GET | `/api/admin/analytics` | — (query `days`) | `AdminAnalytics` | 全站答题分析（掌握度 + 趋势 + 题型正确率） |
+| GET | `/api/admin/memberships` | — (query `q`/`limit`/`offset`) | `AdminMembershipListView` | 会员列表（payment 数据 + 本地用户名） |
+| GET | `/api/admin/orders` | — (query `status`/`limit`/`offset`) | `AdminOrderListView` | 订单列表（payment 数据 + 本地用户名） |
+| POST | `/api/admin/memberships/grant` | `GrantByUsernameRequest` | `dict` | 按用户名发放会员（转调 payment） |
+| POST | `/api/admin/memberships/{id}/grant` | `GrantDaysRequest` | `dict` | 按 user_id 发放会员（转调 payment） |
+| POST | `/api/admin/memberships/{id}/revoke` | — | `dict` | 撤销会员（转调 payment） |
 
 除 `/api/health*`、`/api/auth/register`、`/api/auth/login` 外，所有端点都要求 `current_user`
-鉴权（见 § 4.6）。`/api/test/*` 仅在 test 环境挂载（见 § 5.5）。
+鉴权（见 § 4.6）；`/api/admin/*` 另需 `require_admin`（role=admin，否则 403）。`/api/test/*`
+仅在 test 环境挂载（见 § 5.5）。
 
 ### 5.2 关键端点细节
 
@@ -703,6 +779,61 @@ Query: window_days=30 (可选)
 
 用于"看已提交试卷的批改结果"：`user_answer` 从 `attempt_items.user_answer_json` 取，
 `correct_answer` 不落库、由 `Paper` 重建。从未提交的试卷返回 `null`（非 404）。
+
+#### `POST /api/writing/grade`（作文批改）
+
+**为何独立于 `/api/attempts`**：作文是主观题，需 LLM 多维评分（内容/语言/结构），单次
+5-15 秒；客观题判对错是纯字符串比较、毫秒级。二者分开端点，互不拖累。
+
+```
+Body: WritingGradeRequest
+  { "paper_id": "abc123", "items": [ { "index": 1, "user_essay": "..." } ] }
+
+内部：
+  1. 依赖 rate_limiter("writing", "rate_limit_writing_per_min")（默认 10 次/分）→ current_user
+  2. paper = storage.get_paper(paper_id, user.id) → 404 if None
+  3. is_member = _check_membership_via_payment_service(user.id)   # 见 § 8 付费集成
+  4. 逐 item（跳过非 writing 题）：
+     - grade = ai_gateway.grade_writing(question, user_essay) → WritingGradeResult
+     - 组装 WritingGradeResultItem（分数总是返回；content_analysis / language_analysis /
+       organization_analysis / overall_comment / revised_version 仅会员可见，非会员置 None）
+  5. storage.save_writing_grade_results(...)         # 完整分析入库（不受门控影响）
+     storage.save_writing_attempt_items(...)
+     storage.mark_paper_submitted_if_needed(paper_id, user.id)
+  6. return WritingGradeResponse(paper_id, results)
+```
+
+**会员门控**：**分析字段落库时是完整的**，只在响应里按会员状态裁剪——历史复盘
+（`GET /api/writing/by-paper/{paper_id}`）用同一套门控逻辑，用户升级会员后可回看已批改作文的
+完整分析。`WritingGradeResponse` / `WritingGradeResultItem` 契约见 § 2（`backend/schemas.py`）。
+
+#### `GET /api/writing/by-paper/{paper_id}`（作文批改历史）
+
+```
+内部：
+  1. current_user
+  2. paper = storage.get_paper(paper_id, user.id) → 404 if None
+  3. rows = storage.get_writing_grade_results(paper_id, user.id) → 无则返回 null
+  4. is_member = _check_membership_via_payment_service(user.id)
+  5. 组装 StoredWritingGradeHistoryResponse（分析字段同样按会员门控）
+```
+
+#### 背单词端点（`/api/vocabulary/*`）
+
+四个端点都要求 `current_user`，转调 `shared/storage.py` 的背单词方法（无 LLM）。
+**完整业务规则（间隔复习算法、当日重试队列、streak 计算等）见 `docs/vocabulary-design.md`**；
+此处只列 HTTP 契约：
+
+```
+GET   /api/vocabulary/today       → VocabularyTodayResponse
+      当日任务：phase（scheduled_review/new/same_day_retry/completed）+ current_card + counts
+POST  /api/vocabulary/judgments   body: VocabularyJudgmentRequest（word_id + rating）
+      → VocabularyJudgmentResponse（含卡片详情、next_due_at、stage、是否进当日重试队列）
+      storage.judge_vocabulary_card 抛 ValueError（如 word_id 非法）→ 422 request.invalid
+GET   /api/vocabulary/progress    → VocabularyProgressResponse（学习/掌握计数、streak、词表来源）
+PATCH /api/vocabulary/settings    body: VocabularySettingsRequest（daily_new_limit 10-50）
+      → VocabularySettingsResponse
+```
 
 #### `GET /api/knowledge-points`
 
@@ -899,12 +1030,13 @@ def handle_unexpected(...) -> JSONResponse:
 
 - 每 user_id **每分钟最多 30 次 `/papers/generate`**
 - 每 user_id **每分钟最多 60 次 `/solutions`**
+- 每 user_id **每分钟最多 10 次 `/writing/grade`**（LLM 多维评分较慢，收得更紧）
 
 用一个**进程内的滑动窗口计数器**（`backend/deps.py::rate_limiter`，按 `(user_id, kind)` 建 deque，
 窗口 1 分钟；进程重启计数清零），够用，无需第三方库。
 
 超限返回 `429 Too Many Requests`，`error_code=rate.exceeded`。速率限制作为依赖 `rate_limiter(kind, limit_attr)`
-挂在 `/papers/generate` 与 `/solutions` 两个端点上。
+挂在 `/papers/generate`、`/solutions`、`/writing/grade` 三个端点上。
 
 ### 7.2 请求日志中间件
 
@@ -947,16 +1079,19 @@ class BackendConfig(BaseModel):
     frontend_origin: str = "http://localhost:5173"  # 开发/测试期 CORS 允许来源
     rate_limit_generate_per_min: int = 30
     rate_limit_solutions_per_min: int = 60
+    rate_limit_writing_per_min: int = 10             # 作文批改（LLM，较慢）单独限流
+    payment_service_url: str = "http://127.0.0.1:8001"  # 会员查询用的独立付费服务
 
 class AppConfig(BaseSettings):
-    # ... 扁平的 AI Engine / ingestion 配置（llm_api_key、db_path 等）...
+    # ... 扁平的 AI Engine / ingestion 配置（llm_api_key、db_path、app_db_path 等）...
     data_dir: Path = Path("data")
     backend: BackendConfig = BackendConfig()
 ```
 
 **环境变量覆盖**：`get_config()` 用 `BACKEND_ENV` / `BACKEND_PORT` / `BACKEND_HOST` /
 `SESSION_TTL_DAYS` / `BCRYPT_ROUNDS` / `BACKEND_STATIC_DIR` / `FRONTEND_ORIGIN` /
-`RATE_LIMIT_GENERATE_PER_MIN` / `RATE_LIMIT_SOLUTIONS_PER_MIN` 覆盖对应字段。
+`RATE_LIMIT_GENERATE_PER_MIN` / `RATE_LIMIT_SOLUTIONS_PER_MIN` / `PAYMENT_SERVICE_URL`
+覆盖对应字段（题库/用户库路径分别由 `SQLITE_PATH` / `APP_DB_PATH` 覆盖，见 § 3.0）。
 
 > 历史说明：早期设计曾打算把 `BackendConfig` 单独放在 `backend/config.py`（独立
 > `BaseSettings`）。实际实现改为**嵌套进 `shared/config.py` 的 `AppConfig.backend`**——
@@ -967,6 +1102,24 @@ class AppConfig(BaseSettings):
 BACKEND_ENV=development
 BACKEND_PORT=8000
 ```
+
+### 8.1 付费服务集成（会员状态）
+
+会员（付费）状态**不存在本后端**——由一个**独立的付费服务**管理，本后端按需 HTTP 查询：
+
+- 配置项 `config.backend.payment_service_url`（默认 `http://127.0.0.1:8001`，可用 `PAYMENT_SERVICE_URL` 覆盖）。
+- **作文批改**（`backend/api/writing.py`）用 `_check_membership_via_payment_service(user_id)`
+  调 `GET {payment_service_url}/payapi/membership/me`（带 `X-User-Id` 头）：`active=true` → 会员，
+  据此决定作文分析字段是否返回给前端。**降级策略**：付费服务不可达 / 非 200 一律视作"服务未启用" →
+  当作会员（不锁分析字段），与前端 `useMembership` 的 `locked = isSuccess && !isMember` 规则对齐。
+- **管理后台**（`backend/api/admin.py`）的会员/订单视图（`/api/admin/memberships`、`/api/admin/orders`、
+  发放/撤销）转调付费服务的 `/payapi/admin/*`，转发管理员的 session cookie 供付费侧 `require_admin` 通过，
+  并在本地 join 用户名。付费服务不可达时，概览里的 `active_members` 与详情里的 `membership_expires_at`
+  best-effort 降级为 `None`（不阻塞主流程）。
+
+> 实现差异注记：admin.py 目前用一个硬编码的 `_payment_base()`（`http://localhost:8001`）而非
+> `config.backend.payment_service_url`；两者默认端口一致，但配置化只在 writing.py 生效。若要统一，
+> 应让 admin.py 也读配置项。
 
 ---
 

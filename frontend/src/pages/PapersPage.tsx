@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { listPapers } from '@/api/papers'
 import type { PaperListItem } from '@/types/api'
+import { PATHS } from '@/lib/paths'
 import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -25,7 +26,7 @@ export function PapersPage() {
     <div className="max-w-[56rem]">
       <PageHeader
         title="历史试卷"
-        intro="生成过的卷都在这里，未交的随时开卷，交过的回来复盘。重新生成会产生新 paper_id，旧试卷保留。"
+        intro="生成过的卷都在这里，未交的随时开卷，交过的回来复盘。重新生成会得到一份新卷，旧试卷保留。"
       />
 
       {query.isLoading ? (
@@ -69,17 +70,17 @@ function PaperRow({ paper }: { paper: PaperListItem }) {
   const date = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   return (
     <Link
-      to={`/papers/${paper.paper_id}`}
+      to={PATHS.paper(paper.paper_id)}
       className="grid grid-cols-[110px_minmax(0,1fr)_auto] items-center gap-4 border-b border-hairline px-2 py-[18px] transition-colors hover:bg-tint max-sm:grid-cols-[minmax(0,1fr)_auto]"
     >
       <span className="font-mono text-[12.5px] text-quiet max-sm:hidden">{date}</span>
       <div className="flex min-w-0 flex-col gap-1">
         <span className="truncate text-[15.5px] text-ink">{paper.title}</span>
-        <span className="text-[12.5px] text-quiet">{paper.total_questions} 题</span>
+        <span className="font-ui text-[12.5px] tabular-nums text-quiet">{paper.total_questions} 题</span>
       </div>
       <span
         className={cn(
-          'shrink-0 text-[13px]',
+          'shrink-0 font-ui text-[13px]',
           paper.submitted ? 'text-ink' : 'text-quiet',
         )}
       >
@@ -98,7 +99,7 @@ function EmptyState() {
         用一句话描述想练的题型或考点，生成你的第一份卷
       </p>
       <Button asChild className="mt-3">
-        <Link to="/">去出卷</Link>
+        <Link to={PATHS.dashboard}>去出卷</Link>
       </Button>
     </div>
   )
