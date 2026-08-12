@@ -5,8 +5,11 @@ import { cn } from '@/lib/utils'
  * 生成管线进度。后端同步返回、无 SSE（spec C），故这是「不穿帮的假进度」：
  * 渐近线爬升（永远逼近而到不了 100%，请求完成时父级卸载本组件、导航离开）
  * + 阶段权重（慢在真实耗时大头的 Parser / Reviser，Retriever / Assemble 一闪而过）
- * + 通用文案（不显示任何可被证伪的具体数字）。请求真正结束由父级 `isPending`
- * 转 false 触发卸载——因此这里只管「还在跑」时的观感。
+ * + 通用文案（不显示任何可被证伪的具体数字）。
+ *
+ * 用法：
+ * - 生成中卸载模式（默认，isPending 转 false 时父级卸载本组件）
+ * - 常驻模式：始终挂载，通过 `active` 控制是否跑动画（未激活时静态显示 0% / 待机）
  *
  * 样式：从左到右的流程图——每步一个方块，方块底色是从左往右延伸的进度阴影，
  * 方块内显示阶段名与百分比；方块之间用 › 连接。
@@ -31,12 +34,23 @@ const TICK_MS = 90
 /** 渐近逼近系数：越接近目标越慢，制造「还差一口气」的真实感。 */
 const APPROACH_K = 0.045
 
-export function PipelineProgress() {
+interface PipelineProgressProps {
+  /** true = 跑动画；false/undefined 视作 true（兼容旧调用点：卸载模式） */
+  active?: boolean
+}
+
+export function PipelineProgress({ active = true }: PipelineProgressProps) {
   const [elapsed, setElapsed] = useState(0)
-  // 总进度 0..CEILING（渐近线，永远到不了 1；请求完成时组件被卸载）
+  // 总进度 0..CEILING（渐近线，永远到不了 1；请求完成时组件被卸载或 active 转 false）
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
+    if (!active) {
+      // 未激活：重置为待机态（0% / 0s），不启动定时器
+      setElapsed(0)
+      setProgress(0)
+      return
+    }
     const start = performance.now()
     const timer = setInterval(() => {
       setElapsed((performance.now() - start) / 1000)
@@ -44,7 +58,7 @@ export function PipelineProgress() {
       setProgress((p) => p + (CEILING - p) * APPROACH_K)
     }, TICK_MS)
     return () => clearInterval(timer)
-  }, [])
+  }, [active])
 
   // 当前进度落在哪一步：progress 与各步累计阈值比较
   const activeIndex = CUMULATIVE.findIndex((c) => progress < c)

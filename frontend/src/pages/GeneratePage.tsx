@@ -57,7 +57,7 @@ export function GeneratePage() {
         serverError={serverError}
         quotaNotice={generateQuotaNotice(locked, freeRemaining)}
       />
-      {isPending && <PipelineProgress />}
+      <PipelineProgress active={isPending} />
 
       {/* 强度措辞暗号:教会用户用自然语言控制真题/改编/全新三档 */}
       <details className="mt-8 max-w-[44rem] text-[12.5px] text-quiet">

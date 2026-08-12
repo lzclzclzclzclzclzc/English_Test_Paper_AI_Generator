@@ -82,28 +82,8 @@ export function PracticePage() {
             )}
           </section>
         ))}
-
-        {/* 页脚：自选组卷入口 + 词汇预告 */}
-        <div className="divide-y divide-ink-10 border-t border-hairline">
-          <Link
-            to={PATHS.practiceCustom}
-            className="group flex items-baseline gap-3 px-2 py-4 transition-colors hover:bg-tint"
-          >
-            <span className="font-ui text-[14.5px] text-ink">自选组卷</span>
-            <span className="text-[12px] text-quiet">— 像点菜一样自由配比</span>
-            <span className="ml-auto shrink-0 font-ui text-[13px] text-quiet transition-colors group-hover:text-accent">
-              →
-            </span>
-          </Link>
-          <Link
-            to={PATHS.vocabulary}
-            className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-2 py-4 transition-colors hover:bg-tint"
-          >
-            <span className="font-ui text-[14.5px] text-ink">背单词</span>
-            <span className="text-[12px] text-quiet">— 国家核心 1600 词，间隔重复安排复习节奏 →</span>
-          </Link>
-        </div>
       </div>
     </div>
   )
 }
+

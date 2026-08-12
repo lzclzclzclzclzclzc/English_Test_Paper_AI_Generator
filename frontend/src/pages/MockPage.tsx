@@ -42,13 +42,13 @@ const FULL_EXAM_ENTRIES: ComposeEntry[] = [
 ]
 
 /**
- * 5 个配方常量。折算题数（每篇完形/阅读 = 6 题，首字母 1 篇 = 1 题）：
- * 全科 31 / 语法 25 / 听力 15 / 阅读 13 / 真题 31，全部 ≤ MAX_QUESTIONS(31)。
+ * 6 个配方常量。折算题数（每篇完形/阅读 = 6 题，首字母 1 篇 = 1 题）：
+ * 全科 31 / 语法 25 / 听力 15 / 阅读 13 / 写作 1 / 真题 31，全部 ≤ MAX_QUESTIONS(31)。
  */
 const MOCK_RECIPES: MockRecipe[] = [
   {
     id: 'full',
-    name: '全科检测卷',
+    name: '全科模拟卷',
     structure: '听力 2+2+2 · 单选 6 · 词形 3 · 句改 3 · 完形 1 篇 · 阅读 1 篇 · 作文 1 篇',
     minutes: 40,
     entries: FULL_EXAM_ENTRIES,
@@ -87,9 +87,16 @@ const MOCK_RECIPES: MockRecipe[] = [
     ],
   },
   {
+    id: 'writing',
+    name: '写作专场卷',
+    structure: '作文 1 篇',
+    minutes: 25,
+    entries: [{ type: 'writing', count: 1 }],
+  },
+  {
     id: 'original',
     name: '真题检测卷',
-    structure: '同全科检测卷 · 全部使用中考真题原题',
+    structure: '同全科模拟卷 · 全部使用中考真题原题',
     minutes: 40,
     entries: FULL_EXAM_ENTRIES,
     intensity: 'original',
@@ -97,7 +104,7 @@ const MOCK_RECIPES: MockRecipe[] = [
 ]
 
 /**
- * 整卷模拟：5 个固定配方一键出卷，可选限时（sessionStorage 交接给试卷页，
+ * 整卷模拟：6 个固定配方一键出卷，可选限时（sessionStorage 交接给试卷页，
  * 到点提醒不强制收卷）。真题检测卷 = 全科配方 + original 强度（会员）。
  */
 export function MockPage() {
@@ -135,11 +142,20 @@ export function MockPage() {
       />
 
       <div className="flex flex-col gap-8">
-        <div className="tile-grid" style={{ ['--tile-cols' as string]: '2' }}>
-          {MOCK_RECIPES.map((recipe, i) => {
+        <div className="tile-grid" style={{ ['--tile-cols' as string]: '1' }}>
+          {MOCK_RECIPES.map((recipe) => {
             const total = totalQuestions(recipe.entries)
             const isTimed = timed[recipe.id] === true
-            const tone = ['tile--grammar', 'tile--listening', 'tile--reading', 'tile--writing', 'tile--accent'][i] ?? 'tile--accent'
+            // 按 recipe.id 精确匹配色调，语义与分科色对齐
+            const TONE_BY_ID: Record<string, string> = {
+              full: 'tile--accent',
+              grammar: 'tile--grammar',
+              listening: 'tile--listening',
+              reading: 'tile--reading',
+              writing: 'tile--writing',
+              original: 'tile--accent',
+            }
+            const tone = TONE_BY_ID[recipe.id] ?? 'tile--accent'
             return (
               <div key={recipe.id} className={cn('tile', tone)}>
                 <div className="flex items-center gap-2">
