@@ -21,12 +21,12 @@ interface WeakSpotsProps {
 }
 
 /**
- * 弱点速览（工作台右栏窄版）：近 30 天最弱 3 个考点，每行考点名 +
+ * 弱点速览（工作台右栏窄版）：近 30 天最弱 4 个考点，每行考点名 +
  * 三色 band 条 + 「专练 →」直出 8 道；无答题记录时一句空态引导。
  */
 export function WeakSpots({ mastery, isPending, onDrill }: WeakSpotsProps) {
   const kpQuery = useKnowledgePoints()
-  const weakest = [...(mastery?.weak_kps ?? [])].sort((a, b) => a.mastery - b.mastery).slice(0, 3)
+  const weakest = [...(mastery?.weak_kps ?? [])].sort((a, b) => a.mastery - b.mastery).slice(0, 4)
   const empty = mastery !== undefined && mastery.total_attempts_considered === 0
 
   return (

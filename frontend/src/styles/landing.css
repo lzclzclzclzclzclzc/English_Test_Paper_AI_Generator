@@ -390,5 +390,94 @@ a.tile:active { transform: translateY(1px); }
 .tile--accent { --tile-accent: var(--color-accent); }
 @media (max-width: 640px) { .tile-grid { grid-template-columns: 1fr; } }
 
+/* ---------- 工作台 bento（大小不一方块，统一色系） ---------- */
+.bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+.bento .card {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--color-hairline);
+  border-top: 3px solid var(--card-accent, var(--color-accent));
+  background: var(--color-card-surface); color: var(--color-ink);
+  padding: 18px 20px; min-width: 0;
+  transition: background .15s ease, box-shadow .15s ease, transform .05s ease;
+}
+a.bento-link:hover, .bento a.card:hover { background: var(--color-tint); box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+.bento a.card:active { transform: translateY(1px); }
+/* 跨列/跨行 */
+.bento .col-6 { grid-column: span 6; }
+.bento .col-4 { grid-column: span 4; }
+.bento .col-3 { grid-column: span 3; }
+.bento .col-2 { grid-column: span 2; }
+/* 卡内元素 */
+.bento .card-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--card-accent, var(--color-accent)); margin-bottom: 10px; }
+.bento .card-title { font-size: 17px; font-weight: 700; color: var(--color-ink); }
+.bento .card-sub { font-size: 13px; line-height: 1.7; color: var(--color-quiet); margin-top: 6px; }
+.bento .card-cta { margin-top: auto; padding-top: 14px; font-size: 13px; font-weight: 700; color: var(--card-accent, var(--color-accent)); }
+/* 大数字（进度/统计） */
+.bento .card-stat { display: flex; align-items: baseline; gap: 6px; }
+.bento .card-stat .n { font-size: 30px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.bento .card-stat .u { font-size: 13px; font-weight: 600; color: var(--color-quiet); }
+.bento .card-stats-row { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 4px; }
+/* 迷你进度条 */
+.bento .card-bar { height: 4px; background: var(--color-ink-10); margin-top: 12px; overflow: hidden; }
+.bento .card-bar > i { display: block; height: 100%; background: var(--card-accent, var(--color-accent)); }
+/* 色系变体（复用分科色 token） */
+.bento .card.is-accent { --card-accent: var(--color-accent); }
+.bento .card.is-grammar { --card-accent: var(--color-grammar); }
+.bento .card.is-listening { --card-accent: var(--color-listening); }
+.bento .card.is-reading { --card-accent: var(--color-reading); }
+.bento .card.is-writing { --card-accent: var(--color-writing); }
+.bento .card.is-success { --card-accent: var(--color-success); }
+@media (max-width: 900px) {
+  .bento { grid-template-columns: repeat(2, 1fr); }
+  .bento .col-6 { grid-column: span 2; }
+  .bento .col-4, .bento .col-3, .bento .col-2 { grid-column: span 1; }
+}
+@media (max-width: 560px) {
+  .bento { grid-template-columns: 1fr; }
+  .bento .col-6, .bento .col-4, .bento .col-3, .bento .col-2 { grid-column: span 1; }
+}
+
+/* ---------- 通用浅底滚动条（融入米纸底，避免白底突兀） ---------- */
+.scroll-quiet { scrollbar-width: thin; scrollbar-color: var(--color-ink-15) transparent; }
+.scroll-quiet::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-quiet::-webkit-scrollbar-track { background: transparent; }
+.scroll-quiet::-webkit-scrollbar-thumb { background: var(--color-ink-15); border-radius: 0; }
+.scroll-quiet::-webkit-scrollbar-thumb:hover { background: var(--color-ink-30); }
+
+/* ---------- 工作台顶部：红底白字大输入区（主动作吸引眼球） ---------- */
+.dash-hero-input {
+  background: var(--color-accent);
+  color: #fff;
+  padding: 22px 26px 20px;
+  border: 1px solid var(--color-accent);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.dash-hero-input .hero-label { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; opacity: .88; }
+.dash-hero-input .hero-row { display: flex; align-items: stretch; gap: 12px; }
+.dash-hero-input .hero-input {
+  flex: 1; min-width: 0;
+  padding: 14px 16px; font-size: 17px; font-weight: 500;
+  border: 1px solid rgba(255,255,255,.55);
+  background: rgba(255,255,255,.08); color: #fff;
+  outline: none; transition: background .15s ease, border-color .15s ease;
+}
+.dash-hero-input .hero-input::placeholder { color: rgba(255,255,255,.72); }
+.dash-hero-input .hero-input:focus { background: rgba(255,255,255,.16); border-color: #fff; }
+.dash-hero-input .hero-input:disabled { opacity: .6; }
+.dash-hero-input .hero-submit {
+  flex-shrink: 0; padding: 0 22px; min-width: 108px;
+  background: #fff; color: var(--color-accent);
+  border: 1px solid #fff; font-size: 15px; font-weight: 700; letter-spacing: 0.05em;
+  cursor: pointer; transition: background .15s ease, color .15s ease;
+}
+.dash-hero-input .hero-submit:hover:not(:disabled) { background: #f2f2ee; }
+.dash-hero-input .hero-submit:disabled { opacity: .55; cursor: default; }
+.dash-hero-input .hero-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; font-size: 12.5px; color: rgba(255,255,255,.85); }
+.dash-hero-input .hero-more { color: rgba(255,255,255,.85); transition: color .15s ease; }
+.dash-hero-input .hero-more:hover { color: #fff; }
+.dash-hero-input .hero-err { color: #ffe5df; font-weight: 600; }
+.dash-hero-input .hero-quota { font-variant-numeric: tabular-nums; opacity: .8; }
+
+
 
 

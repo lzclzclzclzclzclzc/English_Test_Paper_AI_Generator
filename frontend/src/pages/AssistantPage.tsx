@@ -126,7 +126,7 @@ export function AssistantPage() {
   }
 
   return (
-    <div className="-mb-12 mx-auto flex h-[calc(100svh-2.5rem)] w-full max-w-[64rem] flex-col">
+    <div className="-mb-12 flex h-[calc(100svh-2.5rem)] w-full flex-col">
       {/* 顶行：新对话（有消息时显示） */}
       <div className="flex min-h-5 items-center justify-end">
         {messages.length > 0 && (
@@ -142,7 +142,7 @@ export function AssistantPage() {
       </div>
 
       {/* 消息列表 */}
-      <div className="min-h-0 flex-1 overflow-y-auto py-6">
+      <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto py-6">
         {messages.length === 0 && (
           <div className="flex flex-col gap-3 pt-10">
             <h1 className="text-[30px] font-bold leading-tight tracking-[-0.01em] text-ink [font-family:var(--font-display)]">
