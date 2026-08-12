@@ -171,7 +171,7 @@ export function AssistantPage() {
           {messages.map((msg, i) =>
             msg.role === 'user' ? (
               <div key={i} className="flex justify-end">
-                <p className="max-w-[85%] whitespace-pre-wrap rounded-md bg-wash px-4 py-2.5 text-[14.5px] leading-[1.8] text-ink">
+                <p className="max-w-[85%] whitespace-pre-wrap bg-wash px-4 py-2.5 text-[14.5px] leading-[1.8] text-ink" style={{ borderRadius: '14px' }}>
                   {msg.content}
                 </p>
               </div>
@@ -210,21 +210,23 @@ export function AssistantPage() {
 
       {/* 输入区 */}
       <div className="border-t border-hairline pb-5 pt-4">
-        <div className="flex items-end gap-3">
+        <div className="flex items-stretch gap-3">
           <textarea
-            rows={2}
+            rows={1}
             placeholder="输入你的需求，Enter 发送，Shift+Enter 换行"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isPending}
-            className="min-h-[56px] flex-1 resize-none rounded-[3px] border border-ink-20 bg-transparent px-3.5 py-2.5 text-[14.5px] leading-[1.8] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent disabled:opacity-60"
+            className="min-h-[48px] flex-1 resize-none border border-ink-20 bg-transparent px-3.5 py-2.5 text-[14.5px] leading-[1.6] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent disabled:opacity-60"
+            style={{ borderRadius: '10px' }}
           />
           <button
             type="button"
             disabled={isPending || !input.trim()}
             onClick={() => send(input)}
-            className="shrink-0 rounded-sm border border-accent bg-wash px-5 py-2.5 font-ui text-[14.5px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-50"
+            className="shrink-0 border border-accent bg-accent px-6 font-ui text-[14.5px] font-bold tracking-[0.05em] text-white transition-colors hover:bg-accent-ink hover:border-accent-ink disabled:pointer-events-none disabled:opacity-50"
+            style={{ borderRadius: '10px' }}
           >
             {chatMutation.isPending ? '思考中…' : '发送'}
           </button>
