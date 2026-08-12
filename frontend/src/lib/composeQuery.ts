@@ -15,7 +15,7 @@ import { TYPE_LABELS } from '@/lib/kp'
 export type Intensity = RevisionMode
 
 /** 与 ai_engine/parser.py MAX_QUESTIONS 对齐 */
-export const MAX_QUESTIONS = 30
+export const MAX_QUESTIONS = 50
 
 export interface ComposeEntry {
   type: QuestionType
@@ -35,6 +35,8 @@ export interface ComposeInput {
 
 /** 按「篇」计数的题型 → 每篇折算题数(parser.md「篇→题」规则) */
 const QUESTIONS_PER_PIECE: Partial<Record<QuestionType, number>> = {
+  listening_true_false: 5,
+  listening_fill_blank: 5,
   reading_longtext_single_choice: 6,
   cloze_single_choice: 6,
   reading_first_blank: 1, // 1 篇 = 1 题(7 空)

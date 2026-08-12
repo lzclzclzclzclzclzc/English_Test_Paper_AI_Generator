@@ -11,12 +11,15 @@ import {
 describe('unitOf / questionsPerUnit', () => {
   it('散题按道,篇章按篇', () => {
     expect(unitOf('single_choice')).toBe('道')
-    expect(unitOf('listening_fill_blank')).toBe('道')
+    expect(unitOf('listening_true_false')).toBe('篇')
+    expect(unitOf('listening_fill_blank')).toBe('篇')
     expect(unitOf('reading_longtext_single_choice')).toBe('篇')
     expect(unitOf('cloze_single_choice')).toBe('篇')
     expect(unitOf('reading_first_blank')).toBe('篇')
   })
-  it('阅读/完形每篇 6 题,首字母 1 篇 = 1 题', () => {
+  it('听力判断/填词每篇 5 题,阅读/完形每篇 6 题,首字母 1 篇 = 1 题', () => {
+    expect(questionsPerUnit('listening_true_false')).toBe(5)
+    expect(questionsPerUnit('listening_fill_blank')).toBe(5)
     expect(questionsPerUnit('reading_longtext_single_choice')).toBe(6)
     expect(questionsPerUnit('cloze_single_choice')).toBe(6)
     expect(questionsPerUnit('reading_first_blank')).toBe(1)
@@ -63,10 +66,10 @@ describe('composeQuery', () => {
       composeQuery({
         entries: [
           { type: 'single_choice', count: 5 },
-          { type: 'listening_fill_blank', count: 3 },
+          { type: 'listening_fill_blank', count: 2 },
         ],
       }),
-    ).toBe('来 5 道单项选择、3 道听力填词')
+    ).toBe('来 5 道单项选择、2 篇听力填词')
   })
   it('篇章题型按篇拼句', () => {
     expect(
@@ -125,7 +128,7 @@ describe('composeQuery', () => {
       composeQuery({
         entries: [{ type: 'listening_fill_blank', count: 5, kps: ['听力填词'] }],
       }),
-    ).toBe('来 5 道听力填词')
+    ).toBe('来 5 篇听力填词')
   })
   it('count 为 0 的条目不进句子', () => {
     expect(
@@ -152,16 +155,16 @@ describe('validateCompose', () => {
     const issues = validateCompose({ entries: [{ type: 'single_choice', count: 2.5 }] })
     expect(issues.some((i) => i.code === 'count_invalid')).toBe(true)
   })
-  it('6 篇完形 = 36 题,超 30 上限被拦', () => {
+  it('9 篇完形 = 54 题,超 50 上限被拦', () => {
     const issues = validateCompose({
-      entries: [{ type: 'cloze_single_choice', count: 6 }],
+      entries: [{ type: 'cloze_single_choice', count: 9 }],
     })
     expect(issues).toEqual([expect.objectContaining({ level: 'error', code: 'over_cap' })])
     expect(issues[0]?.message).toContain(String(MAX_QUESTIONS))
   })
-  it('恰好 30 题放行', () => {
+  it('8 篇完形 = 48 题放行', () => {
     expect(
-      validateCompose({ entries: [{ type: 'cloze_single_choice', count: 5 }] }),
+      validateCompose({ entries: [{ type: 'cloze_single_choice', count: 8 }] }),
     ).toEqual([])
   })
   it('original + 主题 → warn topic_dropped', () => {
