@@ -14,7 +14,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
   return (
     <div className="flex min-h-svh bg-background">
       <Sidebar />
-      <main className="min-w-0 flex-1 px-14 pb-20 pt-10 max-md:px-6">
+      <main className="min-w-0 flex-1 px-14 pb-12 pt-8 max-md:px-6">
         {children ?? <Outlet />}
       </main>
     </div>

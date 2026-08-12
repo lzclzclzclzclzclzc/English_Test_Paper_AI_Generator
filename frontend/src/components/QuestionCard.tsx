@@ -94,14 +94,14 @@ export function QuestionCard({
         </span>
         <span
           className={cn(
-            'rounded-full px-2.5 py-1 text-[12px] leading-none',
+            'rounded-sm px-2 py-1 text-[11px] font-bold leading-none',
             FAMILY_PILL[TYPE_FAMILY[question.question_type] ?? 'grammar'],
           )}
         >
           {typeLabel}
         </span>
         <span
-          className={cn('rounded-full px-2.5 py-1 text-[12px] leading-none', revision.className)}
+          className={cn('rounded-sm px-2 py-1 text-[11px] font-bold leading-none', revision.className)}
         >
           {revision.label}
         </span>

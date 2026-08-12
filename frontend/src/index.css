@@ -9,18 +9,18 @@
 @import "./styles/typography.css";
 @import "./styles/spacing.css";
 @import "./styles/base.css";
+@import "./styles/landing.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    /* 全站衬线（喫茶去：字体全部衬线，只有 400/700 两个字重） */
-    --font-sans: var(--font-serif);
-    --font-heading: var(--font-serif);
-    /* 英文题干沿用正文衬线栈（Georgia 在栈首，拉丁自动走 Georgia） */
-    --font-question: var(--font-serif);
-    /* 2026-08-09 用户裁定:全站单一字体——UI 元素也走衬线,不再引入无衬线层
-       (--font-ui-stack 保留在 typography.css 备用;font-ui 类语义不变,仅指向变化) */
-    --font-ui: var(--font-serif);
+    /* 卷王品牌焕新（2026-08）：全站转无衬线（SaaS × 瑞士国际主义）。
+       原喫茶去衬线栈保留在 typography.css，如需回退把下面四行指回 --font-serif 即可。 */
+    --font-sans: var(--font-ui-stack);
+    --font-heading: var(--font-ui-stack);
+    /* 英文题干沿用无衬线栈 */
+    --font-question: var(--font-ui-stack);
+    --font-ui: var(--font-ui-stack);
     --font-weight-medium: 400;
     --font-weight-semibold: 700;
 
@@ -28,6 +28,7 @@
     --color-ink: var(--ink);
     --color-paper: var(--surface-page);
     --color-accent: var(--accent);
+    --color-accent-ink: var(--accent-ink);
     --color-wash: var(--accent-wash);
     --color-hairline: var(--border-hairline);
     --color-soft: var(--border-soft);
@@ -88,14 +89,14 @@
     --color-chart-4: var(--ink-10);
     --color-chart-5: var(--ink-5);
 
-    /* 圆角：0.25rem（按钮/chip/格子）、0.375rem（代码块/解析框）。不用胶囊圆角。 */
-    --radius-sm: 0.25rem;
-    --radius-md: 0.375rem;
-    --radius-lg: 0.25rem;
-    --radius-xl: 0.375rem;
-    --radius-2xl: 0.375rem;
-    --radius-3xl: 0.375rem;
-    --radius-4xl: 0.375rem;
+    /* 圆角：卷王 variant-5 方正化——统一收到 2px，不用胶囊圆角。 */
+    --radius-sm: 2px;
+    --radius-md: 2px;
+    --radius-lg: 2px;
+    --radius-xl: 3px;
+    --radius-2xl: 3px;
+    --radius-3xl: 3px;
+    --radius-4xl: 3px;
 }
 
 @layer base {

@@ -12,13 +12,15 @@ import { FooterCta } from './landing/FooterCta'
 
 /**
  * 营销首页(`/`,对所有人可见;已登录时页眉 CTA 变「进入工作台」)。纯静态:除 useAuth 外零请求。
+ * 卷王品牌视觉(variant-5 SaaS × Swiss):外层 .landing-swiss 承载作用域样式与深/浅区块色板;
+ * 每个 section 自带 .l-wrap 控制最大宽度(深色区块 Hero/Footer 需要全宽铺底)。
  * 11 段结构拆在 pages/landing/ 子组件里,本文件只做组装。
  */
 export function LandingPage() {
   return (
-    <div className="min-h-svh bg-background">
+    <div className="landing-swiss min-h-svh">
       <LandingHeader />
-      <main className="mx-auto max-w-[1180px] px-14 max-md:px-6">
+      <main id="top">
         <HeroSection />
         <StatsBar />
         <TypeGrid />

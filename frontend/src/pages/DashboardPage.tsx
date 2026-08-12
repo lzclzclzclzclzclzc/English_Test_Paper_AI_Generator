@@ -23,7 +23,11 @@ const SHORTCUTS = [
   { to: PATHS.practice, title: '练习中心', desc: '九大题型，逐类专项练习' },
   { to: PATHS.mock, title: '整卷模拟', desc: '一键出一份完整检测卷' },
   { to: PATHS.review, title: '错题本', desc: '错过的题，再练到会' },
+  { to: PATHS.vocabulary, title: '背单词', desc: '国家核心 1600 词，间隔重复' },
 ] as const
+
+/** 常用方块的分科色调（与 SHORTCUTS 一一对应，2×2 四色） */
+const SHORTCUT_TONE = ['tile--grammar', 'tile--reading', 'tile--accent', 'tile--listening'] as const
 
 /** 首次使用三步引导（papers 为空时替换左栏「今日一练/继续作答」） */
 const FIRST_STEPS = [
@@ -109,9 +113,9 @@ export function DashboardPage() {
         </div>
       </PageHeader>
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-12">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10">
         {/* 左栏 = 行动流：输入条 → 今日一练 → 继续作答 */}
-        <div className="flex min-w-0 flex-col gap-10">
+        <div className="flex min-w-0 flex-col gap-7">
           {/* 一句话迷你输入条：Enter 出卷，右端去完整版 */}
           <section className="flex flex-col gap-2">
             <div className="flex items-center gap-5">
@@ -172,45 +176,32 @@ export function DashboardPage() {
             </>
           )}
 
+          {/* 常用入口：彩色方块网格（2 列，横排紧凑） */}
+          <section className="flex flex-col gap-3 border-t border-hairline pt-6">
+            <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
+              常用
+            </span>
+            <div className="tile-grid" style={{ ['--tile-cols' as string]: '2' }}>
+              {SHORTCUTS.map((s, i) => (
+                <Link key={s.to} to={s.to} className={cn('tile', SHORTCUT_TONE[i])}>
+                  <span className="tile-idx">0{i + 1}</span>
+                  <span className="tile-title">{s.title}</span>
+                  <span className="tile-desc">{s.desc}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+
           {isPending && <PipelineProgress />}
         </div>
 
-        {/* 右栏 = 粘顶信息栏：弱点速览 / 常用 / 词汇预告，细线分段不做卡 */}
+        {/* 右栏 = 粘顶信息栏：弱点速览，细线分段不做卡 */}
         <aside className="mt-12 border-t border-hairline pt-8 lg:sticky lg:top-10 lg:mt-0 lg:self-start lg:border-t-0 lg:pt-0">
-          <div className="flex flex-col divide-y divide-ink-10">
-            <WeakSpots
-              mastery={masteryQuery.data}
-              isPending={isPending}
-              onDrill={submitCompose}
-            />
-
-            {/* 常用：竖排链接列表 */}
-            <section className="flex flex-col gap-2 py-5">
-              <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
-                常用
-              </span>
-              <div className="flex flex-col">
-                {SHORTCUTS.map((s) => (
-                  <Link
-                    key={s.to}
-                    to={s.to}
-                    className="flex flex-col gap-0.5 rounded-sm px-2 py-2.5 transition-colors hover:bg-tint"
-                  >
-                    <span className="font-ui text-[14px] text-ink">{s.title}</span>
-                    <span className="text-[12px] text-quiet">{s.desc}</span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-
-            {/* 背单词入口：一行带过 */}
-            <Link
-              to={PATHS.vocabulary}
-              className="block px-2 pt-5 text-[12.5px] leading-[1.8] text-quiet transition-colors hover:text-accent"
-            >
-              背单词 — 国家核心 1600 词，间隔重复安排复习节奏 →
-            </Link>
-          </div>
+          <WeakSpots
+            mastery={masteryQuery.data}
+            isPending={isPending}
+            onDrill={submitCompose}
+          />
         </aside>
       </div>
 

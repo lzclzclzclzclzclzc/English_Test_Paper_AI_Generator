@@ -17,7 +17,7 @@ import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { prettifyKp, TYPE_LABELS } from '@/lib/kp'
 import { cn } from '@/lib/utils'
 
-const ACCENT = '#c2603f'
+const ACCENT = '#ef4a2b'
 const WEAK_THRESHOLD = 0.4
 
 const WINDOWS = [

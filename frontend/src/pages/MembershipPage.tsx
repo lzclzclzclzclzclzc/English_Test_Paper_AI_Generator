@@ -71,25 +71,29 @@ export function MembershipPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-3 divide-x divide-ink-10 border-y border-hairline max-sm:grid-cols-1 max-sm:divide-x-0 max-sm:divide-y max-sm:divide-ink-10">
-          {plansQuery.data?.map((plan) => (
-            <div key={plan.id} className="flex flex-col gap-3 px-8 py-7 first:pl-2 last:pr-2 max-sm:px-2">
-              <span className="text-[15px] text-ink">{plan.name}</span>
-              <span className="font-ui text-[28px] font-bold leading-none tabular-nums text-accent">
-                {formatYuan(plan.amount_cents)}
-              </span>
-              <span className="text-[12.5px] leading-relaxed text-quiet">{plan.description}</span>
-              <div className="mt-auto pt-2">
-                <Button
-                  size="sm"
-                  onClick={() => orderMutation.mutate(plan.id)}
-                  disabled={orderMutation.isPending}
-                >
-                  {membership?.active ? '续费' : '立即开通'}
-                </Button>
+        <div className="tile-grid" style={{ ['--tile-cols' as string]: '3' }}>
+          {plansQuery.data?.map((plan, i) => {
+            const tone =
+              i === 0 ? 'tile--listening' : i === 1 ? 'tile--reading' : 'tile--accent'
+            return (
+              <div key={plan.id} className={`tile ${tone}`}>
+                <span className="tile-idx">{plan.name}</span>
+                <span className="font-ui text-[28px] font-bold leading-none tabular-nums text-ink">
+                  {formatYuan(plan.amount_cents)}
+                </span>
+                <span className="tile-desc">{plan.description}</span>
+                <div className="mt-2">
+                  <Button
+                    size="sm"
+                    onClick={() => orderMutation.mutate(plan.id)}
+                    disabled={orderMutation.isPending}
+                  >
+                    {membership?.active ? '续费' : '立即开通'}
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

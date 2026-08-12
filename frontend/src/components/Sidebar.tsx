@@ -71,12 +71,11 @@ export function Sidebar() {
     </span>
   )
 
-  const menuItemClass =
-    'flex items-center px-3 py-2 font-ui text-[14px] text-muted-ink transition-colors hover:bg-tint hover:text-ink'
+  const menuItemClass = 'sb-menu-item'
 
   return (
     <aside
-      className="sticky top-0 flex h-svh shrink-0 flex-col border-r border-hairline transition-[width] duration-250 ease-out print:hidden"
+      className="sidebar-swiss sticky top-0 flex h-svh shrink-0 flex-col transition-[width] duration-250 ease-out print:hidden"
       style={{ width: collapsed ? 66 : 232 }}
     >
       {/* 顶部 64px：品牌（回营销首页） + 折叠按钮 */}
@@ -87,18 +86,16 @@ export function Sidebar() {
         )}
       >
         {!collapsed && (
-          <NavLink
-            to={PATHS.home}
-            className="whitespace-nowrap text-[17px] tracking-[0.06em] text-ink [font-family:var(--font-display)]"
-          >
-            试卷生成器
+          <NavLink to={PATHS.home} className="sb-brand">
+            <span className="sb-mark">卷</span>
+            <span>卷王</span>
           </NavLink>
         )}
         <button
           type="button"
           onClick={toggle}
           aria-label={collapsed ? '展开导航' : '收起导航'}
-          className="flex size-[30px] items-center justify-center rounded-sm text-muted-ink transition-colors hover:bg-tint hover:text-accent"
+          className="sb-toggle"
         >
           <PanelLeft className="size-[18px]" strokeWidth={1.5} />
         </button>
@@ -109,32 +106,25 @@ export function Sidebar() {
           <div key={group.label || `top-${groupIndex}`} className="flex flex-col gap-0.5">
             {group.label &&
               (collapsed ? (
-                <div aria-hidden className="mx-1 my-2.5 border-t border-hairline" />
+                <div aria-hidden className="sb-divider" />
               ) : (
-                <div className="px-3 pb-1 pt-4 font-ui text-[10.5px] font-bold tracking-[0.14em] text-quiet">
+                <div className="sb-group">
                   {group.label}
                 </div>
               ))}
             {group.items.map(({ to, label, icon: Icon, end, disabled, badge }) =>
               disabled ? (
-                // 未上线入口：不可点占位（不用赤陶——不可交互处不给强调色）
+                // 未上线入口：不可点占位
                 <span
                   key={to}
                   title={collapsed ? label : undefined}
-                  className={cn(
-                    'flex cursor-default items-center gap-3 rounded-sm px-3 py-[9px] font-ui text-[14.5px] text-quiet',
-                    collapsed && 'justify-center px-0',
-                  )}
+                  className={cn('sb-item is-disabled', collapsed && 'justify-center px-0')}
                 >
                   <Icon className="size-[18px] shrink-0" strokeWidth={1.5} />
                   {!collapsed && (
                     <span className="flex items-center gap-1.5 whitespace-nowrap">
                       {label}
-                      {badge && (
-                        <span className="rounded-sm border border-hairline px-1 py-px font-ui text-[10px] leading-none">
-                          {badge}
-                        </span>
-                      )}
+                      {badge && <span className="sb-badge">{badge}</span>}
                     </span>
                   )}
                 </span>
@@ -145,13 +135,7 @@ export function Sidebar() {
                   end={end}
                   title={collapsed ? label : undefined}
                   className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 rounded-sm px-3 py-[9px] font-ui text-[14.5px] transition-colors',
-                      collapsed && 'justify-center px-0',
-                      isActive
-                        ? 'bg-wash text-accent'
-                        : 'text-muted-ink hover:bg-tint hover:text-ink',
-                    )
+                    cn('sb-item', collapsed && 'justify-center px-0', isActive && 'is-active')
                   }
                 >
                   <Icon className="size-[18px] shrink-0" strokeWidth={1.5} />
@@ -163,13 +147,10 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* 底部用户区：点击弹出个人菜单（历史试卷/会员/设置/登出） */}
+      {/* 底部用户区：点击弹出个人菜单（会员/设置/登出） */}
       <div
         ref={menuRef}
-        className={cn(
-          'relative shrink-0 border-t border-hairline px-2 py-2',
-          collapsed && 'flex justify-center px-0',
-        )}
+        className={cn('sb-user-area', collapsed && 'flex justify-center px-0')}
       >
         <button
           type="button"
@@ -177,17 +158,14 @@ export function Sidebar() {
           aria-expanded={menuOpen}
           title={collapsed ? (user?.username ?? '个人菜单') : undefined}
           onClick={() => setMenuOpen((v) => !v)}
-          className={cn(
-            'flex items-center gap-2.5 rounded-sm px-1.5 py-1.5 text-left transition-colors hover:bg-tint',
-            collapsed ? 'justify-center' : 'w-full',
-          )}
+          className={cn('sb-user-btn', collapsed ? 'justify-center' : 'w-full')}
         >
-          <span className="flex size-[30px] shrink-0 items-center justify-center rounded-md bg-tint font-ui text-[13px] text-muted-ink">
+          <span className="sb-avatar">
             {(user?.username ?? '?').slice(0, 1).toUpperCase()}
           </span>
           {!collapsed && (
             <span className="flex min-w-0 items-center gap-1.5">
-              <span className="truncate font-ui text-[14px] text-ink">{user?.username}</span>
+              <span className="truncate font-ui text-[14px]">{user?.username}</span>
               {memberPill}
             </span>
           )}
@@ -197,36 +175,25 @@ export function Sidebar() {
           <div
             role="menu"
             className={cn(
-              'absolute z-40 flex flex-col rounded-md border border-hairline bg-paper py-1.5',
+              'sb-menu',
               collapsed ? 'bottom-2 left-full ml-2 w-44' : 'bottom-full left-2 right-2 mb-1.5',
             )}
-            style={{ boxShadow: 'var(--shadow-overlay)' }}
           >
             {/* 用户名行（只读） */}
             <div className="flex items-center gap-1.5 px-3 py-2">
-              <span className="truncate font-ui text-[14px] text-ink">{user?.username}</span>
+              <span className="truncate font-ui text-[14px]">{user?.username}</span>
               {memberPill}
             </div>
-            <div aria-hidden className="my-1 border-t border-hairline" />
-            <NavLink
-              to={PATHS.membership}
-              role="menuitem"
-              className={menuItemClass}
-              onClick={() => setMenuOpen(false)}
-            >
+            <div aria-hidden className="sb-menu-divider" />
+            <NavLink to={PATHS.membership} role="menuitem" className={menuItemClass} onClick={() => setMenuOpen(false)}>
               会员
             </NavLink>
             {!isAdmin && (
-              <NavLink
-                to={PATHS.settings}
-                role="menuitem"
-                className={menuItemClass}
-                onClick={() => setMenuOpen(false)}
-              >
+              <NavLink to={PATHS.settings} role="menuitem" className={menuItemClass} onClick={() => setMenuOpen(false)}>
                 设置
               </NavLink>
             )}
-            <div aria-hidden className="my-1 border-t border-hairline" />
+            <div aria-hidden className="sb-menu-divider" />
             <button
               type="button"
               role="menuitem"

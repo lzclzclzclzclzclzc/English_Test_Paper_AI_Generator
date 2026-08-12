@@ -22,10 +22,7 @@ const credentialsSchema = z.object({
 type Credentials = z.infer<typeof credentialsSchema>
 type Mode = 'login' | 'register'
 
-const inputClass =
-  'w-full rounded-[3px] border border-ink-20 bg-transparent px-3 py-2.5 text-[15px] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent'
-
-/** 登录 / 注册（handoff 第 2 屏）：左右两栏，中间竖细线，右栏 24rem 表单。 */
+/** 登录 / 注册：variant-5 两栏——左深色品牌区，右方正表单。 */
 export function LoginPage() {
   const [mode, setMode] = useState<Mode>('login')
   const navigate = useNavigate()
@@ -59,26 +56,24 @@ export function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-svh grid-cols-[1.15fr_1fr] bg-background max-md:grid-cols-1">
-      {/* 左栏：品牌 / 说明 / 底部小字 */}
-      <div className="flex flex-col justify-between border-r border-hairline px-14 py-12 max-md:hidden">
-        <Link
-          to="/welcome"
-          className="self-start text-[21px] tracking-[0.06em] text-ink [font-family:var(--font-display)]"
-        >
-          中考英语 AI 试卷生成器
+    <div className="landing-swiss login-shell">
+      {/* 左栏：深色品牌区 */}
+      <div className="login-brand">
+        <Link to={PATHS.home} className="brand">
+          <span className="mark">卷</span>
+          <span>卷王</span>
         </Link>
-        <p className="max-w-[24em] text-[26px] leading-[1.6] text-ink">
-          说一句你想练什么，<mark>从真题库里出一份能直接做的卷子</mark>。
+        <p className="login-pitch">
+          说一句你想练什么，<span className="hl">从真题库里出一份能直接做的卷子</span>。
         </p>
-        <p className="text-[12px] text-quiet">用户名 + 密码本地登录 · 会话 30 天滑动过期</p>
+        <p className="login-foot">用户名 + 密码本地登录 · 会话 30 天滑动过期</p>
       </div>
 
       {/* 右栏：表单 */}
-      <div className="flex items-center justify-center px-8 py-12">
-        <div className="w-full max-w-[24rem]">
-          {/* 登录 / 注册 tabs：选中项 2px 赤陶下边框 */}
-          <div className="mb-8 flex gap-6 border-b border-hairline">
+      <div className="login-form-col">
+        <div className="login-form">
+          {/* 登录 / 注册 tabs：选中项 2px 橙红下边框 */}
+          <div className="login-tabs">
             {(
               [
                 ['login', '登录'],
@@ -89,12 +84,7 @@ export function LoginPage() {
                 key={value}
                 type="button"
                 onClick={() => setMode(value)}
-                className={cn(
-                  '-mb-px border-b-2 pb-2.5 font-ui text-[15px] transition-colors',
-                  mode === value
-                    ? 'border-accent text-ink'
-                    : 'border-transparent text-quiet hover:text-ink',
-                )}
+                className={cn('login-tab', mode === value && 'is-active')}
               >
                 {label}
               </button>
@@ -103,50 +93,50 @@ export function LoginPage() {
 
           <form className="flex flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="username" className="font-ui text-[13px] text-muted-ink">
+              <label htmlFor="username" className="login-label">
                 用户名
               </label>
               <input
                 id="username"
                 autoComplete="username"
-                className={inputClass}
+                className="login-input"
                 {...form.register('username')}
               />
               {form.formState.errors.username && (
-                <p className="text-[12px] text-accent">
+                <p className="login-err">
                   {form.formState.errors.username.message}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="font-ui text-[13px] text-muted-ink">
+              <label htmlFor="password" className="login-label">
                 密码
               </label>
               <input
                 id="password"
                 type="password"
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                className={inputClass}
+                className="login-input"
                 {...form.register('password')}
               />
               {form.formState.errors.password && (
-                <p className="text-[12px] text-accent">
+                <p className="login-err">
                   {form.formState.errors.password.message}
                 </p>
               )}
             </div>
 
-            <p className="font-ui text-[12px] tabular-nums text-quiet">3–32 位字母数字下划线 · 密码 6–128 位</p>
+            <p className="login-hint num">3–32 位字母数字下划线 · 密码 6–128 位</p>
 
             {form.formState.errors.root && (
-              <p className="text-[12px] text-accent">{form.formState.errors.root.message}</p>
+              <p className="login-err">{form.formState.errors.root.message}</p>
             )}
 
             <button
               type="submit"
               disabled={form.formState.isSubmitting}
-              className="rounded-sm border border-accent bg-wash py-2.5 font-ui text-[15px] tracking-[0.06em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-50"
+              className="btn btn--primary btn--lg login-submit"
             >
               {form.formState.isSubmitting
                 ? mode === 'login'
@@ -157,10 +147,7 @@ export function LoginPage() {
                   : '注册'}
             </button>
 
-            <Link
-              to={PATHS.home}
-              className="self-start font-ui text-[13px] text-quiet transition-colors hover:text-accent"
-            >
+            <Link to={PATHS.home} className="login-back">
               返回首页
             </Link>
           </form>

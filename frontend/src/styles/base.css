@@ -19,7 +19,7 @@ html.dark {
 
 body {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-ui-stack);
   font-weight: var(--weight-regular);
   background: var(--surface-page);
   color: var(--text-body);

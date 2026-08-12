@@ -165,7 +165,7 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
       </div>
 
       <p className="mt-8 border-t border-hairline pt-3 text-[11.5px] text-quiet">
-        由中考英语 AI 试卷生成器生成 · 掌握度按 Wilson 下界计算，分数越低越值得优先练
+        由卷王生成 · 掌握度按 Wilson 下界计算，分数越低越值得优先练
       </p>
     </section>
   )

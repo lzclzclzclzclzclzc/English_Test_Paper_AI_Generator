@@ -135,28 +135,20 @@ export function MockPage() {
       />
 
       <div className="flex flex-col gap-8">
-        <div className="divide-y divide-ink-10 border-y border-hairline">
-          {MOCK_RECIPES.map((recipe) => {
+        <div className="tile-grid" style={{ ['--tile-cols' as string]: '2' }}>
+          {MOCK_RECIPES.map((recipe, i) => {
             const total = totalQuestions(recipe.entries)
             const isTimed = timed[recipe.id] === true
+            const tone = ['tile--grammar', 'tile--listening', 'tile--reading', 'tile--writing', 'tile--accent'][i] ?? 'tile--accent'
             return (
-              <div
-                key={recipe.id}
-                className="flex flex-wrap items-center gap-x-8 gap-y-3 px-2 py-5"
-              >
-                <div className="flex min-w-0 flex-1 basis-[22rem] flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[15.5px] text-ink">{recipe.name}</span>
-                    {recipe.intensity === 'original' && <MemberPill />}
-                  </div>
-                  <span className="text-[12.5px] leading-relaxed text-quiet">
-                    {recipe.structure}
-                  </span>
-                  <span className="font-ui text-[12.5px] tabular-nums text-quiet">
-                    {total} 题 · 建议 {recipe.minutes} 分钟
-                  </span>
+              <div key={recipe.id} className={cn('tile', tone)}>
+                <div className="flex items-center gap-2">
+                  <span className="tile-title">{recipe.name}</span>
+                  {recipe.intensity === 'original' && <MemberPill />}
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
+                <span className="tile-desc">{recipe.structure}</span>
+                <span className="tile-idx mt-0.5">{total} 题 · 建议 {recipe.minutes} 分钟</span>
+                <div className="mt-3 flex items-center gap-2">
                   <button
                     type="button"
                     aria-pressed={isTimed}
@@ -173,7 +165,7 @@ export function MockPage() {
                   <button
                     type="button"
                     disabled={isPending}
-                    className="rounded-sm border border-accent bg-wash px-6 py-1.5 font-ui text-[13.5px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
+                    className="rounded-sm border border-accent bg-accent px-5 py-1.5 font-ui text-[13px] tracking-[0.05em] text-white transition-colors hover:bg-accent-ink disabled:pointer-events-none disabled:opacity-60"
                     onClick={() => start(recipe)}
                   >
                     {isPending ? '生成中…' : '开始'}
