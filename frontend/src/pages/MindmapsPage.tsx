@@ -91,6 +91,8 @@ function MindmapRow({ m, onChanged }: { m: MindmapListItem; onChanged: () => voi
     onSuccess: onChanged,
     onError: toastApiError,
   })
+  // 进入重命名时才种下当前标题，避免行数据在后台更新后 name 变陈旧
+  const startRename = () => { setName(m.title); setRenaming(true) }
 
   return (
     <div className="grid grid-cols-[110px_minmax(0,1fr)_auto] items-center gap-4 border-b border-hairline px-2 py-[18px] transition-colors hover:bg-tint max-sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -113,13 +115,14 @@ function MindmapRow({ m, onChanged }: { m: MindmapListItem; onChanged: () => voi
       <div className="flex shrink-0 items-center gap-3 font-ui text-[13px]">
         {renaming ? (
           <>
-            <button className="text-accent" onClick={() => renameMut.mutate()}>保存</button>
-            <button className="text-quiet" onClick={() => { setRenaming(false); setName(m.title) }}>取消</button>
+            <button className="text-accent disabled:opacity-50" disabled={renameMut.isPending}
+              onClick={() => renameMut.mutate()}>保存</button>
+            <button className="text-quiet" onClick={() => setRenaming(false)}>取消</button>
           </>
         ) : (
           <>
-            <button className="text-quiet hover:text-accent" onClick={() => setRenaming(true)}>重命名</button>
-            <button className="text-quiet hover:text-accent"
+            <button className="text-quiet hover:text-accent" onClick={startRename}>重命名</button>
+            <button className="text-quiet hover:text-accent disabled:opacity-50" disabled={deleteMut.isPending}
               onClick={() => { if (confirm('确定删除这张思维导图？')) deleteMut.mutate() }}>
               删除
             </button>
