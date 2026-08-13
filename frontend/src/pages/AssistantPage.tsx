@@ -188,7 +188,7 @@ export function AssistantPage() {
                 )}
                 {msg.action?.type === 'open_paper' && (
                   <div className="mt-4">
-                    <Button size="sm" onClick={() => navigate(`/papers/${msg.action!.paper_id}`)}>
+                    <Button size="sm" onClick={() => navigate(`/papers/${(msg.action as Extract<AgentAction, { type: 'open_paper' }>).paper_id}`)}>
                       开始做题 →
                     </Button>
                   </div>

@@ -235,14 +235,42 @@ export interface UserCredentials {
 
 export interface AgentChatRequest {
   message: string
+  scope?: 'global' | 'mindmap'
+  mindmap_id?: string
+  session_token?: string
 }
 
 export type AgentAction =
   | { type: 'open_paper'; paper_id: string }
+  | { type: 'open_mindmap'; mindmap_id: string }
+  | { type: 'mindmap_updated'; mindmap_id: string }
 
 export interface AgentChatResponse {
   reply: string
   action: AgentAction | null
+}
+
+// ---- 思维导图 ----
+
+export interface MindmapListItem {
+  id: string
+  title: string
+  knowledge_point?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MindmapListResponse {
+  items: MindmapListItem[]
+}
+
+export interface MindmapDetail {
+  id: string
+  title: string
+  knowledge_point?: string | null
+  outline_md: string
+  created_at: string
+  updated_at: string
 }
 
 // ---- 学习计划 ----
