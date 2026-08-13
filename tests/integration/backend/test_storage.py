@@ -150,6 +150,7 @@ def test_init_db_records_applied_migrations(client):
         storage.MIGRATION_VOCABULARY_RETRY_QUEUE,
         storage.MIGRATION_VOCABULARY_WORD_SOURCES,
         storage.MIGRATION_WRITING_GRADE_RESULTS,
+        storage.MIGRATION_MINDMAPS,
     ]
 
 
