@@ -14,6 +14,7 @@ import { CustomPaperPage } from '@/pages/CustomPaperPage'
 import { MockPage } from '@/pages/MockPage'
 import { AssistantPage } from '@/pages/AssistantPage'
 import { PapersPage } from '@/pages/PapersPage'
+import { MindmapsPage } from '@/pages/MindmapsPage'
 import { PaperPageRoute } from '@/pages/PaperPage'
 import { MasteryPage } from '@/pages/MasteryPage'
 import { MembershipPage } from '@/pages/MembershipPage'
@@ -59,6 +60,7 @@ export function AppRoutes() {
         <Route path={PATHS.assistant} element={<RedirectIfAdmin><AssistantPage /></RedirectIfAdmin>} />
         <Route path={PATHS.review} element={<RedirectIfAdmin><ReviewPage /></RedirectIfAdmin>} />
         <Route path={PATHS.papers} element={<RedirectIfAdmin><PapersPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.mindmaps} element={<RedirectIfAdmin><MindmapsPage /></RedirectIfAdmin>} />
         <Route
           path="/papers/:paperId"
           element={<RedirectIfAdmin><PaperPageRoute /></RedirectIfAdmin>}

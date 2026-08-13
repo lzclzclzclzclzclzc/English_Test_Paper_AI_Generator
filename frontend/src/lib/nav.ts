@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LayoutGrid,
   MessageCircle,
+  Network,
   PenLine,
   ScrollText,
   SlidersHorizontal,
@@ -76,6 +77,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     label: '复盘',
     items: [
       { to: PATHS.papers, label: '历史试卷', icon: ScrollText, end: true },
+      { to: PATHS.mindmaps, label: '思维导图', icon: Network, end: true },
       { to: PATHS.review, label: '错题本', icon: XCircle, end: true },
       { to: PATHS.mastery, label: '掌握度', icon: BarChart3, end: true },
       { to: PATHS.report, label: '学情报告', icon: FileText, end: true },
