@@ -38,3 +38,5 @@ def test_mindmap_isolation_between_users(client):
     client.post("/api/auth/register", json={"username": "bob", "password": "pw123456"})
     rb = client.get(f"/api/agent/mindmaps/{mid}")
     assert rb.status_code == 404
+    # 404 走统一 BackendError 结构（error_code），与全站错误契约一致
+    assert rb.json()["error_code"] == "resource.not_found"

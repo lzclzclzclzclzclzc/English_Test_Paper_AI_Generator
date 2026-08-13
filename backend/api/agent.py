@@ -4,10 +4,11 @@ import re
 import sys
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
 from backend.deps import current_user
+from backend.errors import ResourceNotFoundError
 from backend.schemas import (
     AgentChatRequest,
     AgentChatResponse,
@@ -72,7 +73,7 @@ async def agent_chat(
     mindmap_id: str | None = None
     if body.scope == "mindmap":
         if not body.mindmap_id or not storage.get_mindmap(user.id, body.mindmap_id):
-            raise HTTPException(status_code=404, detail="思维导图不存在或无权访问")
+            raise ResourceNotFoundError("思维导图不存在或无权访问")
         mindmap_id = body.mindmap_id
         set_current_mindmap_id(mindmap_id)
         session = _mindmap_session(user.id, body.session_token or "default")
@@ -169,7 +170,7 @@ async def list_mindmaps_route(
 async def get_mindmap_route(mindmap_id: str, user: User = Depends(current_user)) -> MindmapDetail:
     mm = storage.get_mindmap(user.id, mindmap_id)
     if not mm:
-        raise HTTPException(status_code=404, detail="思维导图不存在")
+        raise ResourceNotFoundError("思维导图不存在")
     return MindmapDetail(**mm)
 
 
@@ -188,12 +189,14 @@ async def update_mindmap_route(
     ok = storage.update_mindmap(user.id, mindmap_id,
                                 outline_md=body.outline_md, title=body.title)
     if not ok:
-        raise HTTPException(status_code=404, detail="思维导图不存在")
+        raise ResourceNotFoundError("思维导图不存在")
     mm = storage.get_mindmap(user.id, mindmap_id)
+    if not mm:
+        raise ResourceNotFoundError("思维导图不存在")
     return MindmapDetail(**mm)
 
 
 @router.delete("/mindmaps/{mindmap_id}", status_code=204)
 async def delete_mindmap_route(mindmap_id: str, user: User = Depends(current_user)) -> None:
     if not storage.delete_mindmap(user.id, mindmap_id):
-        raise HTTPException(status_code=404, detail="思维导图不存在")
+        raise ResourceNotFoundError("思维导图不存在")
