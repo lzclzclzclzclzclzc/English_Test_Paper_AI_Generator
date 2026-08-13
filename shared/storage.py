@@ -32,6 +32,7 @@ MIGRATION_WRITING_GRADE_RESULTS = "20260806_001_writing_grade_results"
 MIGRATION_VOCABULARY_SCHEMA = "20260730_001_vocabulary_mvp"
 MIGRATION_VOCABULARY_RETRY_QUEUE = "20260804_001_vocabulary_retry_queue"
 MIGRATION_VOCABULARY_WORD_SOURCES = "20260805_001_vocabulary_word_sources"
+MIGRATION_MINDMAPS = "20260813_001_mindmaps"
 # Windows' bundled Python may not ship IANA zone data. Shanghai has no DST, so
 # the explicit UTC+08:00 offset keeps daily quota and streak boundaries stable.
 VOCABULARY_TIMEZONE = timezone(timedelta(hours=8), name="Asia/Shanghai")
@@ -197,6 +198,17 @@ def init_db() -> None:
                 UNIQUE(user_id, paper_id, item_index)
             );
             CREATE INDEX IF NOT EXISTS idx_writing_grade_user_paper ON writing_grade_results(user_id, paper_id);
+
+            CREATE TABLE IF NOT EXISTS mindmaps (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL REFERENCES users(id),
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL,
+                title TEXT NOT NULL,
+                knowledge_point TEXT,
+                outline_md TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_mindmaps_user ON mindmaps(user_id, created_at);
             """
         )
         _apply_migrations(conn)
@@ -1097,6 +1109,27 @@ def _migrate_writing_grade_results(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_mindmaps(conn: sqlite3.Connection) -> None:
+    if _table_exists(conn, "mindmaps"):
+        return
+    conn.execute(
+        """
+        CREATE TABLE mindmaps (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL REFERENCES users(id),
+            created_at TIMESTAMP NOT NULL,
+            updated_at TIMESTAMP NOT NULL,
+            title TEXT NOT NULL,
+            knowledge_point TEXT,
+            outline_md TEXT NOT NULL
+        );
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_mindmaps_user ON mindmaps(user_id, created_at)",
+    )
+
+
 def _migrate_vocabulary_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(
         """
@@ -1233,6 +1266,7 @@ def _apply_migrations(conn: sqlite3.Connection) -> None:
         (MIGRATION_USERS_STATUS, _migrate_users_status),
         (MIGRATION_ATTEMPT_ITEMS_USER_ANSWER, _migrate_attempt_items_user_answer),
         (MIGRATION_WRITING_GRADE_RESULTS, _migrate_writing_grade_results),
+        (MIGRATION_MINDMAPS, _migrate_mindmaps),
     ]
     for migration_id, migration in migrations:
         if _migration_applied(conn, migration_id):
