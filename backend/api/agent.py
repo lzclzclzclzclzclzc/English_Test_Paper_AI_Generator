@@ -178,7 +178,9 @@ async def get_mindmap_route(mindmap_id: str, user: User = Depends(current_user))
 async def create_mindmap_route(
     body: MindmapCreateRequest, user: User = Depends(current_user),
 ) -> MindmapCreateResponse:
-    mid = storage.save_mindmap(user.id, body.title, body.outline_md, knowledge_point=body.title)
+    # 手动新建不设 knowledge_point（留空），避免列表里把标题当副标题重复展示；
+    # agent 出图走 create_mindmap 工具，那里才用知识点名填充。
+    mid = storage.save_mindmap(user.id, body.title, body.outline_md)
     return MindmapCreateResponse(id=mid)
 
 

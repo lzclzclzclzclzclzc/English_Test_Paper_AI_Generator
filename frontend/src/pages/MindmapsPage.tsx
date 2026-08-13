@@ -26,7 +26,10 @@ export function MindmapsPage() {
 
   const createMut = useMutation({
     mutationFn: () => createMindmap('未命名思维导图', '# 未命名思维导图\n## 分支一\n- 要点'),
-    onSuccess: (res) => navigate(PATHS.mindmap(res.id)),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['mindmaps', 'list'] })
+      navigate(PATHS.mindmap(res.id))
+    },
     onError: toastApiError,
   })
 
