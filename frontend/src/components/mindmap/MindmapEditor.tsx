@@ -18,9 +18,11 @@ export function MindmapEditor({ value, onSave, saving }: Props) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSaved = useRef(value)
 
-  // 外部 value 变化（如对话改图 / 首次加载）→ 同步进编辑框
+  // 外部 value 变化（如对话改图 / 首次加载）→ 同步进编辑框。
+  // 仅当内容确实不同才覆盖 draft，避免自动保存回环（父层 PATCH 后回传同值）
+  // 重置光标或吞掉用户新输入。
   useEffect(() => {
-    setDraft(value)
+    setDraft((cur) => (cur === value ? cur : value))
     lastSaved.current = value
   }, [value])
 
