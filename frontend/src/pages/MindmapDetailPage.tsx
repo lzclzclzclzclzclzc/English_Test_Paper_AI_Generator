@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { PanelGroup, Panel } from 'react-resizable-panels'
 import { getMindmap, updateMindmap } from '@/api/agent'
 import { MindmapEditor } from '@/components/mindmap/MindmapEditor'
+import { ResizeHandle } from '@/components/mindmap/ResizeHandle'
 import { AssistantChat } from '@/components/AssistantChat'
 import { Button } from '@/components/ui/button'
 import { PATHS } from '@/lib/paths'
@@ -69,7 +71,31 @@ export function MindmapDetailPage() {
         </Button>
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4">
+      {assistantOpen ? (
+        <PanelGroup direction="horizontal" autoSaveId="mm-detail-split" className="flex min-h-0 flex-1">
+          <Panel defaultSize={65} minSize={30} className="min-h-0">
+            <MindmapEditor
+              value={mm.outline_md}
+              saving={saveMut.isPending}
+              onSave={(outline) => saveMut.mutate(outline)}
+            />
+          </Panel>
+          <ResizeHandle />
+          <Panel defaultSize={35} minSize={22} className="min-h-0">
+            <div className="flex h-full min-h-0 flex-col rounded-[12px] border border-hairline p-3">
+              <AssistantChat
+                scope="mindmap"
+                mindmapId={id}
+                sessionToken={sessionToken}
+                storageKey={`agent.chat.mm.${id}.${sessionToken}`}
+                onAction={onAction}
+                emptyHint="告诉我怎么改这张图，例如："
+                suggestions={MINDMAP_SUGGESTIONS}
+              />
+            </div>
+          </Panel>
+        </PanelGroup>
+      ) : (
         <div className="min-h-0 flex-1">
           <MindmapEditor
             value={mm.outline_md}
@@ -77,20 +103,7 @@ export function MindmapDetailPage() {
             onSave={(outline) => saveMut.mutate(outline)}
           />
         </div>
-        {assistantOpen && (
-          <div className="flex min-h-0 w-[360px] shrink-0 flex-col rounded-[12px] border border-hairline p-3 max-lg:w-[300px]">
-            <AssistantChat
-              scope="mindmap"
-              mindmapId={id}
-              sessionToken={sessionToken}
-              storageKey={`agent.chat.mm.${id}.${sessionToken}`}
-              onAction={onAction}
-              emptyHint="告诉我怎么改这张图，例如："
-              suggestions={MINDMAP_SUGGESTIONS}
-            />
-          </div>
-        )}
-      </div>
+      )}
     </div>
   )
 }

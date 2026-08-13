@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { PanelGroup, Panel } from 'react-resizable-panels'
 import { MindmapView } from './MindmapView'
+import { ResizeHandle } from './ResizeHandle'
 
 interface Props {
   /** 当前大纲（父组件持有，对话改图后更新此值即同步预览+编辑框） */
@@ -40,8 +42,8 @@ export function MindmapEditor({ value, onSave, saving }: Props) {
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 md:flex-row">
-      <div className="flex min-h-0 flex-1 flex-col">
+    <PanelGroup direction="horizontal" autoSaveId="mm-editor-split" className="h-full min-h-0">
+      <Panel defaultSize={50} minSize={20} className="flex min-h-0 flex-col pr-2">
         <div className="mb-1 flex items-center justify-between">
           <span className="font-ui text-[12.5px] text-quiet">大纲（Markdown）</span>
           <span className="font-ui text-[12px] text-quiet">
@@ -54,10 +56,13 @@ export function MindmapEditor({ value, onSave, saving }: Props) {
           spellCheck={false}
           className="min-h-[200px] flex-1 resize-none rounded-[10px] border border-ink-20 bg-transparent p-3 font-mono text-[13px] leading-[1.7] text-ink outline-none focus:border-accent"
         />
-      </div>
-      <div className="min-h-[240px] flex-1 rounded-[10px] border border-hairline bg-tint/40">
-        <MindmapView outline={draft} />
-      </div>
-    </div>
+      </Panel>
+      <ResizeHandle />
+      <Panel defaultSize={50} minSize={20} className="min-h-0 pl-2">
+        <div className="h-full rounded-[10px] border border-hairline bg-tint/40">
+          <MindmapView outline={draft} />
+        </div>
+      </Panel>
+    </PanelGroup>
   )
 }

@@ -26,6 +26,23 @@ export function MindmapView({ outline, className }: Props) {
     mmRef.current.fit()
   }, [outline])
 
+  // 容器尺寸变化（如拖拽分隔条改宽）→ 重新 fit，保持全图可见。
+  // rAF 去抖，规避 ResizeObserver loop 警告。
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el) return
+    let raf = 0
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => mmRef.current?.fit())
+    })
+    ro.observe(el)
+    return () => {
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+    }
+  }, [])
+
   useEffect(() => {
     return () => {
       mmRef.current?.destroy()
