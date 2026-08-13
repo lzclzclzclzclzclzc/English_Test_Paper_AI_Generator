@@ -133,6 +133,52 @@ def get_user_history(window_days: int = 30) -> str:
 
 
 @function_tool
+def get_vocabulary_status() -> str:
+    """获取当前用户的背单词情况（间隔重复词汇模块）。
+
+    返回 JSON，包含：
+      today: 今日任务阶段与计数
+        - phase（当前阶段：scheduled_review 复习 / new 新词 / same_day_retry 当日重练 / completed 已完成）
+        - remaining（今日还剩多少张卡）
+        - new_completed / new_total（今日新词进度）
+        - review_completed / review_total（今日到期复习进度）
+        - daily_new_limit（每日新词上限）
+      progress: 累计进度
+        - learned_count / total_words（已学 / 词表总量）
+        - mastered_count（长期掌握：走完全部复习间隔）
+        - due_count（当前到期待复习）
+        - streak_days（连续学习天数）
+        - wordlist_label（词表名）
+    据此可判断学生今天该不该背、进度如何、要不要提醒复习。
+    """
+    user_id = _require_user_id()
+    today = storage.get_vocabulary_today(user_id)
+    progress = storage.get_vocabulary_progress(user_id)
+    counts = today.get("counts", {})
+    return json.dumps({
+        "today": {
+            "date": today.get("date"),
+            "phase": today.get("phase"),
+            "daily_new_limit": today.get("daily_new_limit"),
+            "remaining": counts.get("remaining_count"),
+            "new_completed": counts.get("new_completed"),
+            "new_total": counts.get("new_total"),
+            "review_completed": counts.get("scheduled_review_completed"),
+            "review_total": counts.get("scheduled_review_total"),
+            "retry_pending": counts.get("retry_pending"),
+        },
+        "progress": {
+            "learned_count": progress.get("learned_count"),
+            "total_words": progress.get("total_words"),
+            "mastered_count": progress.get("mastered_count"),
+            "due_count": progress.get("due_count"),
+            "streak_days": progress.get("streak_days"),
+            "wordlist_label": progress.get("wordlist_label"),
+        },
+    }, ensure_ascii=False, indent=2)
+
+
+@function_tool
 def get_example_questions(knowledge_point_id: str, count: int = 3) -> str:
     """从题库随机抽取该知识点的例题（最多 count 道，默认 3 道）。
 
