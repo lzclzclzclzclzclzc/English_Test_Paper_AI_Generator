@@ -19,7 +19,7 @@ from openai import AsyncOpenAI
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from shared.config import get_config
-from agent.tools import get_example_questions, get_user_history, generate_paper, implement_study_plan, get_vocabulary_status
+from agent.tools import get_example_questions, get_user_history, generate_paper, implement_study_plan, get_vocabulary_status, create_mindmap, get_current_mindmap, update_current_mindmap
 
 _SKILLS_DIR = Path(__file__).parent / "skills"
 
@@ -137,6 +137,6 @@ def create_coach_agent() -> Agent:
     return Agent(
         name="中考英语学习助手",
         instructions=system_prompt,
-        tools=[get_user_history, get_example_questions, generate_paper, implement_study_plan, get_vocabulary_status],
+        tools=[get_user_history, get_example_questions, generate_paper, implement_study_plan, get_vocabulary_status, create_mindmap, get_current_mindmap, update_current_mindmap],
         model=_build_model(),
     )
