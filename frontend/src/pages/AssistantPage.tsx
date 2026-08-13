@@ -33,7 +33,17 @@ export function AssistantPage() {
         storageKey="agent.chat"
         allowClear
         initialInput={initialInput}
-        emptyHint="用一句话告诉我你想做什么：出题、查例题、制定学习计划、画思维导图。"
+        emptyHeader={
+          <>
+            <h1 className="text-[30px] font-bold leading-tight tracking-[-0.01em] text-ink [font-family:var(--font-display)]">
+              学习助手
+            </h1>
+            <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
+              用一句话告诉我你想做什么：出题、查例题、制定学习计划、画思维导图，做好的卷子和导图
+              <mark>直接给你入口</mark>。
+            </p>
+          </>
+        }
         suggestions={SUGGESTIONS}
       />
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
@@ -25,6 +26,8 @@ export interface AssistantChatProps {
   onAction?: (action: AgentAction) => void
   /** 是否允许「新对话」（global 场景显示；mindmap 面板通常隐藏） */
   allowClear?: boolean
+  /** 空态顶部富内容（如页面标题 hero），渲染在 emptyHint 之上 */
+  emptyHeader?: ReactNode
   /** 空态提示语 */
   emptyHint?: string
   /** 建议 prompt 列表 */
@@ -58,7 +61,7 @@ function saveMessages(key: string, messages: ChatMessage[]) {
 /** 可复用学习助手聊天。global = 全局会话；mindmap = 编辑页独立会话（session_token 隔离）。 */
 export function AssistantChat({
   scope, storageKey, mindmapId, sessionToken, initialInput, onAction,
-  allowClear = false, emptyHint, suggestions,
+  allowClear = false, emptyHeader, emptyHint, suggestions,
 }: AssistantChatProps) {
   const navigate = useNavigate()
   const [input, setInput] = useState(initialInput ?? '')
@@ -135,6 +138,7 @@ export function AssistantChat({
       <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto py-4">
         {messages.length === 0 && (
           <div className="flex flex-col gap-3 pt-6">
+            {emptyHeader}
             {emptyHint && <p className="text-[14px] leading-[1.9] text-muted-ink">{emptyHint}</p>}
             {suggestions && (
               <div className="mt-1 flex flex-wrap gap-2">
