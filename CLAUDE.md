@@ -73,7 +73,7 @@ original spec):
   read-only, git-tracked question bank (`questions` / `knowledge_points` /
   `question_knowledge_points`). User data (`users` / `sessions` / `papers` /
   `attempts` / `attempt_items` / `study_plans` / `writing_grade_results` /
-  the 7 `vocabulary_*` tables / `schema_migrations`) lives in `data/app.db`,
+  `mindmaps` / the 7 `vocabulary_*` tables / `schema_migrations`) lives in `data/app.db`,
   which is **gitignored** — created fresh by `python -m backend.cli init-db`
   on first run. Bank reads go through `storage.connect_bank()` (env
   `SQLITE_PATH`, `config.db_path`); user reads go through `storage.connect()`

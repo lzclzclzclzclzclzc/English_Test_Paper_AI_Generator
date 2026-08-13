@@ -5,11 +5,16 @@ Tools:
   get_example_questions  — fetch random bank questions for a KP
   generate_paper         — generate a paper via the AI Engine pipeline
   implement_study_plan   — turn an NL plan into per-day papers + persist
+  get_vocabulary_status  — summarise the user's spaced-repetition vocab progress
+  create_mindmap         — save a new mind map from a markdown outline
+  get_current_mindmap    — read the mind map currently being edited
+  update_current_mindmap — overwrite the mind map currently being edited
 
 SECURITY: the acting user id is NEVER a tool parameter — the LLM (and the
 client-supplied chat history) must not be able to choose whose data a tool
 touches. The backend binds the authenticated id via set_current_user_id()
-before running the agent; tools read it from a ContextVar.
+before running the agent; tools read it from a ContextVar. The same holds for
+the mind map being edited (set_current_mindmap_id / _current_mindmap_id).
 """
 from __future__ import annotations
 

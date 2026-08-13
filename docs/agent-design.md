@@ -89,6 +89,14 @@ Skill 与 KP 清单都只在 `create_coach_agent()` 装配时读取一次；热�
 | `get_user_history` | 制定学习计划时分析薄弱点 |
 | `get_example_questions` | 用户要看例题，或计划里展示第 1 天预习例题 |
 | `implement_study_plan` | 用户说"帮我实施这个计划"时，把计划文本落实为每日试卷 |
+| `get_vocabulary_status` | 用户问背单词进度 / 今日任务（背单词 skill） |
+| `create_mindmap` | 全局聊天里要"画/整理成思维导图"（思维导图 skill） |
+| `get_current_mindmap` | 编辑页里改图前先读当前大纲 |
+| `update_current_mindmap` | 编辑页里覆盖保存当前图 |
+
+> 注：`create_mindmap` 属"全局聊天新建"场景；`get_current_mindmap` /
+> `update_current_mindmap` 属"编辑页改图"场景，依赖后端绑定的 `_current_mindmap_id`
+> ContextVar（见 §6 思维导图）。
 
 ---
 
@@ -302,6 +310,35 @@ async def agent_chat(body: AgentChatRequest, user: User = Depends(current_user))
 - **学习计划持久化**：`implement_study_plan` 调 `storage.save_study_plan(user_id, total_days, data)`
   落库，`storage.get_latest_study_plan(user_id)` 取最新计划供 `/study-plans/latest`。计划中每天的
   多考点试卷通过 `storage.save_paper` 写入 papers 表，`/papers/{id}` 即可做题。
+
+---
+
+## 9.5 思维导图（Mind Map）
+
+学习助手可把语法/知识点讲解整理成**思维导图**（纯前端 Markmap 渲染，大纲 markdown
+为唯一事实来源）。详见 `docs/superpowers/specs/2026-08-13-mindmap-design.md`。
+
+**两种上下文**（由 `agent/skills/mindmap.md` 区分）：
+- **全局聊天新建**：Coach 自己组织层级大纲 → `create_mindmap(topic, outline_markdown)`
+  落库 → 回复末尾 `<mindmap_ready mindmap_id=.../>` → 后端解析成 `open_mindmap` 动作，
+  前端渲染入口，点击进 `/mindmaps/{id}` 编辑页。
+- **编辑页改图**：详情页右侧内嵌助手以 `scope=mindmap` 调 `/agent/chat`，后端校验该图
+  归属后 `set_current_mindmap_id(id)` 并使用按图+token 隔离的会话
+  （`user_{id}_mm_{token}`，每次挂载新 token → 每次打开都是新对话）。Coach 先
+  `get_current_mindmap` 读现状 → 改 → `update_current_mindmap` 覆盖保存 → 回复末尾
+  `<mindmap_updated/>` → 后端注入当前 `mindmap_id` 成 `mindmap_updated` 动作 →
+  前端 invalidate 该图查询 → 编辑器与预览刷新。
+
+**安全**：`create_mindmap` / `get_current_mindmap` / `update_current_mindmap` 均不接受
+`user_id` / `mindmap_id` 参数——两者都从 ContextVar 读取（`_current_user_id` +
+`_current_mindmap_id`），后端在 `Runner.run` 前绑定；storage CRUD 一律 `WHERE user_id=?`。
+
+**REST 接口**（`backend/api/agent.py`，均 `Depends(current_user)`）：
+`GET /agent/mindmaps`（分页列表）、`GET /agent/mindmaps/{id}`、`POST /agent/mindmaps`
+（手动新建）、`PATCH /agent/mindmaps/{id}`（覆盖保存 / 重命名，自动保存走这里）、
+`DELETE /agent/mindmaps/{id}`。404 走统一 `ResourceNotFoundError`（`error_code`）。
+存储：`data/app.db` 的 `mindmaps` 表（`id / user_id / created_at / updated_at / title /
+knowledge_point / outline_md`，迁移 `20260813_001_mindmaps`）。
 
 ---
 
