@@ -1383,6 +1383,80 @@ def get_latest_study_plan(user_id: str) -> dict | None:
     return json.loads(row["plan_json"]) if row else None
 
 
+# ─── Mindmaps ────────────────────────────────────────────────────────────────
+
+def save_mindmap(user_id: str, title: str, outline_md: str,
+                 knowledge_point: str = "") -> str:
+    """Persist a new mindmap, return its id."""
+    init_db()
+    mindmap_id = uuid4().hex
+    now = datetime.now(timezone.utc).isoformat()
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO mindmaps (id, user_id, created_at, updated_at, title, "
+            "knowledge_point, outline_md) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (mindmap_id, user_id, now, now, title, knowledge_point, outline_md),
+        )
+    return mindmap_id
+
+
+def get_mindmap(user_id: str, mindmap_id: str) -> dict | None:
+    init_db()
+    with connect() as conn:
+        if not _table_exists(conn, "mindmaps"):
+            return None
+        row = conn.execute(
+            "SELECT id, title, knowledge_point, outline_md, created_at, updated_at "
+            "FROM mindmaps WHERE id = ? AND user_id = ?",
+            (mindmap_id, user_id),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def list_mindmaps(user_id: str, limit: int = 20, offset: int = 0) -> list[dict]:
+    init_db()
+    with connect() as conn:
+        if not _table_exists(conn, "mindmaps"):
+            return []
+        rows = conn.execute(
+            "SELECT id, title, knowledge_point, created_at, updated_at "
+            "FROM mindmaps WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            (user_id, limit, offset),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def update_mindmap(user_id: str, mindmap_id: str, *,
+                   outline_md: str | None = None, title: str | None = None) -> bool:
+    """Overwrite outline and/or title. Returns True if a row was updated."""
+    init_db()
+    sets, params = [], []
+    if outline_md is not None:
+        sets.append("outline_md = ?"); params.append(outline_md)
+    if title is not None:
+        sets.append("title = ?"); params.append(title)
+    if not sets:
+        return False
+    sets.append("updated_at = ?"); params.append(datetime.now(timezone.utc).isoformat())
+    params.extend([mindmap_id, user_id])
+    with connect() as conn:
+        cur = conn.execute(
+            f"UPDATE mindmaps SET {', '.join(sets)} WHERE id = ? AND user_id = ?",
+            params,
+        )
+        return cur.rowcount > 0
+
+
+def delete_mindmap(user_id: str, mindmap_id: str) -> bool:
+    init_db()
+    with connect() as conn:
+        cur = conn.execute(
+            "DELETE FROM mindmaps WHERE id = ? AND user_id = ?",
+            (mindmap_id, user_id),
+        )
+        return cur.rowcount > 0
+
+
 # ─── Vocabulary ─────────────────────────────────────────────────────────────
 
 def _vocabulary_now() -> datetime:
