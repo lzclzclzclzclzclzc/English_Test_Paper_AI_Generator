@@ -544,18 +544,43 @@ def get_paper(paper_id: str, user_id: str) -> Paper | None:
     return Paper.model_validate_json(row["payload_json"]) if row else None
 
 
-def list_papers(user_id: str, limit: int = 100, offset: int = 0) -> list[PaperListItem]:
+def list_papers(user_id: str, limit: int = 100, offset: int = 0, *,
+                submitted: bool | None = None,
+                question_type: str | None = None,
+                start_date: str | None = None,
+                end_date: str | None = None) -> list[PaperListItem]:
     init_db()
+    # Build the WHERE clause dynamically so absent filters don't constrain.
+    # Date filters compare by UTC date (generated_at is stored UTC ISO); a query
+    # near local midnight can land on the adjacent UTC day — a minor edge we accept.
+    clauses = ["user_id = ?"]
+    params: list[object] = [user_id]
+    if submitted is not None:
+        clauses.append("submitted = ?")
+        params.append(int(submitted))
+    if start_date:
+        clauses.append("date(generated_at) >= date(?)")
+        params.append(start_date)
+    if end_date:
+        clauses.append("date(generated_at) <= date(?)")
+        params.append(end_date)
+    if question_type:
+        clauses.append(
+            "EXISTS (SELECT 1 FROM json_each(payload_json, '$.items') je "
+            "WHERE json_extract(je.value, '$.question.question_type') = ?)"
+        )
+        params.append(question_type)
+    params.extend([limit, offset])
     with connect() as conn:
         rows = conn.execute(
-            """
+            f"""
             SELECT paper_id, title, generated_at, payload_json, submitted
             FROM papers
-            WHERE user_id = ?
+            WHERE {" AND ".join(clauses)}
             ORDER BY generated_at DESC
             LIMIT ? OFFSET ?
             """,
-            (user_id, limit, offset),
+            params,
         ).fetchall()
     items: list[PaperListItem] = []
     for row in rows:
