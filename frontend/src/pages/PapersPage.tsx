@@ -172,7 +172,7 @@ function FilterBar({
         value={questionType || 'all'}
         onValueChange={(v) => onQuestionTypeChange(v === 'all' ? '' : v)}
       >
-        <SelectTrigger size="sm" className="border-ink-20 font-ui text-[12.5px]">
+        <SelectTrigger size="sm" aria-label="题型筛选" className="border-ink-20 font-ui text-[12.5px]">
           <SelectValue placeholder="全部题型" />
         </SelectTrigger>
         <SelectContent>
@@ -192,6 +192,7 @@ function FilterBar({
           type="date"
           value={startDate}
           max={endDate || undefined}
+          aria-label="起始日期"
           onChange={(e) => onStartDateChange(e.target.value)}
           className="rounded-lg border border-ink-20 px-2 py-1 text-ink outline-none transition-colors focus:border-accent"
         />
@@ -200,6 +201,7 @@ function FilterBar({
           type="date"
           value={endDate}
           min={startDate || undefined}
+          aria-label="截止日期"
           onChange={(e) => onEndDateChange(e.target.value)}
           className="rounded-lg border border-ink-20 px-2 py-1 text-ink outline-none transition-colors focus:border-accent"
         />
