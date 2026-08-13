@@ -31,6 +31,8 @@ export function MindmapDetailPage() {
 
   const saveMut = useMutation({
     mutationFn: (outline: string) => updateMindmap(id, { outline_md: outline }),
+    // 用返回的最新数据回填缓存，保持 ['mindmap', id] 权威、避免自动保存后缓存陈旧
+    onSuccess: (data) => qc.setQueryData(['mindmap', id], data),
     onError: toastApiError,
   })
 
