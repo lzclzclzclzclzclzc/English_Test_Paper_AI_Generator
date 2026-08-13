@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PanelGroup, Panel } from 'react-resizable-panels'
 import { getMindmap, updateMindmap } from '@/api/agent'
-import { MindmapEditor } from '@/components/mindmap/MindmapEditor'
+import { useOutlineDraft, OutlineEditor } from '@/components/mindmap/MindmapEditor'
+import { MindmapView } from '@/components/mindmap/MindmapView'
 import { ResizeHandle } from '@/components/mindmap/ResizeHandle'
 import { AssistantChat } from '@/components/AssistantChat'
 import { Button } from '@/components/ui/button'
@@ -17,10 +18,11 @@ const MINDMAP_SUGGESTIONS = [
   '整体精简一下',
 ] as const
 
-/** 思维导图详情：左编辑器（自动保存）+ 右可折叠内嵌助手（对话式改图）。 */
+/** 思维导图详情：Markmap 预览常驻居中，左侧可折叠编辑器（默认隐藏，"编辑"切换）、右侧可折叠内嵌助手。 */
 export function MindmapDetailPage() {
   const { id = '' } = useParams()
   const qc = useQueryClient()
+  const [editorOpen, setEditorOpen] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)
   // 每次进入本页生成一个新的会话 token → 内嵌助手每次都是新对话
   const sessionToken = useMemo(() => Math.random().toString(36).slice(2, 12), [id])
@@ -37,6 +39,10 @@ export function MindmapDetailPage() {
     onSuccess: (data) => qc.setQueryData(['mindmap', id], data),
     onError: toastApiError,
   })
+
+  // hook 必须无条件先于 early return 调用；此时 query 可能尚未就绪，用空串占位，
+  // 光标守卫（cur === value）会平滑处理 '' → 真实大纲 的过渡。
+  const { draft, onChange } = useOutlineDraft(query.data?.outline_md ?? '', (o) => saveMut.mutate(o))
 
   const onAction = (action: AgentAction) => {
     if (action.type === 'mindmap_updated' && action.mindmap_id === id) {
@@ -64,6 +70,10 @@ export function MindmapDetailPage() {
         <div className="flex min-w-0 items-center gap-3">
           <Link to={PATHS.mindmaps} className="font-ui text-[13px] text-quiet hover:text-accent">← 思维导图</Link>
           <span className="truncate text-[16px] font-bold text-ink">{mm.title}</span>
+          <Button size="sm" variant={editorOpen ? 'default' : 'outline'}
+            onClick={() => setEditorOpen((v) => !v)}>
+            {editorOpen ? '收起编辑' : '✏️ 编辑'}
+          </Button>
         </div>
         <Button size="sm" variant={assistantOpen ? 'default' : 'outline'}
           onClick={() => setAssistantOpen((v) => !v)}>
@@ -71,39 +81,41 @@ export function MindmapDetailPage() {
         </Button>
       </div>
 
-      {assistantOpen ? (
-        <PanelGroup direction="horizontal" autoSaveId="mm-detail-split" className="flex min-h-0 flex-1">
-          <Panel defaultSize={65} minSize={30} className="min-h-0">
-            <MindmapEditor
-              value={mm.outline_md}
-              saving={saveMut.isPending}
-              onSave={(outline) => saveMut.mutate(outline)}
-            />
-          </Panel>
-          <ResizeHandle />
-          <Panel defaultSize={35} minSize={22} className="min-h-0">
-            <div className="flex h-full min-h-0 flex-col rounded-[12px] border border-hairline p-3">
-              <AssistantChat
-                scope="mindmap"
-                mindmapId={id}
-                sessionToken={sessionToken}
-                storageKey={`agent.chat.mm.${id}.${sessionToken}`}
-                onAction={onAction}
-                emptyHint="告诉我怎么改这张图，例如："
-                suggestions={MINDMAP_SUGGESTIONS}
-              />
-            </div>
-          </Panel>
-        </PanelGroup>
-      ) : (
-        <div className="min-h-0 flex-1">
-          <MindmapEditor
-            value={mm.outline_md}
-            saving={saveMut.isPending}
-            onSave={(outline) => saveMut.mutate(outline)}
-          />
-        </div>
-      )}
+      <PanelGroup direction="horizontal" autoSaveId="mm-workspace" className="flex min-h-0 flex-1">
+        {editorOpen && (
+          <>
+            <Panel id="editor" order={1} defaultSize={30} minSize={20} className="min-h-0 pr-2">
+              <OutlineEditor draft={draft} onChange={onChange} saving={saveMut.isPending} />
+            </Panel>
+            <ResizeHandle />
+          </>
+        )}
+
+        <Panel id="preview" order={2} minSize={25} className="min-h-0 px-1">
+          <div className="h-full rounded-[10px] border border-hairline bg-tint/40">
+            <MindmapView outline={draft} />
+          </div>
+        </Panel>
+
+        {assistantOpen && (
+          <>
+            <ResizeHandle />
+            <Panel id="assistant" order={3} defaultSize={32} minSize={22} className="min-h-0 pl-2">
+              <div className="flex h-full min-h-0 flex-col rounded-[12px] border border-hairline p-3">
+                <AssistantChat
+                  scope="mindmap"
+                  mindmapId={id}
+                  sessionToken={sessionToken}
+                  storageKey={`agent.chat.mm.${id}.${sessionToken}`}
+                  onAction={onAction}
+                  emptyHint="告诉我怎么改这张图，例如："
+                  suggestions={MINDMAP_SUGGESTIONS}
+                />
+              </div>
+            </Panel>
+          </>
+        )}
+      </PanelGroup>
     </div>
   )
 }
