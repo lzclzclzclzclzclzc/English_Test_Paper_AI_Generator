@@ -1438,15 +1438,30 @@ def get_mindmap(user_id: str, mindmap_id: str) -> dict | None:
     return dict(row) if row else None
 
 
-def list_mindmaps(user_id: str, limit: int = 20, offset: int = 0) -> list[dict]:
+def list_mindmaps(user_id: str, limit: int = 20, offset: int = 0, *,
+                  start_date: str | None = None,
+                  end_date: str | None = None) -> list[dict]:
     init_db()
+    # Build the WHERE clause dynamically so absent filters don't constrain.
+    # Date filters compare by UTC date (created_at is stored UTC ISO); a query
+    # near local midnight can land on the adjacent UTC day — a minor edge we accept.
+    clauses = ["user_id = ?"]
+    params: list[object] = [user_id]
+    if start_date:
+        clauses.append("date(created_at) >= date(?)")
+        params.append(start_date)
+    if end_date:
+        clauses.append("date(created_at) <= date(?)")
+        params.append(end_date)
+    params.extend([limit, offset])
     with connect() as conn:
         if not _table_exists(conn, "mindmaps"):
             return []
         rows = conn.execute(
-            "SELECT id, title, knowledge_point, created_at, updated_at "
-            "FROM mindmaps WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
-            (user_id, limit, offset),
+            f"SELECT id, title, knowledge_point, created_at, updated_at "
+            f"FROM mindmaps WHERE {' AND '.join(clauses)} "
+            f"ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            params,
         ).fetchall()
     return [dict(r) for r in rows]
 

@@ -161,8 +161,11 @@ async def list_mindmaps_route(
     user: User = Depends(current_user),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    start_date: str | None = None,
+    end_date: str | None = None,
 ) -> MindmapListResponse:
-    rows = storage.list_mindmaps(user.id, limit=limit, offset=offset)
+    rows = storage.list_mindmaps(user.id, limit=limit, offset=offset,
+                                 start_date=start_date, end_date=end_date)
     return MindmapListResponse(items=[MindmapListItem(**r) for r in rows])
 
 
