@@ -22,7 +22,7 @@ from ai_engine.errors import ParserError
 from ai_engine.prompts import load
 
 
-MAX_QUESTIONS = 31
+MAX_QUESTIONS = 50
 
 
 def _load_kp_catalog(db_path: str) -> list[KnowledgePoint]:

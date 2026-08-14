@@ -222,12 +222,14 @@ class Retriever:
         target: int,
         exclude: set[str],
     ) -> list[RetrievedItem]:
-        """Retrieve whole passage groups for listening_true_false.
+        """Retrieve whole passage groups for passage-based types.
 
-        Picks random passage_ids, takes ALL questions under each, until the
-        cumulative count reaches `target`. The last passage may push the count
-        past target — passage integrity outweighs exact count.
-        """
+    Picks random passage_ids, takes ALL questions under each, until the
+    cumulative count reaches `target`. Once at least one passage has been
+    selected, a subsequent passage that would push the count past `target`
+    is skipped — passage integrity outweighs exact count, and crossing
+    passages just to fill the quota would turn "1 passage" into "2 passages".
+    """
         hard_ids = self._repo.filter_ids(
             question_types=bucket_qtypes or None,
             knowledge_points=req.knowledge_points or None,
@@ -251,6 +253,10 @@ class Retriever:
         chosen_ids: list[str] = []
         for pid in passage_ids:
             if len(chosen_ids) >= target:
+                break
+            # 已选至少一篇后，若加入下一篇会超过目标题数，则停止——
+            # passage 完整性优先，宁可少给几题也不跨篇凑数（避免"1 篇变 2 篇"）。
+            if chosen_ids and len(chosen_ids) + len(groups[pid]) > target:
                 break
             chosen_ids.extend(groups[pid])
 
