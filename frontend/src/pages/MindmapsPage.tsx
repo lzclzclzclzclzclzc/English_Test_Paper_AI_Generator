@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { listMindmaps, createMindmap, deleteMindmap, updateMindmap } from '@/api/agent'
+import { listMindmaps, createMindmap, deleteMindmap, updateMindmap, type MindmapFilters } from '@/api/agent'
 import type { MindmapListItem } from '@/types/api'
 import { PATHS } from '@/lib/paths'
 import { PageHeader } from '@/components/PageHeader'
@@ -16,9 +16,25 @@ export function MindmapsPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
 
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+
+  const hasFilters = !!(startDate || endDate)
+
+  // 服务端筛选：只发已选项，空值退化为不筛。
+  const filters: MindmapFilters = {
+    start_date: startDate || undefined,
+    end_date: endDate || undefined,
+  }
+
+  const clearFilters = () => {
+    setStartDate('')
+    setEndDate('')
+  }
+
   const query = useInfiniteQuery({
-    queryKey: ['mindmaps', 'list'],
-    queryFn: ({ pageParam }) => listMindmaps(PAGE_SIZE, pageParam),
+    queryKey: ['mindmaps', 'list', { startDate, endDate }],
+    queryFn: ({ pageParam }) => listMindmaps(PAGE_SIZE, pageParam, filters),
     initialPageParam: 0,
     getNextPageParam: (last, _all, lastOffset) =>
       last.items.length === PAGE_SIZE ? lastOffset + PAGE_SIZE : undefined,
@@ -48,6 +64,15 @@ export function MindmapsPage() {
         </Button>
       </div>
 
+      <FilterBar
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        hasFilters={hasFilters}
+        onClear={clearFilters}
+      />
+
       {query.isLoading ? (
         <ListSkeleton />
       ) : query.isError ? (
@@ -56,7 +81,11 @@ export function MindmapsPage() {
           <Button variant="outline" size="sm" onClick={() => query.refetch()}>重试</Button>
         </div>
       ) : items.length === 0 ? (
-        <EmptyState onCreate={() => createMut.mutate()} />
+        hasFilters ? (
+          <NoMatchState onClear={clearFilters} />
+        ) : (
+          <EmptyState onCreate={() => createMut.mutate()} />
+        )
       ) : (
         <>
           <div className="border-t border-hairline">
@@ -73,6 +102,59 @@ export function MindmapsPage() {
             </div>
           )}
         </>
+      )}
+    </div>
+  )
+}
+
+/** 筛选条：日期区间 + 清除（思维导图只按创建/更新日期筛）。 */
+function FilterBar({
+  startDate,
+  onStartDateChange,
+  endDate,
+  onEndDateChange,
+  hasFilters,
+  onClear,
+}: {
+  startDate: string
+  onStartDateChange: (v: string) => void
+  endDate: string
+  onEndDateChange: (v: string) => void
+  hasFilters: boolean
+  onClear: () => void
+}) {
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+      {/* 日期区间 */}
+      <div className="inline-flex items-center gap-1.5 font-ui text-[12.5px] text-quiet">
+        <span>日期</span>
+        <input
+          type="date"
+          value={startDate}
+          max={endDate || undefined}
+          aria-label="起始日期"
+          onChange={(e) => onStartDateChange(e.target.value)}
+          className="rounded-lg border border-ink-20 px-2 py-1 text-ink outline-none transition-colors focus:border-accent"
+        />
+        <span>止</span>
+        <input
+          type="date"
+          value={endDate}
+          min={startDate || undefined}
+          aria-label="截止日期"
+          onChange={(e) => onEndDateChange(e.target.value)}
+          className="rounded-lg border border-ink-20 px-2 py-1 text-ink outline-none transition-colors focus:border-accent"
+        />
+      </div>
+
+      {hasFilters && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="font-ui text-[12.5px] text-quiet underline-offset-4 transition-colors hover:text-ink hover:underline"
+        >
+          清除筛选
+        </button>
       )}
     </div>
   )
@@ -144,6 +226,19 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         让学习助手"用思维导图讲讲……"，或直接新建一张
       </p>
       <Button className="mt-3" onClick={onCreate}>新建思维导图</Button>
+    </div>
+  )
+}
+
+/** 筛选无命中：与默认空态区分，给出清除筛选而非新建。 */
+function NoMatchState({ onClear }: { onClear: () => void }) {
+  return (
+    <div className="flex flex-col items-start gap-2 border-t border-hairline pt-8">
+      <p className="text-[17px] text-ink">没有符合条件的思维导图</p>
+      <p className="text-[13.5px] text-muted-ink">换个日期区间，或清除筛选看全部思维导图</p>
+      <Button variant="outline" size="sm" className="mt-3" onClick={onClear}>
+        清除筛选
+      </Button>
     </div>
   )
 }
