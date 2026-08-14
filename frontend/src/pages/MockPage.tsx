@@ -28,7 +28,7 @@ interface MockRecipe {
   intensity?: Intensity
 }
 
-/** 全科检测卷结构（配方 1 与配方 5 共用）：折算 2+2+2+6+3+3+6+6 = 30 题 */
+/** 全科检测卷结构（配方 1 与配方 5 共用）：折算 2+2+2+6+3+3+6+6+1 = 31 题 */
 const FULL_EXAM_ENTRIES: ComposeEntry[] = [
   { type: 'listening_single_choice', count: 2 },
   { type: 'listening_true_false', count: 2 },
@@ -38,17 +38,18 @@ const FULL_EXAM_ENTRIES: ComposeEntry[] = [
   { type: 'sentence_rewriting', count: 3 },
   { type: 'cloze_single_choice', count: 1 },
   { type: 'reading_longtext_single_choice', count: 1 },
+  { type: 'writing', count: 1 },
 ]
 
 /**
- * 5 个配方常量。折算题数（每篇完形/阅读 = 6 题，首字母 1 篇 = 1 题）：
- * 全科 30 / 语法 25 / 听力 15 / 阅读 13 / 真题 30，全部 ≤ MAX_QUESTIONS(30)。
+ * 6 个配方常量。折算题数（每篇完形/阅读 = 6 题，首字母 1 篇 = 1 题）：
+ * 全科 31 / 语法 25 / 听力 15 / 阅读 13 / 写作 1 / 真题 31，全部 ≤ MAX_QUESTIONS(31)。
  */
 const MOCK_RECIPES: MockRecipe[] = [
   {
     id: 'full',
-    name: '全科检测卷',
-    structure: '听力 2+2+2 · 单选 6 · 词形 3 · 句改 3 · 完形 1 篇 · 阅读 1 篇',
+    name: '全科模拟卷',
+    structure: '听力 2+2+2 · 单选 6 · 词形 3 · 句改 3 · 完形 1 篇 · 阅读 1 篇 · 作文 1 篇',
     minutes: 40,
     entries: FULL_EXAM_ENTRIES,
   },
@@ -86,9 +87,16 @@ const MOCK_RECIPES: MockRecipe[] = [
     ],
   },
   {
+    id: 'writing',
+    name: '写作专场卷',
+    structure: '作文 1 篇',
+    minutes: 25,
+    entries: [{ type: 'writing', count: 1 }],
+  },
+  {
     id: 'original',
     name: '真题检测卷',
-    structure: '同全科检测卷 · 全部使用中考真题原题',
+    structure: '同全科模拟卷 · 全部使用中考真题原题',
     minutes: 40,
     entries: FULL_EXAM_ENTRIES,
     intensity: 'original',
@@ -96,7 +104,7 @@ const MOCK_RECIPES: MockRecipe[] = [
 ]
 
 /**
- * 整卷模拟：5 个固定配方一键出卷，可选限时（sessionStorage 交接给试卷页，
+ * 整卷模拟：6 个固定配方一键出卷，可选限时（sessionStorage 交接给试卷页，
  * 到点提醒不强制收卷）。真题检测卷 = 全科配方 + original 强度（会员）。
  */
 export function MockPage() {
@@ -134,28 +142,29 @@ export function MockPage() {
       />
 
       <div className="flex flex-col gap-8">
-        <div className="divide-y divide-ink-10 border-y border-hairline">
+        <div className="tile-grid" style={{ ['--tile-cols' as string]: '1' }}>
           {MOCK_RECIPES.map((recipe) => {
             const total = totalQuestions(recipe.entries)
             const isTimed = timed[recipe.id] === true
+            // 按 recipe.id 精确匹配色调，语义与分科色对齐
+            const TONE_BY_ID: Record<string, string> = {
+              full: 'tile--accent',
+              grammar: 'tile--grammar',
+              listening: 'tile--listening',
+              reading: 'tile--reading',
+              writing: 'tile--writing',
+              original: 'tile--accent',
+            }
+            const tone = TONE_BY_ID[recipe.id] ?? 'tile--accent'
             return (
-              <div
-                key={recipe.id}
-                className="flex flex-wrap items-center gap-x-8 gap-y-3 px-2 py-5"
-              >
-                <div className="flex min-w-0 flex-1 basis-[22rem] flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[15.5px] text-ink">{recipe.name}</span>
-                    {recipe.intensity === 'original' && <MemberPill />}
-                  </div>
-                  <span className="text-[12.5px] leading-relaxed text-quiet">
-                    {recipe.structure}
-                  </span>
-                  <span className="font-ui text-[12.5px] tabular-nums text-quiet">
-                    {total} 题 · 建议 {recipe.minutes} 分钟
-                  </span>
+              <div key={recipe.id} className={cn('tile', tone)}>
+                <div className="flex items-center gap-2">
+                  <span className="tile-title">{recipe.name}</span>
+                  {recipe.intensity === 'original' && <MemberPill />}
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
+                <span className="tile-desc">{recipe.structure}</span>
+                <span className="tile-idx mt-0.5">{total} 题 · 建议 {recipe.minutes} 分钟</span>
+                <div className="mt-3 flex items-center gap-2">
                   <button
                     type="button"
                     aria-pressed={isTimed}
@@ -172,7 +181,7 @@ export function MockPage() {
                   <button
                     type="button"
                     disabled={isPending}
-                    className="rounded-sm border border-accent bg-wash px-6 py-1.5 font-ui text-[13.5px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
+                    className="rounded-sm border border-accent bg-accent px-5 py-1.5 font-ui text-[13px] tracking-[0.05em] text-white transition-colors hover:bg-accent-ink disabled:pointer-events-none disabled:opacity-60"
                     onClick={() => start(recipe)}
                   >
                     {isPending ? '生成中…' : '开始'}
@@ -189,7 +198,7 @@ export function MockPage() {
         {isPending && <PipelineProgress />}
 
         <p className="text-[12.5px] text-quiet">
-          模拟卷基于真题库组卷，不含写作；听力为语音朗读。
+          模拟卷基于真题库组卷，含写作（AI 从内容 / 语言 / 组织三维度批改）；听力为语音朗读。
         </p>
       </div>
 

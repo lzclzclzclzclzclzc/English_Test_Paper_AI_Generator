@@ -5,11 +5,16 @@ Tools:
   get_example_questions  — fetch random bank questions for a KP
   generate_paper         — generate a paper via the AI Engine pipeline
   implement_study_plan   — turn an NL plan into per-day papers + persist
+  get_vocabulary_status  — summarise the user's spaced-repetition vocab progress
+  create_mindmap         — save a new mind map from a markdown outline
+  get_current_mindmap    — read the mind map currently being edited
+  update_current_mindmap — overwrite the mind map currently being edited
 
 SECURITY: the acting user id is NEVER a tool parameter — the LLM (and the
 client-supplied chat history) must not be able to choose whose data a tool
 touches. The backend binds the authenticated id via set_current_user_id()
-before running the agent; tools read it from a ContextVar.
+before running the agent; tools read it from a ContextVar. The same holds for
+the mind map being edited (set_current_mindmap_id / _current_mindmap_id).
 """
 from __future__ import annotations
 
@@ -35,6 +40,22 @@ def _require_user_id() -> str:
     if not uid:
         raise RuntimeError("no authenticated user bound for this agent run")
     return uid
+
+
+# Set by the backend when the agent runs in mindmap-edit context (scope=mindmap).
+_current_mindmap_id: ContextVar[str | None] = ContextVar("agent_current_mindmap_id", default=None)
+
+
+def set_current_mindmap_id(mindmap_id: str | None) -> None:
+    """Bind the mindmap being edited for the duration of one agent run."""
+    _current_mindmap_id.set(mindmap_id)
+
+
+def _require_mindmap_id() -> str:
+    mid = _current_mindmap_id.get()
+    if not mid:
+        raise RuntimeError("no mindmap bound for this agent run")
+    return mid
 
 
 def _connect_app() -> sqlite3.Connection:
@@ -129,6 +150,52 @@ def get_user_history(window_days: int = 30) -> str:
         "window_days": window_days,
         "total_items": len(rows),
         "kp_summary": summary,
+    }, ensure_ascii=False, indent=2)
+
+
+@function_tool
+def get_vocabulary_status() -> str:
+    """获取当前用户的背单词情况（间隔重复词汇模块）。
+
+    返回 JSON，包含：
+      today: 今日任务阶段与计数
+        - phase（当前阶段：scheduled_review 复习 / new 新词 / same_day_retry 当日重练 / completed 已完成）
+        - remaining（今日还剩多少张卡）
+        - new_completed / new_total（今日新词进度）
+        - review_completed / review_total（今日到期复习进度）
+        - daily_new_limit（每日新词上限）
+      progress: 累计进度
+        - learned_count / total_words（已学 / 词表总量）
+        - mastered_count（长期掌握：走完全部复习间隔）
+        - due_count（当前到期待复习）
+        - streak_days（连续学习天数）
+        - wordlist_label（词表名）
+    据此可判断学生今天该不该背、进度如何、要不要提醒复习。
+    """
+    user_id = _require_user_id()
+    today = storage.get_vocabulary_today(user_id)
+    progress = storage.get_vocabulary_progress(user_id)
+    counts = today.get("counts", {})
+    return json.dumps({
+        "today": {
+            "date": today.get("date"),
+            "phase": today.get("phase"),
+            "daily_new_limit": today.get("daily_new_limit"),
+            "remaining": counts.get("remaining_count"),
+            "new_completed": counts.get("new_completed"),
+            "new_total": counts.get("new_total"),
+            "review_completed": counts.get("scheduled_review_completed"),
+            "review_total": counts.get("scheduled_review_total"),
+            "retry_pending": counts.get("retry_pending"),
+        },
+        "progress": {
+            "learned_count": progress.get("learned_count"),
+            "total_words": progress.get("total_words"),
+            "mastered_count": progress.get("mastered_count"),
+            "due_count": progress.get("due_count"),
+            "streak_days": progress.get("streak_days"),
+            "wordlist_label": progress.get("wordlist_label"),
+        },
     }, ensure_ascii=False, indent=2)
 
 
@@ -361,3 +428,73 @@ def generate_paper(
         "revision_intensity": paper.request.revision_intensity,
         "items": items,
     }, ensure_ascii=False, indent=2)
+
+
+@function_tool
+def create_mindmap(topic: str, outline_markdown: str) -> str:
+    """把一个语法/知识点讲解整理成思维导图并保存（全局聊天场景）。
+
+    Args:
+        topic: 思维导图标题，例如"现在完成时"
+        outline_markdown: 层级大纲（# 根节点 / ## 分支 / - 叶子），Markmap 格式
+    返回 {mindmap_id, title}；大纲非法或保存失败时返回 {error}。
+    """
+    return _create_mindmap(topic, outline_markdown)
+
+
+def _create_mindmap(topic: str, outline_markdown: str) -> str:
+    user_id = _require_user_id()
+    if not outline_markdown or "#" not in outline_markdown:
+        return json.dumps({"error": "大纲为空或缺少 # 根节点，请重新组织层级大纲"},
+                          ensure_ascii=False)
+    title = topic.strip() or "未命名思维导图"
+    try:
+        mindmap_id = storage.save_mindmap(user_id, title, outline_markdown.strip(),
+                                          knowledge_point=title)
+    except Exception as e:
+        return json.dumps({"error": f"思维导图保存失败，请重试: {e}"}, ensure_ascii=False)
+    return json.dumps({"mindmap_id": mindmap_id, "title": title}, ensure_ascii=False)
+
+
+@function_tool
+def get_current_mindmap() -> str:
+    """读取当前正在编辑的思维导图大纲（编辑页场景，改图前先读现状）。
+
+    返回 {mindmap_id, title, outline_markdown}；无当前图或不存在时返回 {error}。
+    """
+    return _get_current_mindmap()
+
+
+def _get_current_mindmap() -> str:
+    user_id = _require_user_id()
+    mindmap_id = _require_mindmap_id()
+    mm = storage.get_mindmap(user_id, mindmap_id)
+    if not mm:
+        return json.dumps({"error": "当前思维导图不存在或无权访问"}, ensure_ascii=False)
+    return json.dumps({
+        "mindmap_id": mm["id"],
+        "title": mm["title"],
+        "outline_markdown": mm["outline_md"],
+    }, ensure_ascii=False)
+
+
+@function_tool
+def update_current_mindmap(outline_markdown: str) -> str:
+    """覆盖保存当前正在编辑的思维导图（编辑页场景）。
+
+    Args:
+        outline_markdown: 修改后的完整层级大纲（Markmap 格式）
+    返回 {ok, mindmap_id}；大纲非法或保存失败时返回 {error}。
+    """
+    return _update_current_mindmap(outline_markdown)
+
+
+def _update_current_mindmap(outline_markdown: str) -> str:
+    user_id = _require_user_id()
+    mindmap_id = _require_mindmap_id()
+    if not outline_markdown or "#" not in outline_markdown:
+        return json.dumps({"error": "大纲为空或缺少 # 根节点"}, ensure_ascii=False)
+    ok = storage.update_mindmap(user_id, mindmap_id, outline_md=outline_markdown.strip())
+    if not ok:
+        return json.dumps({"error": "保存失败：思维导图不存在或无权访问"}, ensure_ascii=False)
+    return json.dumps({"ok": True, "mindmap_id": mindmap_id}, ensure_ascii=False)

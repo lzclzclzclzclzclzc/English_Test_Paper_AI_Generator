@@ -1,7 +1,7 @@
 """Unit and integration tests for ai_engine.parser.
 
 Contract:
-- _local_validate filters invalid KP ids, caps total_questions at 30,
+- _local_validate filters invalid KP ids, caps total_questions at MAX_QUESTIONS,
   and scales down distributions that exceed total_questions.
 - _build_kp_catalog_text formats KP list with aliases.
 - _build_prompt assembles system + user prompts with all context.
@@ -304,7 +304,7 @@ def test_parse_review_mode_with_mastery() -> None:
 
 @pytestmark_integration
 def test_parse_total_questions_capped_at_max() -> None:
-    """total_questions > 30 gets capped."""
+    """total_questions beyond MAX_QUESTIONS gets capped."""
     req = parse("来一百道单选题")
     assert req.total_questions <= MAX_QUESTIONS
 

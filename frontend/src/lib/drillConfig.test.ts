@@ -36,14 +36,14 @@ describe('DRILL_CONFIGS 完备性', () => {
       }
     }
   })
-  it('maxCount 折算题数不破单卷 30 上限', () => {
+  it('maxCount 折算题数不破单卷上限', () => {
     for (const c of DRILL_CONFIGS) {
       expect(c.maxCount * questionsPerUnit(c.type)).toBeLessThanOrEqual(MAX_QUESTIONS)
     }
   })
-  it('KP/主题仅语法族的题库题型开放（作文虽属语法族但无 KP 细分）', () => {
+  it('KP/主题仅语法族开放（作文自成一族，无 KP 细分）', () => {
     for (const c of DRILL_CONFIGS) {
-      const kpEligible = c.family === 'grammar' && c.type !== 'writing'
+      const kpEligible = c.family === 'grammar'
       expect(c.supportsKp).toBe(kpEligible)
       expect(c.supportsTopic).toBe(kpEligible)
     }
@@ -66,10 +66,10 @@ describe('drillBySlug / DRILL_FAMILIES', () => {
     expect(drillBySlug('cloze')?.type).toBe('cloze_single_choice')
     expect(drillBySlug('nope')).toBeUndefined()
   })
-  it('三族分区顺序语法→听力→阅读,数量语法 4、听力 3、阅读 3', () => {
-    expect(DRILL_FAMILIES.map((f) => f.family)).toEqual(['grammar', 'listening', 'reading'])
+  it('四族分区顺序语法→听力→阅读→写作,数量语法 3、听力 3、阅读 3、写作 1', () => {
+    expect(DRILL_FAMILIES.map((f) => f.family)).toEqual(['grammar', 'listening', 'reading', 'writing'])
     const byFamily = Object.fromEntries(DRILL_FAMILIES.map((f) => [f.family, f.configs.length]))
-    expect(byFamily).toEqual({ grammar: 4, listening: 3, reading: 3 })
+    expect(byFamily).toEqual({ grammar: 3, listening: 3, reading: 3, writing: 1 })
   })
 })
 

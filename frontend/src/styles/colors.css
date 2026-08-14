@@ -21,9 +21,10 @@
   --rice-cream: oklch(96.8% 0.005 95);    /* ≈ #f6f5f1  light-mode paper */
   --warm-off-white: oklch(90% 0.01 88);   /* dark-mode text (softened, never glaring) */
   --deep-ink-surface: oklch(24% 0.016 72);/* dark-mode ground — warm charcoal, not black */
-  --accent-base: oklch(49% 0.155 33);     /* Terracotta Coral — the lone chroma (light) */
-  --accent-bright: oklch(72% 0.13 35);    /* brighter coral for dark mode */
+  --accent-base: oklch(58% 0.22 30);      /* Vermilion — brand accent (卷王 SaaS Swiss), ≈ #ff3b1f 系 */
+  --accent-bright: oklch(72% 0.19 32);    /* brighter vermilion for dark surfaces */
   --accent: var(--accent-base);           /* the accent in use; brightens in dark mode */
+  --accent-ink: oklch(50% 0.2 30);        /* darker vermilion — filled-button hover/active */
 
   /* ── Opacity-stepped Ink — borders, dividers, hover tints (NOT text) ── */
   --ink-5: color-mix(in oklab, var(--ink) 5%, transparent);
@@ -67,6 +68,8 @@
   --listening-wash: color-mix(in oklab, var(--listening) 12%, transparent);
   --reading: oklch(46% 0.09 195);
   --reading-wash: color-mix(in oklab, var(--reading) 12%, transparent);
+  --writing: oklch(48% 0.1 330);
+  --writing-wash: color-mix(in oklab, var(--writing) 13%, transparent);
 }
 
 /* ── Dark mode — warm charcoal ground, warm off-white ink, brighter coral.
@@ -106,4 +109,6 @@
   --listening-wash: color-mix(in oklab, var(--listening) 16%, transparent);
   --reading: oklch(76% 0.09 195);
   --reading-wash: color-mix(in oklab, var(--reading) 16%, transparent);
+  --writing: oklch(77% 0.1 330);
+  --writing-wash: color-mix(in oklab, var(--writing) 16%, transparent);
 }

@@ -232,7 +232,7 @@ export function AdminUserDetailPage() {
             </button>
           </p>
         ) : mastery.data ? (
-          <MasteryReport profile={mastery.data} />
+          <MasteryReport profile={mastery.data} hideActionCta />
         ) : null}
       </div>
     </div>

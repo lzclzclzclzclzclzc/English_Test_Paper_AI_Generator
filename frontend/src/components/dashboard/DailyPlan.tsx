@@ -38,7 +38,7 @@ export function DailyPlan({ userId, mastery, isPending, onStart }: DailyPlanProp
   }
 
   return (
-    <section className="flex flex-col gap-3 border-t border-hairline pt-6">
+    <section className="flex flex-col gap-3">
       <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
         今日一练 · {recipe.name}
       </span>

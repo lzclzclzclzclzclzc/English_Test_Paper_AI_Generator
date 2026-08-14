@@ -39,8 +39,19 @@ async def revise_paper(body: RevisePaperRequest, user: User = Depends(current_us
 
 
 @router.get("", response_model=PaperListResponse)
-async def list_papers(user: User = Depends(current_user), limit: int = 100, offset: int = 0) -> PaperListResponse:
-    return PaperListResponse(items=storage.list_papers(user.id, limit=limit, offset=offset))
+async def list_papers(
+    user: User = Depends(current_user),
+    limit: int = 100,
+    offset: int = 0,
+    submitted: bool | None = None,
+    question_type: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> PaperListResponse:
+    return PaperListResponse(items=storage.list_papers(
+        user.id, limit=limit, offset=offset,
+        submitted=submitted, question_type=question_type,
+        start_date=start_date, end_date=end_date))
 
 
 @router.get("/{paper_id}", response_model=Paper)

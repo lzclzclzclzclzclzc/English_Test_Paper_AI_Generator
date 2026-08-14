@@ -152,14 +152,14 @@ describe('validateCompose', () => {
     const issues = validateCompose({ entries: [{ type: 'single_choice', count: 2.5 }] })
     expect(issues.some((i) => i.code === 'count_invalid')).toBe(true)
   })
-  it('6 篇完形 = 36 题,超 30 上限被拦', () => {
+  it('6 篇完形 = 36 题,超单卷上限被拦', () => {
     const issues = validateCompose({
       entries: [{ type: 'cloze_single_choice', count: 6 }],
     })
     expect(issues).toEqual([expect.objectContaining({ level: 'error', code: 'over_cap' })])
     expect(issues[0]?.message).toContain(String(MAX_QUESTIONS))
   })
-  it('恰好 30 题放行', () => {
+  it('30 题（未达上限）放行', () => {
     expect(
       validateCompose({ entries: [{ type: 'cloze_single_choice', count: 5 }] }),
     ).toEqual([])

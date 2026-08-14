@@ -170,7 +170,7 @@ export const DRILL_CONFIGS: readonly DrillConfig[] = [
     type: 'writing',
     slug: 'writing',
     label: TYPE_LABELS.writing ?? '英语作文',
-    family: 'grammar',
+    family: 'writing',
     unit: '道',
     unitHint: '1 道 = 1 篇作文',
     countPresets: [1, 2, 3],
@@ -192,9 +192,9 @@ export function drillByType(type: QuestionType): DrillConfig | undefined {
   return DRILL_CONFIGS.find((c) => c.type === type)
 }
 
-/** 按族分组(练习中心三色分区用),顺序:语法 → 听力 → 阅读。 */
+/** 按族分组(练习中心分色分区用),顺序:语法 → 听力 → 阅读 → 写作。 */
 export const DRILL_FAMILIES: ReadonlyArray<{ family: TypeFamily; configs: readonly DrillConfig[] }> =
-  (['grammar', 'listening', 'reading'] as const).map((family) => ({
+  (['grammar', 'listening', 'reading', 'writing'] as const).map((family) => ({
     family,
     configs: DRILL_CONFIGS.filter((c) => c.family === family),
   }))

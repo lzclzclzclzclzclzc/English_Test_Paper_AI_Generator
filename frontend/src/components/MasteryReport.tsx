@@ -25,7 +25,14 @@ const BAND_TEXT: Record<string, string> = {
   solid: 'text-success',
 }
 
-export function MasteryReport({ profile }: { profile: MasteryProfile }) {
+export function MasteryReport({
+  profile,
+  hideActionCta = false,
+}: {
+  profile: MasteryProfile
+  /** admin 端查看他人画像时置 true，隐藏「去错题本重练」CTA */
+  hideActionCta?: boolean
+}) {
   useKnowledgePoints() // 确保目录到达后重渲染，考点显示为中文名
   if (profile.total_attempts_considered === 0) {
     return (
@@ -98,16 +105,18 @@ export function MasteryReport({ profile }: { profile: MasteryProfile }) {
         })}
       </div>
 
-      {/* 底部：薄弱点总结 + 出卷入口 */}
+      {/* 底部：薄弱点总结 + 出卷入口（admin 端隐藏 CTA） */}
       {weakest && weakest.mastery < 0.7 && (
         <div className="flex flex-wrap items-center justify-between gap-4">
           <span className="text-[13.5px] text-muted-ink">
             当前最薄弱：<b className="text-ink">{prettifyKp(weakest.knowledge_point_id)}</b>
             （掌握度 {weakest.mastery.toFixed(2)}），建议从它开始补
           </span>
-          <Button asChild size="sm">
-            <Link to={PATHS.review}>去错题本重练 →</Link>
-          </Button>
+          {!hideActionCta && (
+            <Button asChild size="sm">
+              <Link to={PATHS.review}>去错题本重练 →</Link>
+            </Button>
+          )}
         </div>
       )}
     </div>

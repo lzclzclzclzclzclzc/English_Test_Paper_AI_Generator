@@ -3,6 +3,7 @@ import { listPapers } from '@/api/papers'
 import type { MasteryProfile } from '@/types/api'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
 import { Button } from '@/components/ui/button'
+import { MindmapView } from '@/components/mindmap/MindmapView'
 import { cn } from '@/lib/utils'
 
 /** 与 MasteryReport 相同的三色 band(Spec F v2.2)。 */
@@ -13,6 +14,29 @@ const BAND_TEXT: Record<string, string> = {
   solid: 'text-success',
 }
 const BAND_LABEL: Record<string, string> = { weak: '薄弱', mid: '一般', solid: '扎实' }
+
+/**
+ * 掌握情况 → Markmap 大纲(纯前端 hard code,不耗 LLM,只读)。
+ * 根节点=掌握情况,下挂 薄弱/一般/扎实 三支(仅渲染有考点的支),
+ * 每个考点做叶子,带正确率百分比。复用错题本/思维导图同款 MindmapView 渲染。
+ */
+const BAND_ORDER = ['weak', 'mid', 'solid'] as const
+function masteryToOutline(profile: MasteryProfile): string {
+  const grouped: Record<'weak' | 'mid' | 'solid', string[]> = { weak: [], mid: [], solid: [] }
+  // weak_kps 已按 mastery 升序，分桶后各组内部自然保持从低到高
+  for (const kp of profile.weak_kps) {
+    grouped[bandOf(kp.mastery)].push(
+      `- ${prettifyKp(kp.knowledge_point_id)}（${Math.round(kp.mastery * 100)}%）`,
+    )
+  }
+  const lines = ['# 知识点掌握情况']
+  for (const band of BAND_ORDER) {
+    const items = grouped[band]
+    if (items.length === 0) continue
+    lines.push(`## ${BAND_LABEL[band]}（${items.length}）`, ...items)
+  }
+  return lines.join('\n')
+}
 
 /** 固定话术建议:纯前端模板,不耗 LLM。 */
 function buildAdvice(profile: MasteryProfile): string[] {
@@ -154,6 +178,20 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
         )}
       </div>
 
+      {/* 知识点掌握情况思维导图(hard code,只读)。交互式 SVG 打印易失真，
+          打印时隐藏——薄弱考点表已用打印友好的形式覆盖同样的数据。 */}
+      {profile.weak_kps.length > 0 && (
+        <div className="mt-6 print:hidden">
+          <h3 className="text-[15px] text-ink">掌握情况脑图</h3>
+          <p className="mt-1 text-[12.5px] text-quiet">
+            按掌握程度分为薄弱 / 一般 / 扎实三支，括号内为正确率。
+          </p>
+          <div className="mt-2 h-[300px] w-full overflow-hidden rounded-[10px] border border-hairline bg-tint/40">
+            <MindmapView outline={masteryToOutline(profile)} />
+          </div>
+        </div>
+      )}
+
       {/* 建议 */}
       <div className="mt-6">
         <h3 className="text-[15px] text-ink">下一步建议</h3>
@@ -165,7 +203,7 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
       </div>
 
       <p className="mt-8 border-t border-hairline pt-3 text-[11.5px] text-quiet">
-        由中考英语 AI 试卷生成器生成 · 掌握度按 Wilson 下界计算，分数越低越值得优先练
+        由卷王生成 · 掌握度按 Wilson 下界计算，分数越低越值得优先练
       </p>
     </section>
   )

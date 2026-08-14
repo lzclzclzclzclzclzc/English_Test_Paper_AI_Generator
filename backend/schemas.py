@@ -140,10 +140,49 @@ class PaperListResponse(BaseModel):
     items: list[PaperListItem]
 
 
+class MindmapListItem(BaseModel):
+    id: str
+    title: str
+    knowledge_point: str | None = None
+    created_at: str
+    updated_at: str
+
+
+class MindmapListResponse(BaseModel):
+    items: list[MindmapListItem]
+
+
+class MindmapDetail(BaseModel):
+    id: str
+    title: str
+    knowledge_point: str | None = None
+    outline_md: str
+    created_at: str
+    updated_at: str
+
+
+class MindmapCreateRequest(BaseModel):
+    title: str = Field(default="未命名思维导图", max_length=200)
+    outline_md: str = Field(default="# 未命名思维导图", max_length=20000)
+
+
+class MindmapUpdateRequest(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+    outline_md: str | None = Field(default=None, max_length=20000)
+
+
+class MindmapCreateResponse(BaseModel):
+    id: str
+
+
 class AgentChatRequest(BaseModel):
     # No history field: conversation memory lives server-side (SQLiteSession),
     # keyed by the authenticated user — the client cannot inject/forge turns.
     message: str = Field(min_length=1, max_length=4000)
+    # scope=mindmap: 编辑页内嵌助手，改图上下文。默认 global 不影响现有行为。
+    scope: Literal["global", "mindmap"] = "global"
+    mindmap_id: str | None = None      # scope=mindmap 时必填
+    session_token: str | None = None   # 编辑页临时会话隔离（每次挂载新生成）
 
 
 class AgentChatResponse(BaseModel):

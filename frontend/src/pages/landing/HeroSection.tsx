@@ -1,74 +1,63 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FAMILY_CHIP_CLASS, TYPE_FAMILY, TYPE_LABELS } from '@/lib/kp'
 import { PATHS } from '@/lib/paths'
 import { FREE_GENERATE_PER_DAY } from '@/lib/quota'
-import { scrollToAnchor, TIER_CHIP_CLASS, TIER_LABELS, type RevisionTier } from './shared'
+import { scrollToAnchor } from './shared'
 
-/* ── HeroDemo 数据:2-3 条示例循环,覆盖语法/听力/阅读三族与三档出身 ── */
+/* ── HeroDemo 数据:多条示例循环,覆盖语法/听力两族与原题/轻改两种出身 ── */
 
 interface DemoLine {
   num: string
-  typeId: string
-  tier: RevisionTier
-  stem: string
+  type: string
+  tier: 'orig' | 'edit'
+  stem: React.ReactNode
 }
-
 interface DemoCase {
   query: string
-  header: string
+  meta: string
   lines: DemoLine[]
 }
 
 const DEMO_CASES: readonly DemoCase[] = [
   {
-    query: '来 12 道现在完成时的单项选择,再配 3 道听力填词',
-    header: 'PAPER · 15 题 · 语法 12 / 听力 3',
+    query: '来 12 道现在完成时的单项选择，再配 3 道听力填词',
+    meta: '15 题 · 语法 12 / 听力 3',
     lines: [
-      { num: '01', typeId: 'single_choice', tier: 'original', stem: 'Tom ___ in Shanghai since 2019.' },
-      { num: '02', typeId: 'single_choice', tier: 'light', stem: 'She ___ the film twice with her friends.' },
-      { num: '13', typeId: 'listening_fill_blank', tier: 'original', stem: 'The train to Nanjing leaves at ___.' },
-      { num: '14', typeId: 'listening_fill_blank', tier: 'light', stem: 'Mike has lived there for ___ years.' },
+      { num: '01', type: '单项选择', tier: 'orig', stem: <>Tom <b>___</b> in Shanghai since 2019.</> },
+      { num: '02', type: '单项选择', tier: 'edit', stem: <>She <b>___</b> the film twice with her friends.</> },
+      { num: '13', type: '听力填词', tier: 'orig', stem: <>The train to Nanjing leaves at <b>___</b>.</> },
+      { num: '14', type: '听力填词', tier: 'edit', stem: <>Mike has lived there for <b>___</b> years.</> },
     ],
   },
   {
-    query: '出一套关于环保的完形填空,全新原创',
-    header: 'PAPER · 1 篇 · 阅读 6',
+    query: '出一套关于环保的完形填空，全新原创',
+    meta: '1 篇 · 阅读 6',
     lines: [
-      { num: '01', typeId: 'cloze_single_choice', tier: 'fresh', stem: 'Our city has started a new ___ program.' },
-      { num: '02', typeId: 'cloze_single_choice', tier: 'fresh', stem: 'Instead of driving, more people ___ to work.' },
-      { num: '03', typeId: 'cloze_single_choice', tier: 'fresh', stem: 'Small changes can make a big ___.' },
+      { num: '01', type: '完形填空', tier: 'edit', stem: <>Our city has started a new <b>___</b> program.</> },
+      { num: '02', type: '完形填空', tier: 'edit', stem: <>Instead of driving, more people <b>___</b> to work.</> },
+      { num: '03', type: '完形填空', tier: 'edit', stem: <>Small changes can make a big <b>___</b>.</> },
     ],
   },
   {
-    query: '句子改写 5 道,再来一篇阅读理解',
-    header: 'PAPER · 9 题 · 语法 5 / 阅读 4',
+    query: '句子改写 5 道，再来一篇阅读理解',
+    meta: '9 题 · 语法 5 / 阅读 4',
     lines: [
-      { num: '01', typeId: 'sentence_rewriting', tier: 'original', stem: 'He cleans the classroom every day. (改为被动语态)' },
-      { num: '02', typeId: 'sentence_rewriting', tier: 'light', stem: 'The news is so exciting. (改为感叹句)' },
-      { num: '06', typeId: 'reading_longtext_single_choice', tier: 'original', stem: 'What is the main idea of the passage?' },
+      { num: '01', type: '句子改写', tier: 'orig', stem: <>He cleans the classroom every day. (改为被动语态)</> },
+      { num: '02', type: '句子改写', tier: 'edit', stem: <>The news is so exciting. (改为感叹句)</> },
+      { num: '06', type: '阅读理解', tier: 'orig', stem: <>What is the main idea of the passage?</> },
     ],
   },
 ]
 
-/* ── 打字机状态机:typing → checking → results(hold)→ leaving → 下一条 ── */
-
 type Phase = 'typing' | 'checking' | 'results' | 'leaving'
-
 const TYPE_MS = 70
 const TYPE_DONE_PAUSE_MS = 350
 const CHECKING_MS = 800
 const HOLD_MS = 5000
 const FADE_MS = 300
 
-const CHIP = 'shrink-0 rounded-sm border px-2 py-0.5 font-ui text-[11px]'
-
-/**
- * 自然语言出卷的拟真演示面板。所有定时器都由 useEffect 返回清理;
- * prefers-reduced-motion 时不打字不循环,直接静态显示第一条的完成态。
- */
+/** variant-5「出卷示意」面板:保留打字机状态机,外壳换成 SaaS 卡片样式。 */
 function HeroDemo() {
-  // 挂载时读一次即可:营销页停留短,不监听运行中切换
   const reduced = useMemo(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     [],
@@ -97,7 +86,6 @@ function HeroDemo() {
       const t = setTimeout(() => setPhase('leaving'), HOLD_MS)
       return () => clearTimeout(t)
     }
-    // leaving:淡出后切下一条并复位
     const t = setTimeout(() => {
       setCaseIdx((i) => (i + 1) % DEMO_CASES.length)
       setTyped(0)
@@ -112,102 +100,79 @@ function HeroDemo() {
   const showResults = reduced || phase === 'results' || phase === 'leaving'
 
   return (
-    <div aria-hidden className="rounded-md border border-hairline p-6">
-      <p className="font-ui text-[11px] font-bold tracking-[0.1em] text-accent">
-        GENERATE · 自然语言出卷
-      </p>
-      <div
-        className={`transition-opacity duration-300 ${phase === 'leaving' ? 'opacity-0' : 'opacity-100'}`}
-      >
-        {/* 「输入框」:逐字打出的示例 query + 赤陶闪烁光标 */}
-        <div className="mt-4 min-h-[80px] rounded-[3px] border border-ink-20 px-4 py-3 text-[15px] leading-[1.8] text-ink">
+    <aside className="demo" aria-hidden>
+      <div className="demo-top">
+        <span className="k">GENERATE · 自然语言出卷</span>
+        <span className="dots"><i className="on" /><i /><i /></span>
+      </div>
+      <div className="prompt">
+        <div className="lbl">Prompt · 输入示例</div>
+        <div className="txt">
           {shownQuery}
-          {showCaret && (
-            <span className="kk-caret ml-0.5 inline-block h-[1em] w-[2px] translate-y-[0.15em] bg-accent" />
-          )}
-        </div>
-        {/* 状态行:定高防跳动 */}
-        <div className="mt-3 flex h-5 items-center gap-2">
-          {showChecking && (
-            <>
-              <span className="kk-pulse size-2 rounded-full bg-accent" />
-              <span className="font-ui text-[13px] text-quiet">检索题库 · 校验中</span>
-            </>
-          )}
-        </div>
-        {/* 结果区:卷头行 + 题目行,kk-rise 错峰浮现 */}
-        <div className="mt-3 min-h-[176px] border-t border-hairline pt-4">
-          {showResults && (
-            <div key={caseIdx}>
-              <p
-                className="kk-rise font-mono text-[12px] text-quiet"
-                style={{ animationFillMode: 'backwards' }}
-              >
-                {demo.header}
-              </p>
-              {demo.lines.map((line, i) => {
-                const family = TYPE_FAMILY[line.typeId]
-                return (
-                  <div
-                    key={line.num}
-                    className="kk-rise mt-3 flex min-w-0 items-center gap-2"
-                    style={{ animationDelay: `${(i + 1) * 90}ms`, animationFillMode: 'backwards' }}
-                  >
-                    <span className="w-6 shrink-0 font-mono text-[12px] text-quiet">{line.num}</span>
-                    <span className={`${CHIP} ${family ? FAMILY_CHIP_CLASS[family] : ''}`}>
-                      {TYPE_LABELS[line.typeId] ?? line.typeId}
-                    </span>
-                    <span className={`${CHIP} ${TIER_CHIP_CLASS[line.tier]}`}>
-                      {TIER_LABELS[line.tier]}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-[14px] text-muted-ink">
-                      {line.stem}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          {showCaret && <span className="caret" />}
         </div>
       </div>
-    </div>
+      {showChecking && (
+        <div className="status">
+          <span className="pulse" />
+          <span className="stxt">检索题库 · 校验中</span>
+        </div>
+      )}
+      <div
+        style={{ transition: 'opacity .3s ease', opacity: phase === 'leaving' ? 0 : 1 }}
+      >
+        {showResults && (
+          <>
+            <div className="paper-head">
+              <span className="t">PAPER</span>
+              <span className="meta num">{demo.meta}</span>
+            </div>
+            <div className="rows">
+              {demo.lines.map((line) => (
+                <div className="qrow" key={line.num}>
+                  <div className="qno num">{line.num}</div>
+                  <div className="qbody">
+                    <div className="qtags">
+                      <span className="tag tag--type">{line.type}</span>
+                      <span className={`tag ${line.tier === 'orig' ? 'tag--orig' : 'tag--edit'}`}>
+                        {line.tier === 'orig' ? '原题' : '轻改'}
+                      </span>
+                    </div>
+                    <div className="stem">{line.stem}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </aside>
   )
 }
 
-/** Hero:左文案 + 双 CTA,右 HeroDemo 打字机演示面板。 */
+/** Hero:深色首屏,左文案双 CTA,右 HeroDemo「出卷示意」面板。 */
 export function HeroSection() {
   return (
-    <section className="grid grid-cols-[1.1fr_1fr] gap-[72px] pb-[80px] pt-[96px] max-md:grid-cols-1 max-md:gap-12 max-md:pb-14 max-md:pt-14">
-      <div>
-        <p className="font-ui text-[12px] tracking-[0.1em] text-accent">
-          真题库 + AI 引擎 · 上海中考英语 · 九大题型
-        </p>
-        <h1 className="mt-6 text-[58px] font-normal leading-[1.32] text-ink [font-family:var(--font-display)] max-md:text-[36px]">
-          说一句你想练什么，<mark>出一份能直接做的卷子</mark>
-        </h1>
-        <p className="mt-8 max-w-[42rem] text-[16px] leading-[1.9] text-muted-ink">
-          从上海一模二模真题书里建起的题库，配上能听懂你需求的出题引擎：单选、词形、句改、听力、阅读九大题型，按考点几秒组成一份即出即做的卷子——做完当场判分、逐题讲解、记入你的掌握度。
-        </p>
-        <div className="mt-10 flex flex-wrap items-center gap-4">
-          <Link
-            to={PATHS.login}
-            className="rounded-sm border border-accent bg-wash px-7 py-3 font-ui text-[15px] tracking-[0.05em] text-ink transition-colors hover:text-accent"
-          >
-            免费出一份卷子
-          </Link>
-          <a
-            href="#pricing"
-            onClick={(e) => scrollToAnchor(e, 'pricing')}
-            className="rounded-sm border border-hairline px-6 py-3 font-ui text-[15px] text-muted-ink transition-colors hover:border-accent hover:bg-tint hover:text-accent"
-          >
-            看看定价 ↓
-          </a>
+    <section className="hero">
+      <div className="l-wrap">
+        <div className="hero-grid">
+          <div className="hero-copy">
+            <p className="eyebrow">真题库 + AI 引擎 · 上海中考英语 · 十大题型</p>
+            <h1>说一句你想练什么，<br />出一份能直接做的卷子</h1>
+            <p className="sub">
+              题目全部来自上海中考一模二模真题——<span style={{ color: '#fff' }}>每道题都有真题出处、标注考点，不是 AI 凭空编造</span>。配上能听懂你需求的出题引擎：单选、词形、句改、听力、阅读、完形、作文十大真实题型，覆盖 56 个中考考点，按需几秒组成一份即出即做的卷子——做完当场判分、逐题讲解、记入你的掌握度。
+            </p>
+            <div className="cta-row">
+              <Link to={PATHS.login} className="btn btn--primary btn--lg">免费出一份卷子</Link>
+              <a href="#pricing" onClick={(e) => scrollToAnchor(e, 'pricing')} className="btn btn--ghost-dark btn--lg">看看定价 ↓</a>
+            </div>
+            <p className="fineprint">
+              免费注册即可使用<span className="dot">·</span>每天 {FREE_GENERATE_PER_DAY} 次出卷额度<span className="dot">·</span>无需付费开始
+            </p>
+          </div>
+          <HeroDemo />
         </div>
-        <p className="mt-5 text-[13px] text-quiet">
-          免费注册即可使用，每天 {FREE_GENERATE_PER_DAY} 次出卷额度，无需付费开始
-        </p>
       </div>
-      <HeroDemo />
     </section>
   )
 }

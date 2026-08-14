@@ -9,8 +9,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        /* 主按钮（喫茶去）：赤陶边 + accent-wash 底 + 墨色字，hover 字转赤陶 */
-        default: "border-accent bg-wash text-ink hover:text-accent",
+        /* 主按钮（卷王 variant-5）：实心橙红填充 + 白字，hover 加深 */
+        default: "border-accent bg-accent text-white hover:bg-accent-ink hover:border-accent-ink",
         /* 次按钮：细线边 + 透明底，hover 转赤陶边/字 + 墨色薄底 */
         outline:
           "border-hairline bg-transparent text-muted-ink hover:border-accent hover:bg-tint hover:text-accent aria-expanded:bg-tint aria-expanded:text-accent",

@@ -46,7 +46,7 @@ export function AdminOverviewPage() {
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={28} />
                 <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#c2603f" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="count" stroke="#ef4a2b" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

@@ -1,77 +1,53 @@
-import { TIER_CHIP_CLASS, TIER_LABELS, type RevisionTier } from './shared'
-
 const STEPS = [
-  {
-    num: '01 · PARSER',
-    title: '解析要求',
-    desc: '把你的一句话读成题型、考点、题量与出题强度，不用填任何表单。',
-  },
-  {
-    num: '02 · RETRIEVER',
-    title: '检索真题',
-    desc: '硬过滤 + 向量召回，从 1,428 道真题里命中最贴合的候选题。',
-  },
-  {
-    num: '03 · REVISER',
-    title: '改编校验',
-    desc: '按强度保留原题、轻改或全新命题，每道都过校验——校验不过自动回落，不出怪题。',
-  },
-  {
-    num: '04 · ASSEMBLE',
-    title: '成卷判分',
-    desc: '组卷落库即出即做，客观题交卷当场判分。',
-  },
+  { sn: '01', se: 'Parser · 解析要求', st: '读懂你的一句话', p: '把你的一句话读成题型、考点、题量与出题强度，不用填任何表单。' },
+  { sn: '02', se: 'Retriever · 检索真题', st: '先找真题再动手', p: '从 1,428 道真实中考题里硬过滤 + 向量召回，命中最贴合的候选——先有真题，AI 才动手，不是凭空生成。' },
+  { sn: '03', se: 'Reviser · 改编校验', st: '按强度改编把关', p: '按强度保留原题、轻改或全新命题，每道都过校验——校验不过自动回落，不出怪题。' },
+  { sn: '04', se: 'Assemble · 成卷判分', st: '即出即做当场判', p: '组卷落库即出即做，客观题交卷当场判分。' },
 ] as const
 
-const TIERS: { tier: RevisionTier; name: string; desc: string }[] = [
-  { tier: 'original', name: '真题原样', desc: '一模二模考过什么就练什么，题源、考点都有出处。' },
-  { tier: 'light', name: 'AI 改编', desc: '换词换语境、考点不变，题库再厚也不给你做重复卷。' },
-  {
-    tier: 'fresh',
-    name: '全新原创',
-    desc: '指定主题也可以：『出一套关于环保的完形填空』，AI 从零命题、自动校验。',
-  },
-]
+const WAYS = [
+  { wt: '真题原样', b: 'Original', p: '一模二模考过什么就练什么，题源、考点都有出处。' },
+  { wt: 'AI 改编', b: 'Revised', p: '换词换语境、考点不变，题库再厚也不给你做重复卷。' },
+  { wt: '全新原创', b: 'Original AI', p: '指定主题也可以：『出一套关于环保的完形填空』，AI 从零命题、自动校验。' },
+] as const
 
-/** #engine 引擎:上段四步流程(四列 divide-x),下段三档出题强度细线列表。 */
+/** #engine 引擎:四步网格 +「三种练法」三卡 + 脚注。 */
 export function EngineSection() {
   return (
-    <section id="engine" className="scroll-mt-20 border-t border-hairline py-14">
-      <h2 className="text-[24px] font-normal text-ink [font-family:var(--font-display)]">
-        一句话，四步变成一份卷子
-      </h2>
-      <div className="mt-8 grid grid-cols-4 divide-x divide-ink-10 border-t border-accent max-md:grid-cols-2 max-md:divide-x-0">
-        {STEPS.map((step) => (
-          <div
-            key={step.num}
-            className="flex flex-col gap-3 py-8 pr-6 [&:not(:first-child)]:pl-6 max-md:pl-0"
-          >
-            <span className="font-ui text-[11px] tracking-[0.1em] text-accent">{step.num}</span>
-            <span className="text-[18px] text-ink">{step.title}</span>
-            <p className="text-[14px] leading-[1.8] text-muted-ink">{step.desc}</p>
+    <section className="section" id="engine">
+      <div className="l-wrap">
+        <div className="section-head">
+          <div>
+            <div className="eyebrow-row"><span className="idx">ENGINE</span><hr className="hairline" /></div>
+            <h2 className="h-sec">一句话，<br />四步变成一份卷子</h2>
           </div>
-        ))}
-      </div>
+          <p className="lead">从读懂你的需求到成卷判分，出题引擎四步走完——真题在先，AI 才动手。</p>
+        </div>
 
-      <h3 className="mt-12 text-[19px] text-ink">同一个考点，三种练法</h3>
-      <div className="mt-4">
-        {TIERS.map((t) => (
-          <div key={t.tier} className="flex gap-5 border-t border-hairline py-[22px] last:border-b">
-            <span
-              className={`h-fit shrink-0 rounded-sm border px-2.5 py-1 font-ui text-[12px] ${TIER_CHIP_CLASS[t.tier]}`}
-            >
-              {TIER_LABELS[t.tier]}
-            </span>
-            <div>
-              <div className="text-[17px] text-ink">{t.name}</div>
-              <p className="mt-2 max-w-[42rem] text-[14px] leading-[1.8] text-muted-ink">{t.desc}</p>
+        <div className="steps">
+          {STEPS.map((s) => (
+            <div className="step" key={s.sn}>
+              <div className="sn num">{s.sn}</div>
+              <span className="se">{s.se}</span>
+              <div className="st">{s.st}</div>
+              <p>{s.p}</p>
             </div>
+          ))}
+        </div>
+
+        <div className="three-ways">
+          <h3 className="tw-head">同一个考点，三种练法</h3>
+          <div className="ways-grid">
+            {WAYS.map((w) => (
+              <div className="way" key={w.b}>
+                <div className="wt">{w.wt} <span className="b">{w.b}</span></div>
+                <p>{w.p}</p>
+              </div>
+            ))}
           </div>
-        ))}
+          <p className="ways-foot">每道题右上角都标着它的出身——原题、轻改还是新出，一眼可查。</p>
+        </div>
       </div>
-      <p className="mt-6 text-[15px] leading-[1.9] text-muted-ink">
-        每道题右上角都标着它的出身——原题、轻改还是新出，一眼可查。
-      </p>
     </section>
   )
 }

@@ -19,7 +19,7 @@ from openai import AsyncOpenAI
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from shared.config import get_config
-from agent.tools import get_example_questions, get_user_history, generate_paper, implement_study_plan
+from agent.tools import get_example_questions, get_user_history, generate_paper, implement_study_plan, get_vocabulary_status, create_mindmap, get_current_mindmap, update_current_mindmap
 
 _SKILLS_DIR = Path(__file__).parent / "skills"
 
@@ -29,6 +29,7 @@ _COACH_BASE_PROMPT = """你是一位中考英语学习助手。
 - 根据用户的自然语言请求出题（调用 generate_paper 工具，按照出题 skill 指令执行）
 - 制定个性化学习计划（按照学习计划 skill 指令执行）
 - 查找某个知识点的例题（调用 get_example_questions 工具）
+- 查看学生的背单词进度并给出复习建议（调用 get_vocabulary_status 工具，按照背单词 skill 指令执行）
 - 回答学生关于学习安排的问题
 
 ## 重要规则
@@ -40,9 +41,10 @@ _COACH_BASE_PROMPT = """你是一位中考英语学习助手。
 **只能使用下方"题库知识点清单"中真实存在的知识点**：
 出题、制定学习计划、推荐练习时，只能选用清单里列出的知识点，
 严禁编造清单中没有的考点（例如"名词所有格""综合词性转换"若不在清单里就不能用）。
-每个知识点属于某一种题型（单项选择 / 词形转换 / 改写句子 / 听力选择），
-安排练习时题型必须与该知识点所属的题型一致，否则会出卷失败。
-制定学习计划时，只从清单里挑选知识点排入每日安排。
+每个知识点在清单里标注了它所属的题型（question_type，共十种：单项选择 /
+词形转换 / 改写句子 / 听力选择 / 听力判断 / 听力填词 / 阅读理解 / 完形填空 /
+阅读首字母填空 / 英语作文），安排练习时题型必须与该知识点所属的题型一致，
+否则会出卷失败。制定学习计划时，只从清单里挑选知识点排入每日安排。
 
 保持语言亲切，面向初中生。
 
@@ -135,6 +137,6 @@ def create_coach_agent() -> Agent:
     return Agent(
         name="中考英语学习助手",
         instructions=system_prompt,
-        tools=[get_user_history, get_example_questions, generate_paper, implement_study_plan],
+        tools=[get_user_history, get_example_questions, generate_paper, implement_study_plan, get_vocabulary_status, create_mindmap, get_current_mindmap, update_current_mindmap],
         model=_build_model(),
     )

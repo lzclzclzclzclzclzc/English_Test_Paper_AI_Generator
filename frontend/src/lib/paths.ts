@@ -32,5 +32,7 @@ export const PATHS = {
   membership: '/membership',
   settings: '/settings',
   assistant: '/assistant',
+  mindmaps: '/mindmaps',
+  mindmap: (id: string) => `/mindmaps/${id}`,
   admin: '/admin',
 } as const

@@ -32,6 +32,7 @@ MIGRATION_WRITING_GRADE_RESULTS = "20260806_001_writing_grade_results"
 MIGRATION_VOCABULARY_SCHEMA = "20260730_001_vocabulary_mvp"
 MIGRATION_VOCABULARY_RETRY_QUEUE = "20260804_001_vocabulary_retry_queue"
 MIGRATION_VOCABULARY_WORD_SOURCES = "20260805_001_vocabulary_word_sources"
+MIGRATION_MINDMAPS = "20260813_001_mindmaps"
 # Windows' bundled Python may not ship IANA zone data. Shanghai has no DST, so
 # the explicit UTC+08:00 offset keeps daily quota and streak boundaries stable.
 VOCABULARY_TIMEZONE = timezone(timedelta(hours=8), name="Asia/Shanghai")
@@ -197,6 +198,17 @@ def init_db() -> None:
                 UNIQUE(user_id, paper_id, item_index)
             );
             CREATE INDEX IF NOT EXISTS idx_writing_grade_user_paper ON writing_grade_results(user_id, paper_id);
+
+            CREATE TABLE IF NOT EXISTS mindmaps (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL REFERENCES users(id),
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL,
+                title TEXT NOT NULL,
+                knowledge_point TEXT,
+                outline_md TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_mindmaps_user ON mindmaps(user_id, created_at);
             """
         )
         _apply_migrations(conn)
@@ -532,18 +544,43 @@ def get_paper(paper_id: str, user_id: str) -> Paper | None:
     return Paper.model_validate_json(row["payload_json"]) if row else None
 
 
-def list_papers(user_id: str, limit: int = 100, offset: int = 0) -> list[PaperListItem]:
+def list_papers(user_id: str, limit: int = 100, offset: int = 0, *,
+                submitted: bool | None = None,
+                question_type: str | None = None,
+                start_date: str | None = None,
+                end_date: str | None = None) -> list[PaperListItem]:
     init_db()
+    # Build the WHERE clause dynamically so absent filters don't constrain.
+    # Date filters compare by UTC date (generated_at is stored UTC ISO); a query
+    # near local midnight can land on the adjacent UTC day — a minor edge we accept.
+    clauses = ["user_id = ?"]
+    params: list[object] = [user_id]
+    if submitted is not None:
+        clauses.append("submitted = ?")
+        params.append(int(submitted))
+    if start_date:
+        clauses.append("date(generated_at) >= date(?)")
+        params.append(start_date)
+    if end_date:
+        clauses.append("date(generated_at) <= date(?)")
+        params.append(end_date)
+    if question_type:
+        clauses.append(
+            "EXISTS (SELECT 1 FROM json_each(payload_json, '$.items') je "
+            "WHERE json_extract(je.value, '$.question.question_type') = ?)"
+        )
+        params.append(question_type)
+    params.extend([limit, offset])
     with connect() as conn:
         rows = conn.execute(
-            """
+            f"""
             SELECT paper_id, title, generated_at, payload_json, submitted
             FROM papers
-            WHERE user_id = ?
+            WHERE {" AND ".join(clauses)}
             ORDER BY generated_at DESC
             LIMIT ? OFFSET ?
             """,
-            (user_id, limit, offset),
+            params,
         ).fetchall()
     items: list[PaperListItem] = []
     for row in rows:
@@ -1097,6 +1134,27 @@ def _migrate_writing_grade_results(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_mindmaps(conn: sqlite3.Connection) -> None:
+    if _table_exists(conn, "mindmaps"):
+        return
+    conn.execute(
+        """
+        CREATE TABLE mindmaps (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL REFERENCES users(id),
+            created_at TIMESTAMP NOT NULL,
+            updated_at TIMESTAMP NOT NULL,
+            title TEXT NOT NULL,
+            knowledge_point TEXT,
+            outline_md TEXT NOT NULL
+        );
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_mindmaps_user ON mindmaps(user_id, created_at)",
+    )
+
+
 def _migrate_vocabulary_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(
         """
@@ -1233,6 +1291,7 @@ def _apply_migrations(conn: sqlite3.Connection) -> None:
         (MIGRATION_USERS_STATUS, _migrate_users_status),
         (MIGRATION_ATTEMPT_ITEMS_USER_ANSWER, _migrate_attempt_items_user_answer),
         (MIGRATION_WRITING_GRADE_RESULTS, _migrate_writing_grade_results),
+        (MIGRATION_MINDMAPS, _migrate_mindmaps),
     ]
     for migration_id, migration in migrations:
         if _migration_applied(conn, migration_id):
@@ -1347,6 +1406,95 @@ def get_latest_study_plan(user_id: str) -> dict | None:
             (user_id,),
         ).fetchone()
     return json.loads(row["plan_json"]) if row else None
+
+
+# ─── Mindmaps ────────────────────────────────────────────────────────────────
+
+def save_mindmap(user_id: str, title: str, outline_md: str,
+                 knowledge_point: str = "") -> str:
+    """Persist a new mindmap, return its id."""
+    init_db()
+    mindmap_id = uuid4().hex
+    now = datetime.now(timezone.utc).isoformat()
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO mindmaps (id, user_id, created_at, updated_at, title, "
+            "knowledge_point, outline_md) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (mindmap_id, user_id, now, now, title, knowledge_point, outline_md),
+        )
+    return mindmap_id
+
+
+def get_mindmap(user_id: str, mindmap_id: str) -> dict | None:
+    init_db()
+    with connect() as conn:
+        if not _table_exists(conn, "mindmaps"):
+            return None
+        row = conn.execute(
+            "SELECT id, title, knowledge_point, outline_md, created_at, updated_at "
+            "FROM mindmaps WHERE id = ? AND user_id = ?",
+            (mindmap_id, user_id),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def list_mindmaps(user_id: str, limit: int = 20, offset: int = 0, *,
+                  start_date: str | None = None,
+                  end_date: str | None = None) -> list[dict]:
+    init_db()
+    # Build the WHERE clause dynamically so absent filters don't constrain.
+    # Date filters compare by UTC date (created_at is stored UTC ISO); a query
+    # near local midnight can land on the adjacent UTC day — a minor edge we accept.
+    clauses = ["user_id = ?"]
+    params: list[object] = [user_id]
+    if start_date:
+        clauses.append("date(created_at) >= date(?)")
+        params.append(start_date)
+    if end_date:
+        clauses.append("date(created_at) <= date(?)")
+        params.append(end_date)
+    params.extend([limit, offset])
+    with connect() as conn:
+        if not _table_exists(conn, "mindmaps"):
+            return []
+        rows = conn.execute(
+            f"SELECT id, title, knowledge_point, created_at, updated_at "
+            f"FROM mindmaps WHERE {' AND '.join(clauses)} "
+            f"ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            params,
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def update_mindmap(user_id: str, mindmap_id: str, *,
+                   outline_md: str | None = None, title: str | None = None) -> bool:
+    """Overwrite outline and/or title. Returns True if a row was updated."""
+    init_db()
+    sets, params = [], []
+    if outline_md is not None:
+        sets.append("outline_md = ?"); params.append(outline_md)
+    if title is not None:
+        sets.append("title = ?"); params.append(title)
+    if not sets:
+        return False
+    sets.append("updated_at = ?"); params.append(datetime.now(timezone.utc).isoformat())
+    params.extend([mindmap_id, user_id])
+    with connect() as conn:
+        cur = conn.execute(
+            f"UPDATE mindmaps SET {', '.join(sets)} WHERE id = ? AND user_id = ?",
+            params,
+        )
+        return cur.rowcount > 0
+
+
+def delete_mindmap(user_id: str, mindmap_id: str) -> bool:
+    init_db()
+    with connect() as conn:
+        cur = conn.execute(
+            "DELETE FROM mindmaps WHERE id = ? AND user_id = ?",
+            (mindmap_id, user_id),
+        )
+        return cur.rowcount > 0
 
 
 # ─── Vocabulary ─────────────────────────────────────────────────────────────
