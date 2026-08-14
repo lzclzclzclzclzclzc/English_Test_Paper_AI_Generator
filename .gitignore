@@ -6,6 +6,8 @@ keys/*.pem
 /payment/
 data/agent_sessions.db*
 data/app.db*
+data/acceptance-demo.db*
+data/acceptance-demo-accounts.csv
 
 # build & tool artifacts
 __pycache__/
