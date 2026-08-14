@@ -3,10 +3,17 @@ import { Link } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
 import type { GradeResultItem, PaperItem } from '@/types/api'
 import type { WrongBookEntry } from '@/lib/wrongBook'
-import { FAMILY_LABELS, TYPE_FAMILY, TYPE_LABELS, type TypeFamily } from '@/lib/kp'
+import { TYPE_FAMILY, TYPE_LABELS, type TypeFamily } from '@/lib/kp'
 import { PATHS } from '@/lib/paths'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { QuestionCard } from '@/components/QuestionCard'
 import { SolutionBlock } from '@/components/SolutionBlock'
 
@@ -31,10 +38,11 @@ const FAMILY_PILL: Record<TypeFamily, string> = {
   writing: 'bg-writing-wash text-writing',
 }
 
-const FAMILY_ORDER: readonly TypeFamily[] = ['grammar', 'listening', 'reading', 'writing']
-
-const familyOf = (entry: WrongBookEntry): TypeFamily =>
-  TYPE_FAMILY[entry.question.question_type] ?? 'grammar'
+/** ISO 时间戳 → 本地日历日期（YYYY-MM-DD），与错题行显示的 MM-DD 同一时区，供日期区间比较。 */
+const localYmd = (iso: string) => {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 /** 勾选方块（handoff 第 9 屏）：选中 = 赤陶边 + wash 底 + ✓。 */
 function CheckSquare({
@@ -63,35 +71,8 @@ function CheckSquare({
   )
 }
 
-/** 过滤芯片：选中 = 赤陶边 + wash 底（同掌握度页统计窗口分段）。 */
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        'rounded-sm border px-2.5 py-1 font-ui text-[12.5px] leading-none tabular-nums transition-colors',
-        active
-          ? 'border-accent bg-wash text-ink'
-          : 'border-hairline text-muted-ink hover:bg-tint hover:text-ink',
-      )}
-    >
-      {children}
-    </button>
-  )
-}
-
 /**
- * 错题列表（错题本页左列）：过滤芯片行（按题型三族计数）+ 全选/清空小操作行 +
+ * 错题列表（错题本页左列）：筛选条（精确题型 Select + 日期区间）+ 全选/清空小操作行 +
  * divide-y 错题行——勾选、展开复看、请求解析、移除。数据逻辑不变，仅重排版。
  */
 export function WrongBookList({
@@ -104,7 +85,9 @@ export function WrongBookList({
   locked,
   userId,
 }: WrongBookListProps) {
-  const [family, setFamily] = useState<'all' | TypeFamily>('all')
+  const [questionType, setQuestionType] = useState('') // '' = 全部题型
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   if (entries.length === 0) {
     return (
@@ -120,25 +103,77 @@ export function WrongBookList({
     )
   }
 
-  const counts: Record<TypeFamily, number> = { grammar: 0, listening: 0, reading: 0, writing: 0 }
-  for (const entry of entries) counts[familyOf(entry)] += 1
-  // 当前族的错题被移光时芯片会消失，回退到「全部」
-  const activeFamily = family !== 'all' && counts[family] === 0 ? 'all' : family
-  const filtered =
-    activeFamily === 'all' ? entries : entries.filter((e) => familyOf(e) === activeFamily)
+  const hasFilters = !!(questionType || startDate || endDate)
+  const clearFilters = () => {
+    setQuestionType('')
+    setStartDate('')
+    setEndDate('')
+  }
+
+  // 客户端筛选：题型精确匹配 + 日期区间（按本地日历日 lexicographic 比较）。
+  const filtered = entries.filter((e) => {
+    if (questionType && e.question.question_type !== questionType) return false
+    if (startDate || endDate) {
+      const day = localYmd(e.gradedAt)
+      if (startDate && day < startDate) return false
+      if (endDate && day > endDate) return false
+    }
+    return true
+  })
 
   return (
     <div className="flex flex-col gap-3">
-      {/* 过滤芯片行：全部 + 有错题的族（空族不显示） */}
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterChip active={activeFamily === 'all'} onClick={() => setFamily('all')}>
-          全部 {entries.length}
-        </FilterChip>
-        {FAMILY_ORDER.filter((f) => counts[f] > 0).map((f) => (
-          <FilterChip key={f} active={activeFamily === f} onClick={() => setFamily(f)}>
-            {FAMILY_LABELS[f]} {counts[f]}
-          </FilterChip>
-        ))}
+      {/* 筛选条：精确题型 Select + 日期区间（抄历史试卷页 FilterBar 的记法/字号/token） */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+        {/* 题型 */}
+        <Select
+          value={questionType || 'all'}
+          onValueChange={(v) => setQuestionType(v === 'all' ? '' : v)}
+        >
+          <SelectTrigger size="sm" aria-label="题型筛选" className="border-ink-20 font-ui text-[12.5px]">
+            <SelectValue placeholder="全部题型" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部题型</SelectItem>
+            {Object.entries(TYPE_LABELS).map(([type, label]) => (
+              <SelectItem key={type} value={type}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* 日期区间 */}
+        <div className="inline-flex items-center gap-1.5 font-ui text-[12.5px] text-quiet">
+          <span>起</span>
+          <input
+            type="date"
+            value={startDate}
+            max={endDate || undefined}
+            aria-label="起始日期"
+            onChange={(e) => setStartDate(e.target.value)}
+            className="rounded-lg border border-ink-20 px-2 py-1 text-ink outline-none transition-colors focus:border-accent"
+          />
+          <span>止</span>
+          <input
+            type="date"
+            value={endDate}
+            min={startDate || undefined}
+            aria-label="截止日期"
+            onChange={(e) => setEndDate(e.target.value)}
+            className="rounded-lg border border-ink-20 px-2 py-1 text-ink outline-none transition-colors focus:border-accent"
+          />
+        </div>
+
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="font-ui text-[12.5px] text-quiet underline-offset-4 transition-colors hover:text-ink hover:underline"
+          >
+            清除筛选
+          </button>
+        )}
       </div>
 
       {/* 全选/清空小操作行 */}
@@ -160,20 +195,34 @@ export function WrongBookList({
         <span className="ml-auto text-quiet tabular-nums">已选 {selected.size} 道</span>
       </div>
 
-      <ul className="divide-y divide-ink-10 border-y border-hairline">
-        {filtered.map((entry, i) => (
-          <WrongBookRow
-            key={`${entry.sourceQuestionId}-${entry.gradedAt}`}
-            entry={entry}
-            ordinal={i + 1}
-            checked={selected.has(entry.sourceQuestionId)}
-            onToggle={() => onToggle(entry.sourceQuestionId)}
-            onRemove={() => onRemove(entry.sourceQuestionId)}
-            locked={locked}
-            userId={userId}
-          />
-        ))}
-      </ul>
+      {filtered.length === 0 ? (
+        // 有错题但筛选把它们全排除：内联提示，筛选条保持可见以便清除。
+        <div className="flex flex-col items-start gap-2 border-y border-hairline py-8">
+          <p className="text-[13.5px] text-muted-ink">没有符合条件的错题</p>
+          <button
+            type="button"
+            className="font-ui text-[12.5px] text-quiet underline-offset-4 transition-colors hover:text-ink hover:underline"
+            onClick={clearFilters}
+          >
+            清除筛选
+          </button>
+        </div>
+      ) : (
+        <ul className="divide-y divide-ink-10 border-y border-hairline">
+          {filtered.map((entry, i) => (
+            <WrongBookRow
+              key={`${entry.sourceQuestionId}-${entry.gradedAt}`}
+              entry={entry}
+              ordinal={i + 1}
+              checked={selected.has(entry.sourceQuestionId)}
+              onToggle={() => onToggle(entry.sourceQuestionId)}
+              onRemove={() => onRemove(entry.sourceQuestionId)}
+              locked={locked}
+              userId={userId}
+            />
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
