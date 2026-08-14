@@ -31,8 +31,15 @@ const CUMULATIVE = STEPS.reduce<number[]>((acc, s) => {
 }, []).map((w) => (w / TOTAL_WEIGHT) * CEILING)
 
 const TICK_MS = 90
+/**
+ * 预设时长：进度条按约 1 分钟的节奏渐近爬升（出题实际耗时已增长，早前 ~9s 的
+ * 节奏会让进度过早贴住天花板、看着像卡住）。由目标时长反推渐近系数，使
+ * 到 APPROACH_TARGET_S 时逼近天花板（约 98% × CEILING）。请求提前完成时父级
+ * 卸载本组件，无需等到该时长。
+ */
+const APPROACH_TARGET_S = 60
 /** 渐近逼近系数：越接近目标越慢，制造「还差一口气」的真实感。 */
-const APPROACH_K = 0.045
+const APPROACH_K = 1 - Math.pow(0.02, TICK_MS / (APPROACH_TARGET_S * 1000))
 
 interface PipelineProgressProps {
   /** true = 跑动画；false/undefined 视作 true（兼容旧调用点：卸载模式） */
