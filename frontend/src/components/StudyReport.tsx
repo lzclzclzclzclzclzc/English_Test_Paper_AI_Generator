@@ -23,7 +23,7 @@ const BAND_LABEL: Record<string, string> = { weak: '薄弱', mid: '一般', soli
 const BAND_ORDER = ['weak', 'mid', 'solid'] as const
 function masteryToOutline(profile: MasteryProfile): string {
   const grouped: Record<'weak' | 'mid' | 'solid', string[]> = { weak: [], mid: [], solid: [] }
-  // weak_kps 已按 mastery 升序;分桶后组内保持薄弱在前
+  // weak_kps 已按 mastery 升序，分桶后各组内部自然保持从低到高
   for (const kp of profile.weak_kps) {
     grouped[bandOf(kp.mastery)].push(
       `- ${prettifyKp(kp.knowledge_point_id)}（${Math.round(kp.mastery * 100)}%）`,
@@ -178,9 +178,10 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
         )}
       </div>
 
-      {/* 知识点掌握情况思维导图(hard code,只读) */}
+      {/* 知识点掌握情况思维导图(hard code,只读)。交互式 SVG 打印易失真，
+          打印时隐藏——薄弱考点表已用打印友好的形式覆盖同样的数据。 */}
       {profile.weak_kps.length > 0 && (
-        <div className="mt-6">
+        <div className="mt-6 print:hidden">
           <h3 className="text-[15px] text-ink">掌握情况脑图</h3>
           <p className="mt-1 text-[12.5px] text-quiet">
             按掌握程度分为薄弱 / 一般 / 扎实三支，括号内为正确率。
