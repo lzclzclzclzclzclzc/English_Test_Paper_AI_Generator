@@ -46,9 +46,15 @@ export function LoginPage() {
       if (
         err instanceof ApiError &&
         (err.payload.error_code === 'auth.invalid_credentials' ||
-          err.payload.error_code === 'auth.username_conflict')
+          err.payload.error_code === 'auth.username_conflict' ||
+          err.payload.error_code === 'auth.forbidden')
       ) {
-        form.setError('root', { message: err.payload.message })
+        // 封禁账号（auth.forbidden）的具体原因在 detail 字段
+        const hint =
+          err.payload.error_code === 'auth.forbidden'
+            ? String(err.payload.detail ?? '账号已被封禁')
+            : err.payload.message
+        form.setError('root', { message: hint })
       } else {
         form.setError('root', { message: '登录服务暂时不可用，请稍后重试' })
       }

@@ -28,11 +28,11 @@ interface MockRecipe {
   intensity?: Intensity
 }
 
-/** 全科检测卷结构（配方 1 与配方 5 共用）：折算 2+2+2+6+3+3+6+6+1 = 31 题 */
+/** 全科检测卷结构（配方 1 与配方 5 共用）：折算 2+5+5+6+3+3+6+6+1 = 37 题 */
 const FULL_EXAM_ENTRIES: ComposeEntry[] = [
   { type: 'listening_single_choice', count: 2 },
-  { type: 'listening_true_false', count: 2 },
-  { type: 'listening_fill_blank', count: 2 },
+  { type: 'listening_true_false', count: 1 },
+  { type: 'listening_fill_blank', count: 1 },
   { type: 'single_choice', count: 6 },
   { type: 'word_form', count: 3 },
   { type: 'sentence_rewriting', count: 3 },
@@ -42,14 +42,14 @@ const FULL_EXAM_ENTRIES: ComposeEntry[] = [
 ]
 
 /**
- * 6 个配方常量。折算题数（每篇完形/阅读 = 6 题，首字母 1 篇 = 1 题）：
- * 全科 31 / 语法 25 / 听力 15 / 阅读 13 / 写作 1 / 真题 31，全部 ≤ MAX_QUESTIONS(31)。
+ * 6 个配方常量。折算题数（每篇听判/听填 = 5 题，每篇完形/阅读 = 6 题，首字母 1 篇 = 1 题）：
+ * 全科 37 / 语法 25 / 听力 15 / 阅读 13 / 写作 1 / 真题 37，全部 ≤ MAX_QUESTIONS(50)。
  */
 const MOCK_RECIPES: MockRecipe[] = [
   {
     id: 'full',
     name: '全科模拟卷',
-    structure: '听力 2+2+2 · 单选 6 · 词形 3 · 句改 3 · 完形 1 篇 · 阅读 1 篇 · 作文 1 篇',
+    structure: '听力 2+1+1 · 单选 6 · 词形 3 · 句改 3 · 完形 1 篇 · 阅读 1 篇 · 作文 1 篇',
     minutes: 40,
     entries: FULL_EXAM_ENTRIES,
   },
@@ -67,12 +67,12 @@ const MOCK_RECIPES: MockRecipe[] = [
   {
     id: 'listening',
     name: '听力专场卷',
-    structure: '听选 5 · 听判 5 · 听填 5',
+    structure: '听选 5 · 听判 1 篇 · 听填 1 篇',
     minutes: 15,
     entries: [
       { type: 'listening_single_choice', count: 5 },
-      { type: 'listening_true_false', count: 5 },
-      { type: 'listening_fill_blank', count: 5 },
+      { type: 'listening_true_false', count: 1 },
+      { type: 'listening_fill_blank', count: 1 },
     ],
   },
   {
