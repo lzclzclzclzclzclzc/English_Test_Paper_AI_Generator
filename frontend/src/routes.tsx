@@ -31,6 +31,10 @@ import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
 import { AdminMembershipsPage } from '@/pages/admin/AdminMembershipsPage'
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
+import { AdminLearnerPage } from '@/pages/admin/AdminLearnerPage'
+import { AdminQuestionBankPage } from '@/pages/admin/AdminQuestionBankPage'
+import { AdminQuestionBrowsePage } from '@/pages/admin/AdminQuestionBrowsePage'
+import { AdminAuditPage } from '@/pages/admin/AdminAuditPage'
 import { VocabularyPage } from '@/pages/VocabularyPage'
 import { VocabularyProgressPage } from '@/pages/VocabularyProgressPage'
 import { PATHS } from '@/lib/paths'
@@ -83,10 +87,14 @@ export function AppRoutes() {
         >
           <Route index element={<AdminOverviewPage />} />
           <Route path="analytics" element={<AdminAnalyticsPage />} />
+          <Route path="learner" element={<AdminLearnerPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="users/:userId" element={<AdminUserDetailPage />} />
           <Route path="memberships" element={<AdminMembershipsPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="questionbank" element={<AdminQuestionBankPage />} />
+          <Route path="questionbank/questions" element={<AdminQuestionBrowsePage />} />
+          <Route path="audit" element={<AdminAuditPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to={PATHS.home} replace />} />

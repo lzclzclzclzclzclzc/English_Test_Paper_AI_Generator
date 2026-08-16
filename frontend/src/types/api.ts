@@ -441,9 +441,11 @@ export interface AdminUserDetail extends AdminUserListItem {
 export interface AdminOverview {
   total_users: number
   new_users_today: number
+  banned_users: number
   total_papers: number
   total_attempts: number
   active_members: number | null
+  total_revenue_cents: number | null
 }
 export interface TimeseriesPoint { day: string; count: number }
 export interface AdminTimeseries { users_by_day: TimeseriesPoint[]; papers_by_day: TimeseriesPoint[] }
@@ -459,7 +461,7 @@ export interface AdminOrder {
   created_at: string
   paid_at: string | null
 }
-export interface AdminOrderList { items: AdminOrder[] }
+export interface AdminOrderList { items: AdminOrder[]; total: number }
 
 export interface AdminAttemptDay { day: string; attempts: number; correct_rate: number | null }
 export interface AdminTypeAccuracy { question_type: string; total: number; accuracy: number }
@@ -467,4 +469,71 @@ export interface AdminAnalytics {
   site_mastery: MasteryProfile
   attempts_by_day: AdminAttemptDay[]
   type_accuracy: AdminTypeAccuracy[]
+}
+export interface AdminUserAnalytics {
+  attempts_by_day: AdminAttemptDay[]
+  type_accuracy: AdminTypeAccuracy[]
+}
+
+// ---- Admin Pro (Spec H) ----
+
+export interface AdminUserPaper { id: string; title: string; generated_at: string; question_count: number }
+export interface AdminUserPaperList { items: AdminUserPaper[] }
+export interface AdminUserAttempt {
+  attempt_id: string
+  paper_title: string
+  answered_at: string
+  item_total: number
+  item_correct: number
+  correct_rate: number | null
+}
+export interface AdminUserAttemptList { items: AdminUserAttempt[] }
+
+export interface QuestionBankTypeStat { question_type: string; count: number }
+export interface QuestionBankKpStat { knowledge_point_id: string; level1: string; level2: string; count: number }
+export interface QuestionBankChapterStat { book: string; chapter_l1: string; chapter_l2: string; count: number }
+export interface QuestionBankStats {
+  total: number
+  by_type: QuestionBankTypeStat[]
+  by_knowledge_point: QuestionBankKpStat[]
+  by_chapter: QuestionBankChapterStat[]
+}
+export interface QuestionBankListItem {
+  id: string
+  question_type: string
+  book: string
+  chapter_l1: string
+  chapter_l2: string
+  stem: string
+  options: Array<Record<string, unknown>> | null
+  answer: unknown
+  knowledge_point_ids: string[]
+}
+export interface QuestionBankList { items: QuestionBankListItem[]; total: number }
+
+export interface AdminRevenueDayPoint { day: string; cents: number }
+export interface AdminPlanRevenue { plan_id: string; orders: number; cents: number }
+export interface AdminRevenue {
+  total_cents: number
+  revenue_by_day: AdminRevenueDayPoint[]
+  by_plan: AdminPlanRevenue[]
+}
+
+export interface AdminAuditItem {
+  id: number
+  actor_user_id: string
+  actor_username: string | null
+  action: string
+  target_user_id: string | null
+  target_username: string | null
+  detail: Record<string, unknown> | null
+  created_at: string
+}
+export interface AdminAuditList { items: AdminAuditItem[]; total: number }
+
+export interface AdminSystemHealth {
+  payment: boolean
+  llm: boolean
+  question_bank_total: number
+  app_db_size_kb: number
 }

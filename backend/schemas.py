@@ -326,9 +326,12 @@ class ResetPasswordRequest(BaseModel):
 class AdminOverview(BaseModel):
     total_users: int
     new_users_today: int
+    banned_users: int = 0
     total_papers: int
     total_attempts: int
     active_members: int | None
+    # Best-effort cross-service read; payment down → None (non-blocking).
+    total_revenue_cents: int | None = None
 
 
 class TimeseriesPoint(BaseModel):
@@ -366,6 +369,7 @@ class AdminOrderItem(BaseModel):
 
 class AdminOrderListView(BaseModel):
     items: list[AdminOrderItem]
+    total: int = 0
 
 
 class GrantByUsernameRequest(BaseModel):
@@ -393,3 +397,119 @@ class AdminAnalytics(BaseModel):
     site_mastery: MasteryProfile
     attempts_by_day: list[AdminAttemptDay]
     type_accuracy: list[AdminTypeAccuracy]
+
+
+class AdminUserAnalytics(BaseModel):
+    """Single-user answering analytics for the admin learner view."""
+    attempts_by_day: list[AdminAttemptDay]
+    type_accuracy: list[AdminTypeAccuracy]
+
+
+# ---- Admin Pro (Spec H) ----
+
+
+class AdminUserPaperItem(BaseModel):
+    id: str
+    title: str
+    generated_at: datetime
+    question_count: int
+
+
+class AdminUserPaperList(BaseModel):
+    items: list[AdminUserPaperItem]
+
+
+class AdminUserAttemptItem(BaseModel):
+    attempt_id: str
+    paper_title: str
+    answered_at: datetime
+    item_total: int
+    item_correct: int
+    correct_rate: float | None
+
+
+class AdminUserAttemptList(BaseModel):
+    items: list[AdminUserAttemptItem]
+
+
+class QuestionBankTypeStat(BaseModel):
+    question_type: str
+    count: int
+
+
+class QuestionBankKpStat(BaseModel):
+    knowledge_point_id: str
+    level1: str
+    level2: str
+    count: int
+
+
+class QuestionBankChapterStat(BaseModel):
+    book: str
+    chapter_l1: str
+    chapter_l2: str
+    count: int
+
+
+class QuestionBankStats(BaseModel):
+    total: int
+    by_type: list[QuestionBankTypeStat]
+    by_knowledge_point: list[QuestionBankKpStat]
+    by_chapter: list[QuestionBankChapterStat]
+
+
+class QuestionBankListItem(BaseModel):
+    id: str
+    question_type: str
+    book: str
+    chapter_l1: str
+    chapter_l2: str
+    stem: str
+    options: list[dict] | None = None
+    answer: object | None = None
+    knowledge_point_ids: list[str]
+
+
+class QuestionBankList(BaseModel):
+    items: list[QuestionBankListItem]
+    total: int
+
+
+class AdminRevenueDayPoint(BaseModel):
+    day: str
+    cents: int
+
+
+class AdminPlanRevenue(BaseModel):
+    plan_id: str
+    orders: int
+    cents: int
+
+
+class AdminRevenue(BaseModel):
+    total_cents: int
+    revenue_by_day: list[AdminRevenueDayPoint]
+    by_plan: list[AdminPlanRevenue]
+
+
+class AdminAuditItem(BaseModel):
+    id: int
+    actor_user_id: str
+    actor_username: str | None
+    action: str
+    target_user_id: str | None
+    target_username: str | None
+    detail: dict | None = None
+    created_at: datetime
+
+
+class AdminAuditList(BaseModel):
+    items: list[AdminAuditItem]
+    total: int
+
+
+class AdminSystemHealth(BaseModel):
+    payment: bool
+    llm: bool
+    question_bank_total: int
+    app_db_size_kb: int

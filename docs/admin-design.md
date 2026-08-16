@@ -30,7 +30,7 @@
 - ❌ 细粒度多角色（只有 `user` / `admin` 两级；未来若需"客服/只读"再扩 `role` 取值）
 - ❌ 密码找回 / 邮箱验证（无邮箱字段，沿用 Spec C）
 - ❌ 退款流程（订单只读展示，不实现退款；PAID 订单在 payment 侧本就终态）
-- ❌ 审计日志 / 操作留痕（首版不做；危险操作靠二次确认）
+- ❌ 审计日志 / 操作留痕（首版不做；危险操作靠二次确认）<!-- 已由 Spec H（docs/adminpro.md §5.3）撤销并实现：admin_audit_logs 表 + 各写端点埋点 + /api/admin/audit 浏览 -->
 - ❌ 管理员为他人生成试卷（Spec C § 16 已排除，本 spec 仍不做）
 - ❌ 单独部署的管理服务（明确挂在现有后端，理由见 § 1.2）
 
@@ -41,7 +41,7 @@
 - **payment 侧 role 缓存最多 30s 陈旧**：`payment/app/auth.py` 按 `session_id` 缓存 `AuthUser`（含 role）30 秒。管理员被降级后，payment 的 `/payapi/admin/*` 可能在 ≤30s 内仍放行该用户。主后端侧无此延迟（每请求查库）。影响面小，可接受。
 - **`mark_order_paid` 与会员顺延不再同一事务**：抽出 `extend_membership` 后，CAS 置 PAID 与会员顺延分属两个连接/事务。幂等性仍由 CAS 保证（重复通知不重复顺延），但极端情况下"标记已付"与"顺延会员"之间崩溃会导致已付未顺延。概率极低，风险与重构前基本持平。
 - **无"最后一名管理员"保护**：已禁止管理员改/封自己，但未阻止管理员把其他管理员全部降级/封禁而使系统无管理员。如需要可加"不能移除最后一名管理员"校验。
-- **`_payment_base()` 硬编码 `http://localhost:8001`**：主后端→payment 方向暂无配置项（payment→主后端已有 `main_backend_url`）。离开 localhost 部署时应加一个 `payment_base_url` 配置。
+- **`_payment_base()` 硬编码 `http://localhost:8001`**：主后端→payment 方向暂无配置项（payment→主后端已有 `main_backend_url`）。离开 localhost 部署时应加一个 `payment_base_url` 配置。<!-- 已由 Spec H（docs/adminpro.md §5.4）解决：改为读 shared/config.py 的 payment_service_url 配置 -->
 
 ### 0.3 撤销既有决策
 

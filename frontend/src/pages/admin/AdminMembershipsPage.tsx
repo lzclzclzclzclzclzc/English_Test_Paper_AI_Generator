@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
   grantMembership,
@@ -7,7 +7,9 @@ import {
   listMemberships,
   revokeMembership,
 } from '@/api/admin'
+import { Pagination } from '@/components/admin/Pagination'
 import { displayName } from '@/lib/adminDisplay'
+import { cn } from '@/lib/utils'
 import { queryClient } from '@/lib/queryClient'
 import { toastApiError } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
@@ -28,6 +30,22 @@ import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 /** 校验是否为正整数天数。 */
 function isValidDays(v: string): boolean {
   return /^\d+$/.test(v.trim()) && Number(v) > 0
+}
+
+const PAGE_SIZE = 50
+
+const FILTER_TABS = [
+  { value: 'all', label: '全部' },
+  { value: 'active', label: '有效' },
+  { value: 'expiring', label: '7 天内到期' },
+] as const
+
+/** 到期时间是否落在未来 7 天内（用于预警标红）。 */
+function expiringSoon(expiresAt: string | null): boolean {
+  if (!expiresAt) return false
+  const t = new Date(expiresAt).getTime()
+  if (Number.isNaN(t) || t <= Date.now()) return false
+  return t - Date.now() <= 7 * 24 * 3600 * 1000
 }
 
 /** 开通天数弹窗：输入天数（正整数，默认 30）。 */
@@ -95,10 +113,21 @@ function GrantDialog({
 
 export function AdminMembershipsPage() {
   const [q, setQ] = useState('')
+  const [filter, setFilter] = useState<'all' | 'active' | 'expiring'>('all')
+  const [page, setPage] = useState(1)
   const memberships = useQuery({
-    queryKey: ['admin', 'memberships', q],
-    queryFn: () => listMemberships(q),
+    queryKey: ['admin', 'memberships', q, filter, page],
+    queryFn: () =>
+      listMemberships(
+        q,
+        PAGE_SIZE,
+        (page - 1) * PAGE_SIZE,
+        filter === 'expiring' ? 7 : undefined,
+        filter === 'active' ? true : undefined,
+      ),
+    placeholderData: keepPreviousData,
   })
+  const total = memberships.data?.total ?? 0
 
   // 顶部直开表单：按用户名授予会员（可能尚无会员行）。
   const [grantUsername, setGrantUsername] = useState('')
@@ -182,12 +211,36 @@ export function AdminMembershipsPage() {
         </Button>
       </div>
 
-      <Input
-        placeholder="搜索用户名…"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        className="max-w-[280px]"
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex gap-1">
+          {FILTER_TABS.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => {
+                setFilter(t.value)
+                setPage(1)
+              }}
+              className={cn(
+                'h-8 rounded-lg border px-3 font-ui text-[13px] transition-colors',
+                filter === t.value
+                  ? 'border-accent bg-wash text-accent'
+                  : 'border-hairline text-muted-ink hover:bg-tint/40',
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <Input
+          placeholder="搜索用户名…"
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value)
+            setPage(1)
+          }}
+          className="max-w-[280px]"
+        />
+      </div>
 
       <div className="overflow-hidden rounded-md border border-hairline">
         <table className="w-full text-[13px]">
@@ -206,7 +259,7 @@ export function AdminMembershipsPage() {
                   {displayName(m.username)}
                   <div className="text-[11px] text-quiet">{m.user_id}</div>
                 </td>
-                <td className="px-3 py-2 text-muted-ink">
+                <td className={cn('px-3 py-2 text-muted-ink', expiringSoon(m.expires_at) && 'font-ui font-semibold text-accent')}>
                   {m.expires_at ? m.expires_at.slice(0, 10) : '—'}
                 </td>
                 <td className="px-3 py-2 text-muted-ink">{m.active ? '有效' : '已过期/无'}</td>
@@ -260,6 +313,7 @@ export function AdminMembershipsPage() {
           </tbody>
         </table>
       </div>
+      <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
     </div>
   )
 }

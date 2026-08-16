@@ -162,16 +162,31 @@ def get_membership(user_id: str) -> dict:
     }
 
 
-def list_memberships(q: str = "", limit: int = 50, offset: int = 0) -> list[dict]:
+def list_memberships(
+    q: str = "",
+    limit: int = 50,
+    offset: int = 0,
+    expiring_within_days: int | None = None,
+) -> list[dict]:
     like = f"%{q}%"
-    now = utcnow_iso()
+    now = utcnow()
+    now_iso = format_iso(now)
+    clauses = ["user_id LIKE ?"]
+    params: list[object] = [like]
+    if expiring_within_days is not None:
+        # Active memberships whose expiry falls within the next N days
+        # (expiry > now so already-expired rows never match).
+        horizon = format_iso(now + timedelta(days=expiring_within_days))
+        clauses.append("expires_at > ? AND expires_at <= ?")
+        params.extend([now_iso, horizon])
     with get_conn() as conn:
         rows = conn.execute(
-            "SELECT user_id, expires_at FROM memberships WHERE user_id LIKE ?"
-            " ORDER BY expires_at DESC LIMIT ? OFFSET ?",
-            (like, limit, offset),
+            "SELECT user_id, expires_at FROM memberships WHERE "
+            + " AND ".join(clauses)
+            + " ORDER BY expires_at DESC LIMIT ? OFFSET ?",
+            (*params, limit, offset),
         ).fetchall()
-    return [{"user_id": r["user_id"], "expires_at": r["expires_at"], "active": r["expires_at"] > now} for r in rows]
+    return [{"user_id": r["user_id"], "expires_at": r["expires_at"], "active": r["expires_at"] > now_iso} for r in rows]
 
 
 def count_memberships(q: str = "") -> int:
@@ -203,3 +218,43 @@ def list_orders(status: str | None = None, limit: int = 50, offset: int = 0) -> 
                 (limit, offset),
             ).fetchall()
     return [dict(r) for r in rows]
+
+
+def count_orders(status: str | None = None) -> int:
+    with get_conn() as conn:
+        if status:
+            return conn.execute(
+                "SELECT COUNT(*) FROM orders WHERE status=?", (status,)
+            ).fetchone()[0]
+        return conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+
+
+def revenue_stats(days: int = 30) -> dict:
+    """PAID-only revenue aggregates for the admin dashboard.
+
+    total_cents is all-history; revenue_by_day / by_plan cover the last
+    `days` days (by paid_at)."""
+    since = format_iso(utcnow() - timedelta(days=days))
+    with get_conn() as conn:
+        total_cents = conn.execute(
+            "SELECT COALESCE(SUM(amount_cents), 0) FROM orders WHERE status='PAID'"
+        ).fetchone()[0]
+        by_day = [
+            {"day": r["day"], "cents": r["cents"]}
+            for r in conn.execute(
+                "SELECT substr(paid_at, 1, 10) AS day, SUM(amount_cents) AS cents"
+                " FROM orders WHERE status='PAID' AND paid_at >= ?"
+                " GROUP BY day ORDER BY day",
+                (since,),
+            )
+        ]
+        by_plan = [
+            {"plan_id": r["plan_id"], "orders": r["orders"], "cents": r["cents"]}
+            for r in conn.execute(
+                "SELECT plan_id, COUNT(*) AS orders, SUM(amount_cents) AS cents"
+                " FROM orders WHERE status='PAID' AND paid_at >= ?"
+                " GROUP BY plan_id ORDER BY cents DESC",
+                (since,),
+            )
+        ]
+    return {"total_cents": total_cents, "revenue_by_day": by_day, "by_plan": by_plan}

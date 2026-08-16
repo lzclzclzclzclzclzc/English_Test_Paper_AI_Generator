@@ -149,10 +149,11 @@ def test_memberships_list_attaches_usernames(client, monkeypatch):
     r = client.get("/api/admin/memberships")
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 2
+    # ghost membership (no local user) is dropped, never shown as 已删除/未知
+    assert data["total"] == 1
     by_id = {m["user_id"]: m for m in data["items"]}
     assert by_id[alice.id]["username"] == "alice"
-    assert by_id["ghost"]["username"] is None
+    assert "ghost" not in by_id
 
 
 def test_memberships_list_filters_by_username(client, monkeypatch):

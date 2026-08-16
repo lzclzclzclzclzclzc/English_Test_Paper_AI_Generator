@@ -9,8 +9,17 @@ admin_router = APIRouter(prefix="/payapi/admin")
 
 
 @admin_router.get("/memberships")
-def list_memberships(q: str = "", limit: int = 50, offset: int = 0, _: AuthUser = Depends(require_admin)) -> dict:
-    return {"items": service.list_memberships(q, limit, offset), "total": service.count_memberships(q)}
+def list_memberships(
+    q: str = "",
+    limit: int = 50,
+    offset: int = 0,
+    expiring_within_days: int | None = None,
+    _: AuthUser = Depends(require_admin),
+) -> dict:
+    return {
+        "items": service.list_memberships(q, limit, offset, expiring_within_days),
+        "total": service.count_memberships(q),
+    }
 
 
 @admin_router.get("/memberships/{user_id}")
@@ -32,4 +41,12 @@ def revoke(user_id: str, _: AuthUser = Depends(require_admin)) -> dict:
 
 @admin_router.get("/orders")
 def list_orders(status: str | None = None, limit: int = 50, offset: int = 0, _: AuthUser = Depends(require_admin)) -> dict:
-    return {"items": service.list_orders(status, limit, offset)}
+    return {
+        "items": service.list_orders(status, limit, offset),
+        "total": service.count_orders(status),
+    }
+
+
+@admin_router.get("/stats/revenue")
+def stats_revenue(days: int = 30, _: AuthUser = Depends(require_admin)) -> dict:
+    return service.revenue_stats(days)
