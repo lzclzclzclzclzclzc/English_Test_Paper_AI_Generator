@@ -4,8 +4,10 @@ import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   banUser,
+  getUserAttempts,
   getUserDetail,
   getUserMastery,
+  getUserPapers,
   resetPassword,
   setRole,
   unbanUser,
@@ -35,6 +37,28 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
       <div className="text-ink">{value}</div>
     </>
   )
+}
+
+/** 简单列表区块标题（最近试卷 / 最近做题共用样式）。 */
+function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="text-[16px] text-ink [font-family:var(--font-display)]">{children}</h2>
+  )
+}
+
+/** 列表加载/出错态的统一展示。 */
+function SectionState({ isLoading, isError, onRetry }: { isLoading: boolean; isError: boolean; onRetry: () => void }) {
+  if (isLoading) return <p className="text-[13px] text-quiet">加载中…</p>
+  if (isError)
+    return (
+      <p className="text-[13px] text-muted-ink">
+        加载失败{' '}
+        <button className="text-accent hover:underline" onClick={onRetry}>
+          重试
+        </button>
+      </p>
+    )
+  return null
 }
 
 /** 重置密码弹窗：输入新密码（≥6 位）。 */
@@ -108,6 +132,18 @@ export function AdminUserDetailPage() {
   const mastery = useQuery({
     queryKey: ['admin', 'user', userId, 'mastery'],
     queryFn: () => getUserMastery(userId!),
+    enabled: !!userId,
+  })
+
+  const papers = useQuery({
+    queryKey: ['admin', 'user', userId, 'papers'],
+    queryFn: () => getUserPapers(userId!),
+    enabled: !!userId,
+  })
+
+  const attempts = useQuery({
+    queryKey: ['admin', 'user', userId, 'attempts'],
+    queryFn: () => getUserAttempts(userId!),
     enabled: !!userId,
   })
 
@@ -217,6 +253,78 @@ export function AdminUserDetailPage() {
           pending={passwordMutation.isPending}
           onConfirm={(pw) => passwordMutation.mutate(pw)}
         />
+      </div>
+
+      {/* 最近试卷（Spec H B） */}
+      <div className="flex flex-col gap-3 border-t border-hairline pt-6">
+        <SectionTitle>最近试卷</SectionTitle>
+        <SectionState
+          isLoading={papers.isLoading}
+          isError={papers.isError}
+          onRetry={() => papers.refetch()}
+        />
+        {papers.data && papers.data.items.length === 0 && (
+          <p className="text-[13px] text-muted-ink">暂无试卷</p>
+        )}
+        {papers.data && papers.data.items.length > 0 && (
+          <table className="w-full text-left text-[13px]">
+            <thead>
+              <tr className="border-b border-hairline text-quiet">
+                <th className="py-1.5 pr-4 font-normal">试卷</th>
+                <th className="py-1.5 pr-4 font-normal">生成时间</th>
+                <th className="py-1.5 font-normal">题数</th>
+              </tr>
+            </thead>
+            <tbody>
+              {papers.data.items.map((p) => (
+                <tr key={p.id} className="border-b border-hairline last:border-b-0">
+                  <td className="py-1.5 pr-4 text-ink">{p.title}</td>
+                  <td className="py-1.5 pr-4 text-quiet">{p.generated_at.slice(0, 16).replace('T', ' ')}</td>
+                  <td className="py-1.5 text-quiet">{p.question_count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* 最近做题记录（Spec H B） */}
+      <div className="flex flex-col gap-3 border-t border-hairline pt-6">
+        <SectionTitle>最近做题记录</SectionTitle>
+        <SectionState
+          isLoading={attempts.isLoading}
+          isError={attempts.isError}
+          onRetry={() => attempts.refetch()}
+        />
+        {attempts.data && attempts.data.items.length === 0 && (
+          <p className="text-[13px] text-muted-ink">暂无做题记录</p>
+        )}
+        {attempts.data && attempts.data.items.length > 0 && (
+          <table className="w-full text-left text-[13px]">
+            <thead>
+              <tr className="border-b border-hairline text-quiet">
+                <th className="py-1.5 pr-4 font-normal">试卷</th>
+                <th className="py-1.5 pr-4 font-normal">答题时间</th>
+                <th className="py-1.5 pr-4 font-normal">对/总</th>
+                <th className="py-1.5 font-normal">正确率</th>
+              </tr>
+            </thead>
+            <tbody>
+              {attempts.data.items.map((a) => (
+                <tr key={a.attempt_id} className="border-b border-hairline last:border-b-0">
+                  <td className="py-1.5 pr-4 text-ink">{a.paper_title}</td>
+                  <td className="py-1.5 pr-4 text-quiet">{a.answered_at.slice(0, 16).replace('T', ' ')}</td>
+                  <td className="py-1.5 pr-4 text-quiet">
+                    {a.item_correct}/{a.item_total}
+                  </td>
+                  <td className="py-1.5 text-quiet">
+                    {a.correct_rate == null ? '—' : `${Math.round(a.correct_rate * 100)}%`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* 学习画像：复用学生端掌握度报告组件 */}

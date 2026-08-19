@@ -33,6 +33,7 @@ MIGRATION_VOCABULARY_SCHEMA = "20260730_001_vocabulary_mvp"
 MIGRATION_VOCABULARY_RETRY_QUEUE = "20260804_001_vocabulary_retry_queue"
 MIGRATION_VOCABULARY_WORD_SOURCES = "20260805_001_vocabulary_word_sources"
 MIGRATION_MINDMAPS = "20260813_001_mindmaps"
+MIGRATION_ADMIN_AUDIT_LOGS = "20260816_001_admin_audit_logs"
 # Windows' bundled Python may not ship IANA zone data. Shanghai has no DST, so
 # the explicit UTC+08:00 offset keeps daily quota and streak boundaries stable.
 VOCABULARY_TIMEZONE = timezone(timedelta(hours=8), name="Asia/Shanghai")
@@ -269,31 +270,54 @@ def set_user_status(user_id: str, status: str) -> None:
         conn.execute("UPDATE users SET status = ? WHERE id = ?", (status, user_id))
 
 
-def list_users(q: str = "", limit: int = 50, offset: int = 0) -> list[dict]:
+# Admin user-list sort whitelist: request param → SQL ORDER BY expression.
+# Values are fixed strings (never interpolated from user input).
+_ADMIN_USER_SORTS = {
+    "created_at": "u.created_at DESC",
+    "paper_count": "paper_count DESC, u.created_at DESC",
+    "attempt_count": "attempt_count DESC, u.created_at DESC",
+}
+
+
+def list_users(
+    q: str = "",
+    limit: int = 50,
+    offset: int = 0,
+    status: str = "",
+    sort: str = "created_at",
+) -> list[dict]:
     init_db()
     like = f"%{q}%"
+    order_by = _ADMIN_USER_SORTS.get(sort, _ADMIN_USER_SORTS["created_at"])
+    status_clause = "AND u.status = ?" if status else ""
+    params: list[object] = [like]
+    if status:
+        params.append(status)
     with connect() as conn:
         rows = conn.execute(
-            """
+            f"""
             SELECT u.id, u.username, u.created_at, u.role, u.status,
                    (SELECT COUNT(*) FROM papers p WHERE p.user_id = u.id) AS paper_count,
                    (SELECT COUNT(*) FROM attempts a WHERE a.user_id = u.id) AS attempt_count
             FROM users u
-            WHERE u.username LIKE ?
-            ORDER BY u.created_at DESC
+            WHERE u.username LIKE ? {status_clause}
+            ORDER BY {order_by}
             LIMIT ? OFFSET ?
             """,
-            (like, limit, offset),
+            (*params, limit, offset),
         ).fetchall()
     return [dict(r) for r in rows]
 
 
-def count_users(q: str = "") -> int:
+def count_users(q: str = "", status: str = "") -> int:
     init_db()
+    sql = "SELECT COUNT(*) FROM users WHERE username LIKE ?"
+    params: list[object] = [f"%{q}%"]
+    if status:
+        sql += " AND status = ?"
+        params.append(status)
     with connect() as conn:
-        return conn.execute(
-            "SELECT COUNT(*) FROM users WHERE username LIKE ?", (f"%{q}%",)
-        ).fetchone()[0]
+        return conn.execute(sql, params).fetchone()[0]
 
 
 def usernames_by_ids(user_ids: list[str]) -> dict[str, str]:
@@ -331,14 +355,87 @@ def admin_counts() -> dict:
         new_today = conn.execute(
             "SELECT COUNT(*) FROM users WHERE substr(created_at, 1, 10) = ?", (today,)
         ).fetchone()[0]
+        banned_users = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE status = 'banned'"
+        ).fetchone()[0]
         total_papers = conn.execute("SELECT COUNT(*) FROM papers").fetchone()[0]
         total_attempts = conn.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]
     return {
         "total_users": total_users,
         "new_users_today": new_today,
+        "banned_users": banned_users,
         "total_papers": total_papers,
         "total_attempts": total_attempts,
     }
+
+
+def list_user_papers(user_id: str, limit: int = 10) -> list[dict]:
+    """Admin user-detail: most recent papers (id/title/time/question_count)."""
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT paper_id, title, generated_at, payload_json
+            FROM papers
+            WHERE user_id = ?
+            ORDER BY generated_at DESC
+            LIMIT ?
+            """,
+            (user_id, limit),
+        ).fetchall()
+    out: list[dict] = []
+    for r in rows:
+        try:
+            question_count = len(json.loads(r["payload_json"]).get("items", []))
+        except (json.JSONDecodeError, TypeError):
+            question_count = 0
+        out.append(
+            {
+                "id": r["paper_id"],
+                "title": r["title"],
+                "generated_at": r["generated_at"],
+                "question_count": question_count,
+            }
+        )
+    return out
+
+
+def list_user_attempt_summary(user_id: str, limit: int = 10) -> list[dict]:
+    """Admin user-detail: recent attempts with per-paper correctness rollup.
+
+    One row per attempt; item_total counts graded attempt_items. Papers rows
+    may be gone (deletion is not currently offered, but a LEFT JOIN keeps this
+    robust) — paper_title falls back to the paper_id.
+    """
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT a.id AS attempt_id, a.paper_id, a.answered_at,
+                   p.title AS paper_title,
+                   COUNT(ai.item_index) AS item_total,
+                   SUM(ai.is_correct) AS item_correct
+            FROM attempts a
+            LEFT JOIN papers p ON p.paper_id = a.paper_id
+            LEFT JOIN attempt_items ai ON ai.attempt_id = a.id
+            WHERE a.user_id = ?
+            GROUP BY a.id
+            ORDER BY a.answered_at DESC
+            LIMIT ?
+            """,
+            (user_id, limit),
+        ).fetchall()
+    return [
+        {
+            "attempt_id": r["attempt_id"],
+            "paper_title": r["paper_title"] or r["paper_id"],
+            "answered_at": r["answered_at"],
+            "item_total": r["item_total"],
+            "item_correct": r["item_correct"] or 0,
+            "correct_rate": round((r["item_correct"] or 0) / r["item_total"], 4) if r["item_total"] else None,
+        }
+        for r in rows
+    ]
 
 
 def _by_day(conn: sqlite3.Connection, table: str, ts_col: str, days: int) -> list[dict]:
@@ -368,8 +465,9 @@ def papers_created_by_day(days: int = 30) -> list[dict]:
         return _by_day(conn, "papers", "generated_at", days)
 
 
-def attempts_by_day(days: int = 30) -> list[dict]:
-    """Per-day answered-item volume and correct rate across ALL users.
+def attempts_by_day(days: int = 30, user_id: str | None = None) -> list[dict]:
+    """Per-day answered-item volume and correct rate across ALL users, or for
+    a single user when user_id is given (admin learner view).
 
     "attempts" here counts graded attempt_items (not attempt rows), matching
     the granularity of MasteryProfile.total_attempts_considered. correct_rate
@@ -385,11 +483,11 @@ def attempts_by_day(days: int = 30) -> list[dict]:
                    ROUND(AVG(ai.is_correct), 4) AS correct_rate
             FROM attempts a
             JOIN attempt_items ai ON ai.attempt_id = a.id
-            WHERE a.answered_at >= ?
+            WHERE a.answered_at >= ? AND (? IS NULL OR a.user_id = ?)
             GROUP BY day
             ORDER BY day
             """,
-            (since,),
+            (since, user_id, user_id),
         ).fetchall()
     return [
         {"day": r["day"], "attempts": r["attempts"], "correct_rate": r["correct_rate"]}
@@ -397,18 +495,23 @@ def attempts_by_day(days: int = 30) -> list[dict]:
     ]
 
 
-def question_type_accuracy(window_days: int | None = None) -> list[dict]:
-    """Wilson-lower-bound accuracy per question_type across ALL users.
+def question_type_accuracy(window_days: int | None = None, user_id: str | None = None) -> list[dict]:
+    """Wilson-lower-bound accuracy per question_type across ALL users, or for
+    a single user when user_id is given (admin learner view).
 
     Uses the same _wilson_lower_bound scoring as mastery so low-sample types
     aren't over-credited. window_days None = all history."""
     init_db()
     params: list[object] = []
-    where = ""
+    conds = []
     if window_days is not None:
         since = datetime.now(timezone.utc) - timedelta(days=window_days)
-        where = "WHERE a.answered_at >= ?"
+        conds.append("a.answered_at >= ?")
         params.append(since.isoformat())
+    if user_id is not None:
+        conds.append("a.user_id = ?")
+        params.append(user_id)
+    where = f"WHERE {' AND '.join(conds)}" if conds else ""
     with connect() as conn:
         rows = conn.execute(
             f"""
@@ -669,6 +772,143 @@ def list_questions(
             (*params, limit, offset),
         ).fetchall()
         return [_row_to_question(conn, row) for row in rows]
+
+
+def questionbank_stats() -> dict:
+    """Admin question-bank stats (read-only, questions.db only).
+
+    Returns total + three distributions: by_type, by_knowledge_point (joined
+    with knowledge_points for level1/level2 labels) and by_chapter
+    (book × chapter_l1 × chapter_l2).
+    """
+    with connect_bank() as conn:
+        if not _table_exists(conn, "questions"):
+            return {"total": 0, "by_type": [], "by_knowledge_point": [], "by_chapter": []}
+        total = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+        by_type = [
+            {"question_type": r["question_type"], "count": r["count"]}
+            for r in conn.execute(
+                "SELECT question_type, COUNT(*) AS count FROM questions"
+                " GROUP BY question_type ORDER BY count DESC"
+            )
+        ]
+        by_kp = [
+            {
+                "knowledge_point_id": r["knowledge_point_id"],
+                "level1": r["level1"],
+                "level2": r["level2"],
+                "count": r["count"],
+            }
+            for r in conn.execute(
+                "SELECT qkp.knowledge_point_id, kp.level1, kp.level2, COUNT(*) AS count"
+                " FROM question_knowledge_points qkp"
+                " JOIN knowledge_points kp ON kp.id = qkp.knowledge_point_id"
+                " GROUP BY qkp.knowledge_point_id ORDER BY count DESC, qkp.knowledge_point_id"
+            )
+        ]
+        by_chapter = [
+            {
+                "book": r["book"],
+                "chapter_l1": r["chapter_l1"],
+                "chapter_l2": r["chapter_l2"],
+                "count": r["count"],
+            }
+            for r in conn.execute(
+                "SELECT book, chapter_l1, chapter_l2, COUNT(*) AS count FROM questions"
+                " GROUP BY book, chapter_l1, chapter_l2 ORDER BY count DESC"
+            )
+        ]
+    return {
+        "total": total,
+        "by_type": by_type,
+        "by_knowledge_point": by_kp,
+        "by_chapter": by_chapter,
+    }
+
+
+def questionbank_search(
+    *,
+    question_type: str = "",
+    knowledge_point_id: str = "",
+    book: str = "",
+    chapter_l1: str = "",
+    q: str = "",
+    limit: int = 20,
+    offset: int = 0,
+) -> tuple[list[dict], int]:
+    """Admin question-bank browse: filter + stem search with pagination.
+
+    Returns (rows, total). Rows are plain dicts (stem/options/answer parsed
+    from JSON columns) — the admin preview needs raw fields, not Question
+    objects. Read-only, questions.db only.
+    """
+    with connect_bank() as conn:
+        if not _table_exists(conn, "questions"):
+            return [], 0
+        clauses: list[str] = []
+        params: list[object] = []
+        if question_type:
+            clauses.append("q.question_type = ?")
+            params.append(question_type)
+        if book:
+            clauses.append("q.book = ?")
+            params.append(book)
+        if chapter_l1:
+            clauses.append("q.chapter_l1 = ?")
+            params.append(chapter_l1)
+        if q:
+            clauses.append("q.stem LIKE ?")
+            params.append(f"%{q}%")
+        joins = ""
+        if knowledge_point_id:
+            joins = "JOIN question_knowledge_points qkp ON qkp.question_id = q.id"
+            clauses.append("qkp.knowledge_point_id = ?")
+            params.append(knowledge_point_id)
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        total = conn.execute(
+            f"SELECT COUNT(DISTINCT q.id) FROM questions q {joins} {where}", params
+        ).fetchone()[0]
+        rows = conn.execute(
+            f"""
+            SELECT DISTINCT q.*
+            FROM questions q
+            {joins}
+            {where}
+            ORDER BY q.id
+            LIMIT ? OFFSET ?
+            """,
+            (*params, limit, offset),
+        ).fetchall()
+        kp_rows: list[sqlite3.Row] = []
+        if rows:
+            placeholders = ",".join("?" * len(rows))
+            kp_rows = conn.execute(
+                "SELECT question_id, knowledge_point_id FROM question_knowledge_points"
+                f" WHERE question_id IN ({placeholders})",
+                [r["id"] for r in rows],
+            ).fetchall()
+        kp_map: dict[str, list[str]] = {}
+        for kr in kp_rows:
+            kp_map.setdefault(kr["question_id"], []).append(kr["knowledge_point_id"])
+        items = []
+        for r in rows:
+            stem = r["stem"] or r["original_sentence"] or ""
+            options = json.loads(r["options_json"]) if r["options_json"] else None
+            answer = json.loads(r["answer_json"]) if r["answer_json"] else None
+            items.append(
+                {
+                    "id": r["id"],
+                    "question_type": r["question_type"],
+                    "book": r["book"],
+                    "chapter_l1": r["chapter_l1"],
+                    "chapter_l2": r["chapter_l2"],
+                    "stem": stem,
+                    "options": options,
+                    "answer": answer,
+                    "knowledge_point_ids": sorted(kp_map.get(r["id"], [])),
+                }
+            )
+    return items, total
 
 
 def write_question_solution(question_id: str, solution: str) -> bool:
@@ -1045,6 +1285,120 @@ def _migrate_users_status(conn: sqlite3.Connection) -> None:
     conn.execute("ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'active'")
 
 
+def _migrate_admin_audit_logs(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS admin_audit_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            actor_user_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            target_user_id TEXT,
+            detail_json TEXT,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_created ON admin_audit_logs(created_at DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_actor ON admin_audit_logs(actor_user_id)"
+    )
+
+
+AUDIT_ACTIONS = (
+    "set_role",
+    "reset_password",
+    "ban",
+    "unban",
+    "grant_membership",
+    "revoke_membership",
+)
+
+
+def record_admin_action(
+    actor_user_id: str,
+    action: str,
+    target_user_id: str | None = None,
+    detail: dict | None = None,
+) -> None:
+    """Append one admin-sensitive-action audit row (fire-and-forget)."""
+    init_db()
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO admin_audit_logs"
+            " (actor_user_id, action, target_user_id, detail_json, created_at)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (
+                actor_user_id,
+                action,
+                target_user_id,
+                json.dumps(detail, ensure_ascii=False) if detail else None,
+                datetime.now(timezone.utc).isoformat(),
+            ),
+        )
+
+
+def list_admin_audit(
+    actor_user_id: str = "",
+    action: str = "",
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[dict], int]:
+    """Admin audit log with actor/target usernames joined in.
+
+    Returns (rows, total); newest first.
+    """
+    init_db()
+    clauses: list[str] = []
+    params: list[object] = []
+    if actor_user_id:
+        clauses.append("l.actor_user_id = ?")
+        params.append(actor_user_id)
+    if action:
+        clauses.append("l.action = ?")
+        params.append(action)
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    with connect() as conn:
+        total = conn.execute(
+            f"SELECT COUNT(*) FROM admin_audit_logs l {where}", params
+        ).fetchone()[0]
+        rows = conn.execute(
+            f"""
+            SELECT l.id, l.actor_user_id, l.action, l.target_user_id,
+                   l.detail_json, l.created_at,
+                   ua.username AS actor_username,
+                   ut.username AS target_username
+            FROM admin_audit_logs l
+            LEFT JOIN users ua ON ua.id = l.actor_user_id
+            LEFT JOIN users ut ON ut.id = l.target_user_id
+            {where}
+            ORDER BY l.id DESC
+            LIMIT ? OFFSET ?
+            """,
+            (*params, limit, offset),
+        ).fetchall()
+    out = []
+    for r in rows:
+        try:
+            detail = json.loads(r["detail_json"]) if r["detail_json"] else None
+        except json.JSONDecodeError:
+            detail = None
+        out.append(
+            {
+                "id": r["id"],
+                "actor_user_id": r["actor_user_id"],
+                "actor_username": r["actor_username"],
+                "action": r["action"],
+                "target_user_id": r["target_user_id"],
+                "target_username": r["target_username"],
+                "detail": detail,
+                "created_at": r["created_at"],
+            }
+        )
+    return out, total
+
+
 def _migrate_attempt_items_item_index(conn: sqlite3.Connection) -> None:
     if not _table_exists(conn, "attempt_items"):
         return
@@ -1292,6 +1646,7 @@ def _apply_migrations(conn: sqlite3.Connection) -> None:
         (MIGRATION_ATTEMPT_ITEMS_USER_ANSWER, _migrate_attempt_items_user_answer),
         (MIGRATION_WRITING_GRADE_RESULTS, _migrate_writing_grade_results),
         (MIGRATION_MINDMAPS, _migrate_mindmaps),
+        (MIGRATION_ADMIN_AUDIT_LOGS, _migrate_admin_audit_logs),
     ]
     for migration_id, migration in migrations:
         if _migration_applied(conn, migration_id):

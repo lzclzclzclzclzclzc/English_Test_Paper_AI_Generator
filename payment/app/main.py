@@ -27,6 +27,12 @@ def create_app() -> FastAPI:
     app.include_router(admin_router)
     if get_settings().mock_pay:
         app.include_router(dev_router)
+
+    @app.get("/payapi/health")
+    def health() -> dict:
+        # Lightweight liveness echo for cross-service probes (admin /system/health).
+        return {"status": "ok"}
+
     return app
 
 
