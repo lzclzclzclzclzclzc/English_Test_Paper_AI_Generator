@@ -22,9 +22,9 @@ npm.cmd run dev
 生成器会输出：
 
 - `data/acceptance-demo.db`：独立的用户数据，不会覆盖日常使用的 `data/app.db`；
-- `data/acceptance-demo-accounts.csv`：全部 38 个验收账号。
+- `data/acceptance-demo-accounts.csv`：全部 83 个验收账号（80 名虚构学生、3 名管理员）。
 
-所有账号均使用密码 `Demo2026!`。建议优先使用 `admin_zhou` 登录后台，或使用 `liuyt2026`、`chenxr2026`、`wangzy2026` 查看不同活跃度的学习记录。
+所有账号均使用密码 `Demo2026!`。管理员账号为 `admin_zhou`、`admin_li`、`admin_wang`，建议优先使用 `admin_zhou` 登录后台；学生可使用 `moonlight27`（高活跃）、`xiaohe_9`（稳定）、`bookishbee`（低活跃）或 `softfocus`（新用户）查看不同活跃度的学习记录。
 
 验证生成结果：
 

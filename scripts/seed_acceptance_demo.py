@@ -9,6 +9,7 @@ import argparse
 import csv
 import json
 import random
+import re
 import sqlite3
 import sys
 from dataclasses import dataclass
@@ -33,6 +34,9 @@ END = date(2026, 9, 5)
 PASSWORD = "Demo2026!"
 RNG_SEED = 20260905
 QUESTION_TYPES = ("single_choice", "word_form", "sentence_rewriting")
+EXPECTED_STUDENT_COUNT = 80
+EXPECTED_ADMIN_COUNT = 3
+USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_]{3,32}$")
 
 
 @dataclass(frozen=True)
@@ -47,23 +51,41 @@ class Persona:
 
 
 STUDENT_NAMES = (
-    "liuyt2026", "chenxr2026", "wangzy2026", "zhanghl2026", "linjx2026", "zhaoqy2026",
-    "sunyw2026", "huangxy2026", "wujm2026", "zhouyy2026", "xuwei2026", "hejun2026",
-    "gaolr2026", "pengyh2026", "luoxx2026", "tangzy2026", "majy2026", "fengxy2026",
-    "yangzr2026", "caoyt2026", "guolh2026", "renxy2026", "qianyu2026", "duanlr2026",
-    "shaozy2026", "fanxy2026", "yinqt2026", "kongyh2026", "xieyu2026", "baojx2026",
-    "luzy2026", "shenhx2026", "mengyt2026", "jiangxr2026", "huqian2026", "linzy2026",
+    "moonlight27", "studyfox88", "grammar_lab", "readingstar", "xiaoyu_7",
+    "leilei22", "mango_notes", "bluepencil9", "word_wizard", "quietowl_5",
+    "sunnydesk", "mapleleaf8", "campuscat", "paperplane3", "vocab_voyager",
+    "dawnreader", "orbit_notes", "panda_essay", "mintstudy", "grammar_grove",
+    "cloudybook", "brightpath", "studytrail6", "nova_reader", "littlecomet",
+    "quiz_harbor", "echo_pencil", "amberdesk", "silverpage", "focus_finch",
+    "xiaohe_9", "tutu_english", "yoyo_notes", "mimi_study", "lele_path",
+    "xiaoran_3", "anran_book", "wenwen_lab", "chenchen_q", "lulu_vocab",
+    "reading_river", "wordgarden", "campus_moon", "note_nest", "paper_sparrow",
+    "study_lantern", "quizmap_2", "grammarcloud", "vocab_lane", "essay_spark",
+    "bookishbee", "learnloop7", "brightink", "horizon_note", "orange_quiz",
+    "marblebook", "cobaltpen", "ivy_reader", "owlstudy8", "pocketwords",
+    "smartpencil", "tidy_notes", "grammartrail", "studybridge", "readingkite",
+    "wordcraft_6", "quizforest", "paperorbit", "littleatlas", "notebookfox",
+    "softfocus", "dailydrill", "starry_vocab", "readingship", "essaymint",
+    "study_comet", "grammarwave", "bluebooklet", "wordloom", "campus_echo",
 )
 
 
 def _personas() -> list[Persona]:
     people: list[Persona] = []
     groups = (
-        ("high", 10, 0.80, 9, 100),
-        ("steady", 14, 0.62, 6, 55),
-        ("light", 8, 0.45, 3, 22),
-        ("new", 4, 0.56, 1, 8),
+        ("high", 20, 0.80, 9, 100),
+        ("steady", 30, 0.62, 6, 55),
+        ("light", 20, 0.45, 3, 22),
+        ("new", 10, 0.56, 1, 8),
     )
+    expected_students = sum(count for _, count, *_ in groups)
+    if len(STUDENT_NAMES) != expected_students or expected_students != EXPECTED_STUDENT_COUNT:
+        raise RuntimeError("student username list does not match the configured activity groups")
+    if len(set(STUDENT_NAMES)) != len(STUDENT_NAMES):
+        raise RuntimeError("student usernames must be unique")
+    invalid_names = [username for username in STUDENT_NAMES if not USERNAME_PATTERN.fullmatch(username)]
+    if invalid_names:
+        raise RuntimeError(f"student usernames do not meet account validation: {invalid_names}")
     cursor = 0
     for activity, count, accuracy, papers, words in groups:
         for offset in range(count):
@@ -74,7 +96,10 @@ def _personas() -> list[Persona]:
     people.extend((
         Persona("admin_zhou", "admin", START, 0.78, 4, 35, "admin"),
         Persona("admin_li", "admin", START + timedelta(days=3), 0.72, 3, 28, "admin"),
+        Persona("admin_wang", "admin", START + timedelta(days=6), 0.75, 3, 30, "admin"),
     ))
+    if sum(person.role == "admin" for person in people) != EXPECTED_ADMIN_COUNT:
+        raise RuntimeError("admin account list does not match the expected count")
     return people
 
 
@@ -241,7 +266,7 @@ def seed_database(db_path: Path, accounts_path: Path, *, reset: bool = False) ->
             papers, attempts = _insert_papers_and_attempts(conn, rng, personas)
             logs = _insert_vocabulary(conn, rng, personas)
         _write_accounts(accounts_path, personas)
-        return {"users": len(personas), "admins": 2, "papers": papers, "attempts": attempts, "vocabulary_logs": logs}
+        return {"users": len(personas), "admins": sum(person.role == "admin" for person in personas), "papers": papers, "attempts": attempts, "vocabulary_logs": logs}
     finally:
         storage.set_db_path(None)
 
@@ -254,11 +279,14 @@ def verify_database(db_path: Path) -> dict[str, int]:
         papers = conn.execute("SELECT COUNT(*) FROM papers").fetchone()[0]
         attempts = conn.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]
         logs = conn.execute("SELECT COUNT(*) FROM vocabulary_review_logs").fetchone()[0]
+        unique_usernames = conn.execute("SELECT COUNT(DISTINCT username) FROM users").fetchone()[0]
+        usernames = [row[0] for row in conn.execute("SELECT username FROM users")]
         start, end = conn.execute("SELECT MIN(generated_at), MAX(generated_at) FROM papers").fetchone()
         attempt_start, attempt_end = conn.execute("SELECT MIN(answered_at), MAX(answered_at) FROM attempts").fetchone()
         review_start, review_end = conn.execute("SELECT MIN(reviewed_at), MAX(reviewed_at) FROM vocabulary_review_logs").fetchone()
         fk_errors = conn.execute("PRAGMA foreign_key_check").fetchall()
-        if (users, admins) != (38, 2) or not papers or not attempts or not logs:
+        invalid_usernames = [username for username in usernames if not USERNAME_PATTERN.fullmatch(username)]
+        if (users, admins) != (EXPECTED_STUDENT_COUNT + EXPECTED_ADMIN_COUNT, EXPECTED_ADMIN_COUNT) or users != unique_usernames or invalid_usernames or not papers or not attempts or not logs:
             raise RuntimeError("acceptance database is incomplete")
         if start[:10] != START.isoformat() or end[:10] != END.isoformat():
             raise RuntimeError("paper timestamps are outside the acceptance range")
