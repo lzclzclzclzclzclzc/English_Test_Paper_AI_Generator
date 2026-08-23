@@ -9,9 +9,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        /* 主按钮（卷王 variant-5）：实心橙红填充 + 白字，hover 加深 */
-        default: "border-accent bg-accent text-white hover:bg-accent-ink hover:border-accent-ink",
-        /* 次按钮：细线边 + 透明底，hover 转赤陶边/字 + 墨色薄底 */
+        /* 主按钮（卷王 variant-5）：实心橙红填充 + 白字，hover 加深。
+           用 accent-fill（暗色下不变亮），全站唯一的橙红填充面之一。 */
+        default: "border-accent-fill bg-accent-fill text-white hover:bg-accent-ink hover:border-accent-ink",
+        /* 次按钮：细线边 + 透明底，hover 转橙红边/字 + 墨色薄底 */
         outline:
           "border-hairline bg-transparent text-muted-ink hover:border-accent hover:bg-tint hover:text-accent aria-expanded:bg-tint aria-expanded:text-accent",
         secondary:
@@ -25,14 +26,15 @@ const buttonVariants = cva(
       size: {
         default:
           "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        xs: "h-6 gap-1 px-2 text-xs has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-7 gap-1 px-2.5 text-[0.8rem] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        /* lg = 页面级主 CTA（生成试卷 / 提交判分 / 开始今日一练）：全站统一这一种尺寸 */
+        lg: "h-11 gap-2 px-6 text-[15px] tracking-[0.03em] has-data-[icon=inline-end]:pr-5 has-data-[icon=inline-start]:pl-5",
         icon: "size-8",
         "icon-xs":
-          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
+          "size-6 [&_svg:not([class*='size-'])]:size-3",
         "icon-sm":
-          "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
+          "size-7",
         "icon-lg": "size-9",
       },
     },

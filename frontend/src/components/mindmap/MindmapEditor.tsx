@@ -59,7 +59,7 @@ export function OutlineEditor({ draft, onChange, saving }: OutlineEditorProps) {
         onChange={(e) => onChange(e.target.value)}
         spellCheck={false}
         aria-label="大纲 Markdown 编辑器"
-        className="min-h-[200px] flex-1 resize-none rounded-[10px] border border-ink-20 bg-transparent p-3 font-mono text-[13px] leading-[1.7] text-ink outline-none focus:border-accent"
+        className="min-h-[200px] flex-1 resize-none rounded-sm border border-ink-20 bg-transparent p-3 font-mono text-[13px] leading-[1.7] text-ink outline-none focus:border-accent"
       />
     </div>
   )

@@ -15,7 +15,7 @@ function fmtDate(iso: string): string {
 export function ContinueList({ items }: { items: PaperListItem[] }) {
   return (
     <section className="flex flex-col gap-2">
-      <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">继续作答</span>
+      <span className="kicker">继续作答</span>
       <div className="divide-y divide-ink-10">
         {items.map((p) => (
           <Link

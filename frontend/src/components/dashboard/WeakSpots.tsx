@@ -4,7 +4,7 @@ import type { ComposeInput } from '@/lib/composeQuery'
 import { prettifyKp } from '@/lib/kp'
 import type { MasteryProfile } from '@/types/api'
 
-/** 三色 band（手法同 MasteryReport）：< 0.4 赤陶 / 0.4–0.7 赭黄 / ≥ 0.7 绿 */
+/** 三色 band（手法同 MasteryReport）：< 0.4 橙红 / 0.4–0.7 赭黄 / ≥ 0.7 绿 */
 const bandOf = (m: number) => (m < 0.4 ? 'weak' : m < 0.7 ? 'mid' : 'solid')
 const BAND_BAR: Record<string, string> = {
   weak: 'bg-accent',
@@ -31,7 +31,7 @@ export function WeakSpots({ mastery, isPending, onDrill }: WeakSpotsProps) {
 
   return (
     <section className="flex flex-col gap-3 pb-5">
-      <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
+      <span className="kicker">
         弱点速览 · 近 30 天
       </span>
 
@@ -75,9 +75,9 @@ export function WeakSpots({ mastery, isPending, onDrill }: WeakSpotsProps) {
                     </button>
                   )}
                 </div>
-                <div className="h-[5px] overflow-hidden rounded-full bg-ink-10">
+                <div className="h-1 overflow-hidden bg-ink-10">
                   <div
-                    className={cn('h-full rounded-full', BAND_BAR[band])}
+                    className={cn('h-full', BAND_BAR[band])}
                     style={{ width: `${Math.round(kp.mastery * 100)}%` }}
                   />
                 </div>

@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { HIDDEN_KP_IDS, THIN_KP_IDS } from '@/lib/drillConfig'
 import type { QuestionType } from '@/types/api'
@@ -24,7 +23,7 @@ export function KpPicker({ type, value, onChange }: KpPickerProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
+      <span className="kicker">
         考点（可多选，不选 = 不限）
       </span>
       {isLoading ? (
@@ -39,17 +38,13 @@ export function KpPicker({ type, value, onChange }: KpPickerProps) {
               <button
                 key={kp.id}
                 type="button"
-                className={cn(
-                  'rounded-sm border px-3 py-1 font-ui text-[12.5px] transition-colors',
-                  selected
-                    ? 'border-accent bg-wash text-accent'
-                    : 'border-hairline text-muted-ink hover:border-accent hover:text-accent',
-                )}
+                aria-pressed={selected}
+                className="seg seg-sm"
                 onClick={() => toggle(kp.id)}
               >
                 {kp.level2}
                 {THIN_KP_IDS.has(kp.id) && (
-                  <sup className="ml-0.5 text-[10.5px] font-normal text-quiet">题量少</sup>
+                  <sup className="ml-0.5 text-[10.5px] font-normal opacity-70">题量少</sup>
                 )}
               </button>
             )

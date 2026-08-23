@@ -1,34 +1,30 @@
 /* ── Typography ─────────────────────────────────────────────────────────
-   Serif throughout — book-like, literary, sized for a printed page.
+   Sans throughout（卷王 variant-5, SaaS × Swiss）— system UI stack for
+   chrome, headings and question stems alike; no serif anywhere on screen.
 
-   THE TWO-WEIGHT RULE — the serif ships only at 400 and 700. For Chinese,
-   font-medium/normal both render 400 and font-semibold/bold both render 700.
-   Weight is binary. Build hierarchy from SIZE and COLOR, never an imaginary
-   mid-weight.
+   THE TWO-WEIGHT RULE — only 400 and 700. For Chinese, font-medium/normal
+   both render 400 and font-semibold/bold both render 700. Weight is binary.
+   Build hierarchy from SIZE and COLOR, never an imaginary mid-weight.
 
-   THE MASTHEAD-ANCHOR RULE — the bold 喫茶去 masthead (display font) is the
-   heaviest text in the chrome. Content titles sit one size step up but stay
-   regular weight, so they never out-shout it.
+   Headings: PageHeader h1 30px/700; section h2 17px/700; kicker 11px/700
+   tracked 0.14em (`.kicker` in index.css). Use the `font-heading` utility for
+   headings, never `[font-family:var(--font-display)]` inline.
    ──────────────────────────────────────────────────────────────────────── */
 
 :root {
   /* ── Families ──
-     display — header masthead + nav only (京华老宋体, falls back to serif)
-     serif   — everything you read (Latin → Georgia, CJK → Noto Serif SC)
-     charter — Latin title-page epigraph + entrance splash (IM Fell English)
-     mono    — code blocks only */
-  /* 京华老宋体(KingHwa_OldSong)© TerryWang(王廷瑞),免费商用。
-     经 ZeoSeven Fonts CDN 分片按需加载(index.html <link>),
-     family 名为 "KingHwaOldSong";CDN 不可达时回退到阅读衬线。 */
-  /* 卷王 variant-5：标题也走无衬线（原京华老宋衬线已停用，回退栈保留在注释供需要时恢复）。 */
+     display — legacy alias of the sans stack (admin pages still reference it
+               inline; student pages use the `font-heading` utility instead)
+     serif   — kept ONLY as a print/fallback stack; nothing on screen uses it
+     mono    — code blocks only
+     ui      — the one sans stack every utility (--font-sans/-heading/-ui/
+               -question) resolves to */
   --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
     "PingFang SC", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif;
   --font-serif: ui-serif, Georgia, "Times New Roman",
     "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun",
     serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
-  --font-charter: "IM Fell English", Georgia, ui-serif, serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  /* ui — 无衬线，只给 UI 元素（tag、按钮、序号块、答题卡）；正文/题干仍走衬线 */
   --font-ui-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
     "PingFang SC", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei",
     sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
@@ -59,7 +55,7 @@
   --leading-body: 1.9;        /* prose — wide for Chinese readability */
 
   /* ── Editorial tracking ── */
-  --tracking-masthead: 0.06em;/* CJK masthead 喫茶去 */
+  --tracking-masthead: 0.06em;/* CJK masthead 卷王 */
   --tracking-nav: 0.08em;     /* header nav links */
   --tracking-label: 0.1em;    /* kicker labels */
 

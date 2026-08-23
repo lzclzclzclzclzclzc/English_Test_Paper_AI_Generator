@@ -8,7 +8,9 @@ import { TYPE_LABELS } from '@/lib/kp'
 import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import { Segmented } from '@/components/ui/segmented'
 import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/EmptyState'
 import {
   Select,
   SelectContent,
@@ -20,6 +22,10 @@ import {
 const PAGE_SIZE = 20
 
 type StatusFilter = 'all' | 'submitted' | 'unsubmitted'
+
+/** 筛选条里的原生 date 输入：与 .seg-sm 同高、同圆角 */
+const DATE_INPUT =
+  'h-7 rounded-sm border border-ink-20 bg-transparent px-2 font-ui text-[12.5px] text-ink outline-none transition-colors focus:border-ink'
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: 'all', label: '全部' },
@@ -95,7 +101,7 @@ export function PapersPage() {
         hasFilters ? (
           <NoMatchState onClear={clearFilters} />
         ) : (
-          <EmptyState />
+          <NoPapersState />
         )
       ) : (
         <>
@@ -148,24 +154,14 @@ function FilterBar({
 }) {
   return (
     <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
-      {/* 交卷状态：3 段分段控件（比下拉更直观，契合极简行式审美） */}
-      <div className="inline-flex items-center rounded-lg border border-ink-20 p-0.5">
-        {STATUS_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onStatusChange(opt.value)}
-            className={cn(
-              'rounded-[7px] px-3 py-1 font-ui text-[12.5px] transition-colors',
-              status === opt.value
-                ? 'bg-tint text-ink'
-                : 'text-quiet hover:text-ink',
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      {/* 交卷状态：3 段分段控件（比下拉更直观） */}
+      <Segmented
+        aria-label="交卷状态"
+        size="sm"
+        value={status}
+        onChange={onStatusChange}
+        options={STATUS_OPTIONS}
+      />
 
       {/* 题型 */}
       <Select
@@ -194,7 +190,7 @@ function FilterBar({
           max={endDate || undefined}
           aria-label="起始日期"
           onChange={(e) => onStartDateChange(e.target.value)}
-          className="rounded-lg border border-ink-20 px-2 py-1 text-ink outline-none transition-colors focus:border-accent"
+          className={DATE_INPUT}
         />
         <span>止</span>
         <input
@@ -203,7 +199,7 @@ function FilterBar({
           min={startDate || undefined}
           aria-label="截止日期"
           onChange={(e) => onEndDateChange(e.target.value)}
-          className="rounded-lg border border-ink-20 px-2 py-1 text-ink outline-none transition-colors focus:border-accent"
+          className={DATE_INPUT}
         />
       </div>
 
@@ -246,30 +242,32 @@ function PaperRow({ paper }: { paper: PaperListItem }) {
 }
 
 /** 空态（教学式）：指向唯一下一步——去生成第一份卷。 */
-function EmptyState() {
+function NoPapersState() {
   return (
-    <div className="flex flex-col items-start gap-2 border-t border-hairline pt-8">
-      <p className="text-[17px] text-ink">还没有试卷</p>
-      <p className="text-[13.5px] text-muted-ink">
-        用一句话描述想练的题型或考点，生成你的第一份卷
-      </p>
-      <Button asChild className="mt-3">
-        <Link to={PATHS.dashboard}>去出卷</Link>
-      </Button>
-    </div>
+    <EmptyState
+      title="还没有试卷"
+      desc="用一句话描述想练的题型或考点，生成你的第一份卷"
+      action={
+        <Button asChild>
+          <Link to={PATHS.dashboard}>去出卷</Link>
+        </Button>
+      }
+    />
   )
 }
 
 /** 筛选无命中：与默认空态区分，给出清除筛选而非去出卷。 */
 function NoMatchState({ onClear }: { onClear: () => void }) {
   return (
-    <div className="flex flex-col items-start gap-2 border-t border-hairline pt-8">
-      <p className="text-[17px] text-ink">没有符合条件的试卷</p>
-      <p className="text-[13.5px] text-muted-ink">换个筛选条件，或清除筛选看全部试卷</p>
-      <Button variant="outline" size="sm" className="mt-3" onClick={onClear}>
-        清除筛选
-      </Button>
-    </div>
+    <EmptyState
+      title="没有符合条件的试卷"
+      desc="换个筛选条件，或清除筛选看全部试卷"
+      action={
+        <Button variant="outline" size="sm" onClick={onClear}>
+          清除筛选
+        </Button>
+      }
+    />
   )
 }
 

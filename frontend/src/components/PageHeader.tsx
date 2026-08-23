@@ -9,14 +9,14 @@ interface PageHeaderProps {
 }
 
 /**
- * 应用内页头:display 字体(京华老宋体)34px 标题 + 引导句。
- * 不设 kicker——标题是每屏第一声(端点调试标签已随 2026-07-29 改版撤下)。
+ * 应用内页头（卷王 variant-5）:30px 粗体无衬线标题 + 引导句。
+ * 不设 kicker——标题是每屏第一声。
  */
 export function PageHeader({ title, intro, children }: PageHeaderProps) {
   return (
     <div className="mb-8 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
       <div className="flex min-w-0 flex-col gap-2">
-        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.01em] text-ink [font-family:var(--font-display)] [text-wrap:balance]">
+        <h1 className="font-heading text-[30px] font-bold leading-tight tracking-[-0.01em] text-ink [text-wrap:balance]">
           {title}
         </h1>
         {intro && (

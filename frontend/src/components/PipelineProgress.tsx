@@ -75,7 +75,7 @@ export function PipelineProgress({ active = true }: PipelineProgressProps) {
   return (
     <div className="kk-rise mt-8 max-w-[52rem]">
       <div className="flex items-baseline justify-between border-b border-hairline pb-2.5">
-        <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">PIPELINE</span>
+        <span className="kicker">PIPELINE</span>
         <span className="font-mono text-[13px] text-muted-ink">
           {totalPct}% · {elapsed.toFixed(1)}s
         </span>
@@ -120,7 +120,7 @@ export function PipelineProgress({ active = true }: PipelineProgressProps) {
                   <div className="flex items-center gap-1.5">
                     <span
                       className={cn(
-                        'flex size-4 shrink-0 items-center justify-center rounded-full border text-[10px] leading-none',
+                        'flex size-4 shrink-0 items-center justify-center rounded-sm border text-[10px] leading-none',
                         done
                           ? 'border-ink-30 text-ink'
                           : active

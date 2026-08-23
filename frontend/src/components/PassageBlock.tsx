@@ -41,7 +41,7 @@ export function PassageBlock({ passage, mode }: PassageBlockProps) {
   return (
     <div className="kk-rise rounded-[var(--radius-question-card)] border border-soft bg-card-surface p-6 max-md:p-4">
       {passage.title && (
-        <p className="font-ui text-[11px] tracking-[0.1em] text-quiet">{passage.title}</p>
+        <p className="kicker">{passage.title}</p>
       )}
 
       {isListening && (
@@ -52,7 +52,7 @@ export function PassageBlock({ passage, mode }: PassageBlockProps) {
             'mt-2 flex w-fit items-center gap-2 rounded-sm border px-4 py-2 font-ui text-[14px] transition-colors',
             isPlaying || globallyPlaying
               ? 'cursor-not-allowed border-ink-15 text-quiet'
-              : 'border-accent bg-wash text-accent hover:bg-accent hover:text-paper',
+              : 'border-ink-20 text-ink hover:border-ink hover:bg-tint',
           )}
         >
           <svg

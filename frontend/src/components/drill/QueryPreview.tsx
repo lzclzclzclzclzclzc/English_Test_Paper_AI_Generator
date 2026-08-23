@@ -13,7 +13,7 @@ export function QueryPreview({ input }: QueryPreviewProps) {
 
   return (
     <div className="flex flex-col gap-2 border-t border-hairline pt-4">
-      <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
+      <span className="kicker">
         将向 AI 发送
       </span>
       <p className="text-[15px] leading-[1.9] text-ink">「{composeQuery(input)}」</p>

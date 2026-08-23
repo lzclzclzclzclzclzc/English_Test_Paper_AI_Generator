@@ -88,6 +88,7 @@
 
 /* ---------- hero ---------- */
 .landing-swiss .hero { background: var(--l-dark); color: #fff; border-bottom: 1px solid var(--l-dark-line); }
+.landing-swiss .hero .hl-white { color: #fff; font-weight: inherit; }
 .landing-swiss .hero-grid { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(0,0.95fr); gap: clamp(28px,4vw,56px); padding: clamp(44px,6vw,84px) 0 clamp(40px,5vw,64px); }
 .landing-swiss .hero .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--l-accent); margin-bottom: 22px; }
 .landing-swiss .hero h1 { font-size: clamp(34px,5.4vw,62px); letter-spacing: -0.02em; margin-bottom: 22px; }
@@ -363,7 +364,7 @@
 .sidebar-swiss .sb-user-btn { display: flex; align-items: center; gap: 10px; padding: 6px; text-align: left; background: none; border: 0; cursor: pointer; border-radius: 2px; color: #fff; transition: background .15s; }
 .sidebar-swiss .sb-user-btn:hover { background: var(--sb-hover); }
 .sidebar-swiss .sb-avatar { display: flex; width: 30px; height: 30px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 2px; background: var(--sb-hover); font-size: 13px; color: var(--sb-text); }
-.sidebar-swiss .sb-menu { position: absolute; z-index: 40; display: flex; flex-direction: column; border: 1px solid var(--sb-line); background: var(--sb-bg); padding: 6px 0; border-radius: 2px; box-shadow: 0 8px 28px rgba(0,0,0,.4); }
+.sidebar-swiss .sb-menu { position: absolute; z-index: 40; display: flex; flex-direction: column; border: 1px solid var(--sb-line); background: var(--sb-bg); padding: 6px 0; border-radius: 2px; box-shadow: var(--shadow-overlay); }
 .sidebar-swiss .sb-menu-divider { margin: 4px 0; border-top: 1px solid var(--sb-line); }
 .sidebar-swiss .sb-menu-item { display: flex; align-items: center; padding: 8px 12px; font-size: 14px; color: var(--sb-text); background: none; border: 0; cursor: pointer; text-align: left; transition: background .15s, color .15s; }
 .sidebar-swiss .sb-menu-item:hover { background: var(--sb-hover); color: #fff; }
@@ -377,7 +378,7 @@
   border-top: 3px solid var(--tile-accent, var(--color-accent));
   transition: background .15s ease, transform .05s ease, box-shadow .15s ease;
 }
-a.tile:hover { background: var(--color-tint); box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+a.tile:hover { background: var(--color-tint); box-shadow: var(--shadow-card-hover); }
 a.tile:active { transform: translateY(1px); }
 .tile .tile-idx { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: var(--tile-accent, var(--color-accent)); }
 .tile .tile-title { font-size: 15px; font-weight: 700; color: var(--color-ink); }
@@ -400,7 +401,7 @@ a.tile:active { transform: translateY(1px); }
   padding: 18px 20px; min-width: 0;
   transition: background .15s ease, box-shadow .15s ease, transform .05s ease;
 }
-a.bento-link:hover, .bento a.card:hover { background: var(--color-tint); box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+a.bento-link:hover, .bento a.card:hover { background: var(--color-tint); box-shadow: var(--shadow-card-hover); }
 .bento a.card:active { transform: translateY(1px); }
 /* 跨列/跨行 */
 .bento .col-6 { grid-column: span 6; }
@@ -446,10 +447,10 @@ a.bento-link:hover, .bento a.card:hover { background: var(--color-tint); box-sha
 
 /* ---------- 工作台顶部：红底白字大输入区（主动作吸引眼球） ---------- */
 .dash-hero-input {
-  background: var(--color-accent);
+  background: var(--color-accent-fill);   /* 填充面用 --accent-fill：暗色下不变亮 */
   color: #fff;
   padding: 22px 26px 20px;
-  border: 1px solid var(--color-accent);
+  border: 1px solid var(--color-accent-fill);
   display: flex; flex-direction: column; gap: 12px;
 }
 .dash-hero-input .hero-label { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; opacity: .88; }
@@ -466,7 +467,7 @@ a.bento-link:hover, .bento a.card:hover { background: var(--color-tint); box-sha
 .dash-hero-input .hero-input:disabled { opacity: .6; }
 .dash-hero-input .hero-submit {
   flex-shrink: 0; padding: 0 22px; min-width: 108px;
-  background: #fff; color: var(--color-accent);
+  background: #fff; color: var(--color-accent-fill);
   border: 1px solid #fff; font-size: 15px; font-weight: 700; letter-spacing: 0.05em;
   cursor: pointer; transition: background .15s ease, color .15s ease;
 }

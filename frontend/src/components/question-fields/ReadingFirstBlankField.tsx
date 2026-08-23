@@ -40,7 +40,7 @@ function parseMarkers(content: string): BlankMarker[] {
   return markers
 }
 
-/** 答题态：首字母 + 浅底输入框（输入空位剩余部分），focus 描边转赤陶。 */
+/** 答题态：首字母 + 浅底输入框（输入空位剩余部分），focus 描边转橙红。 */
 function BlankInput({
   letter,
   value,

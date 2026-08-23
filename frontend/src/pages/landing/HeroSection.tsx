@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PATHS } from '@/lib/paths'
-import { FREE_GENERATE_PER_DAY } from '@/lib/quota'
+import { DAILY_GRANT, SIGNUP_BONUS } from '@/lib/pricing'
 import { scrollToAnchor } from './shared'
 
 /* ── HeroDemo 数据:多条示例循环,覆盖语法/听力两族与原题/轻改两种出身 ── */
@@ -160,14 +160,14 @@ export function HeroSection() {
             <p className="eyebrow">真题库 + AI 引擎 · 上海中考英语 · 十大题型</p>
             <h1>说一句你想练什么，<br />出一份能直接做的卷子</h1>
             <p className="sub">
-              题目全部来自上海中考一模二模真题——<span style={{ color: '#fff' }}>每道题都有真题出处、标注考点，不是 AI 凭空编造</span>。配上能听懂你需求的出题引擎：单选、词形、句改、听力、阅读、完形、作文十大真实题型，覆盖 56 个中考考点，按需几秒组成一份即出即做的卷子——做完当场判分、逐题讲解、记入你的掌握度。
+              题目全部来自上海中考一模二模真题——<strong className="hl-white">每道题都有真题出处、标注考点，不是 AI 凭空编造</strong>。配上能听懂你需求的出题引擎：单选、词形、句改、听力、阅读、完形、作文十大真实题型，覆盖 56 个中考考点，按需几秒组成一份即出即做的卷子——做完当场判分、逐题讲解、记入你的掌握度。
             </p>
             <div className="cta-row">
               <Link to={PATHS.login} className="btn btn--primary btn--lg">免费出一份卷子</Link>
               <a href="#pricing" onClick={(e) => scrollToAnchor(e, 'pricing')} className="btn btn--ghost-dark btn--lg">看看定价 ↓</a>
             </div>
             <p className="fineprint">
-              免费注册即可使用<span className="dot">·</span>每天 {FREE_GENERATE_PER_DAY} 次出卷额度<span className="dot">·</span>无需付费开始
+              免费注册送 {SIGNUP_BONUS} 积分<span className="dot">·</span>每天再送 {DAILY_GRANT} 积分<span className="dot">·</span>无需付费开始
             </p>
           </div>
           <HeroDemo />

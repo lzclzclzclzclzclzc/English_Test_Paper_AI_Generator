@@ -35,7 +35,7 @@ export function AssistantPage() {
         initialInput={initialInput}
         emptyHeader={
           <>
-            <h1 className="text-[30px] font-bold leading-tight tracking-[-0.01em] text-ink [font-family:var(--font-display)]">
+            <h1 className="font-heading text-[30px] font-bold leading-tight tracking-[-0.01em] text-ink">
               学习助手
             </h1>
             <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">

@@ -1,6 +1,6 @@
 /* ── Base ───────────────────────────────────────────────────────────────
-   Sensible page defaults for consumers: the paper ground, the reading serif,
-   the wide reading line-height, and the terracotta <mark> wash. Cards and UI
+   Sensible page defaults for consumers: the paper ground, the sans UI stack,
+   the wide reading line-height, and the vermilion <mark> wash. Cards and UI
    kits may override the body surface locally; this is the floor.
    ──────────────────────────────────────────────────────────────────────── */
 
@@ -28,7 +28,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* <mark> — a soft terracotta wash, never the harsh browser yellow.
+/* <mark> — a soft vermilion wash, never the harsh browser yellow.
    color:inherit keeps the ink (and fixes dark mode). */
 mark {
   background-color: var(--accent-wash);
