@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { formatYuan } from '@/lib/money'
 import { PATHS } from '@/lib/paths'
-import { BENEFITS, FREE_TIER_SUMMARY, PRICING_PLANS } from '@/lib/pricing'
+import { FREE_TIER_SUMMARY, PRICE_ROWS, PRICING_PACKS } from '@/lib/pricing'
 
 interface PlanColumn {
   key: string
@@ -14,30 +14,29 @@ interface PlanColumn {
   featured: boolean
 }
 
-const PLAN_DESC: Record<string, string> = {
-  monthly: '全部功能不限量。',
-  quarterly: '全部功能不限量。',
-  yearly: '一年安心用到考前。',
+const PACK_DESC: Record<string, string> = {
+  starter: '约 20 张 AI 改编卷。',
+  standard: '约 60 张 AI 改编卷。',
+  annual: '一次充足，用到考前。',
 }
 
-/* 免费列 + PRICING_PLANS 三档 = 四列。 */
+/* 免费列 + PRICING_PACKS 三档 = 四列。 */
 const COLUMNS: readonly PlanColumn[] = [
   { key: 'free', name: '免费', price: '¥0', term: '永久', desc: FREE_TIER_SUMMARY, featured: false },
-  ...PRICING_PLANS.map((plan) => ({
-    key: plan.id,
-    name: plan.name,
-    price: formatYuan(plan.amountCents),
-    term: `/ ${plan.durationDays} 天`,
-    meta: plan.perMonthNote,
-    desc: PLAN_DESC[plan.id] ?? '全部功能不限量。',
-    featured: plan.recommended === true,
+  ...PRICING_PACKS.map((pack) => ({
+    key: pack.id,
+    name: pack.name,
+    price: formatYuan(pack.amountCents),
+    term: `/ ${pack.credits.toLocaleString()} 积分`,
+    meta: pack.note,
+    desc: PACK_DESC[pack.id] ?? '',
+    featured: pack.recommended === true,
   })),
 ]
 
-/** 权益单元格:✓→yes、—→no、其余→val。 */
-function benefitCell(v: string) {
-  if (v === '✓') return <td className="yes">有</td>
-  if (v === '—') return <td className="no">—</td>
+/** 价目单元格:免费→yes,其余→val。 */
+function costCell(v: string) {
+  if (v === '免费') return <td className="yes">免费</td>
   return <td className="val num">{v}</td>
 }
 
@@ -50,11 +49,11 @@ export function PricingSection() {
     if (loggedIn) {
       return key === 'free'
         ? { label: '进入工作台 →', to: PATHS.dashboard }
-        : { label: '去开通会员 →', to: PATHS.membership }
+        : { label: '去充值 →', to: PATHS.credits }
     }
     return key === 'free'
       ? { label: '免费开始', to: PATHS.login }
-      : { label: '注册后开通', to: PATHS.login }
+      : { label: '注册后充值', to: PATHS.login }
   }
 
   return (
@@ -65,7 +64,7 @@ export function PricingSection() {
             <div className="eyebrow-row"><span className="idx accent">PRICING</span><hr className="hairline" /></div>
             <h2 className="h-sec">定价</h2>
           </div>
-          <p className="lead">免费额度每天刷新，会员按需开通——先用免费额度出一份卷子，再决定要不要付费。</p>
+          <p className="lead">按次扣积分，用多少付多少——注册和每天都送免费积分，先出几份卷子再决定要不要充值。</p>
         </div>
 
         <div className="price-grid">
@@ -87,22 +86,21 @@ export function PricingSection() {
 
         <div className="rights">
           <table className="rights-tbl">
-            <caption>权益对比 · Free vs. Member</caption>
+            <caption>价目 · 积分怎么扣</caption>
             <thead>
-              <tr><th>功能</th><th>免费</th><th>会员</th></tr>
+              <tr><th>功能</th><th>积分</th></tr>
             </thead>
             <tbody>
-              {BENEFITS.map((b) => (
-                <tr key={b.feature}>
-                  <td>{b.feature}</td>
-                  {benefitCell(b.free)}
-                  {benefitCell(b.member)}
+              {PRICE_ROWS.map((r) => (
+                <tr key={r.feature}>
+                  <td>{r.feature}</td>
+                  {costCell(r.cost)}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p className="price-note">到期不自动续费；续费从当前有效期顺延。</p>
+        <p className="price-note">积分不过期、不订阅；出卷失败原路退回。每日赠送当日有效。</p>
       </div>
     </section>
   )

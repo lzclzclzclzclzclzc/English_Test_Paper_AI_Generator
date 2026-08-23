@@ -8,7 +8,8 @@ import { stopAll as stopTTS } from '@/lib/tts'
 import { PageHeader } from '@/components/PageHeader'
 import { PipelineProgress } from '@/components/PipelineProgress'
 import { WrongBookList } from '@/components/review/WrongBookList'
-import { MemberPill, UpgradeDialog } from '@/components/UpgradeDialog'
+import { CreditHint } from '@/components/CreditHint'
+import { Button } from '@/components/ui/button'
 
 /**
  * 错题本页（单一职责）：错题的浏览与重练。
@@ -23,7 +24,6 @@ export function ReviewPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [extraQuery, setExtraQuery] = useState('')
   const [serverError, setServerError] = useState<string | null>(null)
-  const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
 
   // 用户加载后读错题本，默认全选
   useEffect(() => {
@@ -36,7 +36,7 @@ export function ReviewPage() {
   // 离开错题本页面时停止所有 TTS 播放
   useEffect(() => () => stopTTS(), [])
 
-  const { generate, guard, isPending, locked } = useGeneratePaper(setServerError)
+  const { generate, isPending } = useGeneratePaper(setServerError)
 
   const readiness = useQuery({
     queryKey: ['health', 'ready'],
@@ -69,11 +69,6 @@ export function ReviewPage() {
 
   const submitRemediation = () => {
     setServerError(null)
-    const reason = guard('remediation')
-    if (reason) {
-      setUpgradeReason(reason)
-      return
-    }
     const chosen = entries.filter((e) => selected.has(e.sourceQuestionId))
     generate({
       user_query: extraQuery.trim() || '针对我错题本里的这些题目，出一份巩固练习',
@@ -104,10 +99,10 @@ export function ReviewPage() {
         <aside className="mb-10 lg:order-2 lg:sticky lg:top-10 lg:mb-0 lg:self-start">
           <div className="flex flex-col gap-4 rounded-md border border-hairline p-5">
             <div className="flex items-center gap-2">
-              <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
+              <span className="kicker">
                 错题巩固
               </span>
-              {locked && <MemberPill />}
+              <CreditHint action="generate_fresh" units={selected.size} prefix={`${selected.size} 题约`} />
             </div>
 
             <p className="text-[13px] leading-[1.8] text-quiet">
@@ -129,19 +124,19 @@ export function ReviewPage() {
               maxLength={2000}
               placeholder="补充要求（可选），如：多出几道选择题"
               onChange={(e) => setExtraQuery(e.target.value)}
-              className="w-full rounded-[3px] border border-ink-20 bg-transparent px-3 py-2 text-[14px] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent"
+              className="w-full rounded-sm border border-ink-20 bg-transparent px-3 py-2 text-[14px] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent"
             />
 
             <div className="flex flex-col gap-2">
-              <button
+              <Button
+                size="lg"
                 type="button"
                 disabled={selected.size === 0 || isPending}
                 title={entries.length === 0 ? '交卷后答错的题会自动收进错题本' : undefined}
-                className="rounded-sm border border-accent bg-wash px-6 py-2.5 font-ui text-[15px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
                 onClick={submitRemediation}
               >
                 {isPending ? '正在组卷…' : '生成巩固卷'}
-              </button>
+              </Button>
               {serverError && <p className="text-[12px] text-accent">{serverError}</p>}
               <p className="font-ui text-[12px] tabular-nums text-quiet">
                 已选 {selected.size} 道错题
@@ -159,8 +154,6 @@ export function ReviewPage() {
             onSelectMany={selectMany}
             onClearSelection={clearSelection}
             onRemove={remove}
-            locked={locked}
-            userId={userId}
           />
         </div>
       </div>
@@ -170,8 +163,6 @@ export function ReviewPage() {
           <PipelineProgress />
         </div>
       )}
-
-      <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
     </div>
   )
 }

@@ -34,6 +34,7 @@ MIGRATION_VOCABULARY_RETRY_QUEUE = "20260804_001_vocabulary_retry_queue"
 MIGRATION_VOCABULARY_WORD_SOURCES = "20260805_001_vocabulary_word_sources"
 MIGRATION_MINDMAPS = "20260813_001_mindmaps"
 MIGRATION_ADMIN_AUDIT_LOGS = "20260816_001_admin_audit_logs"
+MIGRATION_CREDITS_AND_ORDERS = "20260823_001_credits_and_orders"
 # Windows' bundled Python may not ship IANA zone data. Shanghai has no DST, so
 # the explicit UTC+08:00 offset keeps daily quota and streak boundaries stable.
 VOCABULARY_TIMEZONE = timezone(timedelta(hours=8), name="Asia/Shanghai")
@@ -1306,11 +1307,71 @@ def _migrate_admin_audit_logs(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_credits_and_orders(conn: sqlite3.Connection) -> None:
+    """积分账本 + 支付订单（docs/credits-design.md）。
+
+    credit_accounts — 每用户一行：balance（付费/赠送，不过期）+ daily_balance
+    （每日赠送，daily_date 与今天不同即惰性重置）。
+    credit_ledger   — 只追加的流水；(kind, ref_type, ref_id) 唯一 → 同一订单 /
+    同一次扣费 / 同一次退款只记一次，靠它做幂等。
+    orders          — 原 payment/data/payment.db 的 orders 搬入（plan → pack，
+    并记录该包对应的积分数）。
+    """
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS credit_accounts (
+            user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            balance INTEGER NOT NULL DEFAULT 0,
+            daily_balance INTEGER NOT NULL DEFAULT 0,
+            daily_date TEXT,
+            updated_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS credit_ledger (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            delta INTEGER NOT NULL,
+            bucket TEXT NOT NULL,
+            balance_after INTEGER NOT NULL,
+            kind TEXT NOT NULL,
+            action TEXT,
+            ref_type TEXT,
+            ref_id TEXT,
+            note TEXT,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_credit_ledger_user
+            ON credit_ledger(user_id, id DESC);
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_credit_ledger_ref
+            ON credit_ledger(kind, ref_type, ref_id, bucket)
+            WHERE ref_id IS NOT NULL;
+        CREATE TABLE IF NOT EXISTS orders (
+            out_trade_no TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            pack_id TEXT NOT NULL,
+            amount_cents INTEGER NOT NULL,
+            credits INTEGER NOT NULL,
+            status TEXT NOT NULL DEFAULT 'CREATED',
+            channel TEXT NOT NULL DEFAULT 'qr',
+            qr_code TEXT,
+            pay_url TEXT,
+            alipay_trade_no TEXT,
+            created_at TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            paid_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status, created_at DESC);
+        """
+    )
+
+
 AUDIT_ACTIONS = (
     "set_role",
     "reset_password",
     "ban",
     "unban",
+    "adjust_credits",
+    # 历史动作（会员制时期，2026-08-23 前的审计行仍会带这两个值）
     "grant_membership",
     "revoke_membership",
 )
@@ -1647,6 +1708,7 @@ def _apply_migrations(conn: sqlite3.Connection) -> None:
         (MIGRATION_WRITING_GRADE_RESULTS, _migrate_writing_grade_results),
         (MIGRATION_MINDMAPS, _migrate_mindmaps),
         (MIGRATION_ADMIN_AUDIT_LOGS, _migrate_admin_audit_logs),
+        (MIGRATION_CREDITS_AND_ORDERS, _migrate_credits_and_orders),
     ]
     for migration_id, migration in migrations:
         if _migration_applied(conn, migration_id):

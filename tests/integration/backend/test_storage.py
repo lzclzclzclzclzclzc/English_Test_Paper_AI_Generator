@@ -152,6 +152,7 @@ def test_init_db_records_applied_migrations(client):
         storage.MIGRATION_WRITING_GRADE_RESULTS,
         storage.MIGRATION_MINDMAPS,
         storage.MIGRATION_ADMIN_AUDIT_LOGS,
+        storage.MIGRATION_CREDITS_AND_ORDERS,
     ]
 
 

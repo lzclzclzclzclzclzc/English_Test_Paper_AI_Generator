@@ -1,5 +1,8 @@
 import { toast } from 'sonner'
 import { ApiError } from '@/api/client'
+import { openCreditsDialog } from '@/components/CreditsDialog'
+import { invalidateCredits } from '@/hooks/useCredits'
+import type { InsufficientCreditsDetail } from '@/types/payment'
 
 /**
  * ErrorResponse → 用户可读提示（Spec D § 5.3）。
@@ -16,6 +19,13 @@ export function toastApiError(error: unknown) {
   switch (error_code) {
     case 'auth.unauthorized':
       return // 全局 401 已跳登录
+    case 'credits.insufficient': {
+      // 402：服务端已算好 required / available，弹充值引导而不是 toast
+      const detail = (error.payload.detail ?? {}) as Partial<InsufficientCreditsDetail>
+      invalidateCredits()
+      openCreditsDialog({ required: detail.required, available: detail.available, action: detail.action })
+      return
+    }
     case 'rate.exceeded':
       toast.error('请求过于频繁，请稍后再试')
       return

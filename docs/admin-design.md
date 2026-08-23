@@ -1,5 +1,16 @@
 # Spec G：管理后台设计
 
+> **2026-08-23 积分制改版（Spec P `credits-design.md`）**：会员制与独立 payment 服务已废弃。
+> 本文里所有「会员 / `/payapi/admin/*` / `memberships` / `extend_membership` / `active_members` /
+> `membership_expires_at` / `PaymentUpstreamError`」都已被替换为主后端本地的积分账本：
+> `GET /api/admin/credits`（账户列表）· `GET /api/admin/credits/{id}`（详情 + 流水）·
+> `POST /api/admin/credits/{id}/adjust` 与 `/api/admin/credits/adjust`（按 id / 用户名增减，审计
+> `adjust_credits`）· `GET /api/admin/orders`（本地 `orders` 表）· `POST /api/admin/orders/reconcile` ·
+> `GET /api/admin/stats/revenue`（`by_pack`）· 概览 `paying_users` / `total_revenue_cents` ·
+> 用户详情 `credits_balance` / `credits_daily_balance` · 系统健康 `payment_mock`。前端
+> `AdminMembershipsPage` → `AdminCreditsPage`（`/admin/credits`）。§ 2.4 / § 4.1.1 / § 4.2 / § 5 仅作历史。
+
+
 **创建日期**：2026-08-01
 **范围**：管理员后台（管理员管理其他用户）——用户列表/详情、统计看板与数据可视化、手动会员管理、用户操作（封禁/重置密码/设为管理员）。不单开服务：主后端加一组 `/api/admin/*` 接口，payment 服务加一组 `/payapi/admin/*` 接口，前端在同一个 React 应用里加 `/admin` 路由。
 **依赖**：

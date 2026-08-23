@@ -15,7 +15,7 @@ export const PATHS = {
   daily: '/daily',
   /** 主题出卷(话题 × 语法题型) */
   themes: '/themes',
-  /** 学情报告(会员,打印友好,自掌握度页独立) */
+  /** 学情报告(打印友好,自掌握度页独立) */
   report: '/report',
   practice: '/practice',
   practiceType: (slug: string) => `/practice/${slug}`,
@@ -29,6 +29,9 @@ export const PATHS = {
   /** 背单词(间隔重复;CJN/vocabulary-mvp 合入) */
   vocabulary: '/vocabulary',
   vocabularyProgress: '/vocabulary/progress',
+  /** 积分：余额 / 充值 / 流水（原 /membership，路由层重定向） */
+  credits: '/credits',
+  /** legacy 会员页地址,路由层重定向到 credits */
   membership: '/membership',
   settings: '/settings',
   assistant: '/assistant',

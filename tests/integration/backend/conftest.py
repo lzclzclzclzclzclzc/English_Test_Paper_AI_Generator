@@ -11,8 +11,12 @@ from shared.config import get_config, reset_config_cache
 from shared.schemas import GenerateRequest, Paper, PaperItem, RevisedQuestion
 
 
-def _fake_paper(user_query: str, *, mode="fresh", user_id=None, **_: object) -> Paper:
+def _fake_paper(user_query: str, *, mode="fresh", user_id=None, on_request=None, **_: object) -> Paper:
     total = 2 if "2" in user_query else 3
+    request = GenerateRequest(mode=mode, total_questions=total, user_id=user_id)
+    if on_request is not None:
+        # 与真实管线一致：Parser 之后、生成之前回调（积分扣费挂在这里）
+        on_request(request)
     questions = [
         RevisedQuestion(question_type="single_choice", answer="B", knowledge_point_ids=["kp_sc"]),
         RevisedQuestion(question_type="word_form", answer="written", knowledge_point_ids=["kp_wf"]),
@@ -26,7 +30,7 @@ def _fake_paper(user_query: str, *, mode="fresh", user_id=None, **_: object) -> 
         paper_id=uuid4().hex,
         title="test paper",
         generated_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
-        request=GenerateRequest(mode=mode, total_questions=total, user_id=user_id),
+        request=request,
         items=[
             PaperItem(index=index, source_question_id=f"q_{index:05d}", revision_mode="original", question=question)
             for index, question in enumerate(questions[:total], start=1)
@@ -34,7 +38,9 @@ def _fake_paper(user_query: str, *, mode="fresh", user_id=None, **_: object) -> 
     )
 
 
-def _fake_revise(paper: Paper, _: str) -> Paper:
+def _fake_revise(paper: Paper, _: str, on_request=None) -> Paper:
+    if on_request is not None:
+        on_request(paper.request)
     return paper.model_copy(update={"paper_id": uuid4().hex, "metadata": {"revised_from": paper.paper_id}})
 
 

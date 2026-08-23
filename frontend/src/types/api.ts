@@ -415,7 +415,7 @@ export interface WritingGradeResultItem {
   word_count: number         // 词数统计
   level: string              // 档次：优秀/良好/合格/待提升
   user_essay?: string        // 仅历史回显接口携带：用户提交的作文原文
-  // 以下字段为会员专属，非会员为 null
+  // 三维详细评析（2026-08 积分制起对所有人返回；历史记录可能为 null）
   content_analysis: string | null      // 内容评析
   language_analysis: string | null     // 语言评析（含语法/拼写错误）
   organization_analysis: string | null // 组织结构评析
@@ -436,7 +436,8 @@ export interface AdminUserListItem {
 export interface AdminUserList { items: AdminUserListItem[]; total: number }
 export interface AdminUserDetail extends AdminUserListItem {
   correct_rate: number | null
-  membership_expires_at: string | null
+  credits_balance: number
+  credits_daily_balance: number
 }
 export interface AdminOverview {
   total_users: number
@@ -444,20 +445,40 @@ export interface AdminOverview {
   banned_users: number
   total_papers: number
   total_attempts: number
-  active_members: number | null
-  total_revenue_cents: number | null
+  /** 至少有一笔 PAID 订单的用户数 */
+  paying_users: number
+  total_revenue_cents: number
 }
 export interface TimeseriesPoint { day: string; count: number }
 export interface AdminTimeseries { users_by_day: TimeseriesPoint[]; papers_by_day: TimeseriesPoint[] }
-export interface AdminMembership { user_id: string; username: string | null; expires_at: string | null; active: boolean }
-export interface AdminMembershipList { items: AdminMembership[]; total: number }
+export interface AdminCreditAccount {
+  user_id: string
+  username: string | null
+  balance: number
+  daily_balance: number
+  daily_date: string | null
+  updated_at: string | null
+}
+export interface AdminCreditAccountList { items: AdminCreditAccount[]; total: number }
+export interface AdminCreditAccountDetail {
+  user_id: string
+  username: string | null
+  balance: number
+  daily_balance: number
+  daily_grant: number
+  spent_total: number
+  ledger: import('@/types/payment').CreditLedgerItem[]
+  ledger_total: number
+}
 export interface AdminOrder {
   out_trade_no: string
   user_id: string
   username: string | null
-  plan_id: string
+  pack_id: string
   amount_cents: number
+  credits: number
   status: string
+  channel: string
   created_at: string
   paid_at: string | null
 }
@@ -512,11 +533,11 @@ export interface QuestionBankListItem {
 export interface QuestionBankList { items: QuestionBankListItem[]; total: number }
 
 export interface AdminRevenueDayPoint { day: string; cents: number }
-export interface AdminPlanRevenue { plan_id: string; orders: number; cents: number }
+export interface AdminPackRevenue { pack_id: string; orders: number; cents: number }
 export interface AdminRevenue {
   total_cents: number
   revenue_by_day: AdminRevenueDayPoint[]
-  by_plan: AdminPlanRevenue[]
+  by_pack: AdminPackRevenue[]
 }
 
 export interface AdminAuditItem {
@@ -532,8 +553,9 @@ export interface AdminAuditItem {
 export interface AdminAuditList { items: AdminAuditItem[]; total: number }
 
 export interface AdminSystemHealth {
-  payment: boolean
   llm: boolean
+  /** 后端是否处于离线 mock 支付模式 */
+  payment_mock: boolean
   question_bank_total: number
   app_db_size_kb: number
 }

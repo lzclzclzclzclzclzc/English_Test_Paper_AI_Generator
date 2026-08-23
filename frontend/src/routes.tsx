@@ -18,7 +18,7 @@ import { MindmapsPage } from '@/pages/MindmapsPage'
 import { MindmapDetailPage } from '@/pages/MindmapDetailPage'
 import { PaperPageRoute } from '@/pages/PaperPage'
 import { MasteryPage } from '@/pages/MasteryPage'
-import { MembershipPage } from '@/pages/MembershipPage'
+import { CreditsPage } from '@/pages/CreditsPage'
 import { ReviewPage } from '@/pages/ReviewPage'
 import { StudyPlanPage } from '@/pages/StudyPlanPage'
 import { SettingsPage } from '@/pages/SettingsPage'
@@ -29,7 +29,7 @@ import { AdminOverviewPage } from '@/pages/admin/AdminOverviewPage'
 import { AdminAnalyticsPage } from '@/pages/admin/AdminAnalyticsPage'
 import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
-import { AdminMembershipsPage } from '@/pages/admin/AdminMembershipsPage'
+import { AdminCreditsPage } from '@/pages/admin/AdminCreditsPage'
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
 import { AdminLearnerPage } from '@/pages/admin/AdminLearnerPage'
 import { AdminQuestionBankPage } from '@/pages/admin/AdminQuestionBankPage'
@@ -75,7 +75,8 @@ export function AppRoutes() {
         <Route path={PATHS.studyPlan} element={<RedirectIfAdmin><StudyPlanPage /></RedirectIfAdmin>} />
         <Route path={PATHS.vocabulary} element={<RedirectIfAdmin><VocabularyPage /></RedirectIfAdmin>} />
         <Route path={PATHS.vocabularyProgress} element={<RedirectIfAdmin><VocabularyProgressPage /></RedirectIfAdmin>} />
-        <Route path={PATHS.membership} element={<RedirectIfAdmin><MembershipPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.credits} element={<RedirectIfAdmin><CreditsPage /></RedirectIfAdmin>} />
+        <Route path={PATHS.membership} element={<Navigate to={PATHS.credits} replace />} />
         <Route path={PATHS.settings} element={<RedirectIfAdmin><SettingsPage /></RedirectIfAdmin>} />
         <Route
           path={PATHS.admin}
@@ -90,7 +91,8 @@ export function AppRoutes() {
           <Route path="learner" element={<AdminLearnerPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="users/:userId" element={<AdminUserDetailPage />} />
-          <Route path="memberships" element={<AdminMembershipsPage />} />
+          <Route path="credits" element={<AdminCreditsPage />} />
+          <Route path="memberships" element={<Navigate to="/admin/credits" replace />} />
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="questionbank" element={<AdminQuestionBankPage />} />
           <Route path="questionbank/questions" element={<AdminQuestionBrowsePage />} />

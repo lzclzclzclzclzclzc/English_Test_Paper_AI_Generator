@@ -20,7 +20,27 @@ class BackendConfig(BaseModel):
     rate_limit_generate_per_min: int = 30
     rate_limit_solutions_per_min: int = 60
     rate_limit_writing_per_min: int = 10
-    payment_service_url: str = "http://127.0.0.1:8001"
+    rate_limit_agent_per_min: int = 20
+
+
+class CreditsConfig(BaseModel):
+    """积分赠送规则（docs/credits-design.md §2）。价目表在 backend/services/credits/pricing.py。"""
+
+    signup_bonus: int = 300      # 注册一次性赠送（进 balance，不过期）
+    daily_grant: int = 30        # 每日赠送（当日有效，不累积；Asia/Shanghai 日界）
+
+
+class PaymentConfig(BaseModel):
+    """支付宝沙盒 / 离线 mock（原 payment/ 独立服务的配置，2026-08 合并进主后端）。"""
+
+    mock_pay: bool = True
+    order_ttl_seconds: int = 300
+    alipay_appid: str = ""
+    alipay_gateway: str = "https://openapi-sandbox.dl.alipaydev.com/gateway.do"
+    # 网页收银台(channel=web)支付完成后跳回的页面
+    pay_return_url: str = "http://localhost:5173/credits"
+    alipay_app_private_key_path: Path = Path("keys/app_private_key.pem")
+    alipay_public_key_path: Path = Path("keys/alipay_public_key.pem")
 
 
 class AppConfig(BaseSettings):
@@ -45,6 +65,8 @@ class AppConfig(BaseSettings):
 
     max_questions_per_paper: int = 50
     backend: BackendConfig = BackendConfig()
+    credits: CreditsConfig = CreditsConfig()
+    payment: PaymentConfig = PaymentConfig()
 
 
 _config: AppConfig | None = None
@@ -75,12 +97,42 @@ def get_config() -> AppConfig:
                         "rate_limit_solutions_per_min": int(
                             os.getenv("RATE_LIMIT_SOLUTIONS_PER_MIN", config.backend.rate_limit_solutions_per_min)
                         ),
-                        "payment_service_url": os.getenv("PAYMENT_SERVICE_URL", config.backend.payment_service_url),
+                        "rate_limit_agent_per_min": int(
+                            os.getenv("RATE_LIMIT_AGENT_PER_MIN", config.backend.rate_limit_agent_per_min)
+                        ),
+                    }
+                ),
+                "credits": config.credits.model_copy(
+                    update={
+                        "signup_bonus": int(os.getenv("CREDITS_SIGNUP_BONUS", config.credits.signup_bonus)),
+                        "daily_grant": int(os.getenv("CREDITS_DAILY_GRANT", config.credits.daily_grant)),
+                    }
+                ),
+                "payment": config.payment.model_copy(
+                    update={
+                        "mock_pay": _env_bool("PAYMENT_MOCK", config.payment.mock_pay),
+                        "order_ttl_seconds": int(os.getenv("PAYMENT_ORDER_TTL_SECONDS", config.payment.order_ttl_seconds)),
+                        "alipay_appid": os.getenv("ALIPAY_APPID", config.payment.alipay_appid),
+                        "alipay_gateway": os.getenv("ALIPAY_GATEWAY", config.payment.alipay_gateway),
+                        "pay_return_url": os.getenv("PAY_RETURN_URL", config.payment.pay_return_url),
+                        "alipay_app_private_key_path": Path(
+                            os.getenv("ALIPAY_APP_PRIVATE_KEY_PATH", config.payment.alipay_app_private_key_path)
+                        ),
+                        "alipay_public_key_path": Path(
+                            os.getenv("ALIPAY_PUBLIC_KEY_PATH", config.payment.alipay_public_key_path)
+                        ),
                     }
                 ),
             }
         )
     return _config
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def reset_config_cache() -> None:

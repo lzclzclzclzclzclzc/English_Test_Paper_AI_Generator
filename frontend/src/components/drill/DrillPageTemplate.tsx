@@ -2,22 +2,21 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '@/components/PageHeader'
 import { PipelineProgress } from '@/components/PipelineProgress'
-import { UpgradeDialog } from '@/components/UpgradeDialog'
+import { CreditHint } from '@/components/CreditHint'
 import { CountSelector } from '@/components/drill/CountSelector'
 import { KpPicker } from '@/components/drill/KpPicker'
 import { IntensityPicker } from '@/components/drill/IntensityPicker'
 import { TopicInput } from '@/components/drill/TopicInput'
 import { QueryPreview } from '@/components/drill/QueryPreview'
+import { useCredits } from '@/hooks/useCredits'
 import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { composeQuery, validateCompose, type ComposeInput, type Intensity } from '@/lib/composeQuery'
+import { INTENSITY_ACTION } from '@/lib/creditsActions'
 import type { DrillConfig } from '@/lib/drillConfig'
 import { FAMILY_LABELS, FAMILY_TEXT_CLASS } from '@/lib/kp'
-import { generateQuotaNotice } from '@/lib/quota'
 import { PATHS } from '@/lib/paths'
-
-/** 非会员点「真题原样」档时的升级文案 */
-const ORIGINAL_LOCK_REASON = '真题原卷是会员功能：整卷使用中考真题原题，不做改动。'
+import { Button } from '@/components/ui/button'
 
 interface DrillPageTemplateProps {
   config: DrillConfig
@@ -35,9 +34,9 @@ export function DrillPageTemplate({ config }: DrillPageTemplateProps) {
   )
   const [topic, setTopic] = useState('')
   const [serverError, setServerError] = useState<string | null>(null)
-  const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
 
-  const { generate, guard, isPending, locked, freeRemaining } = useGeneratePaper(setServerError)
+  const { generate, guard, isPending } = useGeneratePaper(setServerError)
+  const { price } = useCredits()
   const kpQuery = useKnowledgePoints()
 
   // kp id → level2 中文名（composeQuery 拼句用名称，Parser 靠名称/alias 识别）
@@ -51,15 +50,13 @@ export function DrillPageTemplate({ config }: DrillPageTemplateProps) {
     ...(config.supportsTopic ? { topic } : {}),
   }
   const hasError = validateCompose(input).some((i) => i.level === 'error')
-  const quotaNotice = generateQuotaNotice(locked, freeRemaining)
+  // 预估价：主题非空会被 composeQuery 升为全新出题（fresh）
+  const effectiveIntensity: Intensity = config.supportsTopic && topic.trim() ? 'fresh' : intensity
+  const estimatedCost = price(INTENSITY_ACTION[effectiveIntensity], count)
 
   const handleSubmit = () => {
     setServerError(null)
-    const reason = guard('fresh')
-    if (reason) {
-      setUpgradeReason(reason)
-      return
-    }
+    if (!guard(estimatedCost)) return
     generate({ user_query: composeQuery(input), mode: 'fresh' })
   }
 
@@ -92,13 +89,7 @@ export function DrillPageTemplate({ config }: DrillPageTemplateProps) {
 
         {config.supportsKp && <KpPicker type={config.type} value={kpIds} onChange={setKpIds} />}
 
-        <IntensityPicker
-          config={config.intensity}
-          value={intensity}
-          onChange={setIntensity}
-          memberLocked={locked}
-          onLockedIntensity={() => setUpgradeReason(ORIGINAL_LOCK_REASON)}
-        />
+        <IntensityPicker config={config.intensity} value={intensity} onChange={setIntensity} />
 
         {config.supportsTopic && (
           <TopicInput value={topic} onChange={setTopic} disabled={intensity === 'original'} />
@@ -108,20 +99,20 @@ export function DrillPageTemplate({ config }: DrillPageTemplateProps) {
 
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-4">
-            <button
+            <Button
+              size="lg"
               type="button"
               disabled={isPending || hasError}
-              className="rounded-sm border border-accent bg-wash px-8 py-3 font-ui text-[16px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
               onClick={handleSubmit}
             >
               {isPending ? '生成中…' : '生成练习'}
-            </button>
+            </Button>
             <span className="font-ui text-[12.5px] text-quiet">
               {isPending ? '生成中，请勿关闭页面' : '通常 4–6 秒'}
             </span>
+            <CreditHint action={INTENSITY_ACTION[effectiveIntensity]} cost={estimatedCost} />
           </div>
           {serverError && <p className="text-[12px] text-accent">{serverError}</p>}
-          {quotaNotice && <p className="font-ui text-[12px] tabular-nums text-quiet">{quotaNotice}</p>}
         </div>
 
         {isPending && <PipelineProgress />}
@@ -142,8 +133,6 @@ export function DrillPageTemplate({ config }: DrillPageTemplateProps) {
           )}
         </div>
       </div>
-
-      <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
     </div>
   )
 }

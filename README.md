@@ -4,7 +4,7 @@
 
 选择**中考英语**原因：纯文字题目，不涉及图片。
 
-> **状态**：核心链路已跑通——AI 学习助手对话出题、做题判分、错题巩固、学习计划、掌握度画像、会员订阅均可用。
+> **状态**：核心链路已跑通——AI 学习助手对话出题、做题判分、错题巩固、学习计划、掌握度画像、积分充值均可用。
 
 ---
 
@@ -21,9 +21,9 @@
 | **学习计划** | 让 AI 根据你的历史正确率排出未来几天的每日练习，每天一份针对薄弱考点的卷子，点进去就能练 |
 | **我的试卷** | 生成过的卷都在这里。没做完的随时接着做，做过的点进去直接看**上次的作答结果**（对错、你的答案 vs 正确答案、解析），也能一键重做 |
 | **掌握度 / 学情报告** | 按知识点展示你的掌握程度（Wilson 分数），颜色标出薄弱点；学情报告打印友好 |
-| **会员** | 扫码开通会员（支付宝沙盒 / 离线演示模式），解锁作文批改详情、错题巩固、综合复习、不限量 AI 解析等功能 |
+| **积分** | 注册送积分、每天再送一笔；出卷 / 讲解 / 批改 / 助手按次扣积分，扫码充值积分包（支付宝沙盒 / 离线演示模式） |
 
-> 管理员账号登录后左侧多出「管理后台」（`/admin`）：用户管理、做题分析看板、会员与订单。
+> 管理员账号登录后左侧多出「管理后台」（`/admin`）：用户管理、做题分析看板、积分与订单。
 
 **做题体验**：交卷后每题标 ✓/✗，卷面右上角盖"对/总"红章；点每题下方「查看解析」由 AI 讲解——**答错的题会专门解释你选的那个选项为什么错**。作文交卷后给出内容/语言/组织三维评分与修改范文。
 
@@ -49,7 +49,7 @@
 | 背单词（间隔重复 SM-2） | 口语 / 手写识别 |
 | 纯文本题目 | 多用户高并发 |
 | AI 对话出题 / 错题巩固 / 学习计划 | 分布式部署、多进程 session 共享 |
-| 用户名+密码本地登录 + 会员订阅 | OAuth/SSO/邮箱验证 |
+| 用户名+密码本地登录 + 积分充值 | OAuth/SSO/邮箱验证 |
 | 后端持久化试卷、答题、掌握度 | — |
 
 ---
@@ -59,7 +59,7 @@
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                              浏览器（React + Vite）                       │
-│  学习助手(AI对话)   错题复习   学习计划   我的试卷   掌握度   会员          │
+│  学习助手(AI对话)   错题复习   学习计划   我的试卷   掌握度   积分          │
 │  ────────────     出题/判分/解析/重做 · 错题巩固 · 每日计划 · 掌握度画像    │
 └─────────────────────────┬────────────────────────────────────────────────┘
                           │ HTTP + Cookie
@@ -75,7 +75,7 @@
 │  /api/writing/*    英语作文批改评分（内容/语言/组织三维度）                │
 │  /api/vocabulary/* 间隔重复背单词（今日卡片 / 评分 / 进度 / 设置）         │
 │  /api/users/me/mastery  掌握度画像                                         │
-│  /api/admin/*      管理后台（用户 / 统计分析 / 会员 / 订单，需 admin）     │
+│  /api/admin/*      管理后台（用户 / 统计分析 / 积分 / 订单，需 admin）     │
 │                                                                          │
 │  职责：鉴权、试卷持久化、答题记录、规范化字符串判对错、错误统一封装        │
 └──────────┬───────────────────┬──────────────────┬────────────────────────┘
@@ -160,13 +160,7 @@ PYTHONIOENCODING=utf-8 python agent/seed_demo.py --user demo
 PYTHONIOENCODING=utf-8 python -m backend.cli serve --reload
 ```
 
-**终端 2 — 支付服务（端口 8001）**
-```bash
-cd payment
-python -m uvicorn app.main:app --port 8001 --reload
-```
-
-**终端 3 — 前端开发服务器（端口 5173）**
+**终端 2 — 前端开发服务器（端口 5173）**
 ```bash
 cd frontend
 npm install   # 首次需要
@@ -184,13 +178,13 @@ npm run dev
 
 ## 生产环境运行
 
-生产形态用 **Caddy 反向代理**统一入口:Caddy 直接提供前端静态产物(`frontend/dist`,SPA 路由回退),并把 `/api/*` 转发到主后端(`:8000`)、`/payapi/*` 转发到支付服务(`:8001`)。浏览器只访问 Caddy,天然同源,无需 CORS。后端与支付都退化为纯 API 进程。与本地开发的区别:`BACKEND_ENV=production`(httpOnly + **Secure** + SameSite=strict Cookie、关闭 CORS、不挂测试端点)、不带 `--reload`、前端跑 `build` 而非 `dev`。
+生产形态用 **Caddy 反向代理**统一入口:Caddy 直接提供前端静态产物(`frontend/dist`,SPA 路由回退),并把 `/api/*` 转发到主后端(`:8000`,含积分 / 支付)。浏览器只访问 Caddy,天然同源,无需 CORS。后端退化为纯 API 进程。与本地开发的区别:`BACKEND_ENV=production`(httpOnly + **Secure** + SameSite=strict Cookie、关闭 CORS、不挂测试端点)、不带 `--reload`、前端跑 `build` 而非 `dev`。
 
 仓库根目录已提供 [`Caddyfile`](./Caddyfile)。
 
 > ⚠️ **必须走 HTTPS**:`BACKEND_ENV=production` 下 session cookie 带 `Secure` 标志(`backend/auth/session.py`),纯 HTTP 浏览器不会回传 → **登录后立刻掉登录态**。Caddy 站点地址用 `localhost` 会自动启用本地 HTTPS(见下),`https://localhost` 下 Secure cookie 正常工作。只想本机快速自测又不想装本地 CA,可改用上面「本地启动」的开发模式(`BACKEND_ENV=development` + Vite dev,走 http://localhost:5173)。
 
-> ⚠️ **上线前务必先读下方「生产部署注意事项」**:会员校验默认 fail-open、演示账号、限流等几处必须调整,否则有安全/计费风险。
+> ⚠️ **上线前务必先读下方「生产部署注意事项」**:`PAYMENT_MOCK`、演示账号、限流、价目等几处必须确认,否则有安全/计费风险。
 
 ### 0. 安装 Caddy(Windows)
 
@@ -208,7 +202,7 @@ LLM_BASE_URL=https://api.deepseek.com
 LLM_MODEL=deepseek-v4-flash
 BACKEND_ENV=production
 ```
-Caddy 直接服务静态产物,因此**不需要** `BACKEND_STATIC_DIR`。payment 的 `.env` 另见 [`payment/README.md`](./payment/README.md)(真实收单需 `MOCK_PAY=false` + 沙盒/正式密钥)。
+Caddy 直接服务静态产物,因此**不需要** `BACKEND_STATIC_DIR`。真实收单需 `.env` 里 `PAYMENT_MOCK=false` + 沙盒/正式密钥(见 `docs/credits-design.md` § 4)。
 
 ### 2. 构建前端
 
@@ -244,15 +238,10 @@ PYTHONIOENCODING=utf-8 BACKEND_ENV=production \
   python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-**终端 2 — 支付服务（:8001）**
-```bash
-cd payment
-PYTHONIOENCODING=utf-8 python -m uvicorn app.main:app --host 127.0.0.1 --port 8001
-```
+> 支付 / 积分 2026-08-23 起在主后端内（`/api/payment`、`/api/credits`），不再有独立的 :8001 服务；
+> 真实支付宝沙盒需在 `.env` 设 `PAYMENT_MOCK=false` + `ALIPAY_*`（见 `.env.example`、`docs/credits-design.md`）。
 
-> 支付服务校验登录态是转发 cookie 到本地主后端（`payment→backend`，纯本地调用），已在 `payment/app/auth.py` 用 `trust_env=False` 显式绕过系统代理——否则装了系统 HTTP 代理的机器会把 localhost 请求也走代理导致会员套餐 503。
-
-**终端 3 — Caddy（仓库根目录，读 `Caddyfile`）**
+**终端 2 — Caddy（仓库根目录，读 `Caddyfile`）**
 ```bash
 caddy trust     # 首次:安装本地 CA，让浏览器信任 localhost 证书
 caddy run       # 前台运行
@@ -262,7 +251,7 @@ caddy run       # 前台运行
 
 > **局域网 / 其他设备访问**:Caddy 的本地 CA 只被本机信任,别的设备打开 `https://<你的IP>` 会提示证书不受信。要么在各设备导入/信任该 CA,要么直接上**公网域名**——把 `Caddyfile` 里的 `localhost` 换成你的域名,Caddy 会自动申请 Let's Encrypt 证书(需 80/443 可从公网访问)。
 >
-> **备选拓扑**:也可让后端自己挂静态(设 `BACKEND_STATIC_DIR=frontend/dist`,后端在 `/` 提供 SPA),Caddy 只把 `/payapi/*` 转发到 `:8001`、其余转发到 `:8000`。本项目默认推荐上面的「Caddy 直服静态」方案(少一层转发)。多核可给 uvicorn 加 `--workers N`(session 存 SQLite,单机多 worker 共享同一库文件即可;跨机部署不在本项目范围)。
+> **备选拓扑**:也可让后端自己挂静态(设 `BACKEND_STATIC_DIR=frontend/dist`,后端在 `/` 提供 SPA),Caddy 把全部请求转发到 `:8000`。本项目默认推荐上面的「Caddy 直服静态」方案(少一层转发)。多核可给 uvicorn 加 `--workers N`(session 存 SQLite,单机多 worker 共享同一库文件即可;跨机部署不在本项目范围)。
 
 ---
 
@@ -270,24 +259,18 @@ caddy run       # 前台运行
 
 本项目当前为本地开发 / 演示配置，部署到生产环境前**必须**调整以下几处，否则存在安全或计费风险：
 
-### 1. 会员校验目前"失败即放行"（fail-open）
+### 1. 付费墙（2026-08-23 起已为服务端积分制）
 
-为方便本地联调（支付服务常不启动），`frontend/src/hooks/useMembership.ts` 现在的逻辑是：
-```ts
-const isMember = query.isError || query.data?.active === true
-```
-即支付服务返回错误（宕机 / 网络异常 / 404）时，**默认把用户当作会员**，解锁错题巩固、综合复习、不限量 AI 解析等所有付费功能。
-
-- **为什么这么写**：本地开发时支付服务（`payment/`，端口 8001）往往没启动，若默认锁定，学习助手/错题巩固等功能全部不可用，无法联调。
-- **生产环境必须改回"失败即锁定"（fail-closed）**：把上面一行改为
-  ```ts
-  const isMember = query.data?.active === true
-  ```
-  并可将"出错解锁"的行为限制在开发模式下（`import.meta.env.DEV`）。否则一旦支付服务异常，全体用户免费获得会员权益，付费墙形同虚设。
+旧版「前端 localStorage 配额 + 会员校验失败即放行」已整体删除：所有出卷 / AI 操作在后端按价目表
+原子扣积分（`backend/services/credits`，余额不足 402 `credits.insufficient`），订单与支付宝沙盒
+逻辑在主后端 `backend/services/payment`。上线前请确认 `.env` 里 `PAYMENT_MOCK=false`（否则
+`/api/payment/dev/simulate-paid` 会被挂载，任何登录用户都能零元「支付」）、`ALIPAY_*` 与 `keys/*.pem`
+就位，并按需调整 `CREDITS_SIGNUP_BONUS` / `CREDITS_DAILY_GRANT` 与
+`backend/services/credits/pricing.py` 的价目。详见 `docs/credits-design.md`。
 
 ### 2. 其他建议
 
-- `/api/agent/chat`、`/api/agent/extract-plan` 目前无限流，生产环境应加 `rate_limiter`（`extract-plan` 会按天数循环出卷，需限制天数上限）。
+- `/api/agent/chat` 已加限流（`RATE_LIMIT_AGENT_PER_MIN`，默认 20）并按条扣积分；助手工具里出卷 / 学习计划按出卷价另扣，余额不足即停。
 - `.env` 中的 `LLM_API_KEY` 等密钥不要提交到仓库；演示账号 `demo / demo123` 应在生产环境禁用或改密。
 
 ---
@@ -341,8 +324,8 @@ const isMember = query.isError || query.data?.active === true
 - **持久化**：`papers` 表存整份 `Paper` 的 JSON（AI Engine 依然保持无状态，后端负责持久化）；用户数据在 `data/app.db`
 - **判对错**：`backend/services/grading.py` 做规范化字符串比较（小写、trim、空白折叠、末尾标点忽略）
 - **错误体统一**：`{ error_code, message, detail, trace_id }`；稳定 `error_code` 供前端精确分派
-- **速率限制**：软限制 `/papers/generate` 30/min、`/solutions` 60/min、`/writing/grade` 10/min（个人项目、防意外循环）
-- **会员校验**：作文批改的详情字段、管理后台会员视图经独立支付服务（`:8001`）校验
+- **速率限制**：软限制 `/papers/generate`、`/papers/revise` 30/min、`/solutions` 60/min、`/writing/grade` 10/min、`/agent/chat` 20/min（个人项目、防意外循环）
+- **积分与支付**：每个出卷 / AI 端点按 `backend/services/credits/pricing.py` 扣积分（先扣今日赠送再扣余额，失败退回，402 `credits.insufficient`）；积分包购买走 `/api/payment/*`（支付宝沙盒 / 离线 mock），账本与订单在 `data/app.db`。详见 [`docs/credits-design.md`](./docs/credits-design.md)（Spec P）
 
 详见 [`docs/backend-design.md`](./docs/backend-design.md)（Spec C）。
 
@@ -377,7 +360,7 @@ const isMember = query.isError || query.data?.active === true
 
 功能结构详见 [`docs/frontend-design.md`](./docs/frontend-design.md)（Spec D）；视觉规范（色板、字体、卷面语言、组件样式）详见 [`docs/frontend-visual-spec.md`](./docs/frontend-visual-spec.md)（Spec F）。
 
-> **附加子系统:`payment/`(模拟支付)** — 独立 FastAPI 小服务(:8001),接支付宝**沙盒**当面付扫码,提供会员订阅(月/季/年)的下单、扫码、轮询查单与会员顺延;登录态通过转发 cookie 到主后端 `/api/auth/me` 校验,另有完全离线的 `MOCK_PAY` 演示模式。详见 [`payment/README.md`](./payment/README.md)。
+> **积分 / 充值**（2026-08-23 起）：`/credits` 页展示余额（注册赠送 + 每日赠送）、积分包、价目与流水；每个付费 CTA 旁标「≈ N 积分」，余额不足统一弹充值引导。原独立 `payment/` 服务已并入主后端，详见 [`docs/credits-design.md`](./docs/credits-design.md)。
 
 ### 6. `tests/`、`tests_e2e/` — 测试
 
@@ -409,7 +392,7 @@ const isMember = query.isError || query.data?.active === true
 | 结构化 LLM 输出 | `instructor` + JSON Mode + pydantic + 重试 | 三层防御，避免自研 200 行解析代码 |
 | 后端 | FastAPI | pydantic 契约天然复用；OpenAPI 免费 |
 | 前端 | Vite + React + shadcn/ui | AI 生成代码模板成熟；shadcn 组件质量高且可拷贝 |
-| 部署 | 生产用 Caddy 直服前端静态 + 反代 `/api`、`/payapi`（开发用 Vite dev） | 同源零 CORS；少一层转发 |
+| 部署 | 生产用 Caddy 直服前端静态 + 反代 `/api`（开发用 Vite dev） | 同源零 CORS；少一层转发 |
 
 ---
 
@@ -443,7 +426,6 @@ English_Test_Paper_AI_Generator/
 ├── backend/                   # 子系统 3：FastAPI 后端（Spec C）
 ├── agent/                     # 子系统 4：AI 学习助手（Agents SDK + skills）
 ├── frontend/                  # 子系统 5：React 前端（Spec D）
-├── payment/                   # 附加：模拟支付服务（:8001）
 ├── tests/ tests_e2e/          # 子系统 6：单元 / 集成 / 跨系统 e2e（Spec E）
 │
 └── data/                      # 数据（题库与 chroma 已跟踪，其余 gitignored）

@@ -29,8 +29,8 @@ function RevenuePanel() {
     day: d.day.slice(5),
     yuan: Math.round(d.cents) / 100,
   }))
-  const byPlan = data.by_plan.map((p) => ({
-    name: p.plan_id,
+  const byPlan = data.by_pack.map((p) => ({
+    name: p.pack_id,
     yuan: Math.round(p.cents) / 100,
     orders: p.orders,
   }))
@@ -127,7 +127,7 @@ export function AdminOrdersPage() {
             <tr>
               <th className="px-3 py-2">订单号</th>
               <th className="px-3 py-2">用户</th>
-              <th className="px-3 py-2">套餐</th>
+              <th className="px-3 py-2">积分包</th>
               <th className="px-3 py-2">金额</th>
               <th className="px-3 py-2">状态</th>
               <th className="px-3 py-2">创建时间</th>
@@ -142,7 +142,10 @@ export function AdminOrdersPage() {
                   {displayName(o.username)}
                   <div className="text-[11px] text-quiet">{o.user_id}</div>
                 </td>
-                <td className="px-3 py-2 text-muted-ink">{o.plan_id}</td>
+                <td className="px-3 py-2 text-muted-ink">
+                  {o.pack_id}
+                  <span className="ml-1 font-ui text-[11px] tabular-nums text-quiet">{o.credits} 积分 · {o.channel}</span>
+                </td>
                 <td className="px-3 py-2 text-muted-ink">
                   {formatYuan(o.amount_cents)}
                 </td>

@@ -3,22 +3,24 @@ from __future__ import annotations
 import os
 
 import httpx
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 
 from backend.auth.password import hash_password
-from backend.auth.session import COOKIE_NAME
 from backend.deps import require_admin
-from backend.errors import AdminOperationError, PaymentUpstreamError, ResourceNotFoundError
+from backend.errors import AdminOperationError, ResourceNotFoundError
 from backend.schemas import (
+    AdjustCreditsByUsernameRequest,
+    AdjustCreditsRequest,
     AdminAnalytics,
     AdminAuditItem,
     AdminAuditList,
-    AdminMembershipItem,
-    AdminMembershipListView,
+    AdminCreditAccountDetail,
+    AdminCreditAccountItem,
+    AdminCreditAccountListView,
     AdminOrderItem,
     AdminOrderListView,
     AdminOverview,
-    AdminPlanRevenue,
+    AdminPackRevenue,
     AdminRevenue,
     AdminRevenueDayPoint,
     AdminSystemHealth,
@@ -30,8 +32,7 @@ from backend.schemas import (
     AdminUserList,
     AdminUserPaperItem,
     AdminUserPaperList,
-    GrantByUsernameRequest,
-    GrantDaysRequest,
+    CreditLedgerItem,
     QuestionBankChapterStat,
     QuestionBankKpStat,
     QuestionBankList,
@@ -42,7 +43,8 @@ from backend.schemas import (
     SetRoleRequest,
     User,
 )
-from backend.services import ai_gateway
+from backend.services import ai_gateway, credits
+from backend.services.payment import orders as order_service
 from shared import storage
 from shared.config import get_config
 from shared.schemas import MasteryProfile
@@ -56,12 +58,6 @@ def _require_target(user_id: str) -> User:
         raise ResourceNotFoundError("user not found")
     return target
 
-
-def admin_cookie(request: Request) -> str | None:
-    """The acting admin's session cookie, forwarded on cross-service payment
-    reads so payment's require_admin passes. Centralises the extraction the
-    payment-calling endpoints all need."""
-    return request.cookies.get(COOKIE_NAME)
 
 
 @router.get("/users", response_model=AdminUserList)
@@ -78,9 +74,10 @@ async def list_users(
 
 
 @router.get("/users/{user_id}", response_model=AdminUserDetail)
-def user_detail(user_id: str, cookie: str | None = Depends(admin_cookie), _: User = Depends(require_admin)) -> AdminUserDetail:
+def user_detail(user_id: str, _: User = Depends(require_admin)) -> AdminUserDetail:
     target = _require_target(user_id)
     counts = storage.get_user_counts(user_id)
+    acct = credits.get_account(user_id)
     return AdminUserDetail(
         id=target.id,
         username=target.username,
@@ -90,7 +87,8 @@ def user_detail(user_id: str, cookie: str | None = Depends(admin_cookie), _: Use
         paper_count=counts["paper_count"],
         attempt_count=counts["attempt_count"],
         correct_rate=storage.user_correct_rate(user_id),
-        membership_expires_at=_fetch_membership_expiry(user_id, cookie),
+        credits_balance=acct.balance,
+        credits_daily_balance=acct.daily_balance,
     )
 
 
@@ -157,12 +155,6 @@ async def unban(user_id: str, admin: User = Depends(require_admin)) -> User:
     return storage.get_user_by_id(user_id)
 
 
-def _payment_base() -> str:
-    # Spec H D4: configurable via PAYMENT_SERVICE_URL (resolves the Spec G
-    # §0.2.1 localhost hardcode).
-    return get_config().backend.payment_service_url.rstrip("/")
-
-
 @router.get("/users/{user_id}/papers", response_model=AdminUserPaperList)
 def user_papers(user_id: str, limit: int = 10, _: User = Depends(require_admin)) -> AdminUserPaperList:
     """Spec H B1: the user's most recent papers (read-only listing)."""
@@ -179,53 +171,14 @@ def user_attempts(user_id: str, limit: int = 10, _: User = Depends(require_admin
     return AdminUserAttemptList(items=items)
 
 
-def _payment_get_json(path: str, cookie: str | None, params: dict | None = None) -> dict:
-    """GET payment JSON, forwarding the admin's session cookie.
-
-    Raises PaymentUpstreamError on any transport failure or non-200 response.
-    """
-    try:
-        resp = httpx.get(
-            f"{_payment_base()}{path}",
-            params=params,
-            cookies={COOKIE_NAME: cookie} if cookie else None,
-            timeout=5.0,
-            trust_env=False,  # local backend→payment call; never route via system proxy
-        )
-    except httpx.HTTPError as exc:
-        raise PaymentUpstreamError(str(exc)) from exc
-    if resp.status_code != 200:
-        raise PaymentUpstreamError(f"payment GET {path} -> {resp.status_code}")
-    return resp.json()
-
-
-def _payment_post_json(path: str, cookie: str | None, json: dict | None = None) -> dict:
-    """POST to payment, forwarding the admin's session cookie.
-
-    Raises PaymentUpstreamError on any transport failure or non-200 response.
-    """
-    try:
-        resp = httpx.post(
-            f"{_payment_base()}{path}",
-            json=json,
-            cookies={COOKIE_NAME: cookie} if cookie else None,
-            timeout=5.0,
-            trust_env=False,  # local backend→payment call; never route via system proxy
-        )
-    except httpx.HTTPError as exc:
-        raise PaymentUpstreamError(str(exc)) from exc
-    if resp.status_code != 200:
-        raise PaymentUpstreamError(f"payment POST {path} -> {resp.status_code}")
-    return resp.json()
-
-
 @router.get("/stats/overview", response_model=AdminOverview)
-def stats_overview(cookie: str | None = Depends(admin_cookie), _: User = Depends(require_admin)) -> AdminOverview:
+def stats_overview(_: User = Depends(require_admin)) -> AdminOverview:
     counts = storage.admin_counts()
+    revenue = order_service.revenue_stats(days=1)
     return AdminOverview(
         **counts,
-        active_members=_fetch_active_members(cookie),
-        total_revenue_cents=_fetch_total_revenue_cents(cookie),
+        paying_users=order_service.paying_user_count(),
+        total_revenue_cents=revenue["total_cents"],
     )
 
 
@@ -251,50 +204,71 @@ def stats_analytics(days: int = 30, _: User = Depends(require_admin)) -> AdminAn
     )
 
 
-# ---- membership / order aggregation (enrich payment data with usernames) ----
+# ---- credits / orders (本地账本，2026-08 自 payment 服务合并) ----
 
 
-@router.get("/memberships", response_model=AdminMembershipListView)
-def list_memberships(
+@router.get("/credits", response_model=AdminCreditAccountListView)
+def list_credit_accounts(
     q: str = "",
     limit: int = 50,
     offset: int = 0,
-    expiring_within_days: int | None = None,
-    active: bool | None = None,
-    cookie: str | None = Depends(admin_cookie),
     _: User = Depends(require_admin),
-) -> AdminMembershipListView:
-    # Pull the full membership set from payment, then join usernames locally.
-    # expiring_within_days (Spec H D2) is applied upstream in payment;
-    # active (also D2) filters the enriched rows locally.
-    params: dict = {"limit": 100000}
-    if expiring_within_days is not None:
-        params["expiring_within_days"] = expiring_within_days
-    payload = _payment_get_json("/payapi/admin/memberships", cookie, params=params)
-    items = payload.get("items", [])
-    name_map = storage.usernames_by_ids([m["user_id"] for m in items])
-    # Drop memberships whose user no longer exists locally — the admin list
-    # must never show "(已删除/未知)" rows (and the overview's active-member
-    # count stays consistent with what this list shows).
-    rows = [
-        AdminMembershipItem(
-            user_id=m["user_id"],
-            username=name_map.get(m["user_id"]),
-            expires_at=m.get("expires_at"),
-            active=bool(m.get("active")),
-        )
-        for m in items
-        if m["user_id"] in name_map
-    ]
-    if active is not None:
-        rows = [r for r in rows if r.active == active]
-    if q:
-        needle = q.lower()
-        # Rows without a resolvable username are excluded when a query is given.
-        rows = [r for r in rows if r.username and needle in r.username.lower()]
-    total = len(rows)
-    page = rows[offset : offset + limit] if limit else rows[offset:]
-    return AdminMembershipListView(items=page, total=total)
+) -> AdminCreditAccountListView:
+    items, total = credits.list_accounts(q, limit=max(1, min(limit, 200)), offset=max(0, offset))
+    return AdminCreditAccountListView(items=[AdminCreditAccountItem(**i) for i in items], total=total)
+
+
+@router.get("/credits/{user_id}", response_model=AdminCreditAccountDetail)
+def credit_account_detail(
+    user_id: str, limit: int = 50, offset: int = 0, _: User = Depends(require_admin)
+) -> AdminCreditAccountDetail:
+    target = _require_target(user_id)
+    acct = credits.get_account(user_id)
+    ledger, total = credits.list_ledger(user_id, limit=max(1, min(limit, 200)), offset=max(0, offset))
+    return AdminCreditAccountDetail(
+        user_id=user_id,
+        username=target.username,
+        balance=acct.balance,
+        daily_balance=acct.daily_balance,
+        daily_grant=acct.daily_grant,
+        spent_total=credits.spent_total(user_id),
+        ledger=[CreditLedgerItem(**i) for i in ledger],
+        ledger_total=total,
+    )
+
+
+def _adjust(admin: User, user_id: str, body: AdjustCreditsRequest) -> AdminCreditAccountItem:
+    target = _require_target(user_id)
+    if body.delta == 0:
+        raise AdminOperationError("delta 不能为 0")
+    acct = credits.grant(
+        user_id, body.delta, kind=credits.KIND_ADMIN_ADJUST, note=f"管理员 {admin.username}：{body.note}"
+    )
+    storage.record_admin_action(admin.id, "adjust_credits", user_id, {"delta": body.delta, "note": body.note})
+    return AdminCreditAccountItem(
+        user_id=user_id,
+        username=target.username,
+        balance=acct.balance,
+        daily_balance=acct.daily_balance,
+        daily_date=acct.daily_date,
+    )
+
+
+@router.post("/credits/adjust", response_model=AdminCreditAccountItem)
+def adjust_credits_by_username(
+    body: AdjustCreditsByUsernameRequest, admin: User = Depends(require_admin)
+) -> AdminCreditAccountItem:
+    user = storage.get_user_by_username(body.username)
+    if user is None:
+        raise ResourceNotFoundError("用户不存在")
+    return _adjust(admin, user.id, body)
+
+
+@router.post("/credits/{user_id}/adjust", response_model=AdminCreditAccountItem)
+def adjust_credits(
+    user_id: str, body: AdjustCreditsRequest, admin: User = Depends(require_admin)
+) -> AdminCreditAccountItem:
+    return _adjust(admin, user_id, body)
 
 
 @router.get("/orders", response_model=AdminOrderListView)
@@ -302,100 +276,35 @@ def list_orders(
     status: str = "",
     limit: int = 50,
     offset: int = 0,
-    cookie: str | None = Depends(admin_cookie),
     _: User = Depends(require_admin),
 ) -> AdminOrderListView:
-    params: dict = {"limit": limit, "offset": offset}
-    if status:
-        params["status"] = status
-    payload = _payment_get_json("/payapi/admin/orders", cookie, params=params)
-    items = payload.get("items", [])
+    items, total = order_service.list_orders(status or None, max(1, min(limit, 200)), max(0, offset))
     name_map = storage.usernames_by_ids([o["user_id"] for o in items])
     rows = [
         AdminOrderItem(
             out_trade_no=o["out_trade_no"],
             user_id=o["user_id"],
             username=name_map.get(o["user_id"]),
-            plan_id=o["plan_id"],
+            pack_id=o["pack_id"],
             amount_cents=o["amount_cents"],
+            credits=o["credits"],
             status=o["status"],
+            channel=o.get("channel") or "qr",
             created_at=o["created_at"],
             paid_at=o.get("paid_at"),
         )
         for o in items
     ]
-    return AdminOrderListView(items=rows, total=payload.get("total", 0))
+    return AdminOrderListView(items=rows, total=total)
 
 
-@router.post("/memberships/grant")
-def grant_membership_by_username(
-    body: GrantByUsernameRequest, cookie: str | None = Depends(admin_cookie), admin: User = Depends(require_admin)
-) -> dict:
-    user = storage.get_user_by_username(body.username)
-    if user is None:
-        raise ResourceNotFoundError("用户不存在")
-    result = _payment_post_json(
-        f"/payapi/admin/memberships/{user.id}/grant", cookie, json={"days": body.days}
-    )
-    storage.record_admin_action(admin.id, "grant_membership", user.id, {"days": body.days})
-    return result
-
-
-@router.post("/memberships/{user_id}/grant")
-def grant_membership(
-    user_id: str, body: GrantDaysRequest, cookie: str | None = Depends(admin_cookie), admin: User = Depends(require_admin)
-) -> dict:
-    result = _payment_post_json(
-        f"/payapi/admin/memberships/{user_id}/grant", cookie, json={"days": body.days}
-    )
-    storage.record_admin_action(admin.id, "grant_membership", user_id, {"days": body.days})
-    return result
-
-
-@router.post("/memberships/{user_id}/revoke")
-def revoke_membership(
-    user_id: str, cookie: str | None = Depends(admin_cookie), admin: User = Depends(require_admin)
-) -> dict:
-    result = _payment_post_json(f"/payapi/admin/memberships/{user_id}/revoke", cookie)
-    storage.record_admin_action(admin.id, "revoke_membership", user_id)
-    return result
-
-
-def _fetch_active_members(cookie: str | None) -> int | None:
-    # Best-effort cross-service read; payment down → None (non-blocking).
-    # Forwards the acting admin's session cookie so payment's require_admin passes.
-    try:
-        payload = _payment_get_json(
-            "/payapi/admin/memberships", cookie, params={"limit": 100000}
-        )
-    except PaymentUpstreamError:
-        return None
-    items = payload.get("items", [])
-    # Only count members whose user still exists locally, so the overview
-    # metric matches the (already filtered) memberships list.
-    name_map = storage.usernames_by_ids([m["user_id"] for m in items])
-    return sum(1 for m in items if m.get("active") and m["user_id"] in name_map)
-
-
-def _fetch_membership_expiry(user_id: str, cookie: str | None) -> str | None:
-    # Best-effort cross-service read; payment down → None (non-blocking).
-    # Forwards the acting admin's session cookie so payment's require_admin passes.
-    try:
-        payload = _payment_get_json(f"/payapi/admin/memberships/{user_id}", cookie)
-    except PaymentUpstreamError:
-        return None
-    return payload.get("expires_at")
-
-
-def _fetch_total_revenue_cents(cookie: str | None) -> int | None:
-    # Best-effort cross-service read; payment down → None (non-blocking).
-    try:
-        payload = _payment_get_json(
-            "/payapi/admin/stats/revenue", cookie, params={"days": 1}
-        )
-    except PaymentUpstreamError:
-        return None
-    return payload.get("total_cents")
+@router.post("/orders/reconcile")
+def reconcile_orders(admin: User = Depends(require_admin)) -> dict:
+    """对账：PAID 订单若缺 purchase 流水则补入账（极端情况下 CAS 与入账之间崩溃）。"""
+    fixed = order_service.reconcile_paid_orders()
+    if fixed:
+        storage.record_admin_action(admin.id, "adjust_credits", None, {"reconciled_orders": fixed})
+    return {"reconciled": fixed}
 
 
 # ---- question bank (Spec H C, read-only questions.db) ----
@@ -439,12 +348,12 @@ def questionbank_questions(
 
 
 @router.get("/stats/revenue", response_model=AdminRevenue)
-def stats_revenue(days: int = 30, cookie: str | None = Depends(admin_cookie), _: User = Depends(require_admin)) -> AdminRevenue:
-    payload = _payment_get_json("/payapi/admin/stats/revenue", cookie, params={"days": days})
+def stats_revenue(days: int = 30, _: User = Depends(require_admin)) -> AdminRevenue:
+    payload = order_service.revenue_stats(days)
     return AdminRevenue(
-        total_cents=payload.get("total_cents", 0),
-        revenue_by_day=[AdminRevenueDayPoint(**d) for d in payload.get("revenue_by_day", [])],
-        by_plan=[AdminPlanRevenue(**p) for p in payload.get("by_plan", [])],
+        total_cents=payload["total_cents"],
+        revenue_by_day=[AdminRevenueDayPoint(**d) for d in payload["revenue_by_day"]],
+        by_pack=[AdminPackRevenue(**p) for p in payload["by_pack"]],
     )
 
 
@@ -477,7 +386,6 @@ def _probe_http(url: str, timeout: float = 2.0) -> bool:
 def system_health(_: User = Depends(require_admin)) -> AdminSystemHealth:
     config = get_config()
     llm_ok = _probe_http(f"{config.llm_base_url.rstrip('/')}/models")
-    payment_ok = _probe_http(f"{_payment_base()}/payapi/health")
     try:
         bank_total = storage.questionbank_stats()["total"]
     except Exception:
@@ -485,8 +393,8 @@ def system_health(_: User = Depends(require_admin)) -> AdminSystemHealth:
     db_path = storage.get_db_path()
     app_db_size_kb = int(os.path.getsize(db_path) / 1024) if db_path.is_file() else 0
     return AdminSystemHealth(
-        payment=payment_ok,
         llm=llm_ok,
+        payment_mock=config.payment.mock_pay,
         question_bank_total=bank_total,
         app_db_size_kb=app_db_size_kb,
     )

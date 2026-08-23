@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select'
 import { QuestionCard } from '@/components/QuestionCard'
 import { SolutionBlock } from '@/components/SolutionBlock'
+import { EmptyState } from '@/components/EmptyState'
 
 interface WrongBookListProps {
   entries: WrongBookEntry[]
@@ -25,9 +26,6 @@ interface WrongBookListProps {
   onSelectMany: (sourceQuestionIds: string[]) => void
   onClearSelection: () => void
   onRemove: (sourceQuestionId: string) => void
-  /** 解析配额用（与试卷页共享每日次数） */
-  locked: boolean
-  userId: string
 }
 
 /** 族色题型标签（配色抄 QuestionCard FAMILY_PILL：wash 底 + 同色字，方角小 chip） */
@@ -44,7 +42,7 @@ const localYmd = (iso: string) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-/** 勾选方块（handoff 第 9 屏）：选中 = 赤陶边 + wash 底 + ✓。 */
+/** 勾选方块（handoff 第 9 屏）：选中 = 墨色实心 + ✓。 */
 function CheckSquare({
   checked,
   onChange,
@@ -63,7 +61,7 @@ function CheckSquare({
       onClick={onChange}
       className={cn(
         'flex size-[18px] shrink-0 items-center justify-center rounded-sm border font-ui text-[11px] leading-none transition-colors',
-        checked ? 'border-accent bg-wash text-accent' : 'border-ink-20 text-transparent hover:border-ink-30',
+        checked ? 'border-ink bg-ink text-paper' : 'border-ink-20 text-transparent hover:border-ink-30',
       )}
     >
       ✓
@@ -82,8 +80,6 @@ export function WrongBookList({
   onSelectMany,
   onClearSelection,
   onRemove,
-  locked,
-  userId,
 }: WrongBookListProps) {
   const [questionType, setQuestionType] = useState('') // '' = 全部题型
   const [startDate, setStartDate] = useState('')
@@ -91,15 +87,15 @@ export function WrongBookList({
 
   if (entries.length === 0) {
     return (
-      <div className="flex flex-col items-start gap-2 border-t border-hairline pt-8">
-        <p className="text-[17px] text-ink">错题本还是空的</p>
-        <p className="text-[13.5px] text-muted-ink">
-          交卷后答错的题会自动收进来，随时回来复练
-        </p>
-        <Button asChild className="mt-3">
-          <Link to={PATHS.dashboard}>去出一份卷</Link>
-        </Button>
-      </div>
+      <EmptyState
+        title="错题本还是空的"
+        desc="交卷后答错的题会自动收进来，随时回来复练"
+        action={
+          <Button asChild>
+            <Link to={PATHS.dashboard}>去出一份卷</Link>
+          </Button>
+        }
+      />
     )
   }
 
@@ -217,8 +213,6 @@ export function WrongBookList({
               checked={selected.has(entry.sourceQuestionId)}
               onToggle={() => onToggle(entry.sourceQuestionId)}
               onRemove={() => onRemove(entry.sourceQuestionId)}
-              locked={locked}
-              userId={userId}
             />
           ))}
         </ul>
@@ -233,16 +227,12 @@ function WrongBookRow({
   checked,
   onToggle,
   onRemove,
-  locked,
-  userId,
 }: {
   entry: WrongBookEntry
   ordinal: number
   checked: boolean
   onToggle: () => void
   onRemove: () => void
-  locked: boolean
-  userId: string
 }) {
   const [expanded, setExpanded] = useState(false)
   const { question } = entry
@@ -311,8 +301,6 @@ function WrongBookRow({
                 sourceQuestionId={entry.sourceQuestionId}
                 revisionMode={entry.revisionMode}
                 cacheKey={['solution', 'wrongbook', entry.sourceQuestionId, entry.gradedAt]}
-                locked={locked}
-                userId={userId}
               />
             }
           />

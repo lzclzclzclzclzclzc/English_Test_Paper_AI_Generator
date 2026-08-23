@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Outlet } from 'react-router-dom'
+import { CreditsDialogHost } from '@/components/CreditsDialog'
 import { Sidebar } from '@/components/Sidebar'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 
@@ -17,6 +18,8 @@ export function AppLayout({ children }: { children?: ReactNode }) {
       <main className="min-w-0 flex-1 px-14 pb-12 pt-8 max-md:px-6">
         {children ?? <Outlet />}
       </main>
+      {/* 余额不足（402 credits.insufficient / 本地预检）统一在这里弹充值引导 */}
+      <CreditsDialogHost />
     </div>
   )
 }

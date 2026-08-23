@@ -208,10 +208,7 @@ export function AdminUserDetailPage() {
           label="正确率"
           value={u.correct_rate == null ? '暂无' : `${Math.round(u.correct_rate * 100)}%`}
         />
-        <Field
-          label="会员到期"
-          value={u.membership_expires_at ? u.membership_expires_at.slice(0, 10) : '无 / 暂不可用'}
-        />
+        <Field label="积分余额" value={`${u.credits_balance}（今日赠送剩余 ${u.credits_daily_balance}）`} />
       </div>
 
       <div className="flex gap-2">

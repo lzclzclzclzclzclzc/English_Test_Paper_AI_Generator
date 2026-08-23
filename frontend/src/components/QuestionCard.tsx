@@ -12,7 +12,6 @@ import { SentenceRewritingField } from '@/components/question-fields/SentenceRew
 import { WritingField } from '@/components/question-fields/WritingField'
 import { TYPE_LABELS, TYPE_FAMILY, prettifyKp, type TypeFamily } from '@/lib/kp'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
-import { useMembership } from '@/hooks/useMembership'
 import { cn } from '@/lib/utils'
 
 interface QuestionCardProps {
@@ -41,7 +40,7 @@ interface QuestionCardProps {
   }
 }
 
-/** 改题档位：原题 = 中性墨、轻改 = 绿、新出 = 赤陶（AI 介入程度递增） */
+/** 改题档位：原题 = 中性墨、轻改 = 绿、新出 = 橙红（AI 介入程度递增） */
 const REVISION_META: Record<PaperItem['revision_mode'], { label: string; className: string }> = {
   original: { label: '原题', className: 'bg-tint text-muted-ink' },
   light: { label: '轻改', className: 'bg-success-wash text-success' },
@@ -58,8 +57,8 @@ const FAMILY_PILL: Record<TypeFamily, string> = {
 
 /**
  * 单题卡片（2026-08 卡片化改版）：近白卡底 + 1px 浅边 + 8px 圆角，
- * hover 轻阴影；题头 = 赤陶序号块 + 题型胶囊 + 档位色胶囊；
- * review 态右侧 ✓ 墨色 / ✕ 赤陶。
+ * hover 轻阴影；题头 = 橙红序号块 + 题型胶囊 + 档位色胶囊；
+ * review 态右侧 ✓ 墨色 / ✕ 橙红。
  */
 export function QuestionCard({
   item,
@@ -71,7 +70,6 @@ export function QuestionCard({
   writingGradeResult,
 }: QuestionCardProps) {
   useKnowledgePoints() // 目录到达后重渲染，考点标签显示为中文名
-  const { locked } = useMembership()
   const { question } = item
   const isReview = mode === 'review'
 
@@ -111,7 +109,7 @@ export function QuestionCard({
         {isReview && result && (
           <span
             className={cn(
-              'ml-auto flex size-6 shrink-0 items-center justify-center rounded-full border font-bold text-[12px] leading-none',
+              'ml-auto flex size-6 shrink-0 items-center justify-center rounded-sm border font-bold text-[12px] leading-none',
               result.is_correct
                 ? 'border-success bg-success-wash text-success'
                 : 'border-accent bg-wash text-accent',
@@ -178,7 +176,6 @@ export function QuestionCard({
             value={typeof value === 'string' ? value : undefined}
             onChange={onChange}
             gradeResult={writingGradeResult}
-            isMember={!locked}
           />
         ) : (
           <SentenceRewritingField

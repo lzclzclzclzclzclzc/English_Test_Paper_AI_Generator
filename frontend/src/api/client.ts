@@ -46,9 +46,5 @@ async function fetchJson<T>(base: string, path: string, opts?: RequestInit): Pro
   return body as T
 }
 
-/** 主后端（/api，队友的 backend-mvp）。 */
+/** 主后端（/api）。支付 / 积分 2026-08 起也在这里（/api/payment、/api/credits）。 */
 export const apiFetch = <T>(path: string, opts?: RequestInit) => fetchJson<T>('/api', path, opts)
-
-/** 支付小服务（/payapi，payment/ 独立 FastAPI）。 */
-export const payFetch = <T>(path: string, opts?: RequestInit) =>
-  fetchJson<T>('/payapi', path, opts)

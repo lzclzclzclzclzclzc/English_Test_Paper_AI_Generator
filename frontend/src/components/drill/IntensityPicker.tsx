@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils'
-import { MemberPill } from '@/components/UpgradeDialog'
+import { useCredits } from '@/hooks/useCredits'
+import { INTENSITY_ACTION } from '@/lib/creditsActions'
 import type { Intensity } from '@/lib/composeQuery'
 import type { DrillConfig } from '@/lib/drillConfig'
 
@@ -15,25 +15,19 @@ interface IntensityPickerProps {
   config: DrillConfig['intensity']
   value: Intensity
   onChange: (i: Intensity) => void
-  /** 非会员（useMembership().locked）：真题原样档点击不选中，改走 onLockedIntensity */
-  memberLocked: boolean
-  onLockedIntensity: () => void
 }
 
 /**
  * 出题方式三档分段按钮。锁定档（阅读首字母固定 original）不渲染控件，
- * 只给一行说明；「真题原样」对非会员挂 MemberPill 并拦去升级弹窗。
+ * 只给一行说明；每档旁标「每题 N 积分」，三档按 AI 介入程度递增计价。
  */
-export function IntensityPicker({
-  config,
-  value,
-  onChange,
-  memberLocked,
-  onLockedIntensity,
-}: IntensityPickerProps) {
+export function IntensityPicker({ config, value, onChange }: IntensityPickerProps) {
+  const { priceTable } = useCredits()
+  const perQuestion = (tier: Intensity): number | null =>
+    priceTable?.items.find((p) => p.action === INTENSITY_ACTION[tier])?.per_unit ?? null
   return (
     <div className="flex flex-col gap-3">
-      <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">出题方式</span>
+      <span className="kicker">出题方式</span>
       {'locked' in config ? (
         <p className="text-[12.5px] text-quiet">此题型固定使用真题原文，不做改写</p>
       ) : (
@@ -45,22 +39,16 @@ export function IntensityPicker({
                 <button
                   key={tier.value}
                   type="button"
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-sm border px-3 py-1.5 font-ui text-[13px] transition-colors',
-                    selected
-                      ? 'border-accent bg-wash text-accent'
-                      : 'border-hairline text-muted-ink hover:border-accent hover:text-accent',
-                  )}
-                  onClick={() => {
-                    if (tier.value === 'original' && memberLocked) {
-                      onLockedIntensity()
-                      return
-                    }
-                    onChange(tier.value)
-                  }}
+                  aria-pressed={selected}
+                  className="seg gap-1.5"
+                  onClick={() => onChange(tier.value)}
                 >
                   {tier.label}
-                  {tier.value === 'original' && memberLocked && <MemberPill />}
+                  {perQuestion(tier.value) !== null && (
+                    <span className={`font-ui text-[11px] tabular-nums ${selected ? 'opacity-70' : 'text-quiet'}`}>
+                      {perQuestion(tier.value)} 积分/题
+                    </span>
+                  )}
                 </button>
               )
             })}

@@ -4,16 +4,13 @@ import { getReadiness } from '@/api/health'
 import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import { GenerateForm, type GenerateFormValues } from '@/components/GenerateForm'
 import { PageHeader } from '@/components/PageHeader'
-import { generateQuotaNotice } from '@/lib/quota'
 import { PipelineProgress } from '@/components/PipelineProgress'
-import { UpgradeDialog } from '@/components/UpgradeDialog'
 
 /** 生成试卷（handoff 第 4 屏）：只做新生成（fresh）。错题巩固 / 综合复习在「错题本」页。 */
 export function GeneratePage() {
   const [serverError, setServerError] = useState<string | null>(null)
-  const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
 
-  const { generate, guard, isPending, locked, freeRemaining } = useGeneratePaper(setServerError)
+  const { generate, isPending } = useGeneratePaper(setServerError)
 
   // 联调期后端题库/向量库可能未就绪；就绪时不渲染任何东西
   const readiness = useQuery({
@@ -26,11 +23,7 @@ export function GeneratePage() {
 
   const handleSubmit = (values: GenerateFormValues) => {
     setServerError(null)
-    const reason = guard('fresh')
-    if (reason) {
-      setUpgradeReason(reason)
-      return
-    }
+    // 一句话出卷的价格要等 Parser 解析出强度 × 题数才知道，不做本地预检；余额不足由服务端 402 → 充值弹窗
     generate({ user_query: values.user_query, mode: 'fresh' })
   }
 
@@ -55,7 +48,6 @@ export function GeneratePage() {
         onSubmit={handleSubmit}
         isPending={isPending}
         serverError={serverError}
-        quotaNotice={generateQuotaNotice(locked, freeRemaining)}
       />
       <PipelineProgress active={isPending} />
 
@@ -70,8 +62,6 @@ export function GeneratePage() {
           <li>说「重新出」「全新原创」或给主题(如「关于环保」)→ 全新命题</li>
         </ul>
       </details>
-
-      <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
     </div>
   )
 }

@@ -6,7 +6,7 @@ import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { PageHeader } from '@/components/PageHeader'
 import { PipelineProgress } from '@/components/PipelineProgress'
-import { UpgradeDialog } from '@/components/UpgradeDialog'
+import { CreditHint } from '@/components/CreditHint'
 import { composeQuery } from '@/lib/composeQuery'
 import {
   SUNDAY_NAME,
@@ -16,24 +16,24 @@ import {
   resolveRecipe,
   structureOf,
 } from '@/lib/dailyRecipes'
-import { generateQuotaNotice } from '@/lib/quota'
+import { useCredits } from '@/hooks/useCredits'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 /**
  * 每日一练页：今日配方一键出卷 + 一周安排表。
  * 配方数据与解析逻辑全在 lib/dailyRecipes.ts(与工作台「今日一练」卡共用);
- * 出卷范式同 MockPage(guard('fresh') → UpgradeDialog / generate)。
+ * 出卷范式同 MockPage(本地预估价 guard → generate;余额不足由 402 弹充值)。
  */
 export function DailyPage() {
   const [serverError, setServerError] = useState<string | null>(null)
-  const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
   // 「今天已练过」标记写入后 bump 重渲染(localStorage 非响应式)
   const [, setTick] = useState(0)
 
   const { data: user } = useAuth()
   const userId = user?.id ?? 'anon'
-  const { generate, guard, isPending, locked, freeRemaining } = useGeneratePaper(setServerError)
-  const quotaNotice = generateQuotaNotice(locked, freeRemaining)
+  const { generate, guard, isPending } = useGeneratePaper(setServerError)
+  const { price } = useCredits()
 
   const masteryQuery = useQuery({
     queryKey: ['mastery', 'me', '30'],
@@ -45,6 +45,8 @@ export function DailyPage() {
   const todayLabel = WEEKDAYS.find((w) => w.day === todayDay)?.label ?? ''
   const todayRecipe = resolveRecipe(todayDay, masteryQuery.data, kpQuery.data)
   const doneToday = localStorage.getItem(dailyDoneKey(userId)) !== null
+  // 每日一练默认 AI 改编强度
+  const estimatedCost = price('generate_light', recipeTotal(todayRecipe))
 
   // 周日弱点日:能按掌握度解析出动态配方时展示实际组合,否则给引导句
   const sundayRecipe = resolveRecipe(0, masteryQuery.data, kpQuery.data)
@@ -52,11 +54,7 @@ export function DailyPage() {
 
   const start = () => {
     setServerError(null)
-    const reason = guard('fresh')
-    if (reason) {
-      setUpgradeReason(reason)
-      return
-    }
+    if (!guard(estimatedCost)) return
     localStorage.setItem(dailyDoneKey(userId), 'pending')
     setTick((t) => t + 1)
     generate({ user_query: composeQuery({ entries: todayRecipe.entries }), mode: 'fresh' })
@@ -72,7 +70,7 @@ export function DailyPage() {
       <div className="flex flex-col gap-10">
         {/* 今日卡区 */}
         <section className="flex flex-col gap-3 border-t border-hairline pt-6">
-          <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
+          <span className="kicker">
             今日 · {todayLabel} · {todayRecipe.name}
           </span>
           <p className="text-[13.5px] leading-relaxed text-muted-ink">
@@ -81,36 +79,35 @@ export function DailyPage() {
           </p>
           <div>
             {doneToday ? (
-              <button
+              <Button
+                variant="outline"
+                size="lg"
                 type="button"
                 disabled={isPending}
-                className="rounded-sm border border-hairline px-5 py-2 font-ui text-[13.5px] text-muted-ink transition-colors hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-60"
                 onClick={start}
               >
                 {isPending ? '生成中…' : '今天已练过 · 再练一组'}
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
+                size="lg"
                 type="button"
                 disabled={isPending}
-                className="rounded-sm border border-accent bg-wash px-6 py-2 font-ui text-[13.5px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
                 onClick={start}
               >
                 {isPending ? '生成中…' : '开始今日一练'}
-              </button>
+              </Button>
             )}
           </div>
+          <CreditHint action="generate_light" cost={estimatedCost} prefix="约" />
           {serverError && <p className="text-[12px] text-accent">{serverError}</p>}
-          {quotaNotice && (
-            <p className="font-ui text-[12px] tabular-nums text-quiet">{quotaNotice}</p>
-          )}
         </section>
 
         {isPending && <PipelineProgress />}
 
         {/* 一周安排表 */}
         <section className="flex flex-col gap-3 border-t border-hairline pt-6">
-          <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
+          <span className="kicker">
             一周安排
           </span>
           <div className="divide-y divide-ink-10 border-y border-hairline">
@@ -126,8 +123,8 @@ export function DailyPage() {
                 <div
                   key={day}
                   className={cn(
-                    'flex flex-wrap items-baseline gap-x-4 gap-y-1 px-3 py-3.5',
-                    day === todayDay && 'bg-wash',
+                    'flex flex-wrap items-baseline gap-x-4 gap-y-1 border-l-2 px-3 py-3.5',
+                    day === todayDay ? 'border-accent bg-tint' : 'border-transparent',
                   )}
                 >
                   <span className="w-10 shrink-0 font-ui text-[13px] text-ink">{label}</span>
@@ -145,11 +142,9 @@ export function DailyPage() {
         </section>
 
         <p className="text-[12.5px] text-quiet">
-          每日一练计入每天 3 次免费出卷额度；会员不限次数。
+          每日一练按 AI 改编价计积分；每天赠送的免费积分正好够练一组小卷。
         </p>
       </div>
-
-      <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
     </div>
   )
 }
