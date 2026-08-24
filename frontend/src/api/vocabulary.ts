@@ -1,5 +1,6 @@
 import { apiFetch } from '@/api/client'
 import type {
+  VocabularyExampleResponse,
   VocabularyProgress,
   VocabularyRating,
   VocabularyJudgmentResponse,
@@ -19,4 +20,10 @@ export const updateVocabularySettings = (daily_new_limit: number) =>
   apiFetch<{ daily_new_limit: number; today_new_cards_added: number }>('/vocabulary/settings', {
     method: 'PATCH',
     body: JSON.stringify({ daily_new_limit }),
+  })
+
+export const generateVocabularyExample = (word_id: string) =>
+  apiFetch<VocabularyExampleResponse>('/vocabulary/example', {
+    method: 'POST',
+    body: JSON.stringify({ word_id }),
   })

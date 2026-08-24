@@ -2283,6 +2283,24 @@ def get_vocabulary_today(user_id: str, now: datetime | None = None) -> dict:
     }
 
 
+def get_vocabulary_word(word_id: str) -> dict | None:
+    """Look up a single vocabulary word's core fields (for AI example generation)."""
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT id, term, part_of_speech, meanings_json FROM vocabulary_words WHERE id = ?",
+            (word_id,),
+        ).fetchone()
+    if row is None:
+        return None
+    return {
+        "word_id": row["id"],
+        "term": row["term"],
+        "part_of_speech": row["part_of_speech"],
+        "meanings": json.loads(row["meanings_json"]),
+    }
+
+
 def judge_vocabulary_card(
     user_id: str,
     word_id: str,

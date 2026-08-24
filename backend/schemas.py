@@ -589,6 +589,17 @@ class CreditChargeInfo(BaseModel):
     daily_after: int
 
 
+class VocabularyExampleRequest(BaseModel):
+    word_id: str = Field(min_length=1, max_length=80)
+
+
+class VocabularyExampleResponse(BaseModel):
+    word_id: str
+    example_en: str
+    example_zh: str
+    credits: CreditChargeInfo
+
+
 class PackOut(BaseModel):
     id: str
     name: str

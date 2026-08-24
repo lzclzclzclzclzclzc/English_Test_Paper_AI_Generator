@@ -9,6 +9,8 @@
  * datetime 字段一律序列化为 ISO-8601 字符串。
  */
 
+import type { CreditChargeInfo } from '@/types/payment'
+
 // ---- 字面量联合（schemas.py 顶部 Literal） ----
 
 export type QuestionType = 'single_choice' | 'word_form' | 'sentence_rewriting' | 'listening_single_choice' | 'listening_true_false' | 'listening_fill_blank' | 'reading_longtext_single_choice' | 'cloze_single_choice' | 'reading_first_blank' | 'writing'
@@ -344,6 +346,13 @@ export interface VocabularyJudgmentResponse {
   added_to_same_day_retry: boolean
   phase: VocabularyToday['phase']
   counts: VocabularyTaskCounts
+}
+
+export interface VocabularyExampleResponse {
+  word_id: string
+  example_en: string
+  example_zh: string
+  credits: CreditChargeInfo
 }
 
 export interface VocabularyProgress {
