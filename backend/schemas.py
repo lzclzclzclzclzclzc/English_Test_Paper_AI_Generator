@@ -411,6 +411,13 @@ class AdminTypeAccuracy(BaseModel):
     accuracy: float
 
 
+class AdminVocabularyDay(BaseModel):
+    day: str
+    studied: int
+    new_words: int
+    review_words: int
+
+
 class AdminAnalytics(BaseModel):
     site_mastery: MasteryProfile
     attempts_by_day: list[AdminAttemptDay]
@@ -421,6 +428,7 @@ class AdminUserAnalytics(BaseModel):
     """Single-user answering analytics for the admin learner view."""
     attempts_by_day: list[AdminAttemptDay]
     type_accuracy: list[AdminTypeAccuracy]
+    vocabulary_by_day: list[AdminVocabularyDay]
 
 
 # ---- Admin Pro (Spec H) ----

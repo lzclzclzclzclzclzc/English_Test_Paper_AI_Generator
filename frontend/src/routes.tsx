@@ -31,7 +31,6 @@ import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
 import { AdminCreditsPage } from '@/pages/admin/AdminCreditsPage'
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
-import { AdminLearnerPage } from '@/pages/admin/AdminLearnerPage'
 import { AdminQuestionBankPage } from '@/pages/admin/AdminQuestionBankPage'
 import { AdminQuestionBrowsePage } from '@/pages/admin/AdminQuestionBrowsePage'
 import { AdminAuditPage } from '@/pages/admin/AdminAuditPage'
@@ -88,7 +87,7 @@ export function AppRoutes() {
         >
           <Route index element={<AdminOverviewPage />} />
           <Route path="analytics" element={<AdminAnalyticsPage />} />
-          <Route path="learner" element={<AdminLearnerPage />} />
+          <Route path="learner" element={<Navigate to="/admin/users" replace />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="users/:userId" element={<AdminUserDetailPage />} />
           <Route path="credits" element={<AdminCreditsPage />} />

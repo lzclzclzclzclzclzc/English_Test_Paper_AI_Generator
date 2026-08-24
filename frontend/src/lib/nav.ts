@@ -8,7 +8,6 @@ import {
   CalendarDays,
   ClipboardList,
   FileText,
-  GraduationCap,
   Home,
   LayoutDashboard,
   LayoutGrid,
@@ -94,7 +93,6 @@ export const ADMIN_GROUPS: readonly NavGroup[] = [
     items: [
       { to: PATHS.admin, label: '概览', icon: LayoutDashboard, end: true },
       { to: '/admin/analytics', label: '分析', icon: BarChart3, end: true },
-      { to: '/admin/learner', label: '学情', icon: GraduationCap, end: true },
       { to: '/admin/users', label: '用户', icon: Users, end: false },
       { to: '/admin/credits', label: '积分', icon: BadgeCheck, end: true },
       { to: '/admin/orders', label: '订单', icon: ScrollText, end: true },

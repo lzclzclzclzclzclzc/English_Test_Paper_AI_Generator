@@ -1,9 +1,22 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+import {
   banUser,
+  getUserAnalytics,
   getUserAttempts,
   getUserDetail,
   getUserMastery,
@@ -12,12 +25,14 @@ import {
   setRole,
   unbanUser,
 } from '@/api/admin'
+import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
+import { prettifyKp, TYPE_LABELS } from '@/lib/kp'
+import { cn } from '@/lib/utils'
 import { queryClient } from '@/lib/queryClient'
 import { toastApiError } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { MasteryReport } from '@/components/MasteryReport'
 import {
   Dialog,
   DialogClose,
@@ -30,12 +45,39 @@ import {
 } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 
+const ACCENT = '#ef4a2b'
+const WEAK_THRESHOLD = 0.4
+
+const WINDOWS = [
+  { label: '近 7 天', days: 7 },
+  { label: '近 30 天', days: 30 },
+  { label: '全部', days: 0 },
+] as const
+
 function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
     <>
       <div className="text-quiet">{label}</div>
       <div className="text-ink">{value}</div>
     </>
+  )
+}
+
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-md border border-hairline bg-wash/40 px-4 py-3">
+      <div className="text-[12px] text-quiet">{label}</div>
+      <div className="mt-1 font-ui text-[22px] font-bold tabular-nums text-ink">{value}</div>
+    </div>
+  )
+}
+
+function ChartCard({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="rounded-md border border-hairline p-4">
+      <div className="mb-2 text-[13px] text-muted-ink">{title}</div>
+      {children}
+    </div>
   )
 }
 
@@ -121,8 +163,16 @@ function ResetPasswordDialog({
   )
 }
 
+/**
+ * 用户详情页（Spec H B）：身份 / 管理操作 + 学情数据可视化（原「学情」页并入）
+ * + 背单词每日词量。学习画像的数据以图表呈现（每日做题、薄弱考点、分题型准确率），
+ * 不再另放一份文字版掌握度报告（去重）。
+ */
 export function AdminUserDetailPage() {
+  useKnowledgePoints() // 确保考点中文名可用
   const { userId } = useParams<{ userId: string }>()
+  const [days, setDays] = useState(30)
+
   const detail = useQuery({
     queryKey: ['admin', 'user', userId],
     queryFn: () => getUserDetail(userId!),
@@ -132,6 +182,12 @@ export function AdminUserDetailPage() {
   const mastery = useQuery({
     queryKey: ['admin', 'user', userId, 'mastery'],
     queryFn: () => getUserMastery(userId!),
+    enabled: !!userId,
+  })
+
+  const analytics = useQuery({
+    queryKey: ['admin', 'user', userId, 'analytics', days],
+    queryFn: () => getUserAnalytics(userId!, days),
     enabled: !!userId,
   })
 
@@ -146,6 +202,45 @@ export function AdminUserDetailPage() {
     queryFn: () => getUserAttempts(userId!),
     enabled: !!userId,
   })
+
+  const trend = useMemo(
+    () =>
+      (analytics.data?.attempts_by_day ?? []).map((d) => ({
+        day: d.day.slice(5), // MM-DD
+        attempts: d.attempts,
+        rate: d.correct_rate == null ? null : Math.round(d.correct_rate * 100),
+      })),
+    [analytics.data],
+  )
+  const weak = useMemo(
+    () =>
+      (mastery.data?.weak_kps ?? []).map((k) => ({
+        name: prettifyKp(k.knowledge_point_id),
+        mastery: Math.round(k.mastery * 100),
+        weak: k.mastery < WEAK_THRESHOLD,
+      })),
+    [mastery.data],
+  )
+  const types = useMemo(
+    () =>
+      (analytics.data?.type_accuracy ?? []).map((t) => ({
+        name: TYPE_LABELS[t.question_type] ?? t.question_type,
+        accuracy: Math.round(t.accuracy * 100),
+        total: t.total,
+      })),
+    [analytics.data],
+  )
+  const vocab = useMemo(
+    () =>
+      (analytics.data?.vocabulary_by_day ?? []).map((d) => ({
+        day: d.day.slice(5), // MM-DD
+        new_words: d.new_words,
+        review_words: d.review_words,
+        studied: d.studied,
+      })),
+    [analytics.data],
+  )
+  const vocabTotal = useMemo(() => vocab.reduce((sum, d) => sum + d.studied, 0), [vocab])
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin'] })
 
@@ -196,19 +291,31 @@ export function AdminUserDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-[20px] text-ink [font-family:var(--font-display)]">{u.username}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[20px] text-ink [font-family:var(--font-display)]">{u.username}</h1>
+        <div className="flex gap-1">
+          {WINDOWS.map((w) => (
+            <button
+              key={w.days}
+              onClick={() => setDays(w.days)}
+              className={cn(
+                'h-8 rounded-lg border px-3 font-ui text-[13px] transition-colors',
+                days === w.days
+                  ? 'border-accent bg-wash text-accent'
+                  : 'border-hairline text-muted-ink hover:bg-tint/40',
+              )}
+            >
+              {w.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[14px]">
+      <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[14px] sm:grid-cols-4">
         <Field label="注册时间" value={u.created_at.slice(0, 10)} />
         <Field label="角色" value={isAdmin ? '管理员' : '用户'} />
         <Field label="状态" value={isBanned ? '已封禁' : '正常'} />
-        <Field label="试卷数" value={u.paper_count} />
-        <Field label="做题数" value={u.attempt_count} />
-        <Field
-          label="正确率"
-          value={u.correct_rate == null ? '暂无' : `${Math.round(u.correct_rate * 100)}%`}
-        />
-        <Field label="积分余额" value={`${u.credits_balance}（今日赠送剩余 ${u.credits_daily_balance}）`} />
+        <Field label="积分余额" value={`${u.credits_balance}（今日 ${u.credits_daily_balance}）`} />
       </div>
 
       <div className="flex gap-2">
@@ -251,6 +358,135 @@ export function AdminUserDetailPage() {
           onConfirm={(pw) => passwordMutation.mutate(pw)}
         />
       </div>
+
+      {/* 学情概览指标（原「学情」页并入） */}
+      <div className="grid grid-cols-2 gap-3 border-t border-hairline pt-6 sm:grid-cols-4">
+        <Metric label="试卷数" value={u.paper_count} />
+        <Metric label="做题数" value={u.attempt_count} />
+        <Metric label="总正确率" value={u.correct_rate == null ? '—' : `${Math.round(u.correct_rate * 100)}%`} />
+        <Metric label="纳入统计作答" value={mastery.data?.total_attempts_considered ?? '—'} />
+      </div>
+
+      {mastery.data && mastery.data.dominant_types.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[13px] text-muted-ink">错误最多题型：</span>
+          {mastery.data.dominant_types.map((t) => (
+            <span
+              key={t}
+              className="rounded-sm border border-hairline bg-wash/60 px-2 py-0.5 font-ui text-[12px] text-muted-ink"
+            >
+              {TYPE_LABELS[t] ?? t}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {(analytics.isLoading || mastery.isLoading) && (
+        <p className="text-[13px] text-quiet">学情数据加载中…</p>
+      )}
+
+      <ChartCard title="每日做题量 / 正确率">
+        {trend.length === 0 ? (
+          <p className="py-8 text-center text-[13px] text-quiet">所选时间窗内暂无做题数据</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={trend}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-10)" />
+              <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+              <YAxis yAxisId="vol" allowDecimals={false} tick={{ fontSize: 11 }} width={32} />
+              <YAxis
+                yAxisId="rate"
+                orientation="right"
+                domain={[0, 100]}
+                tick={{ fontSize: 11 }}
+                width={36}
+                unit="%"
+              />
+              <Tooltip />
+              <Line
+                yAxisId="vol"
+                type="monotone"
+                dataKey="attempts"
+                name="做题量"
+                stroke={ACCENT}
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                yAxisId="rate"
+                type="monotone"
+                dataKey="rate"
+                name="正确率(%)"
+                stroke="var(--text-quiet)"
+                strokeWidth={2}
+                strokeDasharray="4 3"
+                dot={false}
+                connectNulls
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </ChartCard>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ChartCard title="最薄弱考点（掌握度 %）">
+          {weak.length === 0 ? (
+            <p className="py-8 text-center text-[13px] text-quiet">暂无掌握度数据</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={Math.max(160, weak.length * 30)}>
+              <BarChart data={weak} layout="vertical" margin={{ left: 8, right: 16 }}>
+                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={140}
+                  tick={{ fontSize: 11 }}
+                  interval={0}
+                />
+                <Tooltip />
+                <Bar dataKey="mastery" name="掌握度(%)">
+                  {weak.map((w, i) => (
+                    <Cell key={i} fill={ACCENT} fillOpacity={w.weak ? 1 : 0.45} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
+
+        <ChartCard title="分题型准确率（%）">
+          {types.length === 0 ? (
+            <p className="py-8 text-center text-[13px] text-quiet">暂无分题型数据</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={Math.max(160, types.length * 44)}>
+              <BarChart data={types} margin={{ left: 8, right: 16 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} width={36} unit="%" />
+                <Tooltip />
+                <Bar dataKey="accuracy" name="准确率(%)" fill={ACCENT} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
+      </div>
+
+      {/* 背单词：每日背词量（新学 / 复习堆叠） */}
+      <ChartCard title={`背单词 · 每日词量${vocabTotal > 0 ? `（窗口内共 ${vocabTotal} 词）` : ''}`}>
+        {vocab.length === 0 ? (
+          <p className="py-8 text-center text-[13px] text-quiet">所选时间窗内暂无背词记录</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={vocab}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-10)" />
+              <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={32} />
+              <Tooltip />
+              <Bar dataKey="new_words" name="新学" stackId="v" fill={ACCENT} />
+              <Bar dataKey="review_words" name="复习" stackId="v" fill={ACCENT} fillOpacity={0.4} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </ChartCard>
 
       {/* 最近试卷（Spec H B） */}
       <div className="flex flex-col gap-3 border-t border-hairline pt-6">
@@ -322,23 +558,6 @@ export function AdminUserDetailPage() {
             </tbody>
           </table>
         )}
-      </div>
-
-      {/* 学习画像：复用学生端掌握度报告组件 */}
-      <div className="flex flex-col gap-4 border-t border-hairline pt-6">
-        <h2 className="text-[16px] text-ink [font-family:var(--font-display)]">学习画像</h2>
-        {mastery.isLoading ? (
-          <p className="text-[13px] text-quiet">加载中…</p>
-        ) : mastery.isError ? (
-          <p className="text-[13px] text-muted-ink">
-            画像加载失败{' '}
-            <button className="text-accent hover:underline" onClick={() => mastery.refetch()}>
-              重试
-            </button>
-          </p>
-        ) : mastery.data ? (
-          <MasteryReport profile={mastery.data} hideActionCta />
-        ) : null}
       </div>
     </div>
   )

@@ -495,6 +495,7 @@ export interface AdminOrderList { items: AdminOrder[]; total: number }
 
 export interface AdminAttemptDay { day: string; attempts: number; correct_rate: number | null }
 export interface AdminTypeAccuracy { question_type: string; total: number; accuracy: number }
+export interface AdminVocabularyDay { day: string; studied: number; new_words: number; review_words: number }
 export interface AdminAnalytics {
   site_mastery: MasteryProfile
   attempts_by_day: AdminAttemptDay[]
@@ -503,6 +504,7 @@ export interface AdminAnalytics {
 export interface AdminUserAnalytics {
   attempts_by_day: AdminAttemptDay[]
   type_accuracy: AdminTypeAccuracy[]
+  vocabulary_by_day: AdminVocabularyDay[]
 }
 
 // ---- Admin Pro (Spec H) ----

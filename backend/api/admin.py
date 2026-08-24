@@ -104,13 +104,15 @@ def user_mastery(user_id: str, _: User = Depends(require_admin)) -> MasteryProfi
 def user_analytics(
     user_id: str, days: int = 30, _: User = Depends(require_admin)
 ) -> AdminUserAnalytics:
-    """Single-user answering analytics for the admin learner view: per-day
-    volume/correct-rate trend + per-type accuracy. days<=0 = all history."""
+    """Single-user answering analytics for the admin user-detail view: per-day
+    volume/correct-rate trend + per-type accuracy + per-day vocabulary study
+    counts. days<=0 = all history."""
     _require_target(user_id)
     window = days if days > 0 else None
     return AdminUserAnalytics(
         attempts_by_day=storage.attempts_by_day(days if days > 0 else 3650, user_id=user_id),
         type_accuracy=storage.question_type_accuracy(window, user_id=user_id),
+        vocabulary_by_day=storage.vocabulary_studied_by_day(days if days > 0 else 3650, user_id=user_id),
     )
 
 

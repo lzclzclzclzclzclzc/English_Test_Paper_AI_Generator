@@ -496,6 +496,40 @@ def attempts_by_day(days: int = 30, user_id: str | None = None) -> list[dict]:
     ]
 
 
+def vocabulary_studied_by_day(days: int = 30, user_id: str | None = None) -> list[dict]:
+    """Per-day count of vocabulary cards a user completed (words studied), split
+    into new vs review. `study_date` is the local (Asia/Shanghai) study day already
+    stored on each card; one card per word per day, so the count is distinct words.
+    days<=0 means all history."""
+    init_db()
+    since = _vocabulary_date(_vocabulary_now() - timedelta(days=days)) if days > 0 else "0000-00-00"
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT study_date AS day,
+                   SUM(CASE WHEN card_type = 'new' THEN 1 ELSE 0 END) AS new_words,
+                   SUM(CASE WHEN card_type = 'review' THEN 1 ELSE 0 END) AS review_words,
+                   COUNT(*) AS studied
+            FROM vocabulary_daily_cards
+            WHERE completed_at IS NOT NULL
+              AND study_date >= ?
+              AND (? IS NULL OR user_id = ?)
+            GROUP BY study_date
+            ORDER BY study_date
+            """,
+            (since, user_id, user_id),
+        ).fetchall()
+    return [
+        {
+            "day": r["day"],
+            "studied": r["studied"],
+            "new_words": r["new_words"],
+            "review_words": r["review_words"],
+        }
+        for r in rows
+    ]
+
+
 def question_type_accuracy(window_days: int | None = None, user_id: str | None = None) -> list[dict]:
     """Wilson-lower-bound accuracy per question_type across ALL users, or for
     a single user when user_id is given (admin learner view).

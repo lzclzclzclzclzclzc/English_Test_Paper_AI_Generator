@@ -110,6 +110,14 @@
 
 用户详情页目前只有计数（试卷数/做题数/正确率），看不到具体内容。补两个只读列表。
 
+> 2026-08 更新：原独立的「学情」页（`/admin/learner`）已取消，其数据可视化并入
+> **用户详情页**：时间窗切换（近 7 / 30 天 / 全部）+ 每日做题量/正确率折线、最薄弱考点
+> 与分题型准确率柱状图，以及**背单词每日词量柱状图**（新学/复习堆叠，数据来自
+> `GET /api/admin/users/{user_id}/analytics` 新增字段 `vocabulary_by_day`，
+> 底层 `storage.vocabulary_studied_by_day`）。原详情页的文字版「学习画像」
+> （`MasteryReport`）与图表重复，已移除，掌握度改由上述柱状图呈现。`/admin/learner`
+> 保留重定向到 `/admin/users`。
+
 ### 3.1 B1 最近试卷
 
 新端点：
@@ -119,7 +127,7 @@
 | GET | `/api/admin/users/{user_id}/papers?limit=10` | 该用户最近生成的试卷列表：`{items: [{id, title, generated_at, question_count}]}` |
 
 - `storage` 新增 `list_user_papers(user_id, limit)`：查 `papers` 表按 `generated_at DESC`；`question_count` 从 `questions_json` 长度或现有 paper 结构取。
-- 前端：详情页"学习画像"上方加"最近试卷"卡片（表格：标题/题数/时间），仅展示不做跳转（管理端不进入答题视图）。
+- 前端：详情页加"最近试卷"卡片（表格：标题/题数/时间），仅展示不做跳转（管理端不进入答题视图）。
 
 ### 3.2 B2 最近做题记录
 
