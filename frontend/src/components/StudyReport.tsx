@@ -3,7 +3,7 @@ import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
 import { listPapers } from '@/api/papers'
-import { getVocabularyDaily } from '@/api/vocabulary'
+import { getVocabularyDaily, getVocabularyProgress } from '@/api/vocabulary'
 import type { MasteryProfile } from '@/types/api'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
 import { bandOf, BAND_LABEL, masteryToOutline } from '@/lib/masteryOutline'
@@ -80,6 +80,14 @@ export function StudyReport({ profile, windowLabel, onClose, titleOnlyInPrint }:
     studied: d.studied,
   }))
   const vocabTotal = vocab.reduce((sum, d) => sum + d.studied, 0)
+
+  // 背词累计画像：已学习 / 长期掌握 / 连续学习天数（与背词进度页同源缓存）。
+  const vocabProgress = useQuery({
+    queryKey: ['vocabulary', 'progress'],
+    queryFn: getVocabularyProgress,
+    staleTime: 60_000,
+  }).data
+  const hasVocab = (vocabProgress?.learned_count ?? 0) > 0 || vocab.length > 0
 
   const weakest = [...profile.weak_kps].sort((a, b) => a.mastery - b.mastery).slice(0, 5)
   const today = new Date().toLocaleDateString('zh-CN', { dateStyle: 'long' })
@@ -215,24 +223,57 @@ export function StudyReport({ profile, windowLabel, onClose, titleOnlyInPrint }:
 
       {/* 背单词情况（每日新学/复习词量，与管理端用户详情页同款）。交互式 SVG
           打印易失真，打印时隐藏。 */}
-      {vocab.length > 0 && (
+      {hasVocab && (
         <div className="mt-6 print:hidden">
           <h3 className="font-heading text-[15px] font-bold text-ink">背单词情况</h3>
-          <p className="mt-1 text-[12.5px] text-quiet">
-            每日背词量（新学 / 复习），{windowLabel}内共 {vocabTotal} 词。
-          </p>
-          <div className="mt-2 h-[240px] w-full">
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={vocab}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-10)" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={32} />
-                <Tooltip />
-                <Bar dataKey="new_words" name="新学" stackId="v" fill={ACCENT} />
-                <Bar dataKey="review_words" name="复习" stackId="v" fill={ACCENT} fillOpacity={0.4} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+
+          {vocabProgress && (
+            <div className="mt-3 flex flex-wrap items-end gap-x-10 gap-y-4 font-ui">
+              <div className="flex flex-col gap-1">
+                <span className="kicker">已学习</span>
+                <span className="text-[28px] font-bold leading-none tabular-nums text-ink">
+                  {vocabProgress.learned_count}
+                  <span className="text-[13px] font-[450] text-quiet"> / {vocabProgress.total_words} 词</span>
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="kicker">长期掌握</span>
+                <span className="text-[28px] font-bold leading-none tabular-nums text-ink">
+                  {vocabProgress.mastered_count}
+                  <span className="text-[13px] font-[450] text-quiet"> 词</span>
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="kicker">连续学习</span>
+                <span className="text-[28px] font-bold leading-none tabular-nums text-ink">
+                  {vocabProgress.streak_days}
+                  <span className="text-[13px] font-[450] text-quiet"> 天</span>
+                </span>
+              </div>
+            </div>
+          )}
+
+          {vocab.length > 0 ? (
+            <>
+              <p className="mt-5 text-[12.5px] text-quiet">
+                每日背词量（新学 / 复习），{windowLabel}内共 {vocabTotal} 词。
+              </p>
+              <div className="mt-2 h-[240px] w-full">
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={vocab}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-10)" />
+                    <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={32} />
+                    <Tooltip />
+                    <Bar dataKey="new_words" name="新学" stackId="v" fill={ACCENT} />
+                    <Bar dataKey="review_words" name="复习" stackId="v" fill={ACCENT} fillOpacity={0.4} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </>
+          ) : (
+            <p className="mt-4 text-[12.5px] text-quiet">{windowLabel}内暂无背词记录。</p>
+          )}
         </div>
       )}
 
