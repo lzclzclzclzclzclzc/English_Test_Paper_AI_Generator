@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
 import { getMastery } from '@/api/mastery'
 import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import { MasteryReport } from '@/components/MasteryReport'
 import { PageHeader } from '@/components/PageHeader'
 import { PipelineProgress } from '@/components/PipelineProgress'
 import { CreditHint } from '@/components/CreditHint'
-import { PATHS } from '@/lib/paths'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Segmented } from '@/components/ui/segmented'
@@ -65,21 +63,13 @@ export function MasteryPage() {
           </>
         }
       >
-        {/* 统计窗口分段（选中 = 墨色实心）+ 学情报告链接式入口 */}
-        <div className="flex flex-col items-end gap-2">
-          <Segmented
-            aria-label="统计窗口"
-            value={windowKey}
-            onChange={setWindowKey}
-            options={WINDOWS}
-          />
-          <Link
-            to={PATHS.report}
-            className="font-ui text-[13px] text-muted-ink transition-colors hover:text-accent"
-          >
-            学情报告（可打印给家长）→
-          </Link>
-        </div>
+        {/* 统计窗口分段（选中 = 墨色实心） */}
+        <Segmented
+          aria-label="统计窗口"
+          value={windowKey}
+          onChange={setWindowKey}
+          options={WINDOWS}
+        />
       </PageHeader>
 
       {isLoading ? (
