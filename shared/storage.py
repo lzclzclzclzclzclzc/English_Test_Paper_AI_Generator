@@ -439,7 +439,7 @@ def list_user_attempt_summary(user_id: str, limit: int = 10) -> list[dict]:
                    SUM(ai.is_correct) AS item_correct
             FROM attempts a
             LEFT JOIN papers p ON p.paper_id = a.paper_id
-            LEFT JOIN attempt_items ai ON ai.attempt_id = a.id
+            LEFT JOIN attempt_items ai ON ai.attempt_id = a.id AND ai.question_type <> 'writing'
             WHERE a.user_id = ?
             GROUP BY a.id
             ORDER BY a.answered_at DESC
@@ -505,7 +505,7 @@ def attempts_by_day(days: int = 30, user_id: str | None = None) -> list[dict]:
                    ROUND(AVG(ai.is_correct), 4) AS correct_rate
             FROM attempts a
             JOIN attempt_items ai ON ai.attempt_id = a.id
-            WHERE a.answered_at >= ? AND (? IS NULL OR a.user_id = ?)
+            WHERE a.answered_at >= ? AND (? IS NULL OR a.user_id = ?) AND ai.question_type <> 'writing'
             GROUP BY day
             ORDER BY day
             """,
@@ -559,7 +559,8 @@ def question_type_accuracy(window_days: int | None = None, user_id: str | None =
     aren't over-credited. window_days None = all history."""
     init_db()
     params: list[object] = []
-    conds = []
+    # 作文不算对/错正确率（单独看平均分），从分题型准确率里排除。
+    conds = ["ai.question_type <> 'writing'"]
     if window_days is not None:
         since = datetime.now(timezone.utc) - timedelta(days=window_days)
         conds.append("a.answered_at >= ?")
@@ -567,7 +568,7 @@ def question_type_accuracy(window_days: int | None = None, user_id: str | None =
     if user_id is not None:
         conds.append("a.user_id = ?")
         params.append(user_id)
-    where = f"WHERE {' AND '.join(conds)}" if conds else ""
+    where = f"WHERE {' AND '.join(conds)}"
     with connect() as conn:
         rows = conn.execute(
             f"""
@@ -611,7 +612,7 @@ def user_correct_rate(user_id: str) -> float | None:
             """
             SELECT COUNT(*) AS n, SUM(ai.is_correct) AS c
             FROM attempts a JOIN attempt_items ai ON ai.attempt_id = a.id
-            WHERE a.user_id = ?
+            WHERE a.user_id = ? AND ai.question_type <> 'writing'
             """,
             (user_id,),
         ).fetchone()
@@ -1240,6 +1241,30 @@ def get_writing_grade_results(paper_id: str, user_id: str) -> list[dict]:
             (paper_id, user_id),
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+def writing_average(user_id: str | None = None, window_days: int | None = None) -> tuple[float | None, int]:
+    """Average graded-essay total_score and count, for the writing stat shown
+    separately from correctness. user_id None = site-wide; window_days None = all
+    history. Returns (avg rounded to 1dp or None if no essays, count)."""
+    init_db()
+    conds: list[str] = []
+    params: list[object] = []
+    if user_id is not None:
+        conds.append("user_id = ?")
+        params.append(user_id)
+    if window_days is not None:
+        since = datetime.now(timezone.utc) - timedelta(days=window_days)
+        conds.append("graded_at >= ?")
+        params.append(since.isoformat())
+    where = f"WHERE {' AND '.join(conds)}" if conds else ""
+    with connect() as conn:
+        row = conn.execute(
+            f"SELECT AVG(total_score) AS avg, COUNT(*) AS n FROM writing_grade_results {where}",
+            params,
+        ).fetchone()
+    n = int(row["n"] or 0)
+    return (round(row["avg"], 1) if n else None), n
 
 
 def mark_paper_submitted_if_needed(paper_id: str, user_id: str) -> None:

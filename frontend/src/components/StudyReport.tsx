@@ -124,6 +124,18 @@ export function StudyReport({ profile, windowLabel, onClose, titleOnlyInPrint }:
             <span className="text-[13px] font-[450] text-quiet"> 个</span>
           </span>
         </div>
+        {profile.writing_graded_count > 0 && profile.writing_avg_score != null && (
+          <div className="flex flex-col gap-1">
+            <span className="kicker">写作平均分</span>
+            <span className="text-[32px] font-bold leading-none tabular-nums text-ink">
+              {profile.writing_avg_score}
+              <span className="text-[13px] font-[450] text-quiet">
+                {' '}
+                / {profile.writing_full_score} 分 · {profile.writing_graded_count} 篇
+              </span>
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 薄弱考点 */}

@@ -375,6 +375,12 @@ export function AdminUserDetailPage() {
         <Metric label="做题数" value={u.attempt_count} />
         <Metric label="总正确率" value={u.correct_rate == null ? '—' : `${Math.round(u.correct_rate * 100)}%`} />
         <Metric label="纳入统计作答" value={mastery.data?.total_attempts_considered ?? '—'} />
+        {mastery.data && mastery.data.writing_graded_count > 0 && mastery.data.writing_avg_score != null && (
+          <Metric
+            label="写作平均分"
+            value={`${mastery.data.writing_avg_score} / ${mastery.data.writing_full_score}（${mastery.data.writing_graded_count} 篇）`}
+          />
+        )}
       </div>
 
       {mastery.data && mastery.data.dominant_types.length > 0 && (

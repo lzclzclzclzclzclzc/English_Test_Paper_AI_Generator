@@ -43,6 +43,7 @@
 
 - **不 fork 现有 `POST /api/attempts`**：客观题判分是同步快速返回（字符串比对），作文判分需要 LLM 调用（可能 5-15 秒），混在一起会阻塞整体交卷体验
 - **独立的返回类型**：客观题返回 `GradeSubmissionResponse`（逐题对错），作文返回 `WritingGradeResponse`（总分+分项+详细评析）
+- **不计入对/错正确率，单独看平均分**：作文写入 `attempt_items` 仅用于「已作答」展示（`is_correct=0` 占位），会拉低正确率，故所有正确率 / 掌握度聚合一律 `WHERE question_type <> 'writing'` 排除作文（`user_correct_rate` / `attempts_by_day` / `question_type_accuracy` / `list_user_attempt_summary` / `analyzer` 掌握度 / 学习助手 `get_user_history`）。作文改用 `storage.writing_average`（`writing_grade_results` 的 `AVG(total_score)`）计算**平均分**，随 `MasteryProfile.writing_avg_score / writing_graded_count / writing_full_score` 下发，在掌握度页 / 学情报告 / 管理员用户详情页**单独展示**。
 - **解耦演进**：未来若需支持口语评分、听力听写批改等，可按相同模式扩展独立端点
 
 ---

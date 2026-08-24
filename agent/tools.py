@@ -88,6 +88,7 @@ def get_user_history(window_days: int = 30) -> str:
             FROM attempts a
             JOIN attempt_items ai ON a.id = ai.attempt_id
             WHERE a.user_id = ?
+              AND ai.question_type <> 'writing'
               AND a.answered_at >= datetime('now', '-' || ? || ' days')
             """,
             (user_id, window_days),

@@ -213,6 +213,9 @@ export interface MasteryProfile {
   weak_kps: KPMastery[]
   dominant_types: string[]
   total_attempts_considered: number
+  writing_avg_score: number | null
+  writing_graded_count: number
+  writing_full_score: number
 }
 
 // ---- 鉴权 ----

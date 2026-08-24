@@ -308,6 +308,10 @@ class MasteryProfile(BaseModel):
     weak_kps: list[KPMastery]            # ascending mastery, top N
     dominant_types: list[str]            # question types with most wrong answers
     total_attempts_considered: int
+    # 写作单独统计：作文不计入对/错正确率（那样会被当 0），改看平均分。
+    writing_avg_score: float | None = None   # 已批改作文的平均总分；无则 None
+    writing_graded_count: int = 0            # 已批改作文篇数（窗口内）
+    writing_full_score: float = 20.0         # 作文满分，用于「X / 20」展示
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -65,6 +65,7 @@ def _fetch_attempt_items(
             FROM attempts a
             JOIN attempt_items ai ON a.id = ai.attempt_id
             WHERE a.user_id = ?
+              AND ai.question_type <> 'writing'
               AND (? IS NULL OR a.answered_at >= datetime('now', '-' || ? || ' days'))
             """,
             (user_id, window_days, window_days),
@@ -88,7 +89,8 @@ def _fetch_all_attempt_items(
             SELECT ai.kps_json, ai.question_type, ai.is_correct
             FROM attempts a
             JOIN attempt_items ai ON a.id = ai.attempt_id
-            WHERE (? IS NULL OR a.answered_at >= datetime('now', '-' || ? || ' days'))
+            WHERE ai.question_type <> 'writing'
+              AND (? IS NULL OR a.answered_at >= datetime('now', '-' || ? || ' days'))
             """,
             (window_days, window_days),
         ).fetchall()
@@ -110,7 +112,7 @@ def build_profile(user_id: str, window_days: int | None = None) -> MasteryProfil
         Empty profile when there's no history (Spec B §7.3).
     """
     rows = _fetch_attempt_items(_db_path(), user_id, window_days)
-    return _reduce_profile(rows, user_id, window_days)
+    return _reduce_profile(rows, user_id, window_days, _writing_stats(user_id, window_days))
 
 
 def build_site_profile(window_days: int | None = None) -> MasteryProfile:
@@ -121,14 +123,24 @@ def build_site_profile(window_days: int | None = None) -> MasteryProfile:
     student body struggles with. Read-only, no LLM. user_id is "__all__" as a
     sentinel (the profile is not tied to a single user)."""
     rows = _fetch_all_attempt_items(_db_path(), window_days)
-    return _reduce_profile(rows, "__all__", window_days)
+    return _reduce_profile(rows, "__all__", window_days, _writing_stats(None, window_days))
+
+
+def _writing_stats(user_id: str | None, window_days: int | None) -> tuple[float | None, int]:
+    """Writing average score + graded count (shown separately from correctness).
+    user_id None → site-wide. Delegates to storage (owns writing_grade_results)."""
+    from shared import storage
+
+    return storage.writing_average(None if user_id == "__all__" else user_id, window_days)
 
 
 def _reduce_profile(
-    rows: list[sqlite3.Row], user_id: str, window_days: int | None
+    rows: list[sqlite3.Row], user_id: str, window_days: int | None,
+    writing: tuple[float | None, int] = (None, 0),
 ) -> MasteryProfile:
     """Reduce answered-item rows to a MasteryProfile. Shared by single-user
     (build_profile) and site-wide (build_site_profile) aggregation."""
+    writing_avg, writing_count = writing
     if not rows:
         return MasteryProfile(
             user_id=user_id,
@@ -136,6 +148,8 @@ def _reduce_profile(
             weak_kps=[],
             dominant_types=[],
             total_attempts_considered=0,
+            writing_avg_score=writing_avg,
+            writing_graded_count=writing_count,
         )
 
     # Per-KP tallies: each item counts once per KP it hits (Spec B §7.2).
@@ -180,4 +194,6 @@ def _reduce_profile(
         weak_kps=weak_kps,
         dominant_types=dominant_types,
         total_attempts_considered=len(rows),
+        writing_avg_score=writing_avg,
+        writing_graded_count=writing_count,
     )
