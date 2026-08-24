@@ -27,9 +27,11 @@ import {
 } from '@/api/admin'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { prettifyKp, TYPE_LABELS } from '@/lib/kp'
+import { masteryToOutline } from '@/lib/masteryOutline'
 import { cn } from '@/lib/utils'
 import { queryClient } from '@/lib/queryClient'
 import { toastApiError } from '@/lib/errors'
+import { MindmapView } from '@/components/mindmap/MindmapView'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -477,6 +479,18 @@ export function AdminUserDetailPage() {
           )}
         </ChartCard>
       </div>
+
+      {/* 掌握情况脑图（与学生端学情报告同款，纯前端从掌握度生成） */}
+      {mastery.data && mastery.data.weak_kps.length > 0 && (
+        <ChartCard title="掌握情况脑图">
+          <p className="mb-2 text-[12px] text-quiet">
+            按掌握程度分为薄弱 / 一般 / 扎实三支，括号内为正确率。
+          </p>
+          <div className="h-[300px] w-full overflow-hidden rounded-sm border border-hairline bg-card-surface">
+            <MindmapView outline={masteryToOutline(mastery.data)} />
+          </div>
+        </ChartCard>
+      )}
 
       {/* 背单词：每日背词量（新学 / 复习堆叠） */}
       <ChartCard title={`背单词 · 每日词量${vocabTotal > 0 ? `（窗口内共 ${vocabTotal} 词）` : ''}`}>

@@ -112,10 +112,12 @@
 
 > 2026-08 更新：原独立的「学情」页（`/admin/learner`）已取消，其数据可视化并入
 > **用户详情页**：时间窗切换（近 7 / 30 天 / 全部）+ 每日做题量/正确率折线、最薄弱考点
-> 与分题型准确率柱状图，以及**背单词每日词量柱状图**（新学/复习堆叠，数据来自
+> 与分题型准确率柱状图，**掌握情况脑图**（与学生端学情报告同款，纯前端
+> `lib/masteryOutline.masteryToOutline` 从掌握度生成，`MindmapView` 渲染），
+> 以及**背单词每日词量柱状图**（新学/复习堆叠，数据来自
 > `GET /api/admin/users/{user_id}/analytics` 新增字段 `vocabulary_by_day`，
 > 底层 `storage.vocabulary_studied_by_day`）。原详情页的文字版「学习画像」
-> （`MasteryReport`）与图表重复，已移除，掌握度改由上述柱状图呈现。`/admin/learner`
+> （`MasteryReport`）与图表重复，已移除，掌握度改由上述图表 + 脑图呈现。`/admin/learner`
 > 保留重定向到 `/admin/users`。
 
 ### 3.1 B1 最近试卷

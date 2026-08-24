@@ -2,40 +2,16 @@ import { useQuery } from '@tanstack/react-query'
 import { listPapers } from '@/api/papers'
 import type { MasteryProfile } from '@/types/api'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
+import { bandOf, BAND_LABEL, masteryToOutline } from '@/lib/masteryOutline'
 import { Button } from '@/components/ui/button'
 import { MindmapView } from '@/components/mindmap/MindmapView'
 import { cn } from '@/lib/utils'
 
-/** 与 MasteryReport 相同的三色 band(Spec F v2.2)。 */
-const bandOf = (m: number) => (m < 0.4 ? 'weak' : m < 0.7 ? 'mid' : 'solid')
+/** band 文字色（配套 lib/masteryOutline 的三色分级，仅本报告表格用）。 */
 const BAND_TEXT: Record<string, string> = {
   weak: 'text-accent',
   mid: 'text-grammar',
   solid: 'text-success',
-}
-const BAND_LABEL: Record<string, string> = { weak: '薄弱', mid: '一般', solid: '扎实' }
-
-/**
- * 掌握情况 → Markmap 大纲(纯前端 hard code,不耗 LLM,只读)。
- * 根节点=掌握情况,下挂 薄弱/一般/扎实 三支(仅渲染有考点的支),
- * 每个考点做叶子,带正确率百分比。复用错题本/思维导图同款 MindmapView 渲染。
- */
-const BAND_ORDER = ['weak', 'mid', 'solid'] as const
-function masteryToOutline(profile: MasteryProfile): string {
-  const grouped: Record<'weak' | 'mid' | 'solid', string[]> = { weak: [], mid: [], solid: [] }
-  // weak_kps 已按 mastery 升序，分桶后各组内部自然保持从低到高
-  for (const kp of profile.weak_kps) {
-    grouped[bandOf(kp.mastery)].push(
-      `- ${prettifyKp(kp.knowledge_point_id)}（${Math.round(kp.mastery * 100)}%）`,
-    )
-  }
-  const lines = ['# 知识点掌握情况']
-  for (const band of BAND_ORDER) {
-    const items = grouped[band]
-    if (items.length === 0) continue
-    lines.push(`## ${BAND_LABEL[band]}（${items.length}）`, ...items)
-  }
-  return lines.join('\n')
 }
 
 /** 固定话术建议:纯前端模板,不耗 LLM。 */
