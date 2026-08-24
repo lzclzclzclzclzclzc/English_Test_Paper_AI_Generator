@@ -281,6 +281,17 @@ class VocabularySettingsResponse(BaseModel):
     today_new_cards_added: int
 
 
+class VocabularyDailyItem(BaseModel):
+    day: str
+    studied: int
+    new_words: int
+    review_words: int
+
+
+class VocabularyDailyResponse(BaseModel):
+    items: list[VocabularyDailyItem]
+
+
 class ErrorResponse(BaseModel):
     error_code: str
     message: str

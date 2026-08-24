@@ -1,5 +1,6 @@
 import { apiFetch } from '@/api/client'
 import type {
+  VocabularyDailyResponse,
   VocabularyExampleResponse,
   VocabularyProgress,
   VocabularyRating,
@@ -9,6 +10,8 @@ import type {
 
 export const getVocabularyToday = () => apiFetch<VocabularyToday>('/vocabulary/today')
 export const getVocabularyProgress = () => apiFetch<VocabularyProgress>('/vocabulary/progress')
+export const getVocabularyDaily = (days = 30) =>
+  apiFetch<VocabularyDailyResponse>(`/vocabulary/daily?days=${days}`)
 
 export const judgeVocabulary = (body: { word_id: string; rating: VocabularyRating }) =>
   apiFetch<VocabularyJudgmentResponse>('/vocabulary/judgments', {

@@ -97,6 +97,7 @@
 | GET | `/api/vocabulary/today` | — → `VocabularyTodayResponse` | 今日卡片：当前待考卡（题面隐藏例句中的目标词）+ 任务计数（新词/复习/重试） |
 | POST | `/api/vocabulary/judgments` | `VocabularyJudgmentRequest`（word_id + rating）→ `VocabularyJudgmentResponse` | 提交对当前卡的评分，返回词条详情 + 新 stage + next_due_at + 是否入当日重试 + 最新计数 |
 | GET | `/api/vocabulary/progress` | — → `VocabularyProgressResponse` | 学习进度画像（已学/到期/各 stage 分布等） |
+| GET | `/api/vocabulary/daily?days=30` | — → `VocabularyDailyResponse`（`items:[{day, studied, new_words, review_words}]`） | 当前用户每日背词量（新学/复习），供学情报告背词柱状图（与管理端用户详情页 `vocabulary_by_day` 同款，底层 `storage.vocabulary_studied_by_day`）。days<=0 取全部 |
 | PATCH | `/api/vocabulary/settings` | `VocabularySettingsRequest`（daily_new_limit）→ `VocabularySettingsResponse` | 调整每日新词上限（10–50） |
 | POST | `/api/vocabulary/example` | `VocabularyExampleRequest`（word_id）→ `VocabularyExampleResponse` | 「生成例句」按钮：按需 LLM 造句（英文例句 + 中译），扣 `vocab_example` 1 积分（先扣后算、失败退回），结果不落库。词表自带例句仍为占位模板 |
 

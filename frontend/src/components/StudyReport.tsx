@@ -1,11 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
+import {
+  Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from 'recharts'
 import { listPapers } from '@/api/papers'
+import { getVocabularyDaily } from '@/api/vocabulary'
 import type { MasteryProfile } from '@/types/api'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
 import { bandOf, BAND_LABEL, masteryToOutline } from '@/lib/masteryOutline'
 import { Button } from '@/components/ui/button'
 import { MindmapView } from '@/components/mindmap/MindmapView'
 import { cn } from '@/lib/utils'
+
+const ACCENT = '#ef4a2b'
 
 /** band 文字色（配套 lib/masteryOutline 的三色分级，仅本报告表格用）。 */
 const BAND_TEXT: Record<string, string> = {
@@ -59,6 +65,21 @@ export function StudyReport({ profile, windowLabel, onClose, titleOnlyInPrint }:
   })
   const paperCount = papers.data?.items.length ?? null
   const submittedCount = papers.data?.items.filter((p) => p.submitted).length ?? null
+
+  // 背词每日词量（与管理端用户详情页同款可视化）；窗口随报告的掌握度窗口。
+  const vocabDays = profile.window_days ?? 0
+  const vocabQuery = useQuery({
+    queryKey: ['vocabulary', 'daily', vocabDays],
+    queryFn: () => getVocabularyDaily(vocabDays),
+    staleTime: 60_000,
+  })
+  const vocab = (vocabQuery.data?.items ?? []).map((d) => ({
+    day: d.day.slice(5), // MM-DD
+    new_words: d.new_words,
+    review_words: d.review_words,
+    studied: d.studied,
+  }))
+  const vocabTotal = vocab.reduce((sum, d) => sum + d.studied, 0)
 
   const weakest = [...profile.weak_kps].sort((a, b) => a.mastery - b.mastery).slice(0, 5)
   const today = new Date().toLocaleDateString('zh-CN', { dateStyle: 'long' })
@@ -188,6 +209,29 @@ export function StudyReport({ profile, windowLabel, onClose, titleOnlyInPrint }:
           </p>
           <div className="mt-2 h-[300px] w-full overflow-hidden rounded-sm border border-hairline bg-card-surface">
             <MindmapView outline={masteryToOutline(profile)} />
+          </div>
+        </div>
+      )}
+
+      {/* 背单词情况（每日新学/复习词量，与管理端用户详情页同款）。交互式 SVG
+          打印易失真，打印时隐藏。 */}
+      {vocab.length > 0 && (
+        <div className="mt-6 print:hidden">
+          <h3 className="font-heading text-[15px] font-bold text-ink">背单词情况</h3>
+          <p className="mt-1 text-[12.5px] text-quiet">
+            每日背词量（新学 / 复习），{windowLabel}内共 {vocabTotal} 词。
+          </p>
+          <div className="mt-2 h-[240px] w-full">
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={vocab}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-10)" />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={32} />
+                <Tooltip />
+                <Bar dataKey="new_words" name="新学" stackId="v" fill={ACCENT} />
+                <Bar dataKey="review_words" name="复习" stackId="v" fill={ACCENT} fillOpacity={0.4} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       )}

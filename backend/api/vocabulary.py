@@ -9,6 +9,8 @@ from backend.errors import ResourceNotFoundError, ValidationError
 from backend.schemas import (
     CreditChargeInfo,
     User,
+    VocabularyDailyItem,
+    VocabularyDailyResponse,
     VocabularyExampleRequest,
     VocabularyExampleResponse,
     VocabularyJudgmentRequest,
@@ -40,6 +42,13 @@ async def judge(body: VocabularyJudgmentRequest, user: User = Depends(current_us
 @router.get("/progress", response_model=VocabularyProgressResponse)
 async def progress(user: User = Depends(current_user)) -> VocabularyProgressResponse:
     return VocabularyProgressResponse(**storage.get_vocabulary_progress(user.id))
+
+
+@router.get("/daily", response_model=VocabularyDailyResponse)
+async def daily(days: int = 30, user: User = Depends(current_user)) -> VocabularyDailyResponse:
+    """当前用户每日背词量（新学/复习），用于学情报告的背词可视化。days<=0 取全部。"""
+    rows = storage.vocabulary_studied_by_day(days if days > 0 else 3650, user_id=user.id)
+    return VocabularyDailyResponse(items=[VocabularyDailyItem(**r) for r in rows])
 
 
 @router.patch("/settings", response_model=VocabularySettingsResponse)

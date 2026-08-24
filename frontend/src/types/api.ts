@@ -375,6 +375,17 @@ export interface VocabularyProgress {
   wordlist_sources: VocabularyWordlistSource[]
 }
 
+export interface VocabularyDailyItem {
+  day: string
+  studied: number
+  new_words: number
+  review_words: number
+}
+
+export interface VocabularyDailyResponse {
+  items: VocabularyDailyItem[]
+}
+
 export interface VocabularyWordlistSource {
   category: 'national_core' | 'shanghai_extension'
   label: string
