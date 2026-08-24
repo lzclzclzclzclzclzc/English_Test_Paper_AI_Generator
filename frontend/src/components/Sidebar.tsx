@@ -62,8 +62,9 @@ export function Sidebar() {
     }
   }, [menuOpen])
 
-  // 积分小标：用户名旁的余额（深色侧栏里用 sb-badge 细边样式）
-  const creditsBadge = creditsTotal !== null && (
+  // 积分小标：用户名旁的余额（深色侧栏里用 sb-badge 细边样式）。
+  // 管理员不涉及积分/充值，故不显示。
+  const creditsBadge = !isAdmin && creditsTotal !== null && (
     <span className="sb-badge shrink-0 tabular-nums" title="当前可用积分">
       {creditsTotal} 积分
     </span>
@@ -183,15 +184,18 @@ export function Sidebar() {
               {creditsBadge}
             </div>
             <div aria-hidden className="sb-menu-divider" />
-            <NavLink to={PATHS.credits} role="menuitem" className={menuItemClass} onClick={() => setMenuOpen(false)}>
-              积分与充值
-            </NavLink>
+            {/* 管理员的个人菜单只保留「登出」；积分与充值、设置对管理员隐藏 */}
             {!isAdmin && (
-              <NavLink to={PATHS.settings} role="menuitem" className={menuItemClass} onClick={() => setMenuOpen(false)}>
-                设置
-              </NavLink>
+              <>
+                <NavLink to={PATHS.credits} role="menuitem" className={menuItemClass} onClick={() => setMenuOpen(false)}>
+                  积分与充值
+                </NavLink>
+                <NavLink to={PATHS.settings} role="menuitem" className={menuItemClass} onClick={() => setMenuOpen(false)}>
+                  设置
+                </NavLink>
+                <div aria-hidden className="sb-menu-divider" />
+              </>
             )}
-            <div aria-hidden className="sb-menu-divider" />
             <button
               type="button"
               role="menuitem"
