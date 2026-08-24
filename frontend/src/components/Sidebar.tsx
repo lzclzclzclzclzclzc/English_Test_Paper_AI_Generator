@@ -4,7 +4,7 @@ import { PanelLeft } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { logout } from '@/api/auth'
 import { useAuth } from '@/hooks/useAuth'
-import { useMembership } from '@/hooks/useMembership'
+import { useCredits } from '@/hooks/useCredits'
 import { queryClient } from '@/lib/queryClient'
 import { ADMIN_GROUPS, NAV_GROUPS } from '@/lib/nav'
 import { PATHS } from '@/lib/paths'
@@ -12,9 +12,9 @@ import { cn } from '@/lib/utils'
 
 /**
  * 左侧可折叠导航（handoff 第 3 屏）：展开 232px / 收起 66px，粘顶全高，
- * 右侧 1px 细线。当前项 = accent-wash 底 + 赤陶字；收起时组标签变细线。
+ * 右侧 1px 细线。当前项 = 深底 + 橙红左线；收起时组标签变细线。
  * 导航数据在 lib/nav.ts（两个顶级项 主页/学习助手 + 四组 练习/出卷/背词/复盘）；
- * 会员/设置/登出收进底部头像个人菜单(向上弹出,collapsed 时从头像旁弹出)。
+ * 积分/设置/登出收进底部头像个人菜单(向上弹出,collapsed 时从头像旁弹出)。
  * 管理员登录时主导航替换为管理后台菜单（不显示普通功能）。
  */
 export function Sidebar() {
@@ -24,7 +24,7 @@ export function Sidebar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const { data: user } = useAuth()
-  const { isMember, expiresAt } = useMembership()
+  const { total: creditsTotal } = useCredits()
   const navigate = useNavigate()
 
   const isAdmin = user?.role === 'admin'
@@ -62,12 +62,10 @@ export function Sidebar() {
     }
   }, [menuOpen])
 
-  const memberPill = isMember && (
-    <span
-      className="shrink-0 rounded-sm border border-accent/40 px-1 py-px font-ui text-[10px] leading-none text-accent"
-      title={expiresAt ? `会员有效期至 ${expiresAt.slice(0, 10)}` : undefined}
-    >
-      会员
+  // 积分小标：用户名旁的余额（深色侧栏里用 sb-badge 细边样式）
+  const creditsBadge = creditsTotal !== null && (
+    <span className="sb-badge shrink-0 tabular-nums" title="当前可用积分">
+      {creditsTotal} 积分
     </span>
   )
 
@@ -147,7 +145,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* 底部用户区：点击弹出个人菜单（会员/设置/登出） */}
+      {/* 底部用户区：点击弹出个人菜单（积分/设置/登出） */}
       <div
         ref={menuRef}
         className={cn('sb-user-area', collapsed && 'flex justify-center px-0')}
@@ -166,7 +164,7 @@ export function Sidebar() {
           {!collapsed && (
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="truncate font-ui text-[14px]">{user?.username}</span>
-              {memberPill}
+              {creditsBadge}
             </span>
           )}
         </button>
@@ -182,11 +180,11 @@ export function Sidebar() {
             {/* 用户名行（只读） */}
             <div className="flex items-center gap-1.5 px-3 py-2">
               <span className="truncate font-ui text-[14px]">{user?.username}</span>
-              {memberPill}
+              {creditsBadge}
             </div>
             <div aria-hidden className="sb-menu-divider" />
-            <NavLink to={PATHS.membership} role="menuitem" className={menuItemClass} onClick={() => setMenuOpen(false)}>
-              会员
+            <NavLink to={PATHS.credits} role="menuitem" className={menuItemClass} onClick={() => setMenuOpen(false)}>
+              积分与充值
             </NavLink>
             {!isAdmin && (
               <NavLink to={PATHS.settings} role="menuitem" className={menuItemClass} onClick={() => setMenuOpen(false)}>

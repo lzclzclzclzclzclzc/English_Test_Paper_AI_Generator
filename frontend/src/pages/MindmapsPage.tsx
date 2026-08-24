@@ -7,6 +7,7 @@ import { PATHS } from '@/lib/paths'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/EmptyState'
 import { toastApiError } from '@/lib/errors'
 
 const PAGE_SIZE = 20
@@ -84,7 +85,7 @@ export function MindmapsPage() {
         hasFilters ? (
           <NoMatchState onClear={clearFilters} />
         ) : (
-          <EmptyState onCreate={() => createMut.mutate()} />
+          <NoMindmapsState onCreate={() => createMut.mutate()} />
         )
       ) : (
         <>
@@ -218,28 +219,28 @@ function MindmapRow({ m, onChanged }: { m: MindmapListItem; onChanged: () => voi
   )
 }
 
-function EmptyState({ onCreate }: { onCreate: () => void }) {
+function NoMindmapsState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="flex flex-col items-start gap-2 border-t border-hairline pt-8">
-      <p className="text-[17px] text-ink">还没有思维导图</p>
-      <p className="text-[13.5px] text-muted-ink">
-        让学习助手"用思维导图讲讲……"，或直接新建一张
-      </p>
-      <Button className="mt-3" onClick={onCreate}>新建思维导图</Button>
-    </div>
+    <EmptyState
+      title="还没有思维导图"
+      desc="让学习助手“用思维导图讲讲……”，或直接新建一张"
+      action={<Button onClick={onCreate}>新建思维导图</Button>}
+    />
   )
 }
 
 /** 筛选无命中：与默认空态区分，给出清除筛选而非新建。 */
 function NoMatchState({ onClear }: { onClear: () => void }) {
   return (
-    <div className="flex flex-col items-start gap-2 border-t border-hairline pt-8">
-      <p className="text-[17px] text-ink">没有符合条件的思维导图</p>
-      <p className="text-[13.5px] text-muted-ink">换个日期区间，或清除筛选看全部思维导图</p>
-      <Button variant="outline" size="sm" className="mt-3" onClick={onClear}>
-        清除筛选
-      </Button>
-    </div>
+    <EmptyState
+      title="没有符合条件的思维导图"
+      desc="换个日期区间，或清除筛选看全部思维导图"
+      action={
+        <Button variant="outline" size="sm" onClick={onClear}>
+          清除筛选
+        </Button>
+      }
+    />
   )
 }
 

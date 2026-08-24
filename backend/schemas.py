@@ -58,6 +58,7 @@ class SolutionRequest(BaseModel):
 
 class SolutionResponse(BaseModel):
     solution: str
+    credits: CreditChargeInfo | None = None
 
 
 class GradeSubmissionItem(BaseModel):
@@ -110,6 +111,7 @@ class WritingGradeResultItem(BaseModel):
 class WritingGradeResponse(BaseModel):
     paper_id: str
     results: list[WritingGradeResultItem]
+    credits: CreditChargeInfo | None = None   # 本次扣费（docs/credits-design.md）
 
 
 class StoredAttemptItem(BaseModel):
@@ -188,6 +190,7 @@ class AgentChatRequest(BaseModel):
 class AgentChatResponse(BaseModel):
     reply: str
     action: dict | None = None
+    credits: CreditChargeInfo | None = None
 
 
 # ---- Vocabulary -------------------------------------------------------------
@@ -312,7 +315,8 @@ class AdminUserDetail(BaseModel):
     paper_count: int
     attempt_count: int
     correct_rate: float | None
-    membership_expires_at: str | None
+    credits_balance: int = 0
+    credits_daily_balance: int = 0
 
 
 class SetRoleRequest(BaseModel):
@@ -329,9 +333,8 @@ class AdminOverview(BaseModel):
     banned_users: int = 0
     total_papers: int
     total_attempts: int
-    active_members: int | None
-    # Best-effort cross-service read; payment down → None (non-blocking).
-    total_revenue_cents: int | None = None
+    paying_users: int = 0           # 至少有一笔 PAID 订单的用户数
+    total_revenue_cents: int = 0
 
 
 class TimeseriesPoint(BaseModel):
@@ -344,25 +347,49 @@ class AdminTimeseries(BaseModel):
     papers_by_day: list[TimeseriesPoint]
 
 
-class AdminMembershipItem(BaseModel):
+class AdminCreditAccountItem(BaseModel):
     user_id: str
     username: str | None
-    expires_at: str | None
-    active: bool
+    balance: int
+    daily_balance: int
+    daily_date: str | None = None
+    updated_at: str | None = None
 
 
-class AdminMembershipListView(BaseModel):
-    items: list[AdminMembershipItem]
+class AdminCreditAccountListView(BaseModel):
+    items: list[AdminCreditAccountItem]
     total: int
+
+
+class AdminCreditAccountDetail(BaseModel):
+    user_id: str
+    username: str | None
+    balance: int
+    daily_balance: int
+    daily_grant: int
+    spent_total: int
+    ledger: list[CreditLedgerItem]
+    ledger_total: int
+
+
+class AdjustCreditsRequest(BaseModel):
+    delta: int = Field(description="正数加、负数减（不会减到 0 以下）")
+    note: str = Field(min_length=1, max_length=200)
+
+
+class AdjustCreditsByUsernameRequest(AdjustCreditsRequest):
+    username: str
 
 
 class AdminOrderItem(BaseModel):
     out_trade_no: str
     user_id: str
     username: str | None
-    plan_id: str
+    pack_id: str
     amount_cents: int
+    credits: int
     status: str
+    channel: str = "qr"
     created_at: str
     paid_at: str | None = None
 
@@ -370,15 +397,6 @@ class AdminOrderItem(BaseModel):
 class AdminOrderListView(BaseModel):
     items: list[AdminOrderItem]
     total: int = 0
-
-
-class GrantByUsernameRequest(BaseModel):
-    username: str
-    days: int = Field(gt=0)
-
-
-class GrantDaysRequest(BaseModel):
-    days: int = Field(gt=0)
 
 
 class AdminAttemptDay(BaseModel):
@@ -480,8 +498,8 @@ class AdminRevenueDayPoint(BaseModel):
     cents: int
 
 
-class AdminPlanRevenue(BaseModel):
-    plan_id: str
+class AdminPackRevenue(BaseModel):
+    pack_id: str
     orders: int
     cents: int
 
@@ -489,7 +507,7 @@ class AdminPlanRevenue(BaseModel):
 class AdminRevenue(BaseModel):
     total_cents: int
     revenue_by_day: list[AdminRevenueDayPoint]
-    by_plan: list[AdminPlanRevenue]
+    by_pack: list[AdminPackRevenue]
 
 
 class AdminAuditItem(BaseModel):
@@ -509,7 +527,94 @@ class AdminAuditList(BaseModel):
 
 
 class AdminSystemHealth(BaseModel):
-    payment: bool
     llm: bool
+    payment_mock: bool
     question_bank_total: int
     app_db_size_kb: int
+
+
+# ---- credits / payment (docs/credits-design.md) ----
+
+OrderStatus: TypeAlias = Literal["CREATED", "PAID", "EXPIRED", "CLOSED"]
+# qr = 当面付扫码(需沙箱版支付宝 App);web = 电脑网站支付(桌面浏览器收银台)
+PayChannel: TypeAlias = Literal["qr", "web"]
+
+
+class CreditAccountView(BaseModel):
+    balance: int                 # 付费 / 赠送余额（不过期）
+    daily_balance: int           # 今日赠送剩余（当日有效）
+    daily_grant: int             # 每日赠送额度（配置）
+    total: int                   # balance + daily_balance，即当前可用
+    spent_total: int             # 累计消费
+
+
+class CreditPriceItem(BaseModel):
+    action: str
+    label: str
+    base: int
+    per_unit: int
+    unit: str
+    note: str
+
+
+class CreditPriceTable(BaseModel):
+    items: list[CreditPriceItem]
+    signup_bonus: int
+    daily_grant: int
+
+
+class CreditLedgerItem(BaseModel):
+    id: int
+    delta: int
+    bucket: Literal["daily", "balance"]
+    balance_after: int
+    kind: str
+    action: str | None = None
+    ref_type: str | None = None
+    ref_id: str | None = None
+    note: str | None = None
+    created_at: str
+
+
+class CreditLedgerList(BaseModel):
+    items: list[CreditLedgerItem]
+    total: int
+
+
+class CreditChargeInfo(BaseModel):
+    """付费动作响应里附带的本次扣费信息。"""
+
+    cost: int
+    balance_after: int
+    daily_after: int
+
+
+class PackOut(BaseModel):
+    id: str
+    name: str
+    credits: int
+    amount_cents: int
+    description: str
+
+
+class PaymentConfigOut(BaseModel):
+    mock_pay: bool
+
+
+class CreateOrderIn(BaseModel):
+    pack_id: str
+    channel: PayChannel = "qr"
+
+
+class OrderOut(BaseModel):
+    out_trade_no: str
+    pack_id: str
+    amount_cents: int
+    credits: int
+    status: OrderStatus
+    channel: PayChannel
+    qr_code: str | None
+    pay_url: str | None
+    created_at: str
+    expires_at: str
+    paid_at: str | None

@@ -28,6 +28,8 @@ writes no SQL. Persistence is the backend's job (Spec C).
 """
 from __future__ import annotations
 
+from typing import Callable
+
 from ai_engine.errors import ParserError
 from shared.schemas import (
     GenerateMode,
@@ -50,8 +52,15 @@ def generate_paper(
     wrong_items: list[WrongItemRef] | None = None,
     user_id: str | None = None,
     review_window_days: int | None = None,
+    on_request: Callable[[GenerateRequest], None] | None = None,
 ) -> Paper:
     """Natural-language request → a full Paper.
+
+    `on_request` (optional) is invoked with the parsed GenerateRequest right
+    after the Parser and before any retrieval / LLM revision work. The backend
+    uses it to price and charge credits (the cost depends on
+    revision_intensity × total_questions, which are only known post-parse);
+    raising from it aborts the pipeline before the expensive part.
 
     Modes:
       * fresh       — parse the query and generate
@@ -80,6 +89,8 @@ def generate_paper(
     )
     req.user_id = user_id
     req.review_window_days = review_window_days
+    if on_request is not None:
+        on_request(req)
 
     # 3. Retriever: GenerateRequest → candidate pool (+ shortfall)
     retrieval = retriever.retrieve(req)
@@ -95,7 +106,11 @@ def generate_paper(
 # ─────────────────────────────────────────────────────────────────────────────
 # revise_paper — review iteration (Spec B §8)
 # ─────────────────────────────────────────────────────────────────────────────
-def revise_paper(current_paper: Paper, user_instruction: str) -> Paper:
+def revise_paper(
+    current_paper: Paper,
+    user_instruction: str,
+    on_request: Callable[[GenerateRequest], None] | None = None,
+) -> Paper:
     """Apply a natural-language revision instruction to an existing paper,
     returning a brand-new Paper (fresh paper_id). Stateless: everything comes
     from the arguments; the backend supplies `current_paper` (read from its
@@ -143,6 +158,8 @@ def revise_paper(current_paper: Paper, user_instruction: str) -> Paper:
     req: GenerateRequest = parser.parse(query, mode="fresh")
     req.user_id = orig.user_id
     req.review_window_days = orig.review_window_days
+    if on_request is not None:
+        on_request(req)
 
     retrieval = retriever.retrieve(req)
     paper: Paper = reviser.build_paper(req, retrieval)

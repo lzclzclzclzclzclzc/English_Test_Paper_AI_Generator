@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
+import { ApiError } from '@/api/client'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { agentChat, clearAgentSession } from '@/api/agent'
 import { toastApiError } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
+import { CreditHint } from '@/components/CreditHint'
+import { invalidateCredits } from '@/hooks/useCredits'
 import type { AgentAction } from '@/types/api'
 
 interface ChatMessage {
@@ -77,10 +80,15 @@ export function AssistantChat({
         return updated
       })
       if (res.action) onAction?.(res.action)
+      invalidateCredits()
     },
     onError: (err) => {
+      const insufficient = err instanceof ApiError && err.payload.error_code === 'credits.insufficient'
       setMessages((prev) => {
-        const updated = [...prev, { role: 'error' as const, content: '出错了，请稍后重试或换个说法' }]
+        const updated = [
+          ...prev,
+          { role: 'error' as const, content: insufficient ? '积分不足，充值后再来聊' : '出错了，请稍后重试或换个说法' },
+        ]
         saveMessages(storageKey, updated)
         return updated
       })
@@ -213,19 +221,22 @@ export function AssistantChat({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isPending}
-            className="min-h-[48px] flex-1 resize-none border border-ink-20 bg-transparent px-3.5 py-2.5 text-[14.5px] leading-[1.6] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent disabled:opacity-60"
-            style={{ borderRadius: '10px' }}
+            className="min-h-[48px] flex-1 resize-none rounded-sm border border-ink-20 bg-transparent px-3.5 py-2.5 text-[14.5px] leading-[1.6] text-ink outline-none transition-colors placeholder:text-quiet focus:border-ink disabled:opacity-60"
           />
-          <button
+          <Button
             type="button"
+            size="lg"
             disabled={isPending || !input.trim()}
             onClick={() => send(input)}
-            className="shrink-0 border border-accent bg-accent px-6 font-ui text-[14.5px] font-bold tracking-[0.05em] text-white transition-colors hover:bg-accent-ink hover:border-accent-ink disabled:pointer-events-none disabled:opacity-50"
-            style={{ borderRadius: '10px' }}
+            className="h-auto min-h-[48px] shrink-0 font-bold"
           >
             {chatMutation.isPending ? '思考中…' : '发送'}
-          </button>
+          </Button>
         </div>
+        <p className="mt-1.5">
+          <CreditHint action="agent_message" prefix="每条消息" />
+          <span className="font-ui text-[12px] text-quiet">；助手出卷按出卷价另计</span>
+        </p>
       </div>
     </div>
   )

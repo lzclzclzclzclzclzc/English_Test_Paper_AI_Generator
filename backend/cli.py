@@ -67,6 +67,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     sub.add_parser("smoke")
     sub.add_parser("deploy-check")
+    migrate_pay = sub.add_parser(
+        "migrate-payment-db",
+        help="把旧独立支付服务的 payment.db（orders + memberships）迁进主库：订单原样导入，活跃会员剩余天数折算成积分",
+    )
+    migrate_pay.add_argument("--src", type=Path, default=Path("payment/data/payment.db"))
+    sub.add_parser("reconcile-orders", help="对账：PAID 订单缺 purchase 流水则补入账")
 
     args = parser.parse_args(argv)
     if args.command == "serve":
@@ -103,6 +109,16 @@ def main(argv: list[str] | None = None) -> int:
         return _smoke()
     if args.command == "deploy-check":
         return _deploy_check()
+    if args.command == "migrate-payment-db":
+        from backend.services.payment.migrate_legacy import migrate_payment_db
+
+        print(json.dumps(migrate_payment_db(args.src), ensure_ascii=False))
+        return 0
+    if args.command == "reconcile-orders":
+        from backend.services.payment import orders as order_service
+
+        print(json.dumps({"reconciled": order_service.reconcile_paid_orders()}))
+        return 0
     return 1
 
 

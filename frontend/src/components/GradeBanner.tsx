@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { CreditHint } from '@/components/CreditHint'
 import { PATHS } from '@/lib/paths'
 
 interface GradeBannerProps {
@@ -17,7 +18,7 @@ interface GradeBannerProps {
 }
 
 /**
- * 成绩统计行（handoff 第 6 屏）：答对大字 + 错题（赤陶），右侧
+ * 成绩统计行（handoff 第 6 屏）：答对大字 + 错题（橙红），右侧
  * 「按错题生成巩固卷」（主，组好后变「跳转试卷」）+「再做一遍」/「查看掌握度」（次）。
  */
 export function GradeBanner({
@@ -40,13 +41,16 @@ export function GradeBanner({
       )
     }
     return (
-      <Button size="sm" onClick={onRemediate} disabled={remediating}>
-        {remediating ? '正在组卷…' : `按错题生成巩固卷（${wrongCount} 题）`}
-      </Button>
+      <span className="flex items-center gap-2">
+        <Button size="sm" onClick={onRemediate} disabled={remediating}>
+          {remediating ? '正在组卷…' : `按错题生成巩固卷（${wrongCount} 题）`}
+        </Button>
+        <CreditHint action="generate_fresh" units={wrongCount} />
+      </span>
     )
   }
 
-  // 正确率分band（v2.2）：≥80% 绿 / ≥60% 赭黄 / 以下赤陶
+  // 正确率分band（v2.2）：≥80% 绿 / ≥60% 赭黄 / 以下橙红
   const rate = totalCount === 0 ? 0 : correctCount / totalCount
   const rateColor = rate >= 0.8 ? 'text-success' : rate >= 0.6 ? 'text-grammar' : 'text-accent'
 
@@ -54,20 +58,20 @@ export function GradeBanner({
     <div className="kk-rise flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-hairline pb-6">
       <div className="flex items-end gap-8 font-ui">
         <div className="flex flex-col gap-1">
-          <span className="text-[11px] tracking-[0.1em] text-quiet">答对</span>
+          <span className="kicker">答对</span>
           <span className="text-[54px] font-bold leading-none tabular-nums text-success">
             {correctCount}
             <span className="text-[18px] font-[450] text-quiet"> / {totalCount}</span>
           </span>
         </div>
         <div className="flex flex-col gap-1 pb-1">
-          <span className="text-[11px] tracking-[0.1em] text-quiet">错题</span>
+          <span className="kicker">错题</span>
           <span className="text-[28px] font-bold leading-none tabular-nums text-accent">
             {wrongCount}
           </span>
         </div>
         <div className="flex flex-col gap-1 pb-1">
-          <span className="text-[11px] tracking-[0.1em] text-quiet">正确率</span>
+          <span className="kicker">正确率</span>
           <span className={`text-[28px] font-bold leading-none tabular-nums ${rateColor}`}>
             {Math.round(rate * 100)}
             <span className="text-[14px] font-[450]">%</span>
@@ -78,7 +82,7 @@ export function GradeBanner({
         )}
         {writingScore !== null && (
           <div className="flex flex-col gap-1 pb-1">
-            <span className="text-[11px] tracking-[0.1em] text-quiet">作文</span>
+            <span className="kicker">作文</span>
             <span className="text-[20px] leading-none text-accent">{writingScore} / 20</span>
           </div>
         )}

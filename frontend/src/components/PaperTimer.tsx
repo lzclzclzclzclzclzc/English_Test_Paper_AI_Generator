@@ -10,7 +10,7 @@ interface PaperTimerProps {
 }
 
 /**
- * 倒计时显示「剩余 MM:SS」：作答态每秒 tick，最后 5 分钟转赤陶；
+ * 倒计时显示「剩余 MM:SS」：作答态每秒 tick，最后 5 分钟转橙红；
  * 到 0 只触发一次 onExpire，之后停在 00:00。
  */
 export function PaperTimer({ minutes, running, onExpire }: PaperTimerProps) {

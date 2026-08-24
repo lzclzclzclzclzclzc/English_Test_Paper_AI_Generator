@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Callable, Literal
 
 from ai_engine.pipeline import (
     build_profile as run_build_profile,
@@ -10,7 +10,7 @@ from ai_engine.pipeline import (
     revise_paper as run_revise_paper,
 )
 from ai_engine.writing_grader import grade_writing as run_grade_writing
-from shared.schemas import MasteryProfile, Paper, RevisedQuestion, WritingGradeResult, WrongItemRef
+from shared.schemas import GenerateRequest, MasteryProfile, Paper, RevisedQuestion, WritingGradeResult, WrongItemRef
 
 def generate_paper(
     user_query: str,
@@ -19,6 +19,7 @@ def generate_paper(
     wrong_items: list[WrongItemRef] | None = None,
     user_id: str | None = None,
     review_window_days: int | None = None,
+    on_request: Callable[[GenerateRequest], None] | None = None,
 ) -> Paper:
     return run_generate_paper(
         user_query=user_query,
@@ -26,11 +27,16 @@ def generate_paper(
         wrong_items=wrong_items,
         user_id=user_id,
         review_window_days=review_window_days,
+        on_request=on_request,
     )
 
 
-def revise_paper(current_paper: Paper, user_instruction: str) -> Paper:
-    return run_revise_paper(current_paper, user_instruction)
+def revise_paper(
+    current_paper: Paper,
+    user_instruction: str,
+    on_request: Callable[[GenerateRequest], None] | None = None,
+) -> Paper:
+    return run_revise_paper(current_paper, user_instruction, on_request=on_request)
 
 
 def generate_solution(

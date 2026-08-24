@@ -4,13 +4,12 @@ import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/PageHeader'
 import { PipelineProgress } from '@/components/PipelineProgress'
-import { UpgradeDialog } from '@/components/UpgradeDialog'
 import { ContinueList } from '@/components/dashboard/ContinueList'
 import { DailyPlan } from '@/components/dashboard/DailyPlan'
 import { WeakSpots } from '@/components/dashboard/WeakSpots'
 import { useAuth } from '@/hooks/useAuth'
 import { useGeneratePaper } from '@/hooks/useGeneratePaper'
-import { useMembership } from '@/hooks/useMembership'
+import { useCredits } from '@/hooks/useCredits'
 import { getMastery } from '@/api/mastery'
 import { listPapers } from '@/api/papers'
 import { getLatestStudyPlan } from '@/api/agent'
@@ -18,7 +17,7 @@ import { getVocabularyProgress } from '@/api/vocabulary'
 import { composeQuery, type ComposeInput } from '@/lib/composeQuery'
 import { daysUntilExam } from '@/lib/examDate'
 import { PATHS } from '@/lib/paths'
-import { FREE_GENERATE_PER_DAY, generateQuotaNotice } from '@/lib/quota'
+import { Button } from '@/components/ui/button'
 
 /** 首次使用三步引导（papers 为空时替换今日计划/一练） */
 const FIRST_STEPS = [
@@ -42,14 +41,12 @@ function toIso(d: Date): string {
 export function DashboardPage() {
   const [query, setQuery] = useState('')
   const [serverError, setServerError] = useState<string | null>(null)
-  const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
 
   const { data: user } = useAuth()
-  const { isMember } = useMembership()
-  const { generate, guard, isPending, locked, freeRemaining } = useGeneratePaper(setServerError)
+  const { total: creditsTotal, daily: creditsDaily } = useCredits()
+  const { generate, isPending } = useGeneratePaper(setServerError)
   const userId = user?.id ?? 'anon'
   const examDays = daysUntilExam(userId)
-  const quotaNotice = generateQuotaNotice(locked, freeRemaining)
 
   const papersQuery = useQuery({
     queryKey: ['papers', 'recent'],
@@ -74,11 +71,6 @@ export function DashboardPage() {
   /** 结构化配方出卷（今日一练/弱点专练共用）。返回 true = 已实际发起 */
   const submitCompose = (input: ComposeInput): boolean => {
     setServerError(null)
-    const reason = guard('fresh')
-    if (reason) {
-      setUpgradeReason(reason)
-      return false
-    }
     generate({ user_query: composeQuery(input), mode: 'fresh' })
     return true
   }
@@ -88,11 +80,6 @@ export function DashboardPage() {
     const q = query.trim()
     if (q === '' || isPending) return
     setServerError(null)
-    const reason = guard('fresh')
-    if (reason) {
-      setUpgradeReason(reason)
-      return
-    }
     generate({ user_query: q, mode: 'fresh' })
   }
 
@@ -115,13 +102,15 @@ export function DashboardPage() {
           {examDays !== null && (
             <span className="font-ui tabular-nums">距中考 {examDays} 天</span>
           )}
-          {isMember ? (
-            <span className="font-ui">会员 · 出卷不限次</span>
-          ) : locked ? (
-            <span className={cn('font-ui tabular-nums', freeRemaining === 0 && 'text-accent')}>
-              今日免费出卷 {freeRemaining}/{FREE_GENERATE_PER_DAY}
-            </span>
-          ) : null}
+          {creditsTotal !== null && (
+            <Link
+              to={PATHS.credits}
+              className={cn('font-ui tabular-nums transition-colors hover:text-accent', creditsTotal === 0 && 'text-accent')}
+              title={`今日赠送剩余 ${creditsDaily ?? 0}`}
+            >
+              积分 {creditsTotal}{creditsDaily ? ` · 今日赠送 ${creditsDaily}` : ''} →
+            </Link>
+          )}
         </div>
       </PageHeader>
 
@@ -155,7 +144,6 @@ export function DashboardPage() {
             <div className="hero-foot">
               <Link to={PATHS.generate} className="hero-more">展开完整版 →</Link>
               {serverError && <span className="hero-err">{serverError}</span>}
-              {quotaNotice && <span className="hero-quota">{quotaNotice}</span>}
             </div>
           </section>
 
@@ -170,12 +158,9 @@ export function DashboardPage() {
                   </div>
                 ))}
               </div>
-              <Link
-                to={PATHS.practice}
-                className="inline-block self-start rounded-sm border border-accent bg-accent px-6 py-2 font-ui text-[13.5px] tracking-[0.05em] text-white transition-colors hover:bg-accent-ink"
-              >
-                去练习中心
-              </Link>
+              <Button asChild size="lg" className="self-start">
+                <Link to={PATHS.practice}>去练习中心</Link>
+              </Button>
             </section>
           ) : (
             <div className="bento">
@@ -259,8 +244,6 @@ export function DashboardPage() {
           )}
         </aside>
       </div>
-
-      <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
     </div>
   )
 }

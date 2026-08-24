@@ -1,5 +1,9 @@
 # Spec H：管理后台增强设计（Admin Pro）
 
+> **2026-08-23**：会员与 payment 服务已由积分制取代（Spec P `credits-design.md`）。本文 D1/D2/D4 中
+> 「会员到期预警」「`payment_base_url` / `PAYMENT_SERVICE_URL`」「系统健康里的 payment 探活」均为历史：
+> 收入统计改读本地 `orders`（`by_pack`），审计动作新增 `adjust_credits`，系统健康返回 `payment_mock`。
+
 **创建日期**：2026-08-16
 **状态**：设计稿，未实现（分支 `feature/adminpro`）
 **范围**：Spec G（[`./admin-design.md`](./admin-design.md)）管理后台的功能增强——列表分页与列补全、用户维度深挖（最近试卷/做题记录）、题库只读统计与浏览、收入统计、会员到期预警、管理操作审计日志、系统健康。不改变 Spec G 的权限模型与服务形态。

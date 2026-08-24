@@ -1,12 +1,9 @@
 .DS_Store
 .impeccable/
 
-# payment service
-payment/.env
-payment/.venv/
-payment/keys/*.pem
-payment/data/*.db*
-data/payment.db
+# payment (Alipay sandbox keys; legacy standalone-service data dir kept only for migrate-payment-db)
+keys/*.pem
+/payment/
 data/agent_sessions.db*
 data/app.db*
 

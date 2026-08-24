@@ -66,13 +66,15 @@ interface StudyReportProps {
   windowLabel: string
   /** 内联嵌入时的「收起」;/report 独立页不传,不渲染收起按钮 */
   onClose?: () => void
+  /** /report 页已有 PageHeader 作标题，报告自带的标题栏只在打印时出现 */
+  titleOnlyInPrint?: boolean
 }
 
 /**
- * 学情报告(会员):一页纸给家长——练习量、薄弱考点、下一步建议。
+ * 学情报告:一页纸给家长——练习量、薄弱考点、下一步建议。
  * 打印时宿主页面(/report)其他部分用 print:hidden 隐藏,只留本报告。
  */
-export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps) {
+export function StudyReport({ profile, windowLabel, onClose, titleOnlyInPrint }: StudyReportProps) {
   // 报告打开时才拉试卷列表,只为统计练卷数(近 100 份)
   const papers = useQuery({
     queryKey: ['papers', 'report-count'],
@@ -86,10 +88,20 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
   const today = new Date().toLocaleDateString('zh-CN', { dateStyle: 'long' })
 
   return (
-    <section className="kk-rise mt-10 border-t border-accent pt-6 print:mt-0 print:border-t-0 print:pt-0">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <section
+      className={cn(
+        'kk-rise print:mt-0 print:border-t-0 print:pt-0',
+        titleOnlyInPrint ? 'mt-2' : 'mt-10 border-t border-accent pt-6',
+      )}
+    >
+      <div
+        className={cn(
+          'mb-6 flex-wrap items-end justify-between gap-3',
+          titleOnlyInPrint ? 'hidden print:flex' : 'flex',
+        )}
+      >
         <div className="flex flex-col gap-1">
-          <h2 className="text-[28px] leading-snug text-ink [font-family:var(--font-display)]">
+          <h2 className="font-heading text-[28px] font-bold leading-snug text-ink">
             学情报告
           </h2>
           <p className="text-[12.5px] text-quiet">
@@ -111,7 +123,7 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
       {/* 练习量 */}
       <div className="flex flex-wrap items-end gap-x-10 gap-y-4 border-b border-hairline pb-6 font-ui">
         <div className="flex flex-col gap-1">
-          <span className="text-[11px] tracking-[0.1em] text-quiet">纳入作答</span>
+          <span className="kicker">纳入作答</span>
           <span className="text-[32px] font-bold leading-none tabular-nums text-ink">
             {profile.total_attempts_considered}
             <span className="text-[13px] font-[450] text-quiet"> 题次</span>
@@ -119,7 +131,7 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
         </div>
         {paperCount !== null && (
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] tracking-[0.1em] text-quiet">生成试卷</span>
+            <span className="kicker">生成试卷</span>
             <span className="text-[32px] font-bold leading-none tabular-nums text-ink">
               {paperCount}
               <span className="text-[13px] font-[450] text-quiet">
@@ -130,7 +142,7 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
           </div>
         )}
         <div className="flex flex-col gap-1">
-          <span className="text-[11px] tracking-[0.1em] text-quiet">覆盖考点</span>
+          <span className="kicker">覆盖考点</span>
           <span className="text-[32px] font-bold leading-none tabular-nums text-ink">
             {profile.weak_kps.length}
             <span className="text-[13px] font-[450] text-quiet"> 个</span>
@@ -140,7 +152,7 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
 
       {/* 薄弱考点 */}
       <div className="mt-6">
-        <h3 className="text-[15px] text-ink">最需要关注的考点</h3>
+        <h3 className="font-heading text-[15px] font-bold text-ink">最需要关注的考点</h3>
         {weakest.length === 0 ? (
           <p className="mt-2 text-[13.5px] text-muted-ink">
             这个窗口内还没有足够的答题记录。
@@ -182,11 +194,11 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
           打印时隐藏——薄弱考点表已用打印友好的形式覆盖同样的数据。 */}
       {profile.weak_kps.length > 0 && (
         <div className="mt-6 print:hidden">
-          <h3 className="text-[15px] text-ink">掌握情况脑图</h3>
+          <h3 className="font-heading text-[15px] font-bold text-ink">掌握情况脑图</h3>
           <p className="mt-1 text-[12.5px] text-quiet">
             按掌握程度分为薄弱 / 一般 / 扎实三支，括号内为正确率。
           </p>
-          <div className="mt-2 h-[300px] w-full overflow-hidden rounded-[10px] border border-hairline bg-tint/40">
+          <div className="mt-2 h-[300px] w-full overflow-hidden rounded-sm border border-hairline bg-card-surface">
             <MindmapView outline={masteryToOutline(profile)} />
           </div>
         </div>
@@ -194,7 +206,7 @@ export function StudyReport({ profile, windowLabel, onClose }: StudyReportProps)
 
       {/* 建议 */}
       <div className="mt-6">
-        <h3 className="text-[15px] text-ink">下一步建议</h3>
+        <h3 className="font-heading text-[15px] font-bold text-ink">下一步建议</h3>
         <ul className="mt-2 flex flex-col gap-1.5 text-[14px] leading-[1.9] text-muted-ink">
           {buildAdvice(profile).map((line, i) => (
             <li key={i}>{line}</li>

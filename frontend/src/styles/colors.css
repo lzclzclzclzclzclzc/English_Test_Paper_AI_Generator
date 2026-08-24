@@ -1,9 +1,11 @@
 /* ── Colors ─────────────────────────────────────────────────────────────
-   Warm paper ground · soft charcoal ink · one terracotta accent.
+   Warm paper ground · soft charcoal ink · one vermilion accent（卷王 variant-5）.
 
-   THE ONE CHROMA RULE — Terracotta Coral is the only saturated color on any
-   screen, reserved for interaction and emphasis (link hover, post-title
-   hover, in-article underlines, the <mark> wash). It never fills a surface.
+   THE ONE CHROMA RULE — Vermilion is the only saturated brand color on any
+   screen. It fills exactly two things: the primary CTA (<Button> default) and
+   the dashboard hero; everywhere else it is text / hairline / <mark> wash.
+   Selection state (segmented controls, chips) is INK-filled, not vermilion,
+   so a screen full of selected chips never turns red.
 
    THE TINTED NEUTRAL RULE — pure #000 / #fff are forbidden. Every neutral is
    warm-tinted toward the paper hue. Borders, dividers and hover tints are
@@ -23,7 +25,8 @@
   --deep-ink-surface: oklch(24% 0.016 72);/* dark-mode ground — warm charcoal, not black */
   --accent-base: oklch(58% 0.22 30);      /* Vermilion — brand accent (卷王 SaaS Swiss), ≈ #ff3b1f 系 */
   --accent-bright: oklch(72% 0.19 32);    /* brighter vermilion for dark surfaces */
-  --accent: var(--accent-base);           /* the accent in use; brightens in dark mode */
+  --accent: var(--accent-base);           /* the accent in use (text/border); brightens in dark mode */
+  --accent-fill: var(--accent-base);      /* filled SURFACES (primary button, hero) — stays vermilion in dark */
   --accent-ink: oklch(50% 0.2 30);        /* darker vermilion — filled-button hover/active */
 
   /* ── Opacity-stepped Ink — borders, dividers, hover tints (NOT text) ── */
@@ -57,7 +60,7 @@
   --surface-card: oklch(99.2% 0.003 95);
 
   /* ── v2.2 多色层次（2026-08-05）──
-     赤陶仍是品牌与交互主色；以下为语义/分科色，全部压低饱和以贴合暖纸底：
+     橙红仍是品牌与交互主色；以下为语义/分科色，全部压低饱和以贴合暖纸底：
      success = 答对/轻改；分科色按题型家族——语法(单选/词形/改写)=赭黄、
      听力=靛蓝、阅读(长文/完形/首字母)=墨青。各配 12–15% wash 薄底。 */
   --success: oklch(45% 0.1 150);
@@ -72,7 +75,8 @@
   --writing-wash: color-mix(in oklab, var(--writing) 13%, transparent);
 }
 
-/* ── Dark mode — warm charcoal ground, warm off-white ink, brighter coral.
+/* ── Dark mode — warm charcoal ground, warm off-white ink, brighter vermilion
+   for text/borders (--accent); filled surfaces keep --accent-fill unchanged.
    The accent brightens and every opacity-stepped neutral re-bases onto Warm
    Off-White, so borders/tints read as light-on-dark. ──────────────────────── */
 .dark {

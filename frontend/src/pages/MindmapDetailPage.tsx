@@ -92,7 +92,7 @@ export function MindmapDetailPage() {
         )}
 
         <Panel id="preview" order={2} minSize={25} className="min-h-0 px-1">
-          <div className="h-full rounded-[10px] border border-hairline bg-tint/40">
+          <div className="h-full rounded-sm border border-hairline bg-card-surface">
             <MindmapView outline={draft} />
           </div>
         </Panel>
@@ -101,7 +101,7 @@ export function MindmapDetailPage() {
           <>
             <ResizeHandle />
             <Panel id="assistant" order={3} defaultSize={32} minSize={22} className="min-h-0 pl-2">
-              <div className="flex h-full min-h-0 flex-col rounded-[12px] border border-hairline p-3">
+              <div className="flex h-full min-h-0 flex-col rounded-sm border border-hairline p-3">
                 <AssistantChat
                   scope="mindmap"
                   mindmapId={id}

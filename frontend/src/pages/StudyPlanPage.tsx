@@ -5,13 +5,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/PageHeader'
 import { StudyPlanCalendar } from '@/components/StudyPlanCalendar'
+import { EmptyState } from '@/components/EmptyState'
 import { useAuth } from '@/hooks/useAuth'
 import { getExamDate } from '@/lib/examDate'
 import { TYPE_LABELS } from '@/lib/kp'
 import { PATHS } from '@/lib/paths'
 import type { StudyPlanDay } from '@/types/api'
 
-/** 学习计划单日行（喫茶去）：细线分隔的行式列表，无卡片。 */
+/** 学习计划单日行：细线分隔的行式列表，无卡片。 */
 function DayRow({ day }: { day: StudyPlanDay }) {
   const typeLabels = [...new Set(day.question_types)]
     .map((t) => TYPE_LABELS[t] ?? t)
@@ -23,7 +24,7 @@ function DayRow({ day }: { day: StudyPlanDay }) {
     >
       {/* 第 N 天 */}
       <div className="flex flex-col max-sm:hidden">
-        <span className="font-ui text-[11px] tracking-[0.1em] text-accent">DAY</span>
+        <span className="kicker text-accent">DAY</span>
         <span className="font-ui text-[24px] leading-tight tabular-nums text-ink">
           {String(day.index).padStart(2, '0')}
         </span>
@@ -41,7 +42,7 @@ function DayRow({ day }: { day: StudyPlanDay }) {
             {day.kp_names.map((name, i) => (
               <span
                 key={i}
-                className="rounded-sm border border-hairline px-2 py-0.5 font-ui text-[11.5px] text-muted-ink"
+                className="chip"
               >
                 {name}
               </span>
@@ -58,7 +59,7 @@ function DayRow({ day }: { day: StudyPlanDay }) {
   )
 }
 
-/** 学习计划（dev 新功能，喫茶去外观）：按天打卡，每天一份针对性练习。 */
+/** 学习计划（dev 新功能）：按天打卡，每天一份针对性练习。 */
 export function StudyPlanPage() {
   const { data: user } = useAuth()
   const userId = user?.id ?? 'anon'
@@ -90,18 +91,18 @@ export function StudyPlanPage() {
       )}
 
       {!isLoading && !isError && !plan && (
-        <div className="flex flex-col items-start gap-2 border-t border-hairline pt-8">
-          <p className="text-[17px] text-ink">还没有学习计划</p>
-          <p className="text-[13.5px] text-muted-ink">
-            去学习助手告诉我你的目标（比如「帮我制定 7 天学习计划」），我来安排每天练什么
-          </p>
-          <Button asChild className="mt-3">
-            <Link to={PATHS.assistant} state={{ prefill: '帮我制定一个 7 天学习计划' }}>
-              让学习助手帮我制定计划
-            </Link>
-          </Button>
-        </div>
-      )}
+        <EmptyState
+          title="还没有学习计划"
+          desc="去学习助手告诉我你的目标（比如「帮我制定 7 天学习计划」），我来安排每天练什么"
+          action={
+            <Button asChild>
+              <Link to={PATHS.assistant} state={{ prefill: '帮我制定一个 7 天学习计划' }}>
+                让学习助手帮我制定计划
+              </Link>
+            </Button>
+          }
+        />
+        )}
 
       {plan && (
         <div className="flex flex-col gap-4">

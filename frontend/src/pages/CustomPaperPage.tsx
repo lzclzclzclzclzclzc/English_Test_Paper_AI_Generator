@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/PageHeader'
 import { PipelineProgress } from '@/components/PipelineProgress'
-import { UpgradeDialog } from '@/components/UpgradeDialog'
+import { CreditHint } from '@/components/CreditHint'
 import { IntensityPicker } from '@/components/drill/IntensityPicker'
 import { KpPicker } from '@/components/drill/KpPicker'
 import { QueryPreview } from '@/components/drill/QueryPreview'
@@ -21,11 +21,11 @@ import {
 } from '@/lib/composeQuery'
 import { DRILL_CONFIGS, DRILL_FAMILIES, type DrillConfig } from '@/lib/drillConfig'
 import { FAMILY_LABELS, FAMILY_TEXT_CLASS, type TypeFamily } from '@/lib/kp'
-import { generateQuotaNotice } from '@/lib/quota'
+import { INTENSITY_ACTION } from '@/lib/creditsActions'
+import { useCredits } from '@/hooks/useCredits'
 import type { QuestionType } from '@/types/api'
+import { Button } from '@/components/ui/button'
 
-/** 非会员点「真题原样」档时的升级文案（与专项页一致） */
-const ORIGINAL_LOCK_REASON = '真题原卷是会员功能：整卷使用中考真题原题，不做改动。'
 
 /** 工坊三档全开（阅读首字母的锁档只在专项页；这里由全局强度统一控制） */
 const ALL_TIERS: DrillConfig['intensity'] = { options: ['original', 'light', 'fresh'] }
@@ -101,10 +101,9 @@ export function CustomPaperPage() {
   const [intensity, setIntensity] = useState<Intensity>('light')
   const [topic, setTopic] = useState('')
   const [serverError, setServerError] = useState<string | null>(null)
-  const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
 
-  const { generate, guard, isPending, locked, freeRemaining } = useGeneratePaper(setServerError)
-  const quotaNotice = generateQuotaNotice(locked, freeRemaining)
+  const { generate, guard, isPending } = useGeneratePaper(setServerError)
+  const { price } = useCredits()
   const kpQuery = useKnowledgePoints()
 
   // kp id → level2 中文名（composeQuery 拼句用名称，Parser 靠名称/alias 识别）
@@ -130,14 +129,13 @@ export function CustomPaperPage() {
     ...(grammarSum > 0 ? { topic } : {}),
   }
   const hasError = validateCompose(input).some((i) => i.level === 'error')
+  // 预估价：语法题带主题会被 composeQuery 升为全新出题
+  const effectiveIntensity: Intensity = grammarSum > 0 && topic.trim() ? 'fresh' : intensity
+  const estimatedCost = total > 0 ? price(INTENSITY_ACTION[effectiveIntensity], total) : null
 
   const handleSubmit = () => {
     setServerError(null)
-    const reason = guard('fresh')
-    if (reason) {
-      setUpgradeReason(reason)
-      return
-    }
+    if (!guard(estimatedCost)) return
     generate({ user_query: composeQuery(input), mode: 'fresh' })
   }
 
@@ -225,7 +223,7 @@ export function CustomPaperPage() {
         {/* 右列：粘顶汇总栏（工具面板，细线框无阴影；max-lg 置底） */}
         <aside className="mt-12 lg:sticky lg:top-10 lg:mt-0 lg:self-start">
           <div className="flex flex-col gap-6 rounded-md border border-hairline p-5">
-            <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
+            <span className="kicker">
               组卷汇总
             </span>
 
@@ -263,13 +261,7 @@ export function CustomPaperPage() {
               </span>
             </div>
 
-            <IntensityPicker
-              config={ALL_TIERS}
-              value={intensity}
-              onChange={setIntensity}
-              memberLocked={locked}
-              onLockedIntensity={() => setUpgradeReason(ORIGINAL_LOCK_REASON)}
-            />
+            <IntensityPicker config={ALL_TIERS} value={intensity} onChange={setIntensity} />
 
             <div className="flex flex-col gap-2">
               <div className={cn(grammarSum === 0 && 'pointer-events-none opacity-50')}>
@@ -291,16 +283,18 @@ export function CustomPaperPage() {
             {entries.length > 0 && <QueryPreview input={input} />}
 
             <div className="flex flex-col gap-3">
-              <button
+              <Button
+                size="lg"
                 type="button"
                 disabled={isPending || hasError}
-                className="rounded-sm border border-accent bg-wash px-6 py-2.5 font-ui text-[15px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
                 onClick={handleSubmit}
               >
                 {isPending ? '生成中…' : '生成试卷'}
-              </button>
+              </Button>
+              {total > 0 && (
+                <CreditHint action={INTENSITY_ACTION[effectiveIntensity]} cost={estimatedCost} prefix="本卷约" />
+              )}
               {serverError && <p className="text-[12px] text-accent">{serverError}</p>}
-              {quotaNotice && <p className="font-ui text-[12px] tabular-nums text-quiet">{quotaNotice}</p>}
             </div>
           </div>
         </aside>
@@ -311,8 +305,6 @@ export function CustomPaperPage() {
           <PipelineProgress />
         </div>
       )}
-
-      <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
     </div>
   )
 }

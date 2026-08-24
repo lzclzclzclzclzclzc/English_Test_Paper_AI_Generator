@@ -11,7 +11,7 @@ interface BlankedTextProps {
   onChange?: (next: BlankMap) => void
 }
 
-/** 填空输入框（2026-08 卡片化改版）：浅底色圆角框，focus 描边转赤陶。 */
+/** 填空输入框（2026-08 卡片化改版）：浅底色圆角框，focus 描边转橙红。 */
 function BlankInput({
   value,
   onChange,

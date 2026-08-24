@@ -1,62 +1,46 @@
-import { FREE_GENERATE_PER_DAY, FREE_SOLUTION_PER_DAY } from '@/lib/quota'
-
 /**
- * 定价与权益的静态单一来源。
- * PRICING_PLANS 静态镜像 payment/app/plans.py 的 PLANS——权威在后端,改价必须同步;
- * 只服务营销首页的匿名展示(不能调 /payapi,也不能发认证请求)。
- * 会员页的购买路径仍走 getPlans() 实时数据,这里的常量绝不用于下单。
+ * 积分包 / 免费额度 / 价目的静态镜像 —— 只给营销首页的匿名展示用
+ * （不能发认证请求）。权威在后端：
+ *   - 积分包：backend/services/payment/packs.py（积分页的购买路径走 getPacks() 实时数据）
+ *   - 价目表：backend/services/credits/pricing.py（站内一律走 GET /api/credits/prices）
+ *   - 赠送：shared/config.py CreditsConfig
+ * 改价必须同步这里。
  */
-export interface PricingPlan {
+export interface PricingPack {
   id: string
   name: string
-  durationDays: number
+  credits: number
   amountCents: number
-  /** 折算行(「折合 ¥7.3 / 月」),空缺不显示 */
-  perMonthNote?: string
+  /** 折算行（「比入门包多送 20%」），空缺不显示 */
+  note?: string
   recommended?: boolean
 }
 
-export const PRICING_PLANS: readonly PricingPlan[] = [
-  { id: 'monthly', name: '月度会员', durationDays: 30, amountCents: 990 },
-  {
-    id: 'quarterly',
-    name: '季度会员',
-    durationDays: 90,
-    amountCents: 2500,
-    perMonthNote: '折合 ¥8.3 / 月',
-  },
-  {
-    id: 'yearly',
-    name: '年度会员',
-    durationDays: 365,
-    amountCents: 8800,
-    perMonthNote: '折合 ¥7.3 / 月',
-    recommended: true,
-  },
+export const PRICING_PACKS: readonly PricingPack[] = [
+  { id: 'starter', name: '入门包', credits: 1000, amountCents: 990 },
+  { id: 'standard', name: '标准包', credits: 3000, amountCents: 2500, note: '比入门包多送 20%' },
+  { id: 'annual', name: '畅练包', credits: 12000, amountCents: 8800, note: '比入门包多送 35%', recommended: true },
 ]
 
-/** 免费档一句话(营销首页定价区第一列) */
-export const FREE_TIER_SUMMARY = `每天 ${FREE_GENERATE_PER_DAY} 次出卷、${FREE_SOLUTION_PER_DAY} 次讲解`
+export const SIGNUP_BONUS = 300
+export const DAILY_GRANT = 30
 
-export interface Benefit {
+/** 免费档一句话(营销首页定价区第一列) */
+export const FREE_TIER_SUMMARY = `注册送 ${SIGNUP_BONUS} 积分，每天再送 ${DAILY_GRANT} 积分`
+
+export interface PriceRow {
   feature: string
-  free: string
-  member: string
+  cost: string
 }
 
-/**
- * 权益对比:营销首页与会员页共用这一份。
- * 与实际前端门槛一一对应(quota.ts / useGeneratePaper / DrillPageTemplate /
- * PaperPage 打印分版 / MasteryPage 学情报告)。
- */
-export const BENEFITS: readonly Benefit[] = [
-  { feature: '按描述 / 面板生成新卷', free: `每天 ${FREE_GENERATE_PER_DAY} 次`, member: '不限次数' },
-  { feature: 'AI 单题讲解', free: `每天 ${FREE_SOLUTION_PER_DAY} 次`, member: '不限次数' },
-  { feature: '做题、判分、错题本、掌握度', free: '✓', member: '✓' },
-  { feature: '真题原卷（真题档 / 真题检测卷）', free: '—', member: '✓' },
-  { feature: '错题巩固 / 弱点复习卷', free: '—', member: '✓' },
-  { feature: '一句话重新出卷', free: '—', member: '✓' },
-  { feature: '学情报告（可打印给家长）', free: '—', member: '✓' },
-  { feature: '试卷打印 · 学生卷', free: '✓', member: '✓' },
-  { feature: '试卷打印 · 教师版（含答案）', free: '—', member: '✓' },
+/** 价目（营销首页用的静态镜像；站内用 useCredits().priceTable） */
+export const PRICE_ROWS: readonly PriceRow[] = [
+  { feature: '出卷 · 真题原样', cost: '5 + 1 / 题' },
+  { feature: '出卷 · AI 改编', cost: '5 + 3 / 题' },
+  { feature: '出卷 · 全新出题（含复习卷 / 巩固卷 / 主题出卷）', cost: '5 + 4 / 题' },
+  { feature: '一句话重新出卷', cost: '5 + 4 / 题' },
+  { feature: 'AI 单题讲解', cost: '5 / 题' },
+  { feature: '作文批改', cost: '20 / 篇' },
+  { feature: '学习助手', cost: '2 / 条消息' },
+  { feature: '做题、判分、错题本、掌握度、学情报告、打印、背单词', cost: '免费' },
 ]

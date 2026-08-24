@@ -1,9 +1,10 @@
+"""支付宝沙盒当面付 / 网页收银台客户端（原 payment/app/alipay_client.py，2026-08 合并进主后端）。"""
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from .config import get_settings
-from .errors import PaymentError
+from backend.errors import PaymentUpstreamError
+from shared.config import get_config
 
 
 @dataclass(frozen=True)
@@ -44,7 +45,7 @@ class RealAlipayClient:
     def __init__(self) -> None:
         from alipay import AliPay  # 延迟导入,mock 模式无需安装齐全依赖
 
-        settings = get_settings()
+        settings = get_config().payment
         self._client = AliPay(
             appid=settings.alipay_appid,
             app_notify_url=None,  # 本地无公网,仅轮询 trade.query,不做异步通知
@@ -57,7 +58,7 @@ class RealAlipayClient:
         self._client._gateway = settings.alipay_gateway
 
     def precreate(self, out_trade_no: str, amount_cents: int, subject: str) -> str:
-        ttl_minutes = max(1, get_settings().order_ttl_seconds // 60)
+        ttl_minutes = max(1, get_config().payment.order_ttl_seconds // 60)
         resp = self._client.api_alipay_trade_precreate(
             out_trade_no=out_trade_no,
             total_amount=f"{amount_cents / 100:.2f}",
@@ -65,16 +66,11 @@ class RealAlipayClient:
             timeout_express=f"{ttl_minutes}m",
         )
         if resp.get("code") != "10000":
-            raise PaymentError(
-                502,
-                "payment.upstream_error",
-                "支付宝下单失败",
-                detail=resp.get("sub_msg") or resp.get("msg"),
-            )
+            raise PaymentUpstreamError(f"支付宝下单失败: {resp.get('sub_msg') or resp.get('msg')}")
         return resp["qr_code"]
 
     def page_pay_url(self, out_trade_no: str, amount_cents: int, subject: str) -> str:
-        settings = get_settings()
+        settings = get_config().payment
         ttl_minutes = max(1, settings.order_ttl_seconds // 60)
         # page_pay 返回已签名的 query string,拼在网关后即为收银台 URL
         order_string = self._client.api_alipay_trade_page_pay(
@@ -93,12 +89,7 @@ class RealAlipayClient:
             # ACQ.TRADE_NOT_EXIST:买家尚未扫码,支付宝侧还没有这笔交易
             return QueryResult()
         if code != "10000":
-            raise PaymentError(
-                502,
-                "payment.upstream_error",
-                "支付宝查单失败",
-                detail=resp.get("sub_msg") or resp.get("msg"),
-            )
+            raise PaymentUpstreamError(f"支付宝查单失败: {resp.get('sub_msg') or resp.get('msg')}")
         status = resp.get("trade_status")
         if status in ("TRADE_SUCCESS", "TRADE_FINISHED"):
             return QueryResult(paid=True, trade_no=resp.get("trade_no"))
@@ -113,5 +104,11 @@ _client: PayClient | None = None
 def get_pay_client() -> PayClient:
     global _client
     if _client is None:
-        _client = MockAlipayClient() if get_settings().mock_pay else RealAlipayClient()
+        _client = MockAlipayClient() if get_config().payment.mock_pay else RealAlipayClient()
     return _client
+
+
+def reset_pay_client() -> None:
+    """测试 / 改配置后重建客户端。"""
+    global _client
+    _client = None

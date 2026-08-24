@@ -8,6 +8,7 @@ from backend.auth.session import COOKIE_NAME, clear_session_cookie, set_session_
 from backend.deps import current_user
 from backend.errors import AuthorizationError, InvalidCredentialsError, UsernameConflictError
 from backend.schemas import User, UserCredentials
+from backend.services import credits
 from shared import storage
 from shared.config import get_config
 
@@ -22,6 +23,7 @@ async def register(credentials: UserCredentials, response: Response) -> User:
         user = storage.create_user(credentials.username, hash_password(credentials.password))
     except IntegrityError as exc:
         raise UsernameConflictError() from exc
+    credits.grant_signup_bonus(user.id)  # 注册赠送（幂等，按 user_id 去重）
     session_id = storage.create_session(user.id, get_config().backend.session_ttl_days)
     set_session_cookie(response, session_id)
     return user

@@ -28,6 +28,7 @@ describe('audit action labels (Spec H D3)', () => {
       'reset_password',
       'ban',
       'unban',
+      'adjust_credits',
       'grant_membership',
       'revoke_membership',
     ]

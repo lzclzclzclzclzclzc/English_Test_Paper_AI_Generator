@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom'
 import { FAMILY_CHIP_CLASS } from '@/lib/kp'
 import type { TypeFamily } from '@/lib/kp'
 import { PATHS } from '@/lib/paths'
+import { Button } from '@/components/ui/button'
+import { CreditHint } from '@/components/CreditHint'
 
 const generateSchema = z.object({
   user_query: z
@@ -34,16 +36,14 @@ interface GenerateFormProps {
   isPending: boolean
   /** ai.parser_failed / ai.no_candidate 的表单内提示 */
   serverError: string | null
-  /** 非会员的免费次数提示；会员传 null 不显示 */
-  quotaNotice: string | null
 }
 
 /**
- * 生成表单（handoff 第 4 屏）：44rem textarea（focus 边框转赤陶）+
+ * 生成表单（handoff 第 4 屏）：44rem textarea（focus 边框转橙红）+
  * 建议 chips + 主按钮「生成试卷」+ 右侧状态小字。
  * 首页只做新生成（fresh）；错题巩固 / 综合复习入口在「错题本」页。
  */
-export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: GenerateFormProps) {
+export function GenerateForm({ onSubmit, isPending, serverError }: GenerateFormProps) {
   const form = useForm<GenerateFormValues>({
     resolver: zodResolver(generateSchema),
     defaultValues: { user_query: '' },
@@ -54,7 +54,7 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
       <textarea
         rows={4}
         placeholder="来 12 道现在完成时的单项选择，再配 3 道听力填词——也可以点下面的题型标签组卷"
-        className="w-full resize-none rounded-[3px] border border-ink-20 bg-transparent px-4 py-3 text-[16px] leading-[1.8] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent"
+        className="w-full resize-none rounded-sm border border-ink-20 bg-transparent px-4 py-3 text-[16px] leading-[1.8] text-ink outline-none transition-colors placeholder:text-quiet focus:border-accent"
         {...form.register('user_query')}
       />
       {form.formState.errors.user_query && (
@@ -62,7 +62,7 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
       )}
       {serverError && <p className="-mt-3 text-[12px] text-accent">{serverError}</p>}
 
-      {/* 题型 chips：细线边小方角，hover 转赤陶；点击追加「N 道××」，可连点组混合卷 */}
+      {/* 题型 chips：细线边小方角，hover 转分科色；点击追加「N 道××」，可连点组混合卷 */}
       <div className="flex flex-wrap items-baseline gap-2">
         <span className="font-ui text-[12px] text-quiet">点选题型：</span>
         {TYPE_CHIPS.map(({ label, n, family }) => (
@@ -84,19 +84,18 @@ export function GenerateForm({ onSubmit, isPending, serverError, quotaNotice }: 
       </div>
 
       <div className="flex items-center gap-4">
-        <button
+        <Button
+          size="lg"
           type="submit"
           disabled={isPending}
-          className="rounded-sm border border-accent bg-wash px-8 py-3 font-ui text-[16px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
         >
           {isPending ? '生成中…' : '生成试卷'}
-        </button>
+        </Button>
         <span className="font-ui text-[12.5px] text-quiet">
           {isPending ? '生成中，请勿关闭页面' : '通常 4–6 秒'}
         </span>
+        <CreditHint action="generate_light" units={10} prefix="10 题改编约" />
       </div>
-
-      {quotaNotice && <p className="font-ui text-[12px] tabular-nums text-quiet">{quotaNotice}</p>}
 
       <p className="text-[12.5px] text-quiet">
         想练错题或综合复习？去{' '}

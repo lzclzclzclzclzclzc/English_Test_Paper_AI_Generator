@@ -1,13 +1,13 @@
 import { formatYuan } from '@/lib/money'
-import { PRICING_PLANS } from '@/lib/pricing'
+import { PRICING_PACKS } from '@/lib/pricing'
 
-const monthly = PRICING_PLANS.find((p) => p.id === 'monthly')
-const monthlyPrice = monthly ? formatYuan(monthly.amountCents) : '¥9.9'
+const starter = PRICING_PACKS.find((p) => p.id === 'starter')
+const starterPrice = starter ? formatYuan(starter.amountCents) : '¥9.9'
 
 const POINTS = [
   { pi: '01 · Source', title: '题目有出处', desc: '全部题源来自上海一模二模真题书，经人工审核入库，不是网上爬的题。' },
   { pi: '02 · Progress', title: '进步看得见', desc: '掌握度页按知识点统计孩子的强弱变化，练没练、进步没进步，打开就知道。' },
-  { pi: '03 · Price', title: '价格先说清', desc: `免费额度每天都有，会员月付 ${monthlyPrice}，不自动续费、不藏收费项。` },
+  { pi: '03 · Price', title: '价格先说清', desc: `每天都有免费积分，用多少扣多少；充值 ${starterPrice} 起，不订阅、不自动续费、不藏收费项。` },
 ] as const
 
 /** #parents 给家长的三句话:三卡顶边。 */

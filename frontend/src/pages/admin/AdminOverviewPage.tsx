@@ -46,7 +46,9 @@ function SystemHealthPanel() {
           )}
           {health.data && (
             <>
-              <Badge ok={health.data.payment} label="支付服务 " />
+              <span className="text-[13px] text-muted-ink">
+                支付 {health.data.payment_mock ? '离线 mock' : '支付宝沙盒'}
+              </span>
               <Badge ok={health.data.llm} label="LLM 服务 " />
               <span className="text-[13px] text-muted-ink">题库 {health.data.question_bank_total} 题</span>
               <span className="text-[13px] text-muted-ink">
@@ -82,12 +84,12 @@ export function AdminOverviewPage() {
         <Metric label="总用户" value={o?.total_users ?? '—'} />
         <Metric label="今日新增" value={o?.new_users_today ?? '—'} />
         <Metric label="封禁用户" value={o?.banned_users ?? '—'} />
-        <Metric label="活跃会员" value={o?.active_members ?? '暂不可用'} />
+        <Metric label="付费用户" value={o?.paying_users ?? '—'} />
         <Metric label="试卷总数" value={o?.total_papers ?? '—'} />
         <Metric label="总做题数" value={o?.total_attempts ?? '—'} />
         <Metric
           label="累计收入"
-          value={o?.total_revenue_cents == null ? '暂不可用' : formatYuan(o.total_revenue_cents)}
+          value={o?.total_revenue_cents == null ? '—' : formatYuan(o.total_revenue_cents)}
         />
       </div>
       <SystemHealthPanel />

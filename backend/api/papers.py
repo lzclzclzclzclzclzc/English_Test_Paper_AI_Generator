@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from backend.deps import current_user, rate_limiter
 from backend.errors import ResourceNotFoundError
 from backend.schemas import GeneratePaperRequest, PaperListResponse, RevisePaperRequest, User
-from backend.services import ai_gateway
+from backend.services import ai_gateway, credits
 from shared import storage
 from shared.schemas import Paper
 
@@ -17,23 +17,40 @@ async def generate_paper(
     body: GeneratePaperRequest,
     user: User = Depends(rate_limiter("generate", "rate_limit_generate_per_min")),
 ) -> Paper:
-    paper = ai_gateway.generate_paper(
-        user_query=body.user_query,
-        mode=body.mode,
-        wrong_items=body.wrong_items,
-        user_id=user.id,
-        review_window_days=body.review_window_days,
-    )
+    # 积分：Parser 解析出强度 × 题数后（进入检索/改题前）扣费；之后任何失败原路退回。
+    charge = credits.PaperCharge(user.id)
+    try:
+        paper = ai_gateway.generate_paper(
+            user_query=body.user_query,
+            mode=body.mode,
+            wrong_items=body.wrong_items,
+            user_id=user.id,
+            review_window_days=body.review_window_days,
+            on_request=charge.on_request,
+        )
+    except Exception:
+        charge.refund()
+        raise
+    paper.metadata.update(charge.metadata())
     storage.save_paper(paper, user.id)
     return paper
 
 
 @router.post("/revise", response_model=Paper)
-async def revise_paper(body: RevisePaperRequest, user: User = Depends(current_user)) -> Paper:
+async def revise_paper(
+    body: RevisePaperRequest,
+    user: User = Depends(rate_limiter("generate", "rate_limit_generate_per_min")),
+) -> Paper:
     current = storage.get_paper(body.paper_id, user.id)
     if not current:
         raise ResourceNotFoundError()
-    paper = ai_gateway.revise_paper(current, body.user_instruction)
+    charge = credits.PaperCharge(user.id, action="revise_paper", ref_type="paper_revise")
+    try:
+        paper = ai_gateway.revise_paper(current, body.user_instruction, on_request=charge.on_request)
+    except Exception:
+        charge.refund()
+        raise
+    paper.metadata.update(charge.metadata())
     storage.save_paper(paper, user.id)
     return paper
 

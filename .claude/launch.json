@@ -4,20 +4,22 @@
     {
       "name": "frontend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "frontend",
+        "run",
+        "dev"
+      ],
       "port": 5173
     },
     {
       "name": "backend",
-      "runtimeExecutable": "/Users/harrychen/2026summer/ETPG-backend/.venv/bin/uvicorn",
-      "runtimeArgs": ["backend.main:app", "--port", "8000"],
-      "port": 8000
-    },
-    {
-      "name": "payment",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd payment && .venv/bin/uvicorn app.main:app --port 8001"],
-      "port": 8001
+      "runtimeArgs": [
+        "-c",
+        "APP_DB_PATH=data/questions.local.db /Users/harrychen/2026summer/ETPG-backend/.venv/bin/uvicorn backend.main:app --port 8000"
+      ],
+      "port": 8000
     }
   ]
 }

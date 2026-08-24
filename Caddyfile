@@ -1,7 +1,7 @@
 # 墨卷 · 本机/局域网生产 Caddy 配置
 #
 # Caddy 同时负责:① 提供前端静态产物(frontend/dist,SPA 路由回退);
-# ② 反向代理两个 API 服务 —— /api/* → 主后端(:8000)、/payapi/* → 支付(:8001)。
+# ② 反向代理 /api/* → 主后端(:8000)(支付/积分 2026-08 已并入主后端,不再有 :8001)。
 # 浏览器只访问 Caddy,天然同源,无需 CORS。
 #
 # 站点地址用 `localhost` → Caddy 自动启用本地 HTTPS(首次运行 `caddy trust`
@@ -21,11 +21,6 @@ localhost {
 	# 主后端 API
 	handle /api/* {
 		reverse_proxy localhost:8000
-	}
-
-	# 支付服务 API
-	handle /payapi/* {
-		reverse_proxy localhost:8001
 	}
 
 	# 其余全部作为前端 SPA:找不到实体文件就回退到 index.html

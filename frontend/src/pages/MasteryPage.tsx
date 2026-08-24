@@ -6,11 +6,11 @@ import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import { MasteryReport } from '@/components/MasteryReport'
 import { PageHeader } from '@/components/PageHeader'
 import { PipelineProgress } from '@/components/PipelineProgress'
-import { MemberPill, UpgradeDialog } from '@/components/UpgradeDialog'
+import { CreditHint } from '@/components/CreditHint'
 import { PATHS } from '@/lib/paths'
-import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { Segmented } from '@/components/ui/segmented'
 
 const WINDOWS = [
   { value: 'all', label: '全部记录', days: undefined },
@@ -23,16 +23,15 @@ const WINDOWS = [
 const REVIEW_WINDOWS = [7, 30, 90] as const
 
 /**
- * 掌握度（handoff 第 7 屏）：GET /api/users/me/mastery，赤陶不透明度分级。
+ * 掌握度（handoff 第 7 屏）：GET /api/users/me/mastery，橙红不透明度分级。
  * 学情报告已独立成 /report 页(2026-08-09 侧栏拆分)——这里只留链接式入口,
- * 非会员照样可点,拦截在 /report 页内呈现。
+ * 学情报告免费（纯统计）。
  */
 export function MasteryPage() {
   const [windowKey, setWindowKey] = useState<string>('all')
-  const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
   const [reviewWindowDays, setReviewWindowDays] = useState<number>(30)
   const [serverError, setServerError] = useState<string | null>(null)
-  const { generate, guard, isPending, locked } = useGeneratePaper(setServerError)
+  const { generate, isPending } = useGeneratePaper(setServerError)
   const windowMeta = WINDOWS.find((w) => w.value === windowKey)
   const windowDays = windowMeta?.days
 
@@ -43,11 +42,7 @@ export function MasteryPage() {
 
   const submitReview = () => {
     setServerError(null)
-    const reason = guard('review')
-    if (reason) {
-      setUpgradeReason(reason)
-      return
-    }
+    // 复习卷题数由 AI 按薄弱点决定，价格按全新出题价在服务端结算；余额不足由 402 弹充值
     // 文案保持朴素：带"最近 N 天"等场景语义会触发向量检索（需本机 embedding 模型）；
     // 统计窗口走 review_window_days 参数即可
     generate({
@@ -66,30 +61,18 @@ export function MasteryPage() {
         intro={
           <>
             根据你的答题记录计算（Wilson 下界）：分数越低的考点
-            <mark>越值得优先练</mark>，薄弱点用赤陶标出。
+            <mark>越值得优先练</mark>，薄弱点用橙红标出。
           </>
         }
       >
-        {/* 统计窗口分段（选中 = 赤陶边 + wash 底）+ 学情报告链接式入口 */}
+        {/* 统计窗口分段（选中 = 墨色实心）+ 学情报告链接式入口 */}
         <div className="flex flex-col items-end gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {WINDOWS.map((w) => (
-              <button
-                key={w.value}
-                type="button"
-                aria-pressed={windowKey === w.value}
-                onClick={() => setWindowKey(w.value)}
-                className={cn(
-                  'rounded-sm border px-3 py-1.5 text-[13px] transition-colors',
-                  windowKey === w.value
-                    ? 'border-accent bg-wash text-ink'
-                    : 'border-hairline text-muted-ink hover:bg-tint hover:text-ink',
-                )}
-              >
-                {w.label}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            aria-label="统计窗口"
+            value={windowKey}
+            onChange={setWindowKey}
+            options={WINDOWS}
+          />
           <Link
             to={PATHS.report}
             className="font-ui text-[13px] text-muted-ink transition-colors hover:text-accent"
@@ -119,10 +102,10 @@ export function MasteryPage() {
       {data && !isLoading && !isError && (
         <section className="mt-10 flex flex-col items-start gap-4 border-t border-hairline pt-8">
           <div className="flex items-center gap-2">
-            <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
+            <span className="kicker">
               按薄弱考点复习
             </span>
-            {locked && <MemberPill />}
+            <CreditHint action="generate_fresh" units={10} prefix="10 题约" />
           </div>
 
           <p className="max-w-[42rem] text-[15px] leading-[1.9] text-muted-ink">
@@ -134,34 +117,25 @@ export function MasteryPage() {
           ) : (
             <div className="flex flex-wrap items-center gap-2">
               <span className="mr-1 font-ui text-[12px] text-quiet">统计范围</span>
-              {REVIEW_WINDOWS.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  aria-pressed={reviewWindowDays === d}
-                  onClick={() => setReviewWindowDays(d)}
-                  className={cn(
-                    'rounded-sm border px-2.5 py-1 font-ui text-[12.5px] leading-none tabular-nums transition-colors',
-                    reviewWindowDays === d
-                      ? 'border-accent bg-wash text-ink'
-                      : 'border-hairline text-muted-ink hover:bg-tint hover:text-ink',
-                  )}
-                >
-                  近 {d} 天
-                </button>
-              ))}
+              <Segmented
+                aria-label="统计范围"
+                size="sm"
+                value={reviewWindowDays}
+                onChange={setReviewWindowDays}
+                options={REVIEW_WINDOWS.map((d) => ({ value: d, label: `近 ${d} 天` }))}
+              />
             </div>
           )}
 
           <div className="flex flex-col gap-2">
-            <button
+            <Button
+              size="lg"
               type="button"
               disabled={isPending || noAttempts}
-              className="rounded-sm border border-accent bg-wash px-6 py-2.5 font-ui text-[15px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
               onClick={submitReview}
             >
               {isPending ? '正在组卷…' : '出一份复习卷'}
-            </button>
+            </Button>
             {serverError && <p className="text-[12px] text-accent">{serverError}</p>}
           </div>
 
@@ -172,8 +146,6 @@ export function MasteryPage() {
           )}
         </section>
       )}
-
-      <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
     </div>
   )
 }

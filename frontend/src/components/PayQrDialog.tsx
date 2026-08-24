@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { CheckCircle2, Clock, ExternalLink } from 'lucide-react'
 import { cancelOrder, getOrder, simulatePaid } from '@/api/payment'
 import { formatYuan } from '@/lib/money'
+import { invalidateCredits } from '@/hooks/useCredits'
 import { queryClient } from '@/lib/queryClient'
 import type { PayOrder } from '@/types/payment'
 import { Button } from '@/components/ui/button'
@@ -34,7 +35,7 @@ interface PayQrDialogProps {
   order: PayOrder | null
   onClose: () => void
   /** 二维码过期/订单关闭后点「重新下单」。 */
-  onReorder: (planId: string) => void
+  onReorder: (packId: string) => void
   reorderPending: boolean
 }
 
@@ -62,10 +63,12 @@ export function PayQrDialog({ order: initialOrder, onClose, onReorder, reorderPe
   const status = order?.status
   const countdown = useCountdown(status === 'CREATED' ? order?.expires_at : undefined)
 
-  // 支付成功:刷新会员状态,短暂展示后自动关闭
+  // 支付成功:刷新积分余额与流水,短暂展示后自动关闭
   useEffect(() => {
     if (status !== 'PAID') return
-    queryClient.invalidateQueries({ queryKey: ['payMembership'] })
+    invalidateCredits()
+    queryClient.invalidateQueries({ queryKey: ['credits'] })
+    queryClient.invalidateQueries({ queryKey: ['payOrders'] })
     const timer = setTimeout(onClose, 1500)
     return () => clearTimeout(timer)
   }, [status, onClose])
@@ -91,7 +94,7 @@ export function PayQrDialog({ order: initialOrder, onClose, onReorder, reorderPe
           </DialogTitle>
           {order && (
             <DialogDescription className="font-ui tabular-nums">
-              {formatYuan(order.amount_cents)} · 订单 {order.out_trade_no}
+              {formatYuan(order.amount_cents)} · {order.credits} 积分 · 订单 {order.out_trade_no}
             </DialogDescription>
           )}
         </DialogHeader>
@@ -120,7 +123,8 @@ export function PayQrDialog({ order: initialOrder, onClose, onReorder, reorderPe
 
         {order && status === 'CREATED' && order.channel === 'qr' && (
           <div className="flex flex-col items-center gap-3 py-2">
-            <div className="rounded-md border border-hairline bg-white p-3">
+            {/* 二维码底必须纯白（扫码对比度），是全站唯一允许的 #fff 面 */}
+            <div className="rounded-sm border border-hairline bg-white p-3">
               <QRCodeSVG value={order.qr_code ?? ''} size={200} />
             </div>
             <p className="flex items-center gap-1.5 font-ui text-[13px] tabular-nums text-muted-ink">
@@ -144,7 +148,7 @@ export function PayQrDialog({ order: initialOrder, onClose, onReorder, reorderPe
           <div className="flex flex-col items-center gap-2 py-8">
             <CheckCircle2 className="size-10 text-ink" strokeWidth={1.5} />
             <p className="font-ui text-[15px] text-ink">支付成功</p>
-            <p className="font-ui text-[13px] text-muted-ink">会员权益已生效</p>
+            <p className="font-ui text-[13px] text-muted-ink">{order?.credits ?? ''} 积分已到账</p>
           </div>
         )}
 
@@ -153,7 +157,7 @@ export function PayQrDialog({ order: initialOrder, onClose, onReorder, reorderPe
             <p className="font-ui text-[14px] text-foreground">
               {status === 'EXPIRED' ? '二维码已过期' : '订单已关闭'}
             </p>
-            <Button size="sm" onClick={() => onReorder(order.plan_id)} disabled={reorderPending}>
+            <Button size="sm" onClick={() => onReorder(order.pack_id)} disabled={reorderPending}>
               重新下单
             </Button>
           </div>

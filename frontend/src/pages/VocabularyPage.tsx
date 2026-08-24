@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { getVocabularyToday, judgeVocabulary, updateVocabularySettings } from '@/api/vocabulary'
 import { PageHeader } from '@/components/PageHeader'
+import { StatTile } from '@/components/StatTile'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { queryClient } from '@/lib/queryClient'
@@ -92,19 +93,19 @@ export function VocabularyPage() {
 
   if (phase === 'completed' && !judgment) {
     return (
-      <div className="mx-auto flex max-w-[42rem] flex-col gap-8">
+      <div className="flex max-w-[42rem] flex-col gap-8">
         <PageHeader title="今日任务完成" intro="新词、到期复习和今日再复习均已完成。" />
         <section className="border-t border-hairline pt-7">
-          <div className="grid gap-px overflow-hidden border border-hairline bg-hairline sm:grid-cols-3">
-            <div className="bg-canvas px-4 py-5"><p className="text-xs text-quiet">今日新词</p><p className="mt-2 text-xl text-ink">{counts.new_completed}</p></div>
-            <div className="bg-canvas px-4 py-5"><p className="text-xs text-quiet">到期复习</p><p className="mt-2 text-xl text-ink">{counts.scheduled_review_completed}</p></div>
-            <div className="bg-canvas px-4 py-5"><p className="text-xs text-quiet">再复习通过</p><p className="mt-2 text-xl text-ink">{counts.retry_completed}</p></div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <StatTile label="今日新词" value={counts.new_completed} />
+            <StatTile label="到期复习" value={counts.scheduled_review_completed} />
+            <StatTile label="再复习通过" value={counts.retry_completed} />
           </div>
           <div className="mt-8 border-t border-hairline pt-6">
-            <h2 className="text-lg text-ink [font-family:var(--font-display)]">继续背新词</h2>
+            <h2 className="font-heading text-[17px] font-bold text-ink">继续背新词</h2>
             <p className="mt-2 text-sm leading-6 text-muted-ink">提高今日目标后，系统会立刻按国家核心词优先的顺序补发新词。</p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <input className="h-9 w-24 rounded-sm border border-hairline bg-transparent px-2 text-ink" type="number" min="10" max="50" value={moreTarget} onChange={(event) => setMoreTarget(Number(event.target.value))} />
+              <input className="h-8 w-24 rounded-sm border border-ink-20 bg-transparent px-2 text-ink outline-none focus:border-ink" type="number" min="10" max="50" value={moreTarget} onChange={(event) => setMoreTarget(Number(event.target.value))} />
               <span className="text-sm text-muted-ink">词 / 天</span>
               <Button disabled={addMore.isPending || moreTarget <= today.data.daily_new_limit || moreTarget > 50} onClick={() => addMore.mutate()}>
                 {addMore.isPending ? '正在追加…' : '开始背更多'}
@@ -120,10 +121,10 @@ export function VocabularyPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[42rem] flex-col gap-8">
+    <div className="flex max-w-[42rem] flex-col gap-8">
       <PageHeader title="背单词" intro="先凭第一反应判断熟悉度，再确认释义；模糊和不认识的词会在今天再次出现。" />
       <section className="border-t border-hairline pt-7">
-        <div className="flex items-center justify-between gap-4 text-xs tracking-wide text-quiet" aria-live="polite">
+        <div className="kicker flex items-center justify-between gap-4" aria-live="polite">
           <span>{vocabularyPhaseLabel(phase)}</span>
           {phase === 'same_day_retry'
             ? <span>待通过 {counts.retry_pending} 词</span>
@@ -164,7 +165,7 @@ export function VocabularyPage() {
             <div className="mt-14 grid gap-3 sm:grid-cols-3">
               {RATING_BUTTONS.map((item) => (
                 <Button key={item.value} variant={item.variant} className="h-auto min-h-16 flex-col gap-1 py-3" disabled={judge.isPending} onClick={() => judge.mutate(item.value)}>
-                  <span>{judge.isPending ? '提交中…' : item.label}</span><span className="text-xs text-quiet">{item.note}</span>
+                  <span>{judge.isPending ? '提交中…' : item.label}</span><span className="text-xs opacity-75">{item.note}</span>
                 </Button>
               ))}
             </div>

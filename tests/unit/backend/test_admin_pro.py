@@ -81,65 +81,6 @@ def _seed_attempt(user_id, paper_id, days_ago, correct_flags):
     )
 
 
-# ---- memberships aggregation: never surface locally-deleted users ----
-
-
-def _fake_payment_memberships(items):
-    """Monkeypatch factory: /payapi/admin/memberships returns `items`;
-    revenue probe still answers so stats_overview stays green."""
-
-    def fake(path, cookie, params=None):
-        if path == "/payapi/admin/memberships":
-            return {"items": items, "total": len(items)}
-        if path == "/payapi/admin/stats/revenue":
-            return {"total_cents": 0, "revenue_by_day": [], "by_plan": []}
-        raise AssertionError(f"unexpected payment call: {path}")
-
-    return fake
-
-
-def test_memberships_list_excludes_deleted_users(client, monkeypatch):
-    boss = _mk(client, "boss", admin=True)
-    alive = _mk(client, "alive")
-    _as(client, boss)
-    monkeypatch.setattr(
-        "backend.api.admin._payment_get_json",
-        _fake_payment_memberships(
-            [
-                {"user_id": alive.id, "username": None, "expires_at": "2099-01-01T00:00:00Z", "active": True},
-                # ghost membership: user_id resolves to no local user
-                {"user_id": "ghost-id", "username": None, "expires_at": "2099-01-01T00:00:00Z", "active": True},
-            ]
-        ),
-    )
-
-    r = client.get("/api/admin/memberships")
-    assert r.status_code == 200
-    data = r.json()
-    assert data["total"] == 1
-    assert [i["user_id"] for i in data["items"]] == [alive.id]
-    assert data["items"][0]["username"] == "alive"
-
-
-def test_overview_active_members_excludes_deleted_users(client, monkeypatch):
-    boss = _mk(client, "boss", admin=True)
-    alive = _mk(client, "alive")
-    _as(client, boss)
-    monkeypatch.setattr(
-        "backend.api.admin._payment_get_json",
-        _fake_payment_memberships(
-            [
-                {"user_id": alive.id, "username": None, "expires_at": "2099-01-01T00:00:00Z", "active": True},
-                {"user_id": alive.id, "username": None, "expires_at": "2000-01-01T00:00:00Z", "active": False},
-                {"user_id": "ghost-id", "username": None, "expires_at": "2099-01-01T00:00:00Z", "active": True},
-            ]
-        ),
-    )
-
-    r = client.get("/api/admin/stats/overview")
-    assert r.status_code == 200
-    assert r.json()["active_members"] == 1  # ghost's active membership not counted
-
 
 # ---- A: users list sort / status filter ----
 
@@ -306,13 +247,6 @@ def test_questionbank_search_filters_pagination_and_stem_match(client, tmp_path)
 
 
 def test_admin_writes_are_audited(client, monkeypatch):
-    import backend.api.admin as admin_mod
-
-    monkeypatch.setattr(
-        admin_mod,
-        "_payment_post_json",
-        lambda path, cookie, json=None: {"user_id": "x", "active": True},
-    )
     boss = _mk(client, "boss", admin=True)
     victim = _mk(client, "victim")
     _as(client, boss)
@@ -338,10 +272,10 @@ def test_admin_writes_are_audited(client, monkeypatch):
     assert "hushhush1" not in json.dumps(reset_rows[0]["detail"])
 
     assert (
-        client.post(f"/api/admin/memberships/{victim.id}/grant", json={"days": 30}).status_code == 200
+        client.post(f"/api/admin/credits/{victim.id}/adjust", json={"delta": 30, "note": "测试"}).status_code == 200
     )
-    grant_rows = storage.list_admin_audit(action="grant_membership")[0]
-    assert grant_rows[0]["detail"] == {"days": 30}
+    grant_rows = storage.list_admin_audit(action="adjust_credits")[0]
+    assert grant_rows[0]["detail"] == {"delta": 30, "note": "测试"}
 
 
 def test_audit_endpoint_filter_and_pagination(client):
@@ -428,7 +362,7 @@ def test_system_health(client, monkeypatch):
     r = client.get("/api/admin/system/health")
     assert r.status_code == 200
     body = r.json()
-    assert body["payment"] is True
+    assert body["payment_mock"] is True
     assert body["llm"] is True
     assert body["question_bank_total"] == 42
     assert body["app_db_size_kb"] > 0

@@ -265,13 +265,18 @@ def implement_study_plan(plan_text: str, start_date: str = "") -> str:
     from datetime import date, timedelta
     from concurrent.futures import ThreadPoolExecutor
 
+    from uuid import uuid4
+
     from agent.plan_extractor import extract_study_plan, _load_valid_kp_ids
     from ai_engine import retriever as _retriever
     from ai_engine import reviser as _reviser
+    from backend.errors import InsufficientCreditsError
+    from backend.services import credits as _credits
     from shared import storage as _storage
     from shared.schemas import GenerateRequest
 
     user_id = _require_user_id()
+    plan_ref = uuid4().hex
 
     try:
         parsed_start = date.fromisoformat(start_date) if start_date else date.today()
@@ -297,11 +302,25 @@ def implement_study_plan(plan_text: str, start_date: str = "") -> str:
             revision_intensity="light",
             user_id=user_id,
         )
+        # 积分：每天一卷，按 light × 题数扣；余额不足 → 该天失败（其余天照常）；生成失败退回
+        day_ref = f"{plan_ref}:{day.index}"
+        try:
+            _credits.charge_request(user_id, req, ref_type="plan_day", ref_id=day_ref, note=f"学习计划 第 {day.index} 天")
+        except InsufficientCreditsError as e:
+            d = e.detail if isinstance(e.detail, dict) else {}
+            return {
+                "index": day.index, "date": day_date, "theme": day.theme,
+                "knowledge_points": day.knowledge_points, "kp_names": day_kp_names,
+                "question_types": day.question_types, "total_questions": day.total_questions,
+                "note": day.note,
+                "error": f"积分不足（需要 {d.get('required')}，可用 {d.get('available')}）",
+            }
         try:
             retrieval = _retriever.retrieve(req)
             paper = _reviser.build_paper(req, retrieval)
             _storage.save_paper(paper, user_id)
         except Exception as e:
+            _credits.refund(user_id, ref_type="plan_day", ref_id=day_ref, note="计划出卷失败退回")
             return {
                 "index": day.index, "date": day_date, "theme": day.theme,
                 "knowledge_points": day.knowledge_points, "kp_names": day_kp_names,
@@ -379,6 +398,8 @@ def generate_paper(
     返回试卷的摘要信息（标题、题数、每道题的题干和答案）。
     """
     from ai_engine.pipeline import generate_paper as _generate_paper
+    from backend.errors import InsufficientCreditsError
+    from backend.services import credits as _credits
     from shared import storage as _storage
 
     user_id = _require_user_id()
@@ -387,10 +408,23 @@ def generate_paper(
     if mode not in valid_modes:
         mode = "fresh"
 
+    # 积分：与 /api/papers/generate 同一套扣费（解析出强度×题数后扣，失败退回）。
+    charge = _credits.PaperCharge(user_id, note="学习助手出卷")
     try:
-        paper = _generate_paper(user_query, mode=mode, user_id=user_id)
+        paper = _generate_paper(user_query, mode=mode, user_id=user_id, on_request=charge.on_request)
+    except InsufficientCreditsError as e:
+        d = e.detail if isinstance(e.detail, dict) else {}
+        return json.dumps({
+            "error": "积分不足",
+            "credits_required": d.get("required"),
+            "credits_available": d.get("available"),
+            "hint": "请告诉用户：这次出卷需要 {} 积分，当前可用 {} 积分，可以去「积分」页充值，或减少题量 / 改用真题原样。".format(
+                d.get("required"), d.get("available")),
+        }, ensure_ascii=False)
     except Exception as e:
+        charge.refund()
         return json.dumps({"error": str(e)}, ensure_ascii=False)
+    paper.metadata.update(charge.metadata())
 
     # Persist so /api/papers/{id} works. A save failure MUST be surfaced —
     # otherwise the agent advertises a paper_id the frontend can't open (404).
@@ -426,6 +460,7 @@ def generate_paper(
         "title": paper.title,
         "total_questions": len(paper.items),
         "revision_intensity": paper.request.revision_intensity,
+        "credits_charged": paper.metadata.get("credits_charged"),
         "items": items,
     }, ensure_ascii=False, indent=2)
 

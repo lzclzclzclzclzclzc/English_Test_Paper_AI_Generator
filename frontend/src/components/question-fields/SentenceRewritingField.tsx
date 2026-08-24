@@ -31,7 +31,7 @@ export function SentenceRewritingField({
         </p>
       )}
       {question.instruction && (
-        <span className="self-start rounded-md bg-wash px-2.5 py-1 font-ui text-[13px] leading-normal text-accent">
+        <span className="chip self-start border-accent/30 bg-wash px-2.5 py-1 text-[13px] leading-normal text-accent">
           {question.instruction}
         </span>
       )}

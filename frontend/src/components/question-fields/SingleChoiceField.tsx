@@ -12,8 +12,8 @@ interface SingleChoiceFieldProps {
 
 /**
  * 单选题（handoff 第 5 屏）：34rem 宽纵向选项列表，选项字母等宽 13px，
- * 选中 = 赤陶边 + accent-wash 底。review 态：正确项赤陶实边 + ✓，
- * 错选项 ✕ 赤陶字。
+ * 选中 = 墨色实心。review 态：正确项绿色边 + ✓，
+ * 错选项 ✕ 橙红字。
  */
 export function SingleChoiceField({
   question,
@@ -51,7 +51,7 @@ export function SingleChoiceField({
                 className={cn(
                   'flex cursor-pointer items-baseline rounded-sm border px-4 py-2.5 text-[15px] transition-colors',
                   selected
-                    ? 'border-accent bg-wash text-ink'
+                    ? 'border-ink bg-ink text-paper'
                     : 'border-ink-15 text-muted-ink hover:bg-tint',
                 )}
               >

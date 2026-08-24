@@ -25,6 +25,9 @@ class BackendError(Exception):
     http_status = 500
     message = "服务器内部错误"
 
+    # production 下默认隐藏 detail；业务上需要把结构化 detail 交给前端的错误置 True
+    expose_detail = False
+
     def __init__(self, detail: object | None = None):
         super().__init__(str(detail) if detail is not None else self.message)
         self.detail = detail
@@ -114,10 +117,37 @@ class AIInternalError(BackendError):
     message = "AI Engine 内部异常"
 
 
+class InsufficientCreditsError(BackendError):
+    """积分不足。detail = {"required", "available", "action"}；前端据此弹充值对话框。"""
+
+    error_code = "credits.insufficient"
+    http_status = 402
+    message = "积分不足"
+    expose_detail = True
+
+
+class PaymentPackNotFoundError(BackendError):
+    error_code = "payment.pack_not_found"
+    http_status = 404
+    message = "积分包不存在"
+
+
+class PaymentOrderNotFoundError(BackendError):
+    error_code = "payment.order_not_found"
+    http_status = 404
+    message = "订单不存在"
+
+
+class PaymentOrderNotCancelableError(BackendError):
+    error_code = "payment.order_not_cancelable"
+    http_status = 409
+    message = "订单已支付，无法取消"
+
+
 class PaymentUpstreamError(BackendError):
-    error_code = "payment.upstream"
+    error_code = "payment.upstream_error"
     http_status = 502
-    message = "支付服务不可用"
+    message = "支付宝接口调用失败"
 
 
 def install_error_handlers(app: FastAPI) -> None:
@@ -142,7 +172,7 @@ def install_error_handlers(app: FastAPI) -> None:
 def backend_error_response(exc: BackendError, request: Request | None = None) -> JSONResponse:
     trace_id = _request_trace_id(request)
     logger.error("[%s] %s: %s", trace_id, type(exc).__name__, exc)
-    detail = None if get_config().backend.env == "production" else exc.detail
+    detail = exc.detail if (exc.expose_detail or get_config().backend.env != "production") else None
     body = ErrorResponse(
         error_code=exc.error_code,
         message=exc.message,

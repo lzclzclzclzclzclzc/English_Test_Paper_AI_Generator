@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { PATHS } from '@/lib/paths'
-import { FREE_GENERATE_PER_DAY } from '@/lib/quota'
+import { DAILY_GRANT, SIGNUP_BONUS } from '@/lib/pricing'
 
 /** 深色 final CTA 带 + 深色页脚（品牌名「卷王」）。 */
 export function FooterCta() {
@@ -12,7 +12,7 @@ export function FooterCta() {
             <div>
               <h2>出一份卷子，看看 AI 有多懂中考英语。</h2>
               <p className="fsub">
-                免费注册<span className="dot">·</span>每天 {FREE_GENERATE_PER_DAY} 次出卷额度
+                免费注册送 {SIGNUP_BONUS} 积分<span className="dot">·</span>每天再送 {DAILY_GRANT} 积分
               </p>
             </div>
             <div className="cta-side">

@@ -1,6 +1,6 @@
 import { apiFetch } from '@/api/client'
 import type {
-  AdminAnalytics, AdminAuditList, AdminMembership, AdminMembershipList, AdminOrderList,
+  AdminAnalytics, AdminAuditList, AdminCreditAccount, AdminCreditAccountDetail, AdminCreditAccountList, AdminOrderList,
   AdminOverview, AdminRevenue, AdminSystemHealth, AdminTimeseries, AdminUserAnalytics,
   AdminUserAttemptList, AdminUserDetail, AdminUserList, AdminUserPaperList, MasteryProfile,
   QuestionBankList, QuestionBankStats, User,
@@ -51,22 +51,16 @@ export const listAuditLogs = (actor = '', action = '', limit = 50, offset = 0) =
   apiFetch<AdminAuditList>(`/admin/audit${qs({ actor, action, limit, offset })}`)
 export const getSystemHealth = () => apiFetch<AdminSystemHealth>('/admin/system/health')
 
-// 会员 / 订单 → 主后端聚合端点 (/api，补齐 username)
-export const listMemberships = (
-  q = '', limit = 50, offset = 0, expiringWithinDays?: number, active?: boolean,
-) =>
-  apiFetch<AdminMembershipList>(`/admin/memberships${qs({
-    q,
-    limit,
-    offset,
-    expiring_within_days: expiringWithinDays,
-    active: active === undefined ? undefined : String(active),
-  })}`)
-export const grantMembership = (id: string, body: { days?: number; plan_id?: string }) =>
-  apiFetch<AdminMembership>(`/admin/memberships/${id}/grant`, { method: 'POST', body: JSON.stringify(body) })
-export const revokeMembership = (id: string) =>
-  apiFetch<AdminMembership>(`/admin/memberships/${id}/revoke`, { method: 'POST' })
-export const grantMembershipByUsername = (username: string, days: number) =>
-  apiFetch<AdminMembership>('/admin/memberships/grant', { method: 'POST', body: JSON.stringify({ username, days }) })
+// 积分 / 订单（2026-08 纯积分制，本地账本）
+export const listCreditAccounts = (q = '', limit = 50, offset = 0) =>
+  apiFetch<AdminCreditAccountList>(`/admin/credits${qs({ q, limit, offset })}`)
+export const getCreditAccount = (id: string, limit = 50, offset = 0) =>
+  apiFetch<AdminCreditAccountDetail>(`/admin/credits/${id}${qs({ limit, offset })}`)
+export const adjustCredits = (id: string, delta: number, note: string) =>
+  apiFetch<AdminCreditAccount>(`/admin/credits/${id}/adjust`, { method: 'POST', body: JSON.stringify({ delta, note }) })
+export const adjustCreditsByUsername = (username: string, delta: number, note: string) =>
+  apiFetch<AdminCreditAccount>('/admin/credits/adjust', { method: 'POST', body: JSON.stringify({ username, delta, note }) })
 export const listOrders = (status = '', limit = 50, offset = 0) =>
   apiFetch<AdminOrderList>(`/admin/orders${qs({ status, limit, offset })}`)
+export const reconcileOrders = () =>
+  apiFetch<{ reconciled: number }>('/admin/orders/reconcile', { method: 'POST' })

@@ -5,9 +5,9 @@ import { cn } from '@/lib/utils'
 import type { StudyPlanDay } from '@/types/api'
 
 /**
- * 学习计划月历（喫茶去）：ink-10 细线网格、周一起 7 列。
+ * 学习计划月历：ink-10 细线网格、周一起 7 列。
  * 计划日格内放主题 + 题数；已生成试卷的整格可点进卷子，未生成的点击滚到下方 DAY 行。
- * 今天 = 日号旁赤陶圆点；中考日 = 赤陶细线 chip。计划全部无日期时返回 null。
+ * 今天 = 日号旁橙红圆点；中考日 = 橙红细线 chip。计划全部无日期时返回 null。
  */
 
 /** 本地时区 YYYY-MM-DD（补零拼串，不走 toISOString 免时区漂移） */
@@ -198,7 +198,7 @@ export function StudyPlanCalendar({
         <span className="flex items-center gap-1.5">
           <span
             aria-hidden
-            className="inline-flex h-4 items-center rounded-[2px] border border-ink-10 px-1 font-serif text-[10.5px] leading-none text-ink"
+            className="chip h-4 px-1 text-[10.5px] leading-none text-ink"
           >
             主题
           </span>

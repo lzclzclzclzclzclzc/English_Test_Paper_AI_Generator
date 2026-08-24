@@ -14,7 +14,7 @@ interface ListeningTrueFalseFieldProps {
  *
  * passage 不在此组件渲染——由外层 PassageBlock 统一渲染一次。
  * 做题态与 review 态的样式参考 ListeningSingleChoiceField 的选项区
- * （Kissaten：terracotta 高亮正确，ink-30 标注用户错选）。
+ * （绿色高亮正确，橙红标注用户错选）。
  */
 export function ListeningTrueFalseField({
   question,
@@ -53,7 +53,7 @@ export function ListeningTrueFalseField({
                 className={cn(
                   'flex-1 cursor-pointer rounded-sm border px-4 py-2.5 text-[15px] transition-colors',
                   selected
-                    ? 'border-accent bg-wash text-ink'
+                    ? 'border-ink bg-ink text-paper'
                     : 'border-ink-15 text-muted-ink hover:bg-tint',
                 )}
               >

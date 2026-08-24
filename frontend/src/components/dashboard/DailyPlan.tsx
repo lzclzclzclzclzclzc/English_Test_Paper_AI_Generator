@@ -5,12 +5,13 @@ import type { ComposeInput } from '@/lib/composeQuery'
 import { dailyDoneKey, recipeTotal, resolveRecipe, structureOf } from '@/lib/dailyRecipes'
 import { PATHS } from '@/lib/paths'
 import type { MasteryProfile } from '@/types/api'
+import { Button } from '@/components/ui/button'
 
 interface DailyPlanProps {
   userId: string
   mastery: MasteryProfile | undefined
   isPending: boolean
-  /** 返回 true = 已实际发起生成（guard 放行）；false = 被会员/配额拦截 */
+  /** 返回 true = 已实际发起生成；false = 被余额预检拦截 */
   onStart: (input: ComposeInput) => boolean
 }
 
@@ -39,7 +40,7 @@ export function DailyPlan({ userId, mastery, isPending, onStart }: DailyPlanProp
 
   return (
     <section className="flex flex-col gap-3">
-      <span className="font-ui text-[11px] font-bold tracking-[0.14em] text-quiet">
+      <span className="kicker">
         今日一练 · {recipe.name}
       </span>
       <p className="text-[13.5px] leading-relaxed text-muted-ink">
@@ -47,23 +48,24 @@ export function DailyPlan({ userId, mastery, isPending, onStart }: DailyPlanProp
       </p>
       <div>
         {doneToday ? (
-          <button
+          <Button
+            variant="outline"
+            size="lg"
             type="button"
             disabled={isPending}
-            className="rounded-sm border border-hairline px-5 py-2 font-ui text-[13.5px] text-muted-ink transition-colors hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-60"
             onClick={start}
           >
             {isPending ? '生成中…' : '今天已练过 · 再练一组'}
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
+            size="lg"
             type="button"
             disabled={isPending}
-            className="rounded-sm border border-accent bg-wash px-6 py-2 font-ui text-[13.5px] tracking-[0.05em] text-ink transition-colors hover:text-accent disabled:pointer-events-none disabled:opacity-60"
             onClick={start}
           >
             {isPending ? '生成中…' : '开始今日一练'}
-          </button>
+          </Button>
         )}
       </div>
       <Link

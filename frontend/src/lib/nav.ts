@@ -43,7 +43,7 @@ export interface NavGroup {
 
 /**
  * 普通用户侧栏：两个顶级项（主页 / 学习助手）+ 四个分组（练习 / 出卷 / 背词 / 复盘）。
- * 会员/设置不在组内——收进底部头像个人菜单(Sidebar.tsx)。
+ * 积分/设置不在组内——收进底部头像个人菜单(Sidebar.tsx)。
  */
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
@@ -96,7 +96,7 @@ export const ADMIN_GROUPS: readonly NavGroup[] = [
       { to: '/admin/analytics', label: '分析', icon: BarChart3, end: true },
       { to: '/admin/learner', label: '学情', icon: GraduationCap, end: true },
       { to: '/admin/users', label: '用户', icon: Users, end: false },
-      { to: '/admin/memberships', label: '会员', icon: BadgeCheck, end: true },
+      { to: '/admin/credits', label: '积分', icon: BadgeCheck, end: true },
       { to: '/admin/orders', label: '订单', icon: ScrollText, end: true },
       { to: '/admin/questionbank', label: '题库', icon: BookMarked, end: false },
       { to: '/admin/audit', label: '审计', icon: ClipboardList, end: true },

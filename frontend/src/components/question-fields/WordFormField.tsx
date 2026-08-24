@@ -30,7 +30,7 @@ export function WordFormField({ question, mode, value, onChange, result }: WordF
         onChange={onChange}
       />
       {showHint && (
-        <span className="self-start rounded-md bg-wash px-2.5 py-1 font-ui text-[13px] leading-normal text-accent">
+        <span className="chip self-start border-accent/30 bg-wash px-2.5 py-1 text-[13px] leading-normal text-accent">
           用 <b>{question.hint}</b> 的适当形式填空
         </span>
       )}

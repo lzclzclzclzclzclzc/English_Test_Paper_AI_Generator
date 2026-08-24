@@ -4,10 +4,11 @@ import { PATHS } from '@/lib/paths'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/EmptyState'
 import { cn } from '@/lib/utils'
 
 /**
- * 掌握度分级（Spec F v2.2 三色 band）：< 0.4 薄弱 = 赤陶、
+ * 掌握度分级（Spec F v2.2 三色 band）：< 0.4 薄弱 = 橙红、
  * 0.4–0.7 一般 = 赭黄、≥ 0.7 扎实 = 绿。条与分数同色，一眼扫出节奏。
  */
 const WEAK_THRESHOLD = 0.4
@@ -36,15 +37,15 @@ export function MasteryReport({
   useKnowledgePoints() // 确保目录到达后重渲染，考点显示为中文名
   if (profile.total_attempts_considered === 0) {
     return (
-      <div className="flex flex-col items-start gap-4 border-t border-hairline pt-8">
-        <p className="text-[16px] text-ink">还没有答题记录</p>
-        <p className="text-[13px] text-muted-ink">
-          做几份试卷之后，这里会标出你最需要巩固的考点
-        </p>
-        <Button asChild>
-          <Link to={PATHS.dashboard}>去生成一份</Link>
-        </Button>
-      </div>
+      <EmptyState
+        title="还没有答题记录"
+        desc="做几份试卷之后，这里会标出你最需要巩固的考点"
+        action={
+          <Button asChild>
+            <Link to={PATHS.dashboard}>去生成一份</Link>
+          </Button>
+        }
+      />
     )
   }
 
@@ -88,9 +89,9 @@ export function MasteryReport({
                   {kp.knowledge_point_id} · {kp.attempts} 次作答
                 </span>
               </div>
-              <div className="h-[6px] overflow-hidden rounded-full bg-ink-10 max-sm:hidden">
+              <div className="h-1 overflow-hidden bg-ink-10 max-sm:hidden">
                 <div
-                  className={cn('h-full rounded-full', BAND_BAR[band])}
+                  className={cn('h-full', BAND_BAR[band])}
                   style={{ width: `${Math.round(kp.mastery * 100)}%` }}
                 />
               </div>
@@ -136,7 +137,7 @@ function Stat({
 }) {
   return (
     <div className="flex flex-col gap-1 font-ui">
-      <span className="text-[11px] tracking-[0.1em] text-quiet">{label}</span>
+      <span className="kicker">{label}</span>
       <span
         className={cn(
           'text-[32px] font-bold leading-none tabular-nums',

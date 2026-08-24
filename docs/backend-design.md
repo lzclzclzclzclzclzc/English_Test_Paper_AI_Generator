@@ -382,7 +382,7 @@ CREATE TABLE writing_grade_results (
     organization_score    REAL NOT NULL,
     word_count            INTEGER NOT NULL,
     level                 TEXT NOT NULL,         -- 评级标签
-    content_analysis      TEXT,                  -- 会员可见的分析文本；下同
+    content_analysis      TEXT,                  -- 三维分析文本（2026-08 起全量返回）；下同
     language_analysis     TEXT,
     organization_analysis TEXT,
     overall_comment       TEXT,
@@ -600,7 +600,7 @@ GET  /api/auth/me                                           → User（当前登
 | POST | `/api/solutions` | `SolutionRequest` | `SolutionResponse` | 单题按需解析 |
 | POST | `/api/attempts` | `GradeSubmissionRequest` | `GradeSubmissionResponse` | 提交答题 + 判对错 + 写库 |
 | GET | `/api/attempts/by-paper/{paper_id}` | — | `GradeSubmissionResponse \| null` | 一份试卷最近一次答题结果（复盘回放） |
-| POST | `/api/writing/grade` | `WritingGradeRequest` | `WritingGradeResponse` | 作文批改（LLM 多维评分，分析字段按会员门控） |
+| POST | `/api/writing/grade` | `WritingGradeRequest` | `WritingGradeResponse` | 作文批改（LLM 多维评分；每篇扣积分，响应带 `credits`） |
 | GET | `/api/writing/by-paper/{paper_id}` | — | `StoredWritingGradeHistoryResponse \| null` | 一份试卷已存的作文批改历史（复盘） |
 | GET | `/api/vocabulary/today` | — | `VocabularyTodayResponse` | 今日背单词任务（当前卡 + 计数） |
 | POST | `/api/vocabulary/judgments` | `VocabularyJudgmentRequest` | `VocabularyJudgmentResponse` | 提交一张卡的自评（known/fuzzy/forgot） |
@@ -612,20 +612,23 @@ GET  /api/auth/me                                           → User（当前登
 | POST | `/api/agent/chat/clear` | — | 204 | 开始新对话（清空该用户会话历史） |
 | GET | `/api/agent/study-plans/latest` | — | `StudyPlanOut \| null` | 当前用户最新学习计划 |
 | GET | `/api/admin/users` | — (query `q`/`limit`/`offset`) | `AdminUserList` | 用户列表（含题数/答题数） |
-| GET | `/api/admin/users/{id}` | — | `AdminUserDetail` | 单用户详情（含会员到期、正确率） |
+| GET | `/api/admin/users/{id}` | — | `AdminUserDetail` | 单用户详情（含积分余额、正确率） |
 | GET | `/api/admin/users/{id}/mastery` | — | `MasteryProfile` | 单用户掌握度画像（只读，无 LLM） |
 | POST | `/api/admin/users/{id}/role` | `SetRoleRequest` | `User` | 设角色（不可改自己） |
 | POST | `/api/admin/users/{id}/reset-password` | `ResetPasswordRequest` | `User` | 重置密码 + 踢下线 |
 | POST | `/api/admin/users/{id}/ban` | — | `User` | 封禁（不可封自己）+ 踢下线 |
 | POST | `/api/admin/users/{id}/unban` | — | `User` | 解封 + 踢下线 |
-| GET | `/api/admin/stats/overview` | — | `AdminOverview` | 全站计数概览（含活跃会员数） |
+| GET | `/api/admin/stats/overview` | — | `AdminOverview` | 全站计数概览（含付费用户数、累计收入） |
 | GET | `/api/admin/stats/timeseries` | — (query `days`) | `AdminTimeseries` | 用户/试卷按天时间序列 |
 | GET | `/api/admin/analytics` | — (query `days`) | `AdminAnalytics` | 全站答题分析（掌握度 + 趋势 + 题型正确率） |
-| GET | `/api/admin/memberships` | — (query `q`/`limit`/`offset`) | `AdminMembershipListView` | 会员列表（payment 数据 + 本地用户名） |
-| GET | `/api/admin/orders` | — (query `status`/`limit`/`offset`) | `AdminOrderListView` | 订单列表（payment 数据 + 本地用户名） |
-| POST | `/api/admin/memberships/grant` | `GrantByUsernameRequest` | `dict` | 按用户名发放会员（转调 payment） |
-| POST | `/api/admin/memberships/{id}/grant` | `GrantDaysRequest` | `dict` | 按 user_id 发放会员（转调 payment） |
-| POST | `/api/admin/memberships/{id}/revoke` | — | `dict` | 撤销会员（转调 payment） |
+| GET | `/api/admin/credits` | — (query `q`/`limit`/`offset`) | `AdminCreditAccountListView` | 积分账户列表（按用户名搜索） |
+| GET | `/api/admin/credits/{id}` | — | `AdminCreditAccountDetail` | 账户详情 + 流水 |
+| POST | `/api/admin/credits/adjust` | `AdjustCreditsByUsernameRequest` | `AdminCreditAccountItem` | 按用户名增减积分（审计 `adjust_credits`） |
+| POST | `/api/admin/credits/{id}/adjust` | `AdjustCreditsRequest` | `AdminCreditAccountItem` | 按 user_id 增减积分 |
+| GET | `/api/admin/orders` | — (query `status`/`limit`/`offset`) | `AdminOrderListView` | 订单列表（本地 `orders` 表 + 用户名） |
+| POST | `/api/admin/orders/reconcile` | — | `{reconciled}` | PAID 订单缺入账则补 |
+| GET | `/api/credits/me` · `/api/credits/prices` · `/api/credits/ledger` | — | 见 Spec P | 积分余额 / 价目 / 流水 |
+| GET/POST | `/api/payment/config` · `/packs` · `/orders` · `/orders/{no}` · `/orders/{no}/cancel` · `/dev/simulate-paid/{no}` | 见 Spec P | `OrderOut` 等 | 积分包购买（支付宝沙盒 / mock） |
 
 除 `/api/health*`、`/api/auth/register`、`/api/auth/login` 外，所有端点都要求 `current_user`
 鉴权（见 § 4.6）；`/api/admin/*` 另需 `require_admin`（role=admin，否则 403）。`/api/test/*`
@@ -792,20 +795,20 @@ Body: WritingGradeRequest
 内部：
   1. 依赖 rate_limiter("writing", "rate_limit_writing_per_min")（默认 10 次/分）→ current_user
   2. paper = storage.get_paper(paper_id, user.id) → 404 if None
-  3. is_member = _check_membership_via_payment_service(user.id)   # 见 § 8 付费集成
-  4. 逐 item（跳过非 writing 题）：
+  3. 筛出真正会批改的 writing 条目，按篇数一次性 credits.charge(writing_grade × n)
+     → 余额不足 402 credits.insufficient（见 § 8.1 / Spec P）
+  4. 逐 item：
      - grade = ai_gateway.grade_writing(question, user_essay) → WritingGradeResult
-     - 组装 WritingGradeResultItem（分数总是返回；content_analysis / language_analysis /
-       organization_analysis / overall_comment / revised_version 仅会员可见，非会员置 None）
-  5. storage.save_writing_grade_results(...)         # 完整分析入库（不受门控影响）
+       （任一篇 LLM 失败 → credits.refund 本次全部扣费后抛出）
+     - 组装 WritingGradeResultItem（分数 + 三维分析 / 总评 / 范文全量返回）
+  5. storage.save_writing_grade_results(...)
      storage.save_writing_attempt_items(...)
      storage.mark_paper_submitted_if_needed(paper_id, user.id)
-  6. return WritingGradeResponse(paper_id, results)
+  6. return WritingGradeResponse(paper_id, results, credits={cost, balance_after, daily_after})
 ```
 
-**会员门控**：**分析字段落库时是完整的**，只在响应里按会员状态裁剪——历史复盘
-（`GET /api/writing/by-paper/{paper_id}`）用同一套门控逻辑，用户升级会员后可回看已批改作文的
-完整分析。`WritingGradeResponse` / `WritingGradeResultItem` 契约见 § 2（`backend/schemas.py`）。
+2026-08-23 起不再按会员裁剪分析字段（会员制已废弃）。`WritingGradeResponse` /
+`WritingGradeResultItem` 契约见 § 2（`backend/schemas.py`）。
 
 #### `GET /api/writing/by-paper/{paper_id}`（作文批改历史）
 
@@ -814,8 +817,7 @@ Body: WritingGradeRequest
   1. current_user
   2. paper = storage.get_paper(paper_id, user.id) → 404 if None
   3. rows = storage.get_writing_grade_results(paper_id, user.id) → 无则返回 null
-  4. is_member = _check_membership_via_payment_service(user.id)
-  5. 组装 StoredWritingGradeHistoryResponse（分析字段同样按会员门控）
+  4. 组装 StoredWritingGradeHistoryResponse（分析字段全量）
 ```
 
 #### 背单词端点（`/api/vocabulary/*`）
@@ -1080,7 +1082,7 @@ class BackendConfig(BaseModel):
     rate_limit_generate_per_min: int = 30
     rate_limit_solutions_per_min: int = 60
     rate_limit_writing_per_min: int = 10             # 作文批改（LLM，较慢）单独限流
-    payment_service_url: str = "http://127.0.0.1:8001"  # 会员查询用的独立付费服务
+    rate_limit_agent_per_min: int = 20            # 学习助手每分钟消息数（2026-08）
 
 class AppConfig(BaseSettings):
     # ... 扁平的 AI Engine / ingestion 配置（llm_api_key、db_path、app_db_path 等）...
@@ -1103,24 +1105,22 @@ BACKEND_ENV=development
 BACKEND_PORT=8000
 ```
 
-### 8.1 付费服务集成（会员状态）
+### 8.1 积分与支付（2026-08-23 起；详见 `docs/credits-design.md` = Spec P）
 
-会员（付费）状态**不存在本后端**——由一个**独立的付费服务**管理，本后端按需 HTTP 查询：
+会员制与独立付费服务已废弃。付费状态 = **积分账本**（`credit_accounts` / `credit_ledger` /
+`orders`，`data/app.db`，迁移 `MIGRATION_CREDITS_AND_ORDERS`），支付宝沙盒订单逻辑并入
+`backend/services/payment/`，用户侧路由 `/api/credits/*`、`/api/payment/*`，管理侧
+`/api/admin/credits*`、`/api/admin/orders*`、`/api/admin/stats/revenue`。
 
-- 配置项 `config.backend.payment_service_url`（默认 `http://127.0.0.1:8001`，可用 `PAYMENT_SERVICE_URL` 覆盖）。
-- **作文批改**（`backend/api/writing.py`）用 `_check_membership_via_payment_service(user_id)`
-  调 `GET {payment_service_url}/payapi/membership/me`（带 `X-User-Id` 头）：`active=true` → 会员，
-  据此决定作文分析字段是否返回给前端。**降级策略**：付费服务不可达 / 非 200 一律视作"服务未启用" →
-  当作会员（不锁分析字段），与前端 `useMembership` 的 `locked = isSuccess && !isMember` 规则对齐。
-- **管理后台**（`backend/api/admin.py`）的会员/订单视图（`/api/admin/memberships`、`/api/admin/orders`、
-  发放/撤销）转调付费服务的 `/payapi/admin/*`，转发管理员的 session cookie 供付费侧 `require_admin` 通过，
-  并在本地 join 用户名。付费服务不可达时，概览里的 `active_members` 与详情里的 `membership_expires_at`
-  best-effort 降级为 `None`（不阻塞主流程）。
-
-> 实现差异注记：admin.py 目前用一个硬编码的 `_payment_base()`（`http://localhost:8001`）而非
-> `config.backend.payment_service_url`；两者默认端口一致，但配置化只在 writing.py 生效。若要统一，
-> 应让 admin.py 也读配置项。
-
+- 配置：`shared/config.py` `CreditsConfig`（`CREDITS_SIGNUP_BONUS` / `CREDITS_DAILY_GRANT`）与
+  `PaymentConfig`（`PAYMENT_MOCK` / `PAYMENT_ORDER_TTL_SECONDS` / `ALIPAY_*` / `PAY_RETURN_URL`）。
+  `payment_service_url` / `PAYMENT_SERVICE_URL` 已删除。
+- 扣费点（服务端强制，失败退回）：`POST /api/papers/generate`、`/api/papers/revise`（新增限流）、
+  `/api/solutions`、`/api/writing/grade`（按篇）、`/api/agent/chat`（每条 + 工具内出卷另扣，
+  新增限流 `RATE_LIMIT_AGENT_PER_MIN`）。出卷价格在 Parser 之后通过 `ai_engine.pipeline` 的
+  `on_request` 回调计算（强度 × 题数）。余额不足 → **402 `credits.insufficient`**，
+  `detail={required, available, action}`（production 也保留）。
+- 作文批改不再按会员裁剪分析字段（全量返回）。
 ---
 
 ## 9. 后端 CLI

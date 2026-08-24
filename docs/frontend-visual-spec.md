@@ -1,4 +1,8 @@
-# 前端视觉规范 —「喫茶去」
+# 前端视觉规范 —「卷王 variant-5」（原「喫茶去」）
+
+> **v3（2026-08-12 / 08-23）：全站换壳为「卷王 variant-5（SaaS × Swiss）」，见 § 12。**
+> § 12 与前文冲突处以 § 12 为准（橙红 accent、全无衬线、2px 方角、实心主按钮、
+> 墨色选中态）。§ 1–11 保留为历史脉络与未被推翻的细则。
 
 > **v2.1（2026-08-05）：试卷答题页卡片化修订，见 § 10。** § 9 的
 > 「无卡片/无阴影/无胶囊/无绿黄红」四条在试卷页按 § 10 放宽，其余页面照旧。
@@ -149,7 +153,7 @@ ease-out。无弹跳、无装饰性循环；`prefers-reduced-motion` 时全部�
 | 10 | 题库浏览 | — | ⏸ 未做：需后端只读检索端点（`GET /api/questions?…`），见 Spec D § 11 |
 | 11 | 题库摄入控制台 | — | ⏸ 未做：管理员向功能，需 ingestion 状态端点，分阶段上线（handoff 允许） |
 | 12 | 设置 | `/settings` | ✅ 细线行式列表：账号 / 阅读外观（纸色 Ink · 深墨地 Deep Ink 切换 `.dark`，持久化 `localStorage['theme']`）/ 备考目标（目标中考日期，`lib/examDate.ts`，驱动工作台倒计时）/ 速率限制说明；入口移至侧栏底部用户区 |
-| — | 会员（本仓库特有，不在 handoff 内） | `/membership` | ✅ 按同一语言重做：细线分栏套餐、赤陶价格、细线表格权益对比 |
+| — | 积分（原会员页；2026-08-23 积分制） | `/credits`（`/membership` 重定向） | ✅ `StatTile`×3（可用 / 今日赠送剩余 / 累计消费）+ 积分包 `.tile`×3（入门 / 标准 / 畅练，主按钮「¥N 购买」）+ 价目细线表 + 流水行式列表；购买沿用 `PayQrDialog`。全站 CTA 旁 `CreditHint`「≈ N 积分」，余额不足统一 `CreditsDialog`（§ 12.3） |
 | — | 学习助手（dev agent 功能，不在 handoff 内） | `/assistant` | ✅ 对话式：用户消息 = wash 底右对齐，助手回复 = 无框正文 + 底部细线，markdown 用 `.chat-md`（细线表格），思考中 = 赤陶脉冲点 |
 | — | 学习计划（dev agent 功能，不在 handoff 内） | `/study-plan` | ✅ 月历视图（`StudyPlanCalendar`，2026-08-09）：周一起 7 列 ink-10 细线网格，计划日 = 主题名 +「N 题」（有卷整格 Link 进卷 / 无卷点击锚点滚到 DAY 行），今天赤陶圆点 + 当天计划格 wash，中考日赤陶细线 chip，‹›切月限计划/中考覆盖范围；日历下保留 DAY 行式列表；全空 date 时只显列表 |
 | — | 学情报告（自掌握度页独立） | `/report` | ✅ 会员 = `StudyReport` 完整复用（近 30 天，打印友好）；非会员 = 居中提示卡（赤陶上边线 + 价值句 + 去开通会员）。掌握度页保留链接入口 |
@@ -273,3 +277,55 @@ AnswerCard / 各 question-fields）**，其余页面仍守 § 9。
 4. **掌握度三色 band**：< 0.4 赤陶 / 0.4–0.7 赭黄 / ≥ 0.7 绿，条与分数同色
    （替代 v2 的赤陶不透明度分级）。
 5. **标题**：PageHeader h1 34→40px，试卷页标题 34→38px（display 字体不变）。
+
+## 12. v3 修订：卷王 variant-5 全站统一（2026-08-12 换壳，2026-08-23 统一）
+
+2026-08-12（okarin，`eb2861d`）把品牌与视觉换为「卷王 variant-5（SaaS × Swiss）」，
+但只铺到 landing / 登录 / 工作台 / 练习中心 / 整卷模拟 / 会员 / 侧栏；
+2026-08-23 把其余页面与底层 token 对齐到同一套语言。**本节是当前有效规范。**
+
+### 12.1 Token（`styles/*.css` + `index.css` @theme）
+
+| 项 | 现值 | 备注 |
+|---|---|---|
+| 品牌色 `--accent` | `oklch(58% .22 30)` 橙红 Vermilion | 文字 / 描边 / `<mark>` wash；暗色下换 `--accent-bright` |
+| 填充色 `--accent-fill` | `= --accent-base` | **只给填充面**：主按钮、工作台 hero；暗色下不变亮 |
+| `--accent-ink` | `oklch(50% .2 30)` | 实心按钮 hover/active |
+| 字体 | 四个槽（`--font-sans/-heading/-ui/-question`）全部 = `--font-ui-stack` 系统无衬线 | 京华老宋 / 衬线停用；`--font-serif` 仅作回退，屏幕上无人使用 |
+| 圆角 | `--radius-sm/md = 2px`（`spacing.css` 与 `index.css` 必须同值——spacing.css 未分层，会赢过 @theme）；`--radius-xl..4xl = 3px`；`--radius-question-card = 2px` | 不用胶囊；`rounded-full` 只剩真正的圆点 / radio |
+| 阴影 | 静置无阴影；hover = `--shadow-card-hover`；浮层 = `--shadow-overlay` | `.tile` / `.bento .card` / `.sb-menu` 也走这两个 token |
+| 分科色 | `--grammar/--listening/--reading/--writing/--success` 不变 | `.tile--*` / `.bento .card.is-*` 顶边 3px 用色 |
+
+### 12.2 三个全站基元（`index.css` `@layer components`）
+
+- **`.kicker`**：11px / 700 / 0.14em / uppercase / `--text-quiet`。所有小标题
+  （区块 label、表头、统计名）只用它；颜色可用 `text-accent` 等覆盖。
+- **`.chip`**：只读小标签：2px 方角 + 细线边 + 11.5px；`.is-on` = 墨色实心。
+- **`.seg`（+ `.seg-sm`）**：分段/可选按钮；`aria-pressed="true"` 或 `.is-on` =
+  **墨色实心（`--ink` 底 + 纸色字）**，hover 转墨边。包装组件
+  `components/ui/segmented.tsx`（`<Segmented value onChange options size>`）。
+
+### 12.3 组件规则（取代 § 6 中冲突条目）
+
+| 元素 | 规则 |
+|---|---|
+| 主按钮 | `<Button>`（default）= `--accent-fill` 实心 + 白字，hover `--accent-ink`。页面级 CTA（生成试卷 / 提交判分 / 开始今日一练 / 发送）用 `size="lg"`（h-11 px-6 15px）。**不再手写 `border-accent bg-wash` 按钮。** |
+| 次按钮 | `<Button variant="outline">`：细线边透明底，hover 橙红边字。 |
+| 选中态 | 分段按钮、可选 chip、勾选方块、作答中的选项、答题卡已答格 = **墨色实心**；橙红不再用于选中。判分后：对 = 绿边绿底，错 = 橙红边 wash（语义色不变）。 |
+| 章节标题 | h2 = `font-heading text-[17px] font-bold`；h3 = 15px 700；PageHeader h1 = 30px 700；不再内联 `[font-family:var(--font-display)]`。 |
+| 统计数字 | `components/StatTile`（细线边 + 卡底 + kicker + 26px 700 数字），与工作台 `.card-stat` 同规格。 |
+| 空态 | `components/EmptyState`（标题 17px + 一句下一步 + 至多一个动作；顶部细线）。 |
+| 进度条 | 4px 高、方角、`--ink-10` 轨 + band 色填充（同 `.bento .card-bar`）。 |
+| 输入框 | 2px 方角、1px `--ink-20` 边、focus 边转墨色；筛选条里的 date 输入与 `.seg-sm` 同高（h-7）。 |
+| 脑图 | `MindmapView` 按层级轮换品牌色（`--accent → --grammar → --listening → --reading → --writing → --success`，读 CSS 变量随主题切换）。 |
+| `#fff` | 仅允许支付二维码底（扫码对比度）与 landing/登录页 `--l-*` 调色板内。 |
+| 积分 | `CreditHint`（12px quiet / 不够转橙红）挂在每个付费 CTA 旁；侧栏用户名旁 `.sb-badge` 显示余额；`CreditsDialog` 取代 `UpgradeDialog`，`MemberPill` 删除；作文批改详情不再遮罩。 |
+
+### 12.4 范围备注
+
+- `/admin/*`、`AdminLayout`、`components/admin/*` 仍是独立写法（硬编码 `#ef4a2b`、
+  `bg-emerald-500`、自带 h1），**尚未**对齐本节，留待下一轮。
+- landing 11 段与 `styles/landing.css` 的 `.landing-swiss` / `.login-shell` 作用域是
+  独立的营销页调色板（`--l-*`），不受本节约束；其中全站共用的 `.tile` / `.bento` /
+  `.sidebar-swiss` / `.dash-hero-input` 已改走全局 token。
+

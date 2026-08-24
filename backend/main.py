@@ -9,10 +9,11 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.api import attempts, health, mastery, papers, solutions, vocabulary, writing
+from backend.api import attempts, credits, health, mastery, papers, solutions, vocabulary, writing
 from backend.api import admin as admin_api
 from backend.api import agent as agent_api
 from backend.api import knowledge_points as kp_api
+from backend.api import payment as payment_api
 from backend.auth import routes as auth_routes
 from backend.errors import BackendError, backend_error_response, install_error_handlers
 from shared.config import get_config
@@ -62,6 +63,11 @@ def create_app() -> FastAPI:
     app.include_router(kp_api.router, prefix="/api")
     app.include_router(admin_api.router, prefix="/api")
     app.include_router(vocabulary.router, prefix="/api")
+    app.include_router(credits.router, prefix="/api")
+    app.include_router(payment_api.router, prefix="/api")
+    if get_config().payment.mock_pay:
+        # 离线 mock 支付：模拟买家付款的开发端点（真实沙盒模式不挂载）
+        app.include_router(payment_api.dev_router, prefix="/api")
 
     if config.env == "test":
         from backend.api import _test

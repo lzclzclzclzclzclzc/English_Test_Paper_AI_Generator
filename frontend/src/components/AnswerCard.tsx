@@ -26,7 +26,7 @@ function useTypeCounts(paper: Paper) {
 
 /**
  * 右侧粘顶答题卡（2026-08 卡片化改版）：卡片容器 + N/12 大字 +
- * 2px 赤陶进度条 + 4 列题号方格 + 题型分布元信息。
+ * 2px 橙红进度条 + 4 列题号方格 + 题型分布元信息。
  * 作答态标注已答/未答；复盘态标注对/错。与试卷正文读同一份 answers。
  */
 export function AnswerCard({ paper, answers, results }: AnswerCardProps) {
@@ -42,7 +42,7 @@ export function AnswerCard({ paper, answers, results }: AnswerCardProps) {
   return (
     <div className="sticky top-10 w-[280px] shrink-0 self-start max-lg:hidden">
       <div className="flex flex-col gap-4 rounded-[var(--radius-question-card)] border border-soft bg-card-surface p-5 font-ui">
-        <span className="text-[11px] font-bold tracking-[0.14em] text-quiet">
+        <span className="kicker">
           {isReview ? '本卷回顾' : '答题卡'}
         </span>
         <span
@@ -79,8 +79,8 @@ export function AnswerCard({ paper, answers, results }: AnswerCardProps) {
                 key={item.index}
                 href={`#q-${item.index}`}
                 className={cn(
-                  'flex h-8 items-center justify-center rounded-md border text-[13px] tabular-nums transition-colors',
-                  state === 'done' && 'border-accent bg-wash text-ink',
+                  'flex h-8 items-center justify-center rounded-sm border text-[13px] tabular-nums transition-colors',
+                  state === 'done' && 'border-ink bg-ink text-paper',
                   state === 'todo' && 'border-ink-15 text-quiet hover:border-ink-30',
                   state === 'correct' && 'border-success bg-success-wash text-success',
                   state === 'wrong' && 'border-accent bg-wash font-bold text-accent',

@@ -7,11 +7,14 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from backend.deps import current_user
+from uuid import uuid4
+
+from backend.deps import current_user, rate_limiter
 from backend.errors import ResourceNotFoundError
 from backend.schemas import (
     AgentChatRequest,
     AgentChatResponse,
+    CreditChargeInfo,
     User,
     MindmapListItem,
     MindmapListResponse,
@@ -20,6 +23,7 @@ from backend.schemas import (
     MindmapUpdateRequest,
     MindmapCreateResponse,
 )
+from backend.services import credits
 from shared import storage
 
 router = APIRouter(prefix="/agent", tags=["agent"])
@@ -50,12 +54,19 @@ def _ensure_agent_path() -> None:
 @router.post("/chat", response_model=AgentChatResponse)
 async def agent_chat(
     body: AgentChatRequest,
-    user: User = Depends(current_user),
+    user: User = Depends(rate_limiter("agent", "rate_limit_agent_per_min")),
 ) -> AgentChatResponse:
     _ensure_agent_path()
     from agents import Runner
     from agent.coach import create_coach_agent
     from agent.tools import set_current_user_id, set_current_mindmap_id
+
+    # 积分：每条消息先扣 agent_message；助手工具里触发的出卷在工具内按出卷价另扣。
+    msg_ref = uuid4().hex
+    receipt = credits.charge(
+        user.id, credits.price("agent_message"), action="agent_message",
+        ref_type="agent_msg", ref_id=msg_ref, note="学习助手消息",
+    )
 
     # Bind the authenticated user server-side. Tools read this — never a
     # user_id supplied by the LLM, so a user cannot make a tool operate on
@@ -82,11 +93,21 @@ async def agent_chat(
         session = _user_session(user.id)
 
     agent = create_coach_agent()
-    result = await Runner.run(agent, input=body.message, session=session)
+    try:
+        result = await Runner.run(agent, input=body.message, session=session)
+    except Exception:
+        credits.refund(user.id, ref_type="agent_msg", ref_id=msg_ref, note="助手回复失败退回")
+        raise
     reply: str = result.final_output or ""
     action = _parse_action(reply, current_mindmap_id=mindmap_id)
 
-    return AgentChatResponse(reply=reply, action=action)
+    # 工具里可能又扣了出卷费，余额以最新账户为准
+    acct = credits.get_account(user.id)
+    return AgentChatResponse(
+        reply=reply,
+        action=action,
+        credits=CreditChargeInfo(cost=receipt.cost, balance_after=acct.balance, daily_after=acct.daily_balance),
+    )
 
 
 @router.post("/chat/clear", status_code=204)

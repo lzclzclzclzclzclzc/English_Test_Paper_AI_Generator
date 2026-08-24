@@ -21,8 +21,9 @@ export const ACTION_LABELS: Record<string, string> = {
   reset_password: '重置密码',
   ban: '封禁',
   unban: '解封',
-  grant_membership: '开通会员',
-  revoke_membership: '撤销会员',
+  adjust_credits: '调整积分',
+  grant_membership: '开通会员（历史）',
+  revoke_membership: '撤销会员（历史）',
 }
 
 /** detail_json 中的关键值（days/role 等）以标签展示。 */

@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import type { RevisedQuestion } from '@/types/api'
 
 interface WritingFieldProps {
@@ -21,13 +20,11 @@ interface WritingFieldProps {
     overall_comment: string | null
     revised_version: string | null
   }
-  /** review 态下是否为会员（控制详细评析显示） */
-  isMember?: boolean
 }
 
 /**
  * 英语作文答题组件：题目 + 输入框 + 词数统计 + 提交按钮。
- * review 态：只读展示作文内容 + 批改结果（分数表 + 会员专属详细评析）。
+ * review 态：只读展示作文内容 + 批改结果（分数表 + 三维详细评析；批改按篇扣积分）。
  */
 export function WritingField({
   question,
@@ -35,7 +32,6 @@ export function WritingField({
   value,
   onChange,
   gradeResult,
-  isMember = false,
 }: WritingFieldProps) {
   const [text, setText] = useState(value ?? '')
 
@@ -91,7 +87,7 @@ export function WritingField({
         <p className="text-[12px] text-quiet">词数：{wordCount}</p>
 
         {/* 批改结果 */}
-        {gradeResult && <WritingGradeDisplay result={gradeResult} isMember={isMember} />}
+        {gradeResult && <WritingGradeDisplay result={gradeResult} />}
       </div>
     )
   }
@@ -144,15 +140,9 @@ export function WritingField({
   )
 }
 
-/** 批改结果展示：总分表 + 详细评析。
- *  分数与档次信息对所有用户可见；详细评析区：
- *   - 会员：直接显示
- *   - 非会员：内容正常渲染在 blur 层下，上方叠加「开通会员查看」遮罩
- *   - 后端若为非会员将 content_analysis 等字段置空，依然显示空段落 + 遮罩
- */
+/** 批改结果展示：总分表 + 三维详细评析（2026-08 积分制起全量可见，不再分会员）。 */
 function WritingGradeDisplay({
   result,
-  isMember,
 }: {
   result: {
     total_score: number
@@ -167,7 +157,6 @@ function WritingGradeDisplay({
     overall_comment: string | null
     revised_version: string | null
   }
-  isMember: boolean
 }) {
   const hasDetail = Boolean(
     result.content_analysis ||
@@ -195,15 +184,9 @@ function WritingGradeDisplay({
         <ScoreCard label="组织结构" score={result.organization_score} max={4} />
       </div>
 
-      {/* 详细评析区：始终渲染（即便后端已裁减掉内容也保留占位） */}
+      {/* 详细评析区 */}
       <div className="relative">
-        <div
-          className={
-            isMember
-              ? 'space-y-3'
-              : 'space-y-3 [filter:blur(6px)] [pointer-events:none] select-none'
-          }
-        >
+        <div className="space-y-3">
           {hasDetail ? (
             <>
               <Section
@@ -226,50 +209,9 @@ function WritingGradeDisplay({
               )}
             </>
           ) : (
-            <div className="space-y-3">
-              <Section
-                title="📝 内容评析"
-                content={`示例：文章围绕「感谢老师」展开，情感真挚，有具体事例支撑，但第二段落稍显平淡……`}
-              />
-              <Section
-                title="✍️ 语言评析"
-                content={`示例：语法总体规范，有2处时态错误；词汇较为基础，建议适当增加高级词汇和复合句式……`}
-              />
-              <Section
-                title="🏗️ 组织结构评析"
-                content={`示例：结构清晰，采用三段式组织；段与段之间过渡可更自然……`}
-              />
-              <Section
-                title="🌟 总体评价"
-                content={`示例：整体完成度高，情感真挚，如能在句式变化和细节描写上进一步加强，将更上一层楼。`}
-              />
-              <Section
-                title="🔧 修改范文"
-                content={`示例：Dear Teacher,
-
-I am writing this letter to express my heartfelt gratitude to you…`}
-              />
-            </div>
+            <p className="text-[13px] text-quiet">本次批改未返回详细评析。</p>
           )}
         </div>
-        {/* 非会员遮罩层 */}
-        {!isMember && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="pointer-events-auto rounded-md border border-accent/50 bg-white/85 px-6 py-5 text-center shadow-sm backdrop-blur-sm">
-              <p className="text-[14px] font-medium text-ink">
-                🔒 详细批改为会员专属
-              </p>
-              <p className="mt-1 text-[12px] text-quiet">
-                <Link to="/membership" className="text-accent underline underline-offset-2">
-                  开通会员
-                </Link>
-                可查看内容/语言/结构三维评析
-                <br />
-                错误分析、总体评价与修改范文
-              </p>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -283,8 +225,8 @@ function ScoreCard({ label, score, max }: { label: string; score: number; max: n
       <p className="mt-1 text-[20px] font-medium text-ink">
         {score} <span className="text-[13px] text-quiet">/ {max}</span>
       </p>
-      <div className="mt-2 h-1 rounded-full bg-hairline">
-        <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+      <div className="mt-2 h-1 bg-ink-10">
+        <div className="h-full bg-accent" style={{ width: `${pct}%` }} />
       </div>
     </div>
   )

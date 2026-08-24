@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/PageHeader'
 import { PipelineProgress } from '@/components/PipelineProgress'
-import { MemberPill, UpgradeDialog } from '@/components/UpgradeDialog'
+import { CreditHint } from '@/components/CreditHint'
+import { useCredits } from '@/hooks/useCredits'
 import { useGeneratePaper } from '@/hooks/useGeneratePaper'
 import {
   composeQuery,
@@ -10,11 +11,9 @@ import {
   type ComposeEntry,
   type Intensity,
 } from '@/lib/composeQuery'
-import { generateQuotaNotice } from '@/lib/quota'
+import { INTENSITY_ACTION } from '@/lib/creditsActions'
 import { setPendingTimer } from '@/lib/paperTimer'
-
-/** 非会员点「真题检测卷」时的升级文案（与 IntensityPicker 的 original 档一致） */
-const ORIGINAL_LOCK_REASON = '真题原卷是会员功能：整卷使用中考真题原题，不做改动。'
+import { Button } from '@/components/ui/button'
 
 interface MockRecipe {
   id: string
@@ -24,7 +23,7 @@ interface MockRecipe {
   /** 建议用时，也是限时 toggle 的分钟数 */
   minutes: number
   entries: ComposeEntry[]
-  /** 缺省 light；'original' = 真题检测卷（会员） */
+  /** 缺省 light；'original' = 真题检测卷（按真题原样价计，最便宜） */
   intensity?: Intensity
 }
 
@@ -105,28 +104,20 @@ const MOCK_RECIPES: MockRecipe[] = [
 
 /**
  * 整卷模拟：6 个固定配方一键出卷，可选限时（sessionStorage 交接给试卷页，
- * 到点提醒不强制收卷）。真题检测卷 = 全科配方 + original 强度（会员）。
+ * 到点提醒不强制收卷）。真题检测卷 = 全科配方 + original 强度。
  */
 export function MockPage() {
   const [timed, setTimed] = useState<Record<string, boolean>>({})
   const [serverError, setServerError] = useState<string | null>(null)
-  const [upgradeReason, setUpgradeReason] = useState<string | null>(null)
 
-  const { generate, guard, isPending, locked, freeRemaining } = useGeneratePaper(setServerError)
-  const quotaNotice = generateQuotaNotice(locked, freeRemaining)
+  const { generate, guard, isPending } = useGeneratePaper(setServerError)
+  const { price } = useCredits()
+  const costOf = (recipe: MockRecipe) =>
+    price(INTENSITY_ACTION[recipe.intensity ?? 'light'], totalQuestions(recipe.entries))
 
   const start = (recipe: MockRecipe) => {
     setServerError(null)
-    // 真题卷先做会员判断，再走免费次数门槛
-    if (recipe.intensity === 'original' && locked) {
-      setUpgradeReason(ORIGINAL_LOCK_REASON)
-      return
-    }
-    const reason = guard('fresh')
-    if (reason) {
-      setUpgradeReason(reason)
-      return
-    }
+    if (!guard(costOf(recipe))) return
     if (timed[recipe.id]) setPendingTimer(recipe.minutes)
     generate({
       user_query: composeQuery({ entries: recipe.entries, intensity: recipe.intensity ?? 'light' }),
@@ -158,34 +149,29 @@ export function MockPage() {
             const tone = TONE_BY_ID[recipe.id] ?? 'tile--accent'
             return (
               <div key={recipe.id} className={cn('tile', tone)}>
-                <div className="flex items-center gap-2">
-                  <span className="tile-title">{recipe.name}</span>
-                  {recipe.intensity === 'original' && <MemberPill />}
-                </div>
+                <span className="tile-title">{recipe.name}</span>
                 <span className="tile-desc">{recipe.structure}</span>
-                <span className="tile-idx mt-0.5">{total} 题 · 建议 {recipe.minutes} 分钟</span>
+                <span className="tile-idx mt-0.5 flex items-center gap-2">
+                  {total} 题 · 建议 {recipe.minutes} 分钟
+                  <CreditHint action={INTENSITY_ACTION[recipe.intensity ?? 'light']} cost={costOf(recipe)} className="font-normal tracking-normal" />
+                </span>
                 <div className="mt-3 flex items-center gap-2">
                   <button
                     type="button"
                     aria-pressed={isTimed}
-                    className={cn(
-                      'rounded-sm border px-3 py-1.5 font-ui text-[12.5px] tabular-nums transition-colors',
-                      isTimed
-                        ? 'border-accent bg-wash text-accent'
-                        : 'border-hairline text-muted-ink hover:border-accent hover:text-accent',
-                    )}
+                    className="seg seg-sm tabular-nums"
                     onClick={() => setTimed((prev) => ({ ...prev, [recipe.id]: !isTimed }))}
                   >
                     限时 {recipe.minutes} 分钟
                   </button>
-                  <button
+                  <Button
                     type="button"
                     disabled={isPending}
-                    className="rounded-sm border border-accent bg-accent px-5 py-1.5 font-ui text-[13px] tracking-[0.05em] text-white transition-colors hover:bg-accent-ink disabled:pointer-events-none disabled:opacity-60"
+                    className="px-5"
                     onClick={() => start(recipe)}
                   >
                     {isPending ? '生成中…' : '开始'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )
@@ -193,7 +179,6 @@ export function MockPage() {
         </div>
 
         {serverError && <p className="text-[12px] text-accent">{serverError}</p>}
-        {quotaNotice && <p className="font-ui text-[12px] tabular-nums text-quiet">{quotaNotice}</p>}
 
         {isPending && <PipelineProgress />}
 
@@ -201,8 +186,6 @@ export function MockPage() {
           模拟卷基于真题库组卷，含写作（AI 从内容 / 语言 / 组织三维度批改）；听力为语音朗读。
         </p>
       </div>
-
-      <UpgradeDialog reason={upgradeReason} onClose={() => setUpgradeReason(null)} />
     </div>
   )
 }

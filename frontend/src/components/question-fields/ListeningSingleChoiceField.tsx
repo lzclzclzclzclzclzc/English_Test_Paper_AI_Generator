@@ -16,7 +16,7 @@ interface ListeningSingleChoiceFieldProps {
  * 听力选择题（handoff 第 5 屏）：播放控件 + 男女声标注的听力原文 +
  * 纵向选项列表（与 SingleChoiceField 一致）。
  *
- * Kissaten 设计系统：terracotta 是唯一彩色，M/W 仅用文字标签区分，
+ * 橙红是唯一品牌色，M/W 仅用文字标签区分，
  * 不使用 blue/pink（违反 one chroma rule）。
  */
 export function ListeningSingleChoiceField({
@@ -58,7 +58,7 @@ export function ListeningSingleChoiceField({
           'flex w-fit items-center gap-2 rounded-sm border px-4 py-2 font-ui text-[14px] transition-colors',
           isPlaying || globallyPlaying
             ? 'cursor-not-allowed border-ink-15 text-quiet'
-            : 'border-accent bg-wash text-accent hover:bg-accent hover:text-paper',
+            : 'border-ink-20 text-ink hover:border-ink hover:bg-tint',
         )}
       >
         <svg
@@ -112,7 +112,7 @@ export function ListeningSingleChoiceField({
         </div>
       )}
 
-      {/* 选项（与 SingleChoiceField 一致的纵向布局 + Kissaten 样式） */}
+      {/* 选项（与 SingleChoiceField 一致的纵向布局） */}
       {mode === 'answering' ? (
         <RadioGroup
           value={value ?? ''}
@@ -127,7 +127,7 @@ export function ListeningSingleChoiceField({
                 className={cn(
                   'flex cursor-pointer items-baseline rounded-sm border px-4 py-2.5 text-[15px] transition-colors',
                   selected
-                    ? 'border-accent bg-wash text-ink'
+                    ? 'border-ink bg-ink text-paper'
                     : 'border-ink-15 text-muted-ink hover:bg-tint',
                 )}
               >
