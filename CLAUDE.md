@@ -18,10 +18,10 @@ code. Vector retrieval (RAG) bridges the two.**
 | Dir | Role | Status |
 |-----|------|--------|
 | `ingestion/` | Offline: EPUB → question bank (SQLite + ChromaDB) + vocabulary wordlist build | ✅ done |
-| `shared/` | Cross-subsystem contracts (`schemas.py`), `storage.py`, `config.py` | ✅ done — schemas / storage / config / embedding / llm all extracted |
-| `ai_engine/` | Parser / Retriever / Reviser / Solutioner / Analyzer / WritingGrader + `pipeline.py` | ✅ done — all modules integrated into `pipeline.py` |
+| `shared/` | Cross-subsystem contracts (`schemas.py`), `storage.py`, `config.py`, `llm/deepseek.py` | ✅ done — schemas / storage / config / llm live in `shared/`; the Qwen embedder lives in `ingestion/chromadb/embedder.py` (there is no `shared/embedding.py`) |
+| `ai_engine/` | Parser / Retriever / Reviser / Solutioner / Analyzer / WritingGrader + `pipeline.py` (+ `question_repo.py`, `errors.py`) | ✅ done — all modules integrated into `pipeline.py` |
 | `backend/` | FastAPI (13 router groups, auth, persistence, grading, **credits ledger + Alipay-sandbox payment** — `services/credits/`, `services/payment/`) | ✅ done |
-| `frontend/` | React + Vite (21 user pages + 7 admin pages) | ✅ done — full app: drill system, writing grading UI, vocabulary SRS UI, credits/top-up UI |
+| `frontend/` | React + Vite (21 user pages + 10 admin pages) | ✅ done — full app: drill system, writing grading UI, vocabulary SRS UI, mindmaps, credits/top-up UI |
 
 > 2026-08-23: the standalone `payment/` service (:8001) and the membership
 > model were **removed**. Monetisation is a pure **credits** system (docs/
@@ -33,7 +33,9 @@ code. Vector retrieval (RAG) bridges the two.**
 
 Specs live in `docs/` (`question-bank-ingestion-design.md` = Spec A,
 `ai-engine-design.md` = Spec B, plus `backend-design.md`, `frontend-design.md`,
-`testing-design.md`, `admin-design.md`, `agent-design.md`, per-question-type
+`frontend-visual-spec.md` (Spec F — visual system), `testing-design.md`,
+`admin-design.md`, `adminpro.md` (Spec H — admin question-bank / audit),
+`agent-design.md`, per-question-type
 specs (`writing-design.md`, `listening-support-design.md`,
 `listening-fill-blank-design.md`, `longtext-support-design.md`,
 `reading-first-blank-design.md`), `vocabulary-design.md`, and
