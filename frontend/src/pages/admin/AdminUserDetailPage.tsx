@@ -54,12 +54,13 @@ const WINDOWS = [
   { label: '全部', days: 0 },
 ] as const
 
-function Field({ label, value }: { label: string; value: ReactNode }) {
+function Field({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
   return (
-    <>
-      <div className="text-quiet">{label}</div>
-      <div className="text-ink">{value}</div>
-    </>
+    <div className="flex flex-col gap-0.5">
+      <div className="text-[12px] text-quiet">{label}</div>
+      <div className="font-ui text-[15px] text-ink">{value}</div>
+      {hint != null && <div className="text-[11px] text-quiet">{hint}</div>}
+    </div>
   )
 }
 
@@ -311,11 +312,18 @@ export function AdminUserDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[14px] sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Field label="注册时间" value={u.created_at.slice(0, 10)} />
         <Field label="角色" value={isAdmin ? '管理员' : '用户'} />
-        <Field label="状态" value={isBanned ? '已封禁' : '正常'} />
-        <Field label="积分余额" value={`${u.credits_balance}（今日 ${u.credits_daily_balance}）`} />
+        <Field
+          label="状态"
+          value={<span className={isBanned ? 'text-accent' : 'text-ink'}>{isBanned ? '已封禁' : '正常'}</span>}
+        />
+        <Field
+          label="积分余额"
+          value={u.credits_balance + u.credits_daily_balance}
+          hint={`永久 ${u.credits_balance} · 今日赠送 ${u.credits_daily_balance}`}
+        />
       </div>
 
       <div className="flex gap-2">
