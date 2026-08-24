@@ -16,8 +16,9 @@ const qs = (params: Record<string, string | number | undefined>) => {
 // 用户 / 统计 → 主后端 (/api)
 export const listUsers = (
   q = '', limit = 50, offset = 0, status = '', sort = 'created_at',
+  role = '', created_from = '', created_to = '',
 ) =>
-  apiFetch<AdminUserList>(`/admin/users${qs({ q, limit, offset, status, sort })}`)
+  apiFetch<AdminUserList>(`/admin/users${qs({ q, limit, offset, status, sort, role, created_from, created_to })}`)
 export const getUserDetail = (id: string) => apiFetch<AdminUserDetail>(`/admin/users/${id}`)
 export const setRole = (id: string, role: 'user' | 'admin') =>
   apiFetch<User>(`/admin/users/${id}/role`, { method: 'POST', body: JSON.stringify({ role }) })

@@ -67,10 +67,19 @@ async def list_users(
     offset: int = 0,
     status: str = "",
     sort: str = "created_at",
+    role: str = "",
+    created_from: str = "",
+    created_to: str = "",
     _: User = Depends(require_admin),
 ) -> AdminUserList:
-    items = storage.list_users(q=q, limit=limit, offset=offset, status=status, sort=sort)
-    return AdminUserList(items=items, total=storage.count_users(q=q, status=status))
+    items = storage.list_users(
+        q=q, limit=limit, offset=offset, status=status, sort=sort,
+        role=role, created_from=created_from, created_to=created_to,
+    )
+    total = storage.count_users(
+        q=q, status=status, role=role, created_from=created_from, created_to=created_to,
+    )
+    return AdminUserList(items=items, total=total)
 
 
 @router.get("/users/{user_id}", response_model=AdminUserDetail)

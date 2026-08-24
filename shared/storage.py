@@ -280,20 +280,43 @@ _ADMIN_USER_SORTS = {
 }
 
 
+def _admin_user_where(
+    q: str, status: str, role: str, created_from: str, created_to: str
+) -> tuple[str, list[object]]:
+    """Shared WHERE clause + params for admin user list/count (keep the two in sync).
+
+    Column names are unqualified so the fragment works both with `FROM users` and
+    `FROM users u` (the list query's correlated subqueries use their own aliases)."""
+    clauses = ["username LIKE ?"]
+    params: list[object] = [f"%{q}%"]
+    if status:
+        clauses.append("status = ?")
+        params.append(status)
+    if role:
+        clauses.append("role = ?")
+        params.append(role)
+    if created_from:
+        clauses.append("substr(created_at, 1, 10) >= ?")
+        params.append(created_from)
+    if created_to:
+        clauses.append("substr(created_at, 1, 10) <= ?")
+        params.append(created_to)
+    return " AND ".join(clauses), params
+
+
 def list_users(
     q: str = "",
     limit: int = 50,
     offset: int = 0,
     status: str = "",
     sort: str = "created_at",
+    role: str = "",
+    created_from: str = "",
+    created_to: str = "",
 ) -> list[dict]:
     init_db()
-    like = f"%{q}%"
     order_by = _ADMIN_USER_SORTS.get(sort, _ADMIN_USER_SORTS["created_at"])
-    status_clause = "AND u.status = ?" if status else ""
-    params: list[object] = [like]
-    if status:
-        params.append(status)
+    where, params = _admin_user_where(q, status, role, created_from, created_to)
     with connect() as conn:
         rows = conn.execute(
             f"""
@@ -301,7 +324,7 @@ def list_users(
                    (SELECT COUNT(*) FROM papers p WHERE p.user_id = u.id) AS paper_count,
                    (SELECT COUNT(*) FROM attempts a WHERE a.user_id = u.id) AS attempt_count
             FROM users u
-            WHERE u.username LIKE ? {status_clause}
+            WHERE {where}
             ORDER BY {order_by}
             LIMIT ? OFFSET ?
             """,
@@ -310,15 +333,13 @@ def list_users(
     return [dict(r) for r in rows]
 
 
-def count_users(q: str = "", status: str = "") -> int:
+def count_users(
+    q: str = "", status: str = "", role: str = "", created_from: str = "", created_to: str = ""
+) -> int:
     init_db()
-    sql = "SELECT COUNT(*) FROM users WHERE username LIKE ?"
-    params: list[object] = [f"%{q}%"]
-    if status:
-        sql += " AND status = ?"
-        params.append(status)
+    where, params = _admin_user_where(q, status, role, created_from, created_to)
     with connect() as conn:
-        return conn.execute(sql, params).fetchone()[0]
+        return conn.execute(f"SELECT COUNT(*) FROM users WHERE {where}", params).fetchone()[0]
 
 
 def usernames_by_ids(user_ids: list[str]) -> dict[str, str]:
