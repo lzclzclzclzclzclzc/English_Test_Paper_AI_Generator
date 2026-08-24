@@ -188,7 +188,7 @@ payment 的 `payment.db` **只存 `user_id`，没有 username**（见 § 5）。
 | 方法 | 路径 | 作用 |
 |---|---|---|
 | GET | `/api/admin/memberships?q=&limit=&offset=` | 拉 payment 全量会员 → 批量补 `username` → **按用户名 `q` 过滤**（大小写不敏感；user_id 查不到用户名的行在 `q` 非空时不匹配）→ Python 端分页。返回 `{items:[{user_id, username, expires_at, active}], total}` |
-| GET | `/api/admin/orders?status=&limit=&offset=` | 拉 payment 订单（转发 `status`）→ 批量补 `username`。返回 `{items:[{…order, username}]}` |
+| GET | `/api/admin/orders?status=&order_no=&user=&pack_id=&created_from=&created_to=&paid_from=&paid_to=&limit=&offset=` | 本地 `orders` 表，支持表头各列筛选：订单号 / 用户（用户名或 user_id，子查询同库 `users`）/ 积分包 / 状态 / 创建·支付日期区间 → 批量补 `username`。返回 `{items:[{…order, username}], total}` |
 | POST | `/api/admin/memberships/grant` | body `{username, days}`：主后端 `get_user_by_username` 解析 user_id（找不到 → 404 `resource.not_found`），再转发 payment grant |
 | POST | `/api/admin/memberships/{user_id}/grant` \| `/revoke` | 薄封装转发到 payment，使前端会员/订单调用统一走 `/api` |
 
@@ -312,7 +312,7 @@ RequireAuth（已登录?）
 - **用户列表**：分页表格（用户名/注册时间/role/status/试卷数），**筛选内嵌到各列表头**（漏斗下拉，命中变赤陶）：用户名搜索、注册日期区间（原生日历，`created_from`/`created_to`）、角色（全部/用户/管理员）、状态（全部/正常/已封禁）；下拉面板经 Portal 渲染，不被表格 `overflow-hidden` 裁切。行内操作（详情/封禁·解封/重置密码/设为管理员·取消）。危险操作走二次确认弹窗（复用现有 `components/ui/dialog`）。
 - **用户详情**：基础信息 + 做题正确率/掌握度概览 + 会员到期（拼装自 payment）+ 操作区。
 - **会员管理**：会员列表 + "手动开通 N 天 / 取消"（带确认）。
-- **订单列表**：只读表格，按状态筛选。
+- **订单列表**：只读表格，收入统计面板 + 各列表头内嵌筛选（订单号 / 用户搜索、积分包 / 状态下拉、创建·支付日期区间；金额列不筛），复用 `components/admin/HeaderFilter`。
 
 ### 7.6 API 客户端（`frontend/src/api/admin.ts`）
 

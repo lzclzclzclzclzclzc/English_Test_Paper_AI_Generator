@@ -287,9 +287,21 @@ def list_orders(
     status: str = "",
     limit: int = 50,
     offset: int = 0,
+    order_no: str = "",
+    user: str = "",
+    pack_id: str = "",
+    created_from: str = "",
+    created_to: str = "",
+    paid_from: str = "",
+    paid_to: str = "",
     _: User = Depends(require_admin),
 ) -> AdminOrderListView:
-    items, total = order_service.list_orders(status or None, max(1, min(limit, 200)), max(0, offset))
+    items, total = order_service.list_orders(
+        status or None, max(1, min(limit, 200)), max(0, offset),
+        out_trade_no=order_no, user_q=user, pack_id=pack_id,
+        created_from=created_from, created_to=created_to,
+        paid_from=paid_from, paid_to=paid_to,
+    )
     name_map = storage.usernames_by_ids([o["user_id"] for o in items])
     rows = [
         AdminOrderItem(

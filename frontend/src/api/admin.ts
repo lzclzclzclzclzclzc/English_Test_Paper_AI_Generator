@@ -61,7 +61,19 @@ export const adjustCredits = (id: string, delta: number, note: string) =>
   apiFetch<AdminCreditAccount>(`/admin/credits/${id}/adjust`, { method: 'POST', body: JSON.stringify({ delta, note }) })
 export const adjustCreditsByUsername = (username: string, delta: number, note: string) =>
   apiFetch<AdminCreditAccount>('/admin/credits/adjust', { method: 'POST', body: JSON.stringify({ username, delta, note }) })
-export const listOrders = (status = '', limit = 50, offset = 0) =>
-  apiFetch<AdminOrderList>(`/admin/orders${qs({ status, limit, offset })}`)
+export const listOrders = (
+  params: {
+    status?: string
+    order_no?: string
+    user?: string
+    pack_id?: string
+    created_from?: string
+    created_to?: string
+    paid_from?: string
+    paid_to?: string
+    limit?: number
+    offset?: number
+  } = {},
+) => apiFetch<AdminOrderList>(`/admin/orders${qs({ limit: 50, offset: 0, ...params })}`)
 export const reconcileOrders = () =>
   apiFetch<{ reconciled: number }>('/admin/orders/reconcile', { method: 'POST' })

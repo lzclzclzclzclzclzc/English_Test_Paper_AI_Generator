@@ -5,19 +5,26 @@ import {
 } from 'recharts'
 import { getRevenue, listOrders } from '@/api/admin'
 import { Pagination } from '@/components/admin/Pagination'
+import { DateRangeFilter, FilterMenu, OptionList, SearchFilter } from '@/components/admin/HeaderFilter'
 import { displayName } from '@/lib/adminDisplay'
 import { formatYuan } from '@/lib/money'
-import { cn } from '@/lib/utils'
 
 const ACCENT = '#ef4a2b'
 const PAGE_SIZE = 50
 
 const STATUS_OPTIONS = [
-  { value: '', label: '全部' },
+  { value: '', label: '全部状态' },
   { value: 'CREATED', label: 'CREATED' },
   { value: 'PAID', label: 'PAID' },
   { value: 'EXPIRED', label: 'EXPIRED' },
   { value: 'CLOSED', label: 'CLOSED' },
+] as const
+
+const PACK_OPTIONS = [
+  { value: '', label: '全部积分包' },
+  { value: 'starter', label: '入门' },
+  { value: 'standard', label: '标准' },
+  { value: 'annual', label: '畅练' },
 ] as const
 
 /** 收入统计区块（Spec H D1）：指标卡 + 按日收入折线 + 套餐分布。 */
@@ -89,10 +96,30 @@ function RevenuePanel() {
 
 export function AdminOrdersPage() {
   const [status, setStatus] = useState('')
+  const [orderNo, setOrderNo] = useState('')
+  const [userQ, setUserQ] = useState('')
+  const [packId, setPackId] = useState('')
+  const [createdFrom, setCreatedFrom] = useState('')
+  const [createdTo, setCreatedTo] = useState('')
+  const [paidFrom, setPaidFrom] = useState('')
+  const [paidTo, setPaidTo] = useState('')
   const [page, setPage] = useState(1)
+
   const orders = useQuery({
-    queryKey: ['admin', 'orders', status, page],
-    queryFn: () => listOrders(status, PAGE_SIZE, (page - 1) * PAGE_SIZE),
+    queryKey: ['admin', 'orders', status, orderNo, userQ, packId, createdFrom, createdTo, paidFrom, paidTo, page],
+    queryFn: () =>
+      listOrders({
+        status,
+        order_no: orderNo,
+        user: userQ,
+        pack_id: packId,
+        created_from: createdFrom,
+        created_to: createdTo,
+        paid_from: paidFrom,
+        paid_to: paidTo,
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+      }),
     placeholderData: keepPreviousData,
   })
   const total = orders.data?.total ?? 0
@@ -103,35 +130,103 @@ export function AdminOrdersPage() {
 
       <RevenuePanel />
 
-      <select
-        value={status}
-        onChange={(e) => {
-          setStatus(e.target.value)
-          setPage(1)
-        }}
-        className={cn(
-          'h-8 max-w-[200px] rounded-lg border border-hairline bg-transparent px-2.5 py-1',
-          'text-[13px] text-ink outline-none focus-visible:border-ring',
-        )}
-      >
-        {STATUS_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-
       <div className="overflow-hidden rounded-md border border-hairline">
         <table className="w-full text-[13px]">
           <thead className="bg-wash/60 text-left font-ui text-muted-ink">
             <tr>
-              <th className="px-3 py-2">订单号</th>
-              <th className="px-3 py-2">用户</th>
-              <th className="px-3 py-2">积分包</th>
+              <th className="px-3 py-2">
+                <div className="flex items-center gap-1">
+                  <span>订单号</span>
+                  <FilterMenu active={orderNo !== ''} label="订单号" className="w-64">
+                    <SearchFilter
+                      value={orderNo}
+                      placeholder="搜索订单号…"
+                      onChange={(v) => {
+                        setOrderNo(v)
+                        setPage(1)
+                      }}
+                    />
+                  </FilterMenu>
+                </div>
+              </th>
+              <th className="px-3 py-2">
+                <div className="flex items-center gap-1">
+                  <span>用户</span>
+                  <FilterMenu active={userQ !== ''} label="用户" className="w-64">
+                    <SearchFilter
+                      value={userQ}
+                      placeholder="搜索用户名 / ID…"
+                      onChange={(v) => {
+                        setUserQ(v)
+                        setPage(1)
+                      }}
+                    />
+                  </FilterMenu>
+                </div>
+              </th>
+              <th className="px-3 py-2">
+                <div className="flex items-center gap-1">
+                  <span>积分包</span>
+                  <FilterMenu active={packId !== ''} label="积分包" className="w-40">
+                    <OptionList
+                      value={packId}
+                      options={PACK_OPTIONS}
+                      onPick={(v) => {
+                        setPackId(v)
+                        setPage(1)
+                      }}
+                    />
+                  </FilterMenu>
+                </div>
+              </th>
               <th className="px-3 py-2">金额</th>
-              <th className="px-3 py-2">状态</th>
-              <th className="px-3 py-2">创建时间</th>
-              <th className="px-3 py-2">支付时间</th>
+              <th className="px-3 py-2">
+                <div className="flex items-center gap-1">
+                  <span>状态</span>
+                  <FilterMenu active={status !== ''} label="状态" className="w-40">
+                    <OptionList
+                      value={status}
+                      options={STATUS_OPTIONS}
+                      onPick={(v) => {
+                        setStatus(v)
+                        setPage(1)
+                      }}
+                    />
+                  </FilterMenu>
+                </div>
+              </th>
+              <th className="px-3 py-2">
+                <div className="flex items-center gap-1">
+                  <span>创建时间</span>
+                  <FilterMenu active={!!(createdFrom || createdTo)} label="创建时间">
+                    <DateRangeFilter
+                      from={createdFrom}
+                      to={createdTo}
+                      onChange={(f, t) => {
+                        setCreatedFrom(f)
+                        setCreatedTo(t)
+                        setPage(1)
+                      }}
+                    />
+                  </FilterMenu>
+                </div>
+              </th>
+              <th className="px-3 py-2">
+                <div className="flex items-center gap-1">
+                  <span>支付时间</span>
+                  <FilterMenu active={!!(paidFrom || paidTo)} label="支付时间">
+                    <DateRangeFilter
+                      from={paidFrom}
+                      to={paidTo}
+                      onChange={(f, t) => {
+                        setPaidFrom(f)
+                        setPaidTo(t)
+                        setPage(1)
+                      }}
+                    />
+                  </FilterMenu>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
