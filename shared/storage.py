@@ -593,6 +593,87 @@ def question_type_accuracy(window_days: int | None = None, user_id: str | None =
     ]
 
 
+def usage_by_action(days: int = 30) -> list[dict]:
+    """Per付费动作（credit_ledger.action）在窗口内的调用次数与积分消耗，
+    覆盖 generate_*/revise_paper/solution/writing_grade/vocab_example/agent_message。
+    只统计扣费流水（kind='spend'）；spend 行 delta 为负，消耗取 -delta。"""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT action AS action,
+                   COUNT(*) AS count,
+                   COALESCE(SUM(-delta), 0) AS credits_spent
+            FROM credit_ledger
+            WHERE kind = 'spend' AND action IS NOT NULL AND created_at >= ?
+            GROUP BY action
+            ORDER BY count DESC
+            """,
+            (since,),
+        ).fetchall()
+    return [
+        {"action": r["action"], "count": r["count"], "credits_spent": r["credits_spent"]}
+        for r in rows
+    ]
+
+
+def papers_by_source(days: int = 30) -> list[dict]:
+    """Per出卷来源页面（paper.metadata.source）的出卷次数——回答"用户偏好从哪个
+    页面出卷"。历史卷无此键 → json_extract 返回 NULL → 归为 'unknown'。"""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT COALESCE(json_extract(payload_json, '$.metadata.source'), 'unknown') AS source,
+                   COUNT(*) AS count
+            FROM papers
+            WHERE generated_at >= ?
+            GROUP BY source
+            ORDER BY count DESC
+            """,
+            (since,),
+        ).fetchall()
+    return [{"source": r["source"], "count": r["count"]} for r in rows]
+
+
+def papers_by_mode(days: int = 30) -> list[dict]:
+    """Per出卷类型（request.mode：fresh/remediation/review）的分布。"""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT COALESCE(json_extract(payload_json, '$.request.mode'), 'unknown') AS mode,
+                   COUNT(*) AS count
+            FROM papers
+            WHERE generated_at >= ?
+            GROUP BY mode
+            ORDER BY count DESC
+            """,
+            (since,),
+        ).fetchall()
+    return [{"mode": r["mode"], "count": r["count"]} for r in rows]
+
+
+def writing_summary(days: int = 30) -> dict:
+    """窗口内 AI 作文批改的篇数与平均总分（writing_grade_results）。"""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS count, AVG(total_score) AS avg_score
+            FROM writing_grade_results
+            WHERE graded_at >= ?
+            """,
+            (since,),
+        ).fetchone()
+    avg = row["avg_score"]
+    return {"count": row["count"], "avg_score": round(avg, 1) if avg is not None else None}
+
+
 def update_password_hash(user_id: str, password_hash: str) -> None:
     init_db()
     with connect() as conn:

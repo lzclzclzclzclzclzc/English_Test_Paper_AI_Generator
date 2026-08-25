@@ -321,6 +321,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
       user_query: '针对我这份试卷里做错的题目，出一份针对性的巩固练习',
       mode: 'remediation',
       wrong_items: wrongItems,
+      source: 'paper_retry',
     })
   }
 

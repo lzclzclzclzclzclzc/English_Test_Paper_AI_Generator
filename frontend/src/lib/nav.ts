@@ -1,4 +1,5 @@
 import {
+  Activity,
   BadgeCheck,
   BarChart3,
   BookMarked,
@@ -92,7 +93,7 @@ export const ADMIN_GROUPS: readonly NavGroup[] = [
     label: '管理后台',
     items: [
       { to: PATHS.admin, label: '概览', icon: LayoutDashboard, end: true },
-      { to: '/admin/analytics', label: '分析', icon: BarChart3, end: true },
+      { to: '/admin/dashboard', label: '监控看板', icon: Activity, end: true },
       { to: '/admin/users', label: '用户', icon: Users, end: false },
       { to: '/admin/credits', label: '积分', icon: BadgeCheck, end: true },
       { to: '/admin/orders', label: '订单', icon: ScrollText, end: true },

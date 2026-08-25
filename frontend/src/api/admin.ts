@@ -1,7 +1,7 @@
 import { apiFetch } from '@/api/client'
 import type {
   AdminAnalytics, AdminAuditList, AdminCreditAccount, AdminCreditAccountDetail, AdminCreditAccountList, AdminOrderList,
-  AdminOverview, AdminRevenue, AdminSystemHealth, AdminTimeseries, AdminUserAnalytics,
+  AdminOverview, AdminRevenue, AdminSystemHealth, AdminTimeseries, AdminUsage, AdminUserAnalytics,
   AdminUserAttemptList, AdminUserDetail, AdminUserList, AdminUserPaperList, MasteryProfile,
   QuestionBankList, QuestionBankStats, User,
 } from '@/types/api'
@@ -30,6 +30,7 @@ export const getOverview = () => apiFetch<AdminOverview>('/admin/stats/overview'
 export const getTimeseries = (days = 30) => apiFetch<AdminTimeseries>(`/admin/stats/timeseries${qs({ days })}`)
 // days=0 = 全部历史；直接拼串确保 0 也传出（不经 qs 的 falsy 过滤）。
 export const getAnalytics = (days = 30) => apiFetch<AdminAnalytics>(`/admin/analytics?days=${days}`)
+export const getUsageStats = (days = 30) => apiFetch<AdminUsage>(`/admin/stats/usage?days=${days}`)
 export const getUserMastery = (id: string) => apiFetch<MasteryProfile>(`/admin/users/${id}/mastery`)
 export const getUserAnalytics = (id: string, days = 30) =>
   apiFetch<AdminUserAnalytics>(`/admin/users/${id}/analytics?days=${days}`)

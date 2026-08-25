@@ -25,6 +25,11 @@ from backend.schemas import (
     AdminRevenueDayPoint,
     AdminSystemHealth,
     AdminTimeseries,
+    AdminUsage,
+    AdminUsageActionPoint,
+    AdminUsageModePoint,
+    AdminUsageSourcePoint,
+    AdminUsageWriting,
     AdminUserAnalytics,
     AdminUserAttemptItem,
     AdminUserAttemptList,
@@ -32,6 +37,7 @@ from backend.schemas import (
     AdminUserList,
     AdminUserPaperItem,
     AdminUserPaperList,
+    AdminVocabularyDay,
     CreditLedgerItem,
     QuestionBankChapterStat,
     QuestionBankKpStat,
@@ -215,6 +221,20 @@ def stats_analytics(days: int = 30, _: User = Depends(require_admin)) -> AdminAn
     )
 
 
+@router.get("/stats/usage", response_model=AdminUsage)
+def stats_usage(days: int = 30, _: User = Depends(require_admin)) -> AdminUsage:
+    """功能使用监控（监控看板）：各付费 AI 动作调用量/积分消耗、出卷来源页面
+    分布、出卷类型分布、作文批改概况、每日背单词量。`days<=0` = 全部历史。"""
+    span = days if days > 0 else 3650
+    return AdminUsage(
+        by_action=[AdminUsageActionPoint(**a) for a in storage.usage_by_action(span)],
+        by_source=[AdminUsageSourcePoint(**s) for s in storage.papers_by_source(span)],
+        by_mode=[AdminUsageModePoint(**m) for m in storage.papers_by_mode(span)],
+        writing=AdminUsageWriting(**storage.writing_summary(span)),
+        vocabulary_by_day=[AdminVocabularyDay(**v) for v in storage.vocabulary_studied_by_day(span)],
+    )
+
+
 # ---- credits / orders (本地账本，2026-08 自 payment 服务合并) ----
 
 
@@ -394,12 +414,17 @@ def list_audit(
     return AdminAuditList(items=[AdminAuditItem(**i) for i in items], total=total)
 
 
-def _probe_http(url: str, timeout: float = 2.0) -> bool:
+def _probe_http(url: str, *, headers: dict[str, str] | None = None, timeout: float = 5.0) -> bool:
     """Transport-level reachability probe: any HTTP response counts as up
-    (401/404 still prove the service is alive); only transport errors /
-    timeouts count as down."""
+    (400/401/404 still prove the service is alive); only transport errors /
+    timeouts count as down.
+
+    trust_env is left at its default (True) so corporate HTTP(S)_PROXY / CA
+    settings are honoured — this MUST match how the real OpenAI LLM client
+    connects (shared/llm/deepseek.py), otherwise a proxy-only network makes the
+    probe report the LLM "down" while paper generation actually works."""
     try:
-        httpx.get(url, timeout=timeout, trust_env=False)
+        httpx.get(url, timeout=timeout, headers=headers or {})
         return True
     except httpx.HTTPError:
         return False
@@ -408,7 +433,10 @@ def _probe_http(url: str, timeout: float = 2.0) -> bool:
 @router.get("/system/health", response_model=AdminSystemHealth)
 def system_health(_: User = Depends(require_admin)) -> AdminSystemHealth:
     config = get_config()
-    llm_ok = _probe_http(f"{config.llm_base_url.rstrip('/')}/models")
+    # Send the API key so /models answers 200 rather than 401 where the gateway
+    # requires auth; any HTTP status still counts as "reachable" regardless.
+    llm_headers = {"Authorization": f"Bearer {config.llm_api_key}"} if config.llm_api_key.strip() else None
+    llm_ok = _probe_http(f"{config.llm_base_url.rstrip('/')}/models", headers=llm_headers)
     try:
         bank_total = storage.questionbank_stats()["total"]
     except Exception:

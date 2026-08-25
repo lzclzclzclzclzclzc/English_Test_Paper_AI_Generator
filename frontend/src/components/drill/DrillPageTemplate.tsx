@@ -35,7 +35,7 @@ export function DrillPageTemplate({ config }: DrillPageTemplateProps) {
   const [topic, setTopic] = useState('')
   const [serverError, setServerError] = useState<string | null>(null)
 
-  const { generate, guard, isPending } = useGeneratePaper(setServerError)
+  const { generate, guard, isPending } = useGeneratePaper(setServerError, `drill:${config.slug}`)
   const { price } = useCredits()
   const kpQuery = useKnowledgePoints()
 

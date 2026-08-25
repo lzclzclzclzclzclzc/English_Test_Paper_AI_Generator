@@ -110,7 +110,7 @@ export function MockPage() {
   const [timed, setTimed] = useState<Record<string, boolean>>({})
   const [serverError, setServerError] = useState<string | null>(null)
 
-  const { generate, guard, isPending } = useGeneratePaper(setServerError)
+  const { generate, guard, isPending } = useGeneratePaper(setServerError, 'mock')
   const { price } = useCredits()
   const costOf = (recipe: MockRecipe) =>
     price(INTENSITY_ACTION[recipe.intensity ?? 'light'], totalQuestions(recipe.entries))

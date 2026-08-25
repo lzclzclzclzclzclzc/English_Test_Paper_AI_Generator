@@ -40,6 +40,9 @@ class GeneratePaperRequest(BaseModel):
     mode: GenerateMode = "fresh"
     wrong_items: list[WrongItemRef] | None = None
     review_window_days: int | None = None
+    # 出卷来源页面标签（如 generate / daily / errorbook / drill:single_choice），
+    # 存进 paper.metadata["source"] 供管理端「监控看板」统计页面偏好。见 Spec P / 监控看板计划。
+    source: str = "unknown"
 
 
 class RevisePaperRequest(BaseModel):
@@ -527,6 +530,41 @@ class AdminRevenue(BaseModel):
     total_cents: int
     revenue_by_day: list[AdminRevenueDayPoint]
     by_pack: list[AdminPackRevenue]
+
+
+# ---- Usage monitoring (监控看板) ----
+
+
+class AdminUsageActionPoint(BaseModel):
+    """每个付费 AI 动作（credit_ledger.action）的调用量与积分消耗。"""
+    action: str
+    count: int
+    credits_spent: int
+
+
+class AdminUsageSourcePoint(BaseModel):
+    """出卷来源页面（paper.metadata.source）的出卷次数——回答页面偏好。"""
+    source: str
+    count: int
+
+
+class AdminUsageModePoint(BaseModel):
+    """出卷类型（request.mode：fresh/remediation/review）的分布。"""
+    mode: str
+    count: int
+
+
+class AdminUsageWriting(BaseModel):
+    count: int
+    avg_score: float | None = None
+
+
+class AdminUsage(BaseModel):
+    by_action: list[AdminUsageActionPoint]
+    by_source: list[AdminUsageSourcePoint]
+    by_mode: list[AdminUsageModePoint]
+    writing: AdminUsageWriting
+    vocabulary_by_day: list[AdminVocabularyDay]
 
 
 class AdminAuditItem(BaseModel):

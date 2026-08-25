@@ -29,7 +29,7 @@ export function MasteryPage() {
   const [windowKey, setWindowKey] = useState<string>('all')
   const [reviewWindowDays, setReviewWindowDays] = useState<number>(30)
   const [serverError, setServerError] = useState<string | null>(null)
-  const { generate, isPending } = useGeneratePaper(setServerError)
+  const { generate, isPending } = useGeneratePaper(setServerError, 'mastery_review')
   const windowMeta = WINDOWS.find((w) => w.value === windowKey)
   const windowDays = windowMeta?.days
 

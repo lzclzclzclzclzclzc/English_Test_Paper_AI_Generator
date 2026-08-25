@@ -125,6 +125,8 @@ export interface GeneratePaperRequest {
   mode?: GenerationMode
   wrong_items?: WrongItemRef[] | null
   review_window_days?: number | null
+  /** 出卷来源页面标签（供管理端监控看板统计），如 generate / daily / errorbook / drill:single_choice */
+  source?: string
 }
 
 /** POST /api/papers/revise（返回全新 paper_id 的 Paper） */
@@ -563,6 +565,19 @@ export interface AdminRevenue {
   total_cents: number
   revenue_by_day: AdminRevenueDayPoint[]
   by_pack: AdminPackRevenue[]
+}
+
+// ---- 监控看板（功能使用监控） ----
+export interface AdminUsageActionPoint { action: string; count: number; credits_spent: number }
+export interface AdminUsageSourcePoint { source: string; count: number }
+export interface AdminUsageModePoint { mode: string; count: number }
+export interface AdminUsageWriting { count: number; avg_score: number | null }
+export interface AdminUsage {
+  by_action: AdminUsageActionPoint[]
+  by_source: AdminUsageSourcePoint[]
+  by_mode: AdminUsageModePoint[]
+  writing: AdminUsageWriting
+  vocabulary_by_day: AdminVocabularyDay[]
 }
 
 export interface AdminAuditItem {

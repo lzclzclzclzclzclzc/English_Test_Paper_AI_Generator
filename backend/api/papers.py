@@ -32,6 +32,7 @@ async def generate_paper(
         charge.refund()
         raise
     paper.metadata.update(charge.metadata())
+    paper.metadata["source"] = body.source  # 出卷来源页面，供监控看板统计
     storage.save_paper(paper, user.id)
     return paper
 

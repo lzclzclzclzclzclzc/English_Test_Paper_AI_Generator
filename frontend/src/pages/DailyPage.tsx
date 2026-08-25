@@ -32,7 +32,7 @@ export function DailyPage() {
 
   const { data: user } = useAuth()
   const userId = user?.id ?? 'anon'
-  const { generate, guard, isPending } = useGeneratePaper(setServerError)
+  const { generate, guard, isPending } = useGeneratePaper(setServerError, 'daily')
   const { price } = useCredits()
 
   const masteryQuery = useQuery({
