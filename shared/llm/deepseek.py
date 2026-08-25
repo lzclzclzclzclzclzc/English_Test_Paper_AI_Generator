@@ -31,9 +31,13 @@ class LLMConfig:
 class DeepSeekClient:
     def __init__(self, cfg: LLMConfig | None = None):
         self._cfg = cfg or LLMConfig()
+        # max_retries on the OpenAI client gives BOTH call paths a transient-error
+        # (429/5xx/network) retry baseline — including text(), which has no
+        # instructor-level retry — and is where the LLM_MAX_RETRIES config is consumed.
         self._raw = OpenAI(
             api_key=self._cfg.api_key,
             base_url=self._cfg.base_url,
+            max_retries=self._cfg.max_retries,
         )
         self._instructor = instructor.from_openai(
             self._raw,

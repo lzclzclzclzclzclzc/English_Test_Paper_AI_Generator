@@ -36,7 +36,7 @@ export function ReviewPage() {
   // 离开错题本页面时停止所有 TTS 播放
   useEffect(() => () => stopTTS(), [])
 
-  const { generate, isPending } = useGeneratePaper(setServerError)
+  const { generate, isPending } = useGeneratePaper(setServerError, 'errorbook')
 
   const readiness = useQuery({
     queryKey: ['health', 'ready'],

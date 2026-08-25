@@ -44,7 +44,7 @@ export function DashboardPage() {
 
   const { data: user } = useAuth()
   const { total: creditsTotal, daily: creditsDaily } = useCredits()
-  const { generate, isPending } = useGeneratePaper(setServerError)
+  const { generate, isPending } = useGeneratePaper(setServerError, 'dashboard')
   const userId = user?.id ?? 'anon'
   const examDays = daysUntilExam(userId)
 

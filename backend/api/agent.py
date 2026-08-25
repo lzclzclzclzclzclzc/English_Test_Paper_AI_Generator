@@ -61,13 +61,6 @@ async def agent_chat(
     from agent.coach import create_coach_agent
     from agent.tools import set_current_user_id, set_current_mindmap_id
 
-    # 积分：每条消息先扣 agent_message；助手工具里触发的出卷在工具内按出卷价另扣。
-    msg_ref = uuid4().hex
-    receipt = credits.charge(
-        user.id, credits.price("agent_message"), action="agent_message",
-        ref_type="agent_msg", ref_id=msg_ref, note="学习助手消息",
-    )
-
     # Bind the authenticated user server-side. Tools read this — never a
     # user_id supplied by the LLM, so a user cannot make a tool operate on
     # someone else's data.
@@ -75,6 +68,8 @@ async def agent_chat(
 
     # scope=mindmap: 校验该图属于当前用户后，绑定为“当前编辑的图”，
     # 并使用按图+token 隔离的独立会话（每次前端挂载生成新 token → 新对话）。
+    # 校验必须在扣费之前：图不存在/无权访问时直接拒绝，不扣 agent_message，
+    # 避免非法 mindmap_id 反复调用白扣积分。
     # Conversation memory is server-side, keyed by user (and mindmap+token in
     # mindmap scope). The client sends only the new message; the SDK loads/saves
     # history from the session store, so the client cannot forge system/assistant
@@ -91,6 +86,14 @@ async def agent_chat(
     else:
         set_current_mindmap_id(None)
         session = _user_session(user.id)
+
+    # 积分：校验通过后再扣每条消息的 agent_message；助手工具里触发的出卷在工具内
+    # 按出卷价另扣。回复失败原路退回。
+    msg_ref = uuid4().hex
+    receipt = credits.charge(
+        user.id, credits.price("agent_message"), action="agent_message",
+        ref_type="agent_msg", ref_id=msg_ref, note="学习助手消息",
+    )
 
     agent = create_coach_agent()
     try:

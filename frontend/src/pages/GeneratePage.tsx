@@ -10,7 +10,7 @@ import { PipelineProgress } from '@/components/PipelineProgress'
 export function GeneratePage() {
   const [serverError, setServerError] = useState<string | null>(null)
 
-  const { generate, isPending } = useGeneratePaper(setServerError)
+  const { generate, isPending } = useGeneratePaper(setServerError, 'generate')
 
   // 联调期后端题库/向量库可能未就绪；就绪时不渲染任何东西
   const readiness = useQuery({

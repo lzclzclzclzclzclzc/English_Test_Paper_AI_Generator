@@ -9,6 +9,8 @@
  * datetime 字段一律序列化为 ISO-8601 字符串。
  */
 
+import type { CreditChargeInfo } from '@/types/payment'
+
 // ---- 字面量联合（schemas.py 顶部 Literal） ----
 
 export type QuestionType = 'single_choice' | 'word_form' | 'sentence_rewriting' | 'listening_single_choice' | 'listening_true_false' | 'listening_fill_blank' | 'reading_longtext_single_choice' | 'cloze_single_choice' | 'reading_first_blank' | 'writing'
@@ -123,6 +125,8 @@ export interface GeneratePaperRequest {
   mode?: GenerationMode
   wrong_items?: WrongItemRef[] | null
   review_window_days?: number | null
+  /** 出卷来源页面标签（供管理端监控看板统计），如 generate / daily / errorbook / drill:single_choice */
+  source?: string
 }
 
 /** POST /api/papers/revise（返回全新 paper_id 的 Paper） */
@@ -211,6 +215,9 @@ export interface MasteryProfile {
   weak_kps: KPMastery[]
   dominant_types: string[]
   total_attempts_considered: number
+  writing_avg_score: number | null
+  writing_graded_count: number
+  writing_full_score: number
 }
 
 // ---- 鉴权 ----
@@ -346,6 +353,13 @@ export interface VocabularyJudgmentResponse {
   counts: VocabularyTaskCounts
 }
 
+export interface VocabularyExampleResponse {
+  word_id: string
+  example_en: string
+  example_zh: string
+  credits: CreditChargeInfo
+}
+
 export interface VocabularyProgress {
   date: string
   daily_new_limit: number
@@ -361,6 +375,17 @@ export interface VocabularyProgress {
   wordlist_label: string
   source_url: string
   wordlist_sources: VocabularyWordlistSource[]
+}
+
+export interface VocabularyDailyItem {
+  day: string
+  studied: number
+  new_words: number
+  review_words: number
+}
+
+export interface VocabularyDailyResponse {
+  items: VocabularyDailyItem[]
 }
 
 export interface VocabularyWordlistSource {
@@ -445,6 +470,8 @@ export interface AdminOverview {
   banned_users: number
   total_papers: number
   total_attempts: number
+  /** 已提交（已作答）试卷数 */
+  submitted_papers: number
   /** 至少有一笔 PAID 订单的用户数 */
   paying_users: number
   total_revenue_cents: number
@@ -486,6 +513,7 @@ export interface AdminOrderList { items: AdminOrder[]; total: number }
 
 export interface AdminAttemptDay { day: string; attempts: number; correct_rate: number | null }
 export interface AdminTypeAccuracy { question_type: string; total: number; accuracy: number }
+export interface AdminVocabularyDay { day: string; studied: number; new_words: number; review_words: number }
 export interface AdminAnalytics {
   site_mastery: MasteryProfile
   attempts_by_day: AdminAttemptDay[]
@@ -494,6 +522,7 @@ export interface AdminAnalytics {
 export interface AdminUserAnalytics {
   attempts_by_day: AdminAttemptDay[]
   type_accuracy: AdminTypeAccuracy[]
+  vocabulary_by_day: AdminVocabularyDay[]
 }
 
 // ---- Admin Pro (Spec H) ----
@@ -538,6 +567,23 @@ export interface AdminRevenue {
   total_cents: number
   revenue_by_day: AdminRevenueDayPoint[]
   by_pack: AdminPackRevenue[]
+}
+
+// ---- 监控看板（功能使用监控） ----
+export interface AdminUsageActionPoint { action: string; count: number; credits_spent: number }
+export interface AdminUsageSourcePoint { source: string; count: number }
+export interface AdminUsageModePoint { mode: string; count: number }
+export interface AdminUsageWriting { count: number; avg_score: number | null }
+export interface AdminUsageDayCredits { day: string; credits: number }
+export interface AdminUsageSpender { user_id: string; username: string | null; credits_spent: number }
+export interface AdminUsage {
+  by_action: AdminUsageActionPoint[]
+  by_source: AdminUsageSourcePoint[]
+  by_mode: AdminUsageModePoint[]
+  writing: AdminUsageWriting
+  vocabulary_by_day: AdminVocabularyDay[]
+  credits_by_day: AdminUsageDayCredits[]
+  top_spenders: AdminUsageSpender[]
 }
 
 export interface AdminAuditItem {

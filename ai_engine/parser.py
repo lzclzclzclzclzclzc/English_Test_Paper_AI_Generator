@@ -6,6 +6,7 @@ revision_intensity is inferred by LLM from the user's language.
 from __future__ import annotations
 
 import json
+import logging
 from typing import Literal
 
 import sqlite3
@@ -21,6 +22,8 @@ from shared.schemas import (
 from ai_engine.errors import ParserError
 from ai_engine.prompts import load
 
+
+log = logging.getLogger(__name__)
 
 MAX_QUESTIONS = 50
 
@@ -186,7 +189,11 @@ def parse(
         raise ParserError(f"LLM call failed: {str(e)}") from e
     
     validated, warnings = _local_validate(llm_response, kps)
-    
+    if warnings:
+        # Surface local-validation adjustments (invalid KP ids dropped, distribution
+        # scaled, counts capped) instead of silently discarding them.
+        log.warning("parser local-validate adjustments: %s", "; ".join(warnings))
+
     validated.mode = mode
     validated.wrong_items = wrong_items or []
 

@@ -19,6 +19,7 @@ from openai import AsyncOpenAI
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from shared.config import get_config
+from shared.schemas import QUESTION_TYPE_LABELS
 from agent.tools import get_example_questions, get_user_history, generate_paper, implement_study_plan, get_vocabulary_status, create_mindmap, get_current_mindmap, update_current_mindmap
 
 _SKILLS_DIR = Path(__file__).parent / "skills"
@@ -62,18 +63,7 @@ def _load_kp_catalog() -> str:
     """Load the real KP catalog grouped by question type (level1), so the
     agent only ever plans/generates against knowledge points that actually
     exist in the bank — with the correct question type for each."""
-    type_names = {
-        "single_choice": "单项选择",
-        "word_form": "词形转换",
-        "sentence_rewriting": "改写句子",
-        "listening_single_choice": "听力选择",
-        "listening_true_false": "听力判断",
-        "listening_fill_blank": "听力填词",
-        "reading_longtext_single_choice": "阅读理解",
-        "cloze_single_choice": "完形填空",
-        "reading_first_blank": "阅读首字母填空",
-        "writing": "英语作文",
-    }
+    type_names = QUESTION_TYPE_LABELS
     db_path = str(get_config().db_path)
     conn = sqlite3.connect(db_path)
     try:
@@ -127,16 +117,28 @@ def _build_model() -> OpenAIChatCompletionsModel:
     )
 
 
-def create_coach_agent() -> Agent:
-    skills_content = _load_skills()
-    system_prompt = _COACH_BASE_PROMPT.format(
-        kp_catalog=_load_kp_catalog(),
-        skills=skills_content if skills_content else "（暂无已加载的 skill）",
-    )
+_SYSTEM_PROMPT_CACHE: str | None = None
 
+
+def _system_prompt() -> str:
+    """Build (once per process) the coach system prompt. The KP catalog (bank DB
+    read) and skills (disk read) are static within a process, so cache the
+    formatted prompt — create_coach_agent runs on every /agent/chat message and
+    should not re-hit the DB + filesystem each time."""
+    global _SYSTEM_PROMPT_CACHE
+    if _SYSTEM_PROMPT_CACHE is None:
+        skills_content = _load_skills()
+        _SYSTEM_PROMPT_CACHE = _COACH_BASE_PROMPT.format(
+            kp_catalog=_load_kp_catalog(),
+            skills=skills_content if skills_content else "（暂无已加载的 skill）",
+        )
+    return _SYSTEM_PROMPT_CACHE
+
+
+def create_coach_agent() -> Agent:
     return Agent(
         name="中考英语学习助手",
-        instructions=system_prompt,
+        instructions=_system_prompt(),
         tools=[get_user_history, get_example_questions, generate_paper, implement_study_plan, get_vocabulary_status, create_mindmap, get_current_mindmap, update_current_mindmap],
         model=_build_model(),
     )

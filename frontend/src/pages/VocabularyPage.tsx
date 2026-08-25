@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { getVocabularyToday, judgeVocabulary, updateVocabularySettings } from '@/api/vocabulary'
+import { generateVocabularyExample, getVocabularyToday, judgeVocabulary, updateVocabularySettings } from '@/api/vocabulary'
 import { PageHeader } from '@/components/PageHeader'
 import { StatTile } from '@/components/StatTile'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useCredits } from '@/hooks/useCredits'
 import { queryClient } from '@/lib/queryClient'
 import type { VocabularyJudgmentResponse, VocabularyRating } from '@/types/api'
 import {
@@ -30,13 +31,24 @@ export function VocabularyPage() {
   const [judgment, setJudgment] = useState<VocabularyJudgmentResponse | null>(null)
   const [loadingNext, setLoadingNext] = useState(false)
   const [moreTarget, setMoreTarget] = useState(30)
+  const [example, setExample] = useState<{ en: string; zh: string } | null>(null)
+  const { price, refresh: refreshCredits } = useCredits()
+  const examplePrice = price('vocab_example') ?? 1
   const today = useQuery({ queryKey: ['vocabulary', 'today'], queryFn: getVocabularyToday })
   const card = today.data?.current_card
   const judge = useMutation({
     mutationFn: (rating: VocabularyRating) => judgeVocabulary({ word_id: card!.word_id, rating }),
     onSuccess: (result) => {
+      setExample(null)
       setJudgment(result)
       void queryClient.invalidateQueries({ queryKey: ['vocabulary', 'today'] })
+    },
+  })
+  const genExample = useMutation({
+    mutationFn: () => generateVocabularyExample(judgment!.detail.word_id),
+    onSuccess: (result) => {
+      setExample({ en: result.example_en, zh: result.example_zh })
+      refreshCredits()
     },
   })
   const addMore = useMutation({
@@ -50,6 +62,7 @@ export function VocabularyPage() {
 
   const next = async () => {
     setJudgment(null)
+    setExample(null)
     setLoadingNext(true)
     await today.refetch()
     setLoadingNext(false)
@@ -138,7 +151,22 @@ export function VocabularyPage() {
               <p className="text-sm text-accent">{judgment.detail.part_of_speech}</p>
               <p className="mt-2 text-xl leading-relaxed text-ink">{formatVocabularyMeanings(judgment.detail.meanings)}</p>
               {isVocabularyExamplePlaceholder(judgment.detail.example_en, judgment.detail.term) ? (
-                <p className="mt-7 border-l-2 border-accent/50 pl-4 text-sm leading-7 text-quiet">例句正在整理，暂不展示示范模板。</p>
+                example ? (
+                  <blockquote className="mt-7 border-l-2 border-accent/50 pl-4 text-[15px] leading-7 text-muted-ink">
+                    <p>{example.en}</p>
+                    <p className="mt-1 text-[13px] text-quiet">{example.zh}</p>
+                  </blockquote>
+                ) : (
+                  <div className="mt-7">
+                    <Button variant="outline" disabled={genExample.isPending} onClick={() => genExample.mutate()}>
+                      {genExample.isPending ? '正在生成例句…' : `生成例句（${examplePrice} 积分）`}
+                    </Button>
+                    <p className="mt-2 text-xs text-quiet">由 AI 现场造句，消耗 {examplePrice} 积分。</p>
+                    {genExample.isError && (
+                      <p className="mt-2 text-sm text-accent">生成失败，请重试；若积分不足可前往「积分」页充值。</p>
+                    )}
+                  </div>
+                )
               ) : (
                 <blockquote className="mt-7 border-l-2 border-accent/50 pl-4 text-[15px] leading-7 text-muted-ink">
                   <p>{judgment.detail.example_en}</p>

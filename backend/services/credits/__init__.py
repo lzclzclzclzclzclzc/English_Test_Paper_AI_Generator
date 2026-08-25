@@ -26,5 +26,5 @@ from backend.services.credits.ledger import (  # noqa: F401
     spent_total,
     today_key,
 )
-from backend.services.credits.charging import PaperCharge, charge_request  # noqa: F401
+from backend.services.credits.charging import PaperCharge, charge_request, charged  # noqa: F401
 from backend.services.credits.pricing import INTENSITY_ACTION, PRICES, price, price_table  # noqa: F401

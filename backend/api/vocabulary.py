@@ -3,9 +3,14 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from backend.deps import current_user
-from backend.errors import ValidationError
+from backend.errors import ResourceNotFoundError, ValidationError
 from backend.schemas import (
+    CreditChargeInfo,
     User,
+    VocabularyDailyItem,
+    VocabularyDailyResponse,
+    VocabularyExampleRequest,
+    VocabularyExampleResponse,
     VocabularyJudgmentRequest,
     VocabularyJudgmentResponse,
     VocabularyProgressResponse,
@@ -13,6 +18,7 @@ from backend.schemas import (
     VocabularySettingsResponse,
     VocabularyTodayResponse,
 )
+from backend.services import ai_gateway, credits
 from shared import storage
 
 router = APIRouter(prefix="/vocabulary", tags=["vocabulary"])
@@ -36,6 +42,40 @@ async def progress(user: User = Depends(current_user)) -> VocabularyProgressResp
     return VocabularyProgressResponse(**storage.get_vocabulary_progress(user.id))
 
 
+@router.get("/daily", response_model=VocabularyDailyResponse)
+async def daily(days: int = 30, user: User = Depends(current_user)) -> VocabularyDailyResponse:
+    """当前用户每日背词量（新学/复习），用于学情报告的背词可视化。days<=0 取全部。"""
+    rows = storage.vocabulary_studied_by_day(days if days > 0 else 3650, user_id=user.id)
+    return VocabularyDailyResponse(items=[VocabularyDailyItem(**r) for r in rows])
+
+
 @router.patch("/settings", response_model=VocabularySettingsResponse)
 async def settings(body: VocabularySettingsRequest, user: User = Depends(current_user)) -> VocabularySettingsResponse:
     return VocabularySettingsResponse(**storage.set_vocabulary_daily_new_limit(user.id, body.daily_new_limit))
+
+
+@router.post("/example", response_model=VocabularyExampleResponse)
+async def generate_example(
+    body: VocabularyExampleRequest, user: User = Depends(current_user),
+) -> VocabularyExampleResponse:
+    """按需为单词生成一个 AI 例句（消耗 1 积分，与 /solutions 同一套先扣后算、失败退回）。"""
+    word = storage.get_vocabulary_word(body.word_id)
+    if word is None:
+        raise ResourceNotFoundError("单词不存在")
+
+    with credits.charged(
+        user.id, credits.price("vocab_example"), action="vocab_example",
+        ref_type="vocab_example", note=f"AI 例句 · {word['term']}",
+        refund_note="例句生成失败退回",
+    ) as receipt:
+        example_en, example_zh = ai_gateway.generate_vocabulary_example(
+            word["term"], word["part_of_speech"], word["meanings"],
+        )
+    return VocabularyExampleResponse(
+        word_id=body.word_id,
+        example_en=example_en,
+        example_zh=example_zh,
+        credits=CreditChargeInfo(
+            cost=receipt.cost, balance_after=receipt.balance_after, daily_after=receipt.daily_after,
+        ),
+    )

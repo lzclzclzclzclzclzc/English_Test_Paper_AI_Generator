@@ -20,8 +20,10 @@ from ai_engine.prompts import load
 from shared.llm.deepseek import get_llm_client
 from shared.schemas import (
     GenerateRequest,
+    PASSAGE_QUESTION_TYPES,
     Paper,
     PaperItem,
+    QUESTION_TYPE_LABELS,
     Question,
     RevisedQuestion,
     RetrievalResult,
@@ -32,18 +34,7 @@ def _infer_title(req: GenerateRequest) -> str:
     """Infer a paper title from the request."""
     parts = []
     if req.question_types:
-        type_names = {
-            "single_choice": "单选",
-            "word_form": "词性转换",
-            "sentence_rewriting": "改写句子",
-            "listening_single_choice": "听力选择",
-            "listening_true_false": "听力判断",
-            "listening_fill_blank": "听力填词",
-            "reading_longtext_single_choice": "阅读理解",
-            "cloze_single_choice": "完形填空",
-            "reading_first_blank": "阅读首字母填空",
-        }
-        parts.append("、".join(type_names.get(t, t) for t in req.question_types))
+        parts.append("、".join(QUESTION_TYPE_LABELS.get(t, t) for t in req.question_types))
     if req.revision_intensity == "original":
         parts.append("原题")
     elif req.revision_intensity == "fresh":
@@ -76,14 +67,8 @@ def _copy_question(q: Question) -> RevisedQuestion:
 
 # 段落类题型（共享 passage）以及无标准答案的写作题，一律按原题出：
 # 段落题改写会破坏同组 passage 一致性且耗时；为保证出题速度，直接拷贝原题。
-_PASSTHROUGH_TYPES = frozenset({
-    "reading_first_blank",
-    "writing",
-    "listening_true_false",
-    "listening_fill_blank",
-    "reading_longtext_single_choice",
-    "cloze_single_choice",
-})
+# （与 retriever.PASSAGE_TYPES 同源，定义在 shared.schemas.PASSAGE_QUESTION_TYPES）
+_PASSTHROUGH_TYPES = PASSAGE_QUESTION_TYPES
 
 
 def _validate_revision(original: Question, revised: RevisedQuestion) -> bool:

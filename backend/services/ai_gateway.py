@@ -10,6 +10,7 @@ from ai_engine.pipeline import (
     revise_paper as run_revise_paper,
 )
 from ai_engine.writing_grader import grade_writing as run_grade_writing
+from ai_engine.vocab_example import generate_example as run_generate_vocabulary_example
 from shared.schemas import GenerateRequest, MasteryProfile, Paper, RevisedQuestion, WritingGradeResult, WrongItemRef
 
 def generate_paper(
@@ -65,3 +66,9 @@ def build_site_profile(window_days: int | None = None) -> MasteryProfile:
 def grade_writing(question: RevisedQuestion, user_essay: str) -> WritingGradeResult:
     """Grade an essay using LLM-based multi-dimensional scoring."""
     return run_grade_writing(question, user_essay)
+
+
+def generate_vocabulary_example(term: str, part_of_speech: str, meanings: list[str]) -> tuple[str, str]:
+    """Generate an example sentence for a vocabulary word. Returns (english, chinese)."""
+    result = run_generate_vocabulary_example(term, part_of_speech, meanings)
+    return result.example_en, result.example_zh

@@ -17,6 +17,7 @@ Action = Literal[
     "revise_paper",
     "solution",
     "writing_grade",
+    "vocab_example",
     "agent_message",
 ]
 
@@ -38,6 +39,7 @@ PRICES: dict[str, Price] = {
     "revise_paper": Price("revise_paper", "一句话重新出卷", 5, 4, "题", "整卷重跑解析 + 改写"),
     "solution": Price("solution", "AI 单题讲解", 5, 0, "", "每次 1 次 LLM"),
     "writing_grade": Price("writing_grade", "作文批改", 20, 0, "", "每篇 1 次 LLM 三维批改"),
+    "vocab_example": Price("vocab_example", "背单词 · AI 例句", 1, 0, "", "每次 1 次 LLM 造句"),
     "agent_message": Price("agent_message", "学习助手 · 每条消息", 2, 0, "", "助手里触发的出卷按出卷价另计"),
 }
 

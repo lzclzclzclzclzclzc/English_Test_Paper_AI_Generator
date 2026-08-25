@@ -280,20 +280,43 @@ _ADMIN_USER_SORTS = {
 }
 
 
+def _admin_user_where(
+    q: str, status: str, role: str, created_from: str, created_to: str
+) -> tuple[str, list[object]]:
+    """Shared WHERE clause + params for admin user list/count (keep the two in sync).
+
+    Column names are unqualified so the fragment works both with `FROM users` and
+    `FROM users u` (the list query's correlated subqueries use their own aliases)."""
+    clauses = ["username LIKE ?"]
+    params: list[object] = [f"%{q}%"]
+    if status:
+        clauses.append("status = ?")
+        params.append(status)
+    if role:
+        clauses.append("role = ?")
+        params.append(role)
+    if created_from:
+        clauses.append("substr(created_at, 1, 10) >= ?")
+        params.append(created_from)
+    if created_to:
+        clauses.append("substr(created_at, 1, 10) <= ?")
+        params.append(created_to)
+    return " AND ".join(clauses), params
+
+
 def list_users(
     q: str = "",
     limit: int = 50,
     offset: int = 0,
     status: str = "",
     sort: str = "created_at",
+    role: str = "",
+    created_from: str = "",
+    created_to: str = "",
 ) -> list[dict]:
     init_db()
-    like = f"%{q}%"
     order_by = _ADMIN_USER_SORTS.get(sort, _ADMIN_USER_SORTS["created_at"])
-    status_clause = "AND u.status = ?" if status else ""
-    params: list[object] = [like]
-    if status:
-        params.append(status)
+    where, params = _admin_user_where(q, status, role, created_from, created_to)
     with connect() as conn:
         rows = conn.execute(
             f"""
@@ -301,7 +324,7 @@ def list_users(
                    (SELECT COUNT(*) FROM papers p WHERE p.user_id = u.id) AS paper_count,
                    (SELECT COUNT(*) FROM attempts a WHERE a.user_id = u.id) AS attempt_count
             FROM users u
-            WHERE u.username LIKE ? {status_clause}
+            WHERE {where}
             ORDER BY {order_by}
             LIMIT ? OFFSET ?
             """,
@@ -310,15 +333,13 @@ def list_users(
     return [dict(r) for r in rows]
 
 
-def count_users(q: str = "", status: str = "") -> int:
+def count_users(
+    q: str = "", status: str = "", role: str = "", created_from: str = "", created_to: str = ""
+) -> int:
     init_db()
-    sql = "SELECT COUNT(*) FROM users WHERE username LIKE ?"
-    params: list[object] = [f"%{q}%"]
-    if status:
-        sql += " AND status = ?"
-        params.append(status)
+    where, params = _admin_user_where(q, status, role, created_from, created_to)
     with connect() as conn:
-        return conn.execute(sql, params).fetchone()[0]
+        return conn.execute(f"SELECT COUNT(*) FROM users WHERE {where}", params).fetchone()[0]
 
 
 def usernames_by_ids(user_ids: list[str]) -> dict[str, str]:
@@ -360,12 +381,14 @@ def admin_counts() -> dict:
             "SELECT COUNT(*) FROM users WHERE status = 'banned'"
         ).fetchone()[0]
         total_papers = conn.execute("SELECT COUNT(*) FROM papers").fetchone()[0]
+        submitted_papers = conn.execute("SELECT COUNT(*) FROM papers WHERE submitted = 1").fetchone()[0]
         total_attempts = conn.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]
     return {
         "total_users": total_users,
         "new_users_today": new_today,
         "banned_users": banned_users,
         "total_papers": total_papers,
+        "submitted_papers": submitted_papers,
         "total_attempts": total_attempts,
     }
 
@@ -418,7 +441,7 @@ def list_user_attempt_summary(user_id: str, limit: int = 10) -> list[dict]:
                    SUM(ai.is_correct) AS item_correct
             FROM attempts a
             LEFT JOIN papers p ON p.paper_id = a.paper_id
-            LEFT JOIN attempt_items ai ON ai.attempt_id = a.id
+            LEFT JOIN attempt_items ai ON ai.attempt_id = a.id AND ai.question_type <> 'writing'
             WHERE a.user_id = ?
             GROUP BY a.id
             ORDER BY a.answered_at DESC
@@ -484,7 +507,7 @@ def attempts_by_day(days: int = 30, user_id: str | None = None) -> list[dict]:
                    ROUND(AVG(ai.is_correct), 4) AS correct_rate
             FROM attempts a
             JOIN attempt_items ai ON ai.attempt_id = a.id
-            WHERE a.answered_at >= ? AND (? IS NULL OR a.user_id = ?)
+            WHERE a.answered_at >= ? AND (? IS NULL OR a.user_id = ?) AND ai.question_type <> 'writing'
             GROUP BY day
             ORDER BY day
             """,
@@ -492,6 +515,40 @@ def attempts_by_day(days: int = 30, user_id: str | None = None) -> list[dict]:
         ).fetchall()
     return [
         {"day": r["day"], "attempts": r["attempts"], "correct_rate": r["correct_rate"]}
+        for r in rows
+    ]
+
+
+def vocabulary_studied_by_day(days: int = 30, user_id: str | None = None) -> list[dict]:
+    """Per-day count of vocabulary cards a user completed (words studied), split
+    into new vs review. `study_date` is the local (Asia/Shanghai) study day already
+    stored on each card; one card per word per day, so the count is distinct words.
+    days<=0 means all history."""
+    init_db()
+    since = _vocabulary_date(_vocabulary_now() - timedelta(days=days)) if days > 0 else "0000-00-00"
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT study_date AS day,
+                   SUM(CASE WHEN card_type = 'new' THEN 1 ELSE 0 END) AS new_words,
+                   SUM(CASE WHEN card_type = 'review' THEN 1 ELSE 0 END) AS review_words,
+                   COUNT(*) AS studied
+            FROM vocabulary_daily_cards
+            WHERE completed_at IS NOT NULL
+              AND study_date >= ?
+              AND (? IS NULL OR user_id = ?)
+            GROUP BY study_date
+            ORDER BY study_date
+            """,
+            (since, user_id, user_id),
+        ).fetchall()
+    return [
+        {
+            "day": r["day"],
+            "studied": r["studied"],
+            "new_words": r["new_words"],
+            "review_words": r["review_words"],
+        }
         for r in rows
     ]
 
@@ -504,7 +561,8 @@ def question_type_accuracy(window_days: int | None = None, user_id: str | None =
     aren't over-credited. window_days None = all history."""
     init_db()
     params: list[object] = []
-    conds = []
+    # 作文不算对/错正确率（单独看平均分），从分题型准确率里排除。
+    conds = ["ai.question_type <> 'writing'"]
     if window_days is not None:
         since = datetime.now(timezone.utc) - timedelta(days=window_days)
         conds.append("a.answered_at >= ?")
@@ -512,7 +570,7 @@ def question_type_accuracy(window_days: int | None = None, user_id: str | None =
     if user_id is not None:
         conds.append("a.user_id = ?")
         params.append(user_id)
-    where = f"WHERE {' AND '.join(conds)}" if conds else ""
+    where = f"WHERE {' AND '.join(conds)}"
     with connect() as conn:
         rows = conn.execute(
             f"""
@@ -537,6 +595,119 @@ def question_type_accuracy(window_days: int | None = None, user_id: str | None =
     ]
 
 
+def usage_by_action(days: int = 30) -> list[dict]:
+    """Per付费动作（credit_ledger.action）在窗口内的调用次数与积分消耗，
+    覆盖 generate_*/revise_paper/solution/writing_grade/vocab_example/agent_message。
+    只统计扣费流水（kind='spend'）；spend 行 delta 为负，消耗取 -delta。"""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT action AS action,
+                   COUNT(*) AS count,
+                   COALESCE(SUM(-delta), 0) AS credits_spent
+            FROM credit_ledger
+            WHERE kind = 'spend' AND action IS NOT NULL AND created_at >= ?
+            GROUP BY action
+            ORDER BY count DESC
+            """,
+            (since,),
+        ).fetchall()
+    return [
+        {"action": r["action"], "count": r["count"], "credits_spent": r["credits_spent"]}
+        for r in rows
+    ]
+
+
+def papers_by_source(days: int = 30) -> list[dict]:
+    """Per出卷来源页面（paper.metadata.source）的出卷次数——回答"用户偏好从哪个
+    页面出卷"。历史卷无此键 → json_extract 返回 NULL → 归为 'unknown'。"""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT COALESCE(json_extract(payload_json, '$.metadata.source'), 'unknown') AS source,
+                   COUNT(*) AS count
+            FROM papers
+            WHERE generated_at >= ?
+            GROUP BY source
+            ORDER BY count DESC
+            """,
+            (since,),
+        ).fetchall()
+    return [{"source": r["source"], "count": r["count"]} for r in rows]
+
+
+def papers_by_mode(days: int = 30) -> list[dict]:
+    """Per出卷类型（request.mode：fresh/remediation/review）的分布。"""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT COALESCE(json_extract(payload_json, '$.request.mode'), 'unknown') AS mode,
+                   COUNT(*) AS count
+            FROM papers
+            WHERE generated_at >= ?
+            GROUP BY mode
+            ORDER BY count DESC
+            """,
+            (since,),
+        ).fetchall()
+    return [{"mode": r["mode"], "count": r["count"]} for r in rows]
+
+
+def writing_summary(days: int = 30) -> dict:
+    """窗口内 AI 作文批改的篇数与平均总分（供监控看板）。
+    复用 writing_average（站点级），避免两处 AVG/COUNT 查询漂移。"""
+    avg, count = writing_average(user_id=None, window_days=days)
+    return {"count": count, "avg_score": avg}
+
+
+def credits_spent_by_day(days: int = 30) -> list[dict]:
+    """窗口内每日积分总消耗（credit_ledger 扣费流水，spend 行 delta 为负 → 取 -delta）。"""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT substr(created_at, 1, 10) AS day, COALESCE(SUM(-delta), 0) AS credits
+            FROM credit_ledger
+            WHERE kind = 'spend' AND created_at >= ?
+            GROUP BY day
+            ORDER BY day
+            """,
+            (since,),
+        ).fetchall()
+    return [{"day": r["day"], "credits": r["credits"]} for r in rows]
+
+
+def top_spenders(days: int = 30, limit: int = 10) -> list[dict]:
+    """窗口内积分消耗最多的前 N 个用户（补上 username）。"""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT user_id, COALESCE(SUM(-delta), 0) AS credits_spent
+            FROM credit_ledger
+            WHERE kind = 'spend' AND created_at >= ?
+            GROUP BY user_id
+            HAVING credits_spent > 0
+            ORDER BY credits_spent DESC
+            LIMIT ?
+            """,
+            (since, max(1, limit)),
+        ).fetchall()
+    name_map = usernames_by_ids([r["user_id"] for r in rows])
+    return [
+        {"user_id": r["user_id"], "username": name_map.get(r["user_id"]), "credits_spent": r["credits_spent"]}
+        for r in rows
+    ]
+
+
 def update_password_hash(user_id: str, password_hash: str) -> None:
     init_db()
     with connect() as conn:
@@ -556,7 +727,7 @@ def user_correct_rate(user_id: str) -> float | None:
             """
             SELECT COUNT(*) AS n, SUM(ai.is_correct) AS c
             FROM attempts a JOIN attempt_items ai ON ai.attempt_id = a.id
-            WHERE a.user_id = ?
+            WHERE a.user_id = ? AND ai.question_type <> 'writing'
             """,
             (user_id,),
         ).fetchone()
@@ -674,7 +845,9 @@ def list_papers(user_id: str, limit: int = 100, offset: int = 0, *,
             "WHERE json_extract(je.value, '$.question.question_type') = ?)"
         )
         params.append(question_type)
-    params.extend([limit, offset])
+    # Clamp to a bounded window (consistent with the other list endpoints);
+    # an unclamped/negative limit would let SQLite load the whole table.
+    params.extend([max(1, min(limit, 200)), max(0, offset)])
     with connect() as conn:
         rows = conn.execute(
             f"""
@@ -1187,6 +1360,30 @@ def get_writing_grade_results(paper_id: str, user_id: str) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def writing_average(user_id: str | None = None, window_days: int | None = None) -> tuple[float | None, int]:
+    """Average graded-essay total_score and count, for the writing stat shown
+    separately from correctness. user_id None = site-wide; window_days None = all
+    history. Returns (avg rounded to 1dp or None if no essays, count)."""
+    init_db()
+    conds: list[str] = []
+    params: list[object] = []
+    if user_id is not None:
+        conds.append("user_id = ?")
+        params.append(user_id)
+    if window_days is not None:
+        since = datetime.now(timezone.utc) - timedelta(days=window_days)
+        conds.append("graded_at >= ?")
+        params.append(since.isoformat())
+    where = f"WHERE {' AND '.join(conds)}" if conds else ""
+    with connect() as conn:
+        row = conn.execute(
+            f"SELECT AVG(total_score) AS avg, COUNT(*) AS n FROM writing_grade_results {where}",
+            params,
+        ).fetchone()
+    n = int(row["n"] or 0)
+    return (round(row["avg"], 1) if n else None), n
+
+
 def mark_paper_submitted_if_needed(paper_id: str, user_id: str) -> None:
     """Mark a paper submitted if it is not already, so list view shows "已提交".
 
@@ -1679,8 +1876,6 @@ def _migrate_vocabulary_word_sources(conn: sqlite3.Connection) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_vocabulary_wordlist_sources_list
             ON vocabulary_wordlist_sources(wordlist_id, category);
-        CREATE INDEX IF NOT EXISTS idx_vocabulary_words_category
-            ON vocabulary_words(is_active, source_category, id);
         """
     )
 
@@ -2280,6 +2475,24 @@ def get_vocabulary_today(user_id: str, now: datetime | None = None) -> dict:
             "word_id": active["word_id"], "term": active["term"], "origin": active["origin"], "retry_count": active["retry_count"],
         } if active else None,
         "counts": counts,
+    }
+
+
+def get_vocabulary_word(word_id: str) -> dict | None:
+    """Look up a single vocabulary word's core fields (for AI example generation)."""
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT id, term, part_of_speech, meanings_json FROM vocabulary_words WHERE id = ?",
+            (word_id,),
+        ).fetchone()
+    if row is None:
+        return None
+    return {
+        "word_id": row["id"],
+        "term": row["term"],
+        "part_of_speech": row["part_of_speech"],
+        "meanings": json.loads(row["meanings_json"]),
     }
 
 

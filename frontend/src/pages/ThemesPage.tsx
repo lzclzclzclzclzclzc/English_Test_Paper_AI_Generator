@@ -72,7 +72,7 @@ export function ThemesPage() {
   } as Record<QuestionType, RowState>)
   const [serverError, setServerError] = useState<string | null>(null)
 
-  const { generate, guard, isPending } = useGeneratePaper(setServerError)
+  const { generate, guard, isPending } = useGeneratePaper(setServerError, 'themes')
   const { price } = useCredits()
 
   // 互斥:chip 与自定义输入二选一

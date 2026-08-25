@@ -55,6 +55,7 @@ export type CreditAction =
   | 'revise_paper'
   | 'solution'
   | 'writing_grade'
+  | 'vocab_example'
   | 'agent_message'
 
 export interface CreditPrice {

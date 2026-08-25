@@ -179,21 +179,57 @@ def cancel_order(user_id: str, out_trade_no: str) -> dict:
     return get_order(user_id, out_trade_no)
 
 
-def list_orders(status: str | None = None, limit: int = 50, offset: int = 0) -> tuple[list[dict], int]:
+def list_orders(
+    status: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    *,
+    out_trade_no: str = "",
+    user_q: str = "",
+    pack_id: str = "",
+    created_from: str = "",
+    created_to: str = "",
+    paid_from: str = "",
+    paid_to: str = "",
+) -> tuple[list[dict], int]:
+    """Admin order listing with header-column filters. `user_q` matches either
+    the order's user_id or the buyer's username (both live in app.db, so the
+    subquery JOIN is intra-database). Date filters compare the YYYY-MM-DD prefix
+    of the ISO timestamps; a paid-date filter naturally excludes unpaid rows."""
     storage.init_db()
+    clauses: list[str] = []
+    params: list[object] = []
+    if status:
+        clauses.append("status = ?")
+        params.append(status)
+    if out_trade_no:
+        clauses.append("out_trade_no LIKE ?")
+        params.append(f"%{out_trade_no}%")
+    if user_q:
+        clauses.append("(user_id LIKE ? OR user_id IN (SELECT id FROM users WHERE username LIKE ?))")
+        params += [f"%{user_q}%", f"%{user_q}%"]
+    if pack_id:
+        clauses.append("pack_id = ?")
+        params.append(pack_id)
+    if created_from:
+        clauses.append("substr(created_at, 1, 10) >= ?")
+        params.append(created_from)
+    if created_to:
+        clauses.append("substr(created_at, 1, 10) <= ?")
+        params.append(created_to)
+    if paid_from:
+        clauses.append("substr(paid_at, 1, 10) >= ?")
+        params.append(paid_from)
+    if paid_to:
+        clauses.append("substr(paid_at, 1, 10) <= ?")
+        params.append(paid_to)
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     with storage.connect() as conn:
-        if status:
-            total = conn.execute("SELECT COUNT(*) FROM orders WHERE status=?", (status,)).fetchone()[0]
-            rows = conn.execute(
-                "SELECT * FROM orders WHERE status=? ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                (status, limit, offset),
-            ).fetchall()
-        else:
-            total = conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
-            rows = conn.execute(
-                "SELECT * FROM orders ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                (limit, offset),
-            ).fetchall()
+        total = conn.execute(f"SELECT COUNT(*) FROM orders {where}", params).fetchone()[0]
+        rows = conn.execute(
+            f"SELECT * FROM orders {where} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            (*params, limit, offset),
+        ).fetchall()
     return [dict(r) for r in rows], int(total)
 
 

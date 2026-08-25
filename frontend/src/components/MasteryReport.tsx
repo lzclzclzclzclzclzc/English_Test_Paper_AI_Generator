@@ -65,6 +65,13 @@ export function MasteryReport({
           unit="个"
           accent={weakCount > 0}
         />
+        {profile.writing_graded_count > 0 && profile.writing_avg_score != null && (
+          <Stat
+            label="写作平均分"
+            value={String(profile.writing_avg_score)}
+            unit={`/ ${profile.writing_full_score} 分 · ${profile.writing_graded_count} 篇`}
+          />
+        )}
         {profile.dominant_types.length > 0 && (
           <span className="pb-1 text-[13px] text-quiet">
             主要练习：{profile.dominant_types.map((t) => TYPE_LABELS[t] ?? t).join('、')}

@@ -102,7 +102,7 @@ export function CustomPaperPage() {
   const [topic, setTopic] = useState('')
   const [serverError, setServerError] = useState<string | null>(null)
 
-  const { generate, guard, isPending } = useGeneratePaper(setServerError)
+  const { generate, guard, isPending } = useGeneratePaper(setServerError, 'custom')
   const { price } = useCredits()
   const kpQuery = useKnowledgePoints()
 

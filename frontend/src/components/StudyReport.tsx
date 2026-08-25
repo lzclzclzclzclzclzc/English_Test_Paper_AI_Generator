@@ -1,41 +1,23 @@
 import { useQuery } from '@tanstack/react-query'
+import {
+  Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from 'recharts'
 import { listPapers } from '@/api/papers'
+import { getVocabularyDaily, getVocabularyProgress } from '@/api/vocabulary'
 import type { MasteryProfile } from '@/types/api'
 import { TYPE_LABELS, prettifyKp } from '@/lib/kp'
+import { bandOf, BAND_LABEL, masteryToOutline } from '@/lib/masteryOutline'
 import { Button } from '@/components/ui/button'
 import { MindmapView } from '@/components/mindmap/MindmapView'
 import { cn } from '@/lib/utils'
 
-/** 与 MasteryReport 相同的三色 band(Spec F v2.2)。 */
-const bandOf = (m: number) => (m < 0.4 ? 'weak' : m < 0.7 ? 'mid' : 'solid')
+const ACCENT = '#ef4a2b'
+
+/** band 文字色（配套 lib/masteryOutline 的三色分级，仅本报告表格用）。 */
 const BAND_TEXT: Record<string, string> = {
   weak: 'text-accent',
   mid: 'text-grammar',
   solid: 'text-success',
-}
-const BAND_LABEL: Record<string, string> = { weak: '薄弱', mid: '一般', solid: '扎实' }
-
-/**
- * 掌握情况 → Markmap 大纲(纯前端 hard code,不耗 LLM,只读)。
- * 根节点=掌握情况,下挂 薄弱/一般/扎实 三支(仅渲染有考点的支),
- * 每个考点做叶子,带正确率百分比。复用错题本/思维导图同款 MindmapView 渲染。
- */
-const BAND_ORDER = ['weak', 'mid', 'solid'] as const
-function masteryToOutline(profile: MasteryProfile): string {
-  const grouped: Record<'weak' | 'mid' | 'solid', string[]> = { weak: [], mid: [], solid: [] }
-  // weak_kps 已按 mastery 升序，分桶后各组内部自然保持从低到高
-  for (const kp of profile.weak_kps) {
-    grouped[bandOf(kp.mastery)].push(
-      `- ${prettifyKp(kp.knowledge_point_id)}（${Math.round(kp.mastery * 100)}%）`,
-    )
-  }
-  const lines = ['# 知识点掌握情况']
-  for (const band of BAND_ORDER) {
-    const items = grouped[band]
-    if (items.length === 0) continue
-    lines.push(`## ${BAND_LABEL[band]}（${items.length}）`, ...items)
-  }
-  return lines.join('\n')
 }
 
 /** 固定话术建议:纯前端模板,不耗 LLM。 */
@@ -83,6 +65,29 @@ export function StudyReport({ profile, windowLabel, onClose, titleOnlyInPrint }:
   })
   const paperCount = papers.data?.items.length ?? null
   const submittedCount = papers.data?.items.filter((p) => p.submitted).length ?? null
+
+  // 背词每日词量（与管理端用户详情页同款可视化）；窗口随报告的掌握度窗口。
+  const vocabDays = profile.window_days ?? 0
+  const vocabQuery = useQuery({
+    queryKey: ['vocabulary', 'daily', vocabDays],
+    queryFn: () => getVocabularyDaily(vocabDays),
+    staleTime: 60_000,
+  })
+  const vocab = (vocabQuery.data?.items ?? []).map((d) => ({
+    day: d.day.slice(5), // MM-DD
+    new_words: d.new_words,
+    review_words: d.review_words,
+    studied: d.studied,
+  }))
+  const vocabTotal = vocab.reduce((sum, d) => sum + d.studied, 0)
+
+  // 背词累计画像：已学习 / 长期掌握 / 连续学习天数（与背词进度页同源缓存）。
+  const vocabProgress = useQuery({
+    queryKey: ['vocabulary', 'progress'],
+    queryFn: getVocabularyProgress,
+    staleTime: 60_000,
+  }).data
+  const hasVocab = (vocabProgress?.learned_count ?? 0) > 0 || vocab.length > 0
 
   const weakest = [...profile.weak_kps].sort((a, b) => a.mastery - b.mastery).slice(0, 5)
   const today = new Date().toLocaleDateString('zh-CN', { dateStyle: 'long' })
@@ -148,6 +153,18 @@ export function StudyReport({ profile, windowLabel, onClose, titleOnlyInPrint }:
             <span className="text-[13px] font-[450] text-quiet"> 个</span>
           </span>
         </div>
+        {profile.writing_graded_count > 0 && profile.writing_avg_score != null && (
+          <div className="flex flex-col gap-1">
+            <span className="kicker">写作平均分</span>
+            <span className="text-[32px] font-bold leading-none tabular-nums text-ink">
+              {profile.writing_avg_score}
+              <span className="text-[13px] font-[450] text-quiet">
+                {' '}
+                / {profile.writing_full_score} 分 · {profile.writing_graded_count} 篇
+              </span>
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 薄弱考点 */}
@@ -201,6 +218,62 @@ export function StudyReport({ profile, windowLabel, onClose, titleOnlyInPrint }:
           <div className="mt-2 h-[300px] w-full overflow-hidden rounded-sm border border-hairline bg-card-surface">
             <MindmapView outline={masteryToOutline(profile)} />
           </div>
+        </div>
+      )}
+
+      {/* 背单词情况（每日新学/复习词量，与管理端用户详情页同款）。交互式 SVG
+          打印易失真，打印时隐藏。 */}
+      {hasVocab && (
+        <div className="mt-6 print:hidden">
+          <h3 className="font-heading text-[15px] font-bold text-ink">背单词情况</h3>
+
+          {vocabProgress && (
+            <div className="mt-3 flex flex-wrap items-end gap-x-10 gap-y-4 font-ui">
+              <div className="flex flex-col gap-1">
+                <span className="kicker">已学习</span>
+                <span className="text-[28px] font-bold leading-none tabular-nums text-ink">
+                  {vocabProgress.learned_count}
+                  <span className="text-[13px] font-[450] text-quiet"> / {vocabProgress.total_words} 词</span>
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="kicker">长期掌握</span>
+                <span className="text-[28px] font-bold leading-none tabular-nums text-ink">
+                  {vocabProgress.mastered_count}
+                  <span className="text-[13px] font-[450] text-quiet"> 词</span>
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="kicker">连续学习</span>
+                <span className="text-[28px] font-bold leading-none tabular-nums text-ink">
+                  {vocabProgress.streak_days}
+                  <span className="text-[13px] font-[450] text-quiet"> 天</span>
+                </span>
+              </div>
+            </div>
+          )}
+
+          {vocab.length > 0 ? (
+            <>
+              <p className="mt-5 text-[12.5px] text-quiet">
+                每日背词量（新学 / 复习），{windowLabel}内共 {vocabTotal} 词。
+              </p>
+              <div className="mt-2 h-[240px] w-full">
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={vocab}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-10)" />
+                    <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={32} />
+                    <Tooltip />
+                    <Bar dataKey="new_words" name="新学" stackId="v" fill={ACCENT} />
+                    <Bar dataKey="review_words" name="复习" stackId="v" fill={ACCENT} fillOpacity={0.4} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </>
+          ) : (
+            <p className="mt-4 text-[12.5px] text-quiet">{windowLabel}内暂无背词记录。</p>
+          )}
         </div>
       )}
 

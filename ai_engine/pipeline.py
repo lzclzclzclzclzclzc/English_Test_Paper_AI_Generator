@@ -36,6 +36,7 @@ from shared.schemas import (
     GenerateRequest,
     MasteryProfile,
     Paper,
+    QUESTION_TYPE_LABELS,
     RevisedQuestion,
     RevisionMode,
     WrongItemRef,
@@ -126,22 +127,10 @@ def revise_paper(
     # Give the Parser the original paper's shape as context, so a relative
     # instruction ("把选择题换成词形转换") resolves against the real paper.
     orig = current_paper.request
-    type_names = {
-        "single_choice": "单项选择",
-        "word_form": "词性转换",
-        "sentence_rewriting": "改写句子",
-        "listening_single_choice": "听力选择",
-        "listening_true_false": "听力判断",
-        "listening_fill_blank": "听力填词",
-        "reading_longtext_single_choice": "阅读理解",
-        "cloze_single_choice": "完形填空",
-        "reading_first_blank": "阅读首字母填空",
-        "writing": "英语作文",
-    }
     context_parts = [f"共 {orig.total_questions} 题"]
     if orig.question_types:
         context_parts.append(
-            "题型：" + "、".join(type_names.get(t, t) for t in orig.question_types)
+            "题型：" + "、".join(QUESTION_TYPE_LABELS.get(t, t) for t in orig.question_types)
         )
     if orig.knowledge_points:
         context_parts.append("考点：" + "、".join(orig.knowledge_points))

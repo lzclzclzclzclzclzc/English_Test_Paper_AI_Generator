@@ -16,10 +16,42 @@ ai_engine.pipeline；回调里扣费，失败抛 InsufficientCreditsError 终止
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 from uuid import uuid4
 
 from backend.services.credits import ledger, pricing
 from shared.schemas import GenerateRequest
+
+
+@contextmanager
+def charged(
+    user_id: str,
+    cost: int,
+    *,
+    action: str,
+    ref_type: str,
+    ref_id: str | None = None,
+    note: str | None = None,
+    refund_note: str = "操作失败退回",
+):
+    """先扣后算的通用扣费上下文：进入时扣费，块内异常时原路退回并重新抛出。
+
+    统一了 solutions / vocabulary / writing 等单次 LLM 端点各自手写的
+    charge → try → except: refund → raise 样板（也杜绝漏写 refund 的隐患）。
+
+    用法：
+        with credits.charged(user.id, credits.price("solution"), action="solution",
+                             ref_type="solution", note="AI 讲解") as receipt:
+            result = do_llm_work()
+        return Response(..., credits=CreditChargeInfo(cost=receipt.cost, ...))
+    """
+    rid = ref_id or uuid4().hex
+    receipt = ledger.charge(user_id, cost, action=action, ref_type=ref_type, ref_id=rid, note=note)
+    try:
+        yield receipt
+    except Exception:
+        ledger.refund(user_id, ref_type=ref_type, ref_id=rid, note=refund_note)
+        raise
 
 
 class PaperCharge:

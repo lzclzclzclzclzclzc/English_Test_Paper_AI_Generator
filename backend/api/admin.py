@@ -25,6 +25,13 @@ from backend.schemas import (
     AdminRevenueDayPoint,
     AdminSystemHealth,
     AdminTimeseries,
+    AdminUsage,
+    AdminUsageActionPoint,
+    AdminUsageDayCredits,
+    AdminUsageModePoint,
+    AdminUsageSourcePoint,
+    AdminUsageSpender,
+    AdminUsageWriting,
     AdminUserAnalytics,
     AdminUserAttemptItem,
     AdminUserAttemptList,
@@ -32,6 +39,7 @@ from backend.schemas import (
     AdminUserList,
     AdminUserPaperItem,
     AdminUserPaperList,
+    AdminVocabularyDay,
     CreditLedgerItem,
     QuestionBankChapterStat,
     QuestionBankKpStat,
@@ -67,10 +75,19 @@ async def list_users(
     offset: int = 0,
     status: str = "",
     sort: str = "created_at",
+    role: str = "",
+    created_from: str = "",
+    created_to: str = "",
     _: User = Depends(require_admin),
 ) -> AdminUserList:
-    items = storage.list_users(q=q, limit=limit, offset=offset, status=status, sort=sort)
-    return AdminUserList(items=items, total=storage.count_users(q=q, status=status))
+    items = storage.list_users(
+        q=q, limit=limit, offset=offset, status=status, sort=sort,
+        role=role, created_from=created_from, created_to=created_to,
+    )
+    total = storage.count_users(
+        q=q, status=status, role=role, created_from=created_from, created_to=created_to,
+    )
+    return AdminUserList(items=items, total=total)
 
 
 @router.get("/users/{user_id}", response_model=AdminUserDetail)
@@ -104,13 +121,15 @@ def user_mastery(user_id: str, _: User = Depends(require_admin)) -> MasteryProfi
 def user_analytics(
     user_id: str, days: int = 30, _: User = Depends(require_admin)
 ) -> AdminUserAnalytics:
-    """Single-user answering analytics for the admin learner view: per-day
-    volume/correct-rate trend + per-type accuracy. days<=0 = all history."""
+    """Single-user answering analytics for the admin user-detail view: per-day
+    volume/correct-rate trend + per-type accuracy + per-day vocabulary study
+    counts. days<=0 = all history."""
     _require_target(user_id)
     window = days if days > 0 else None
     return AdminUserAnalytics(
         attempts_by_day=storage.attempts_by_day(days if days > 0 else 3650, user_id=user_id),
         type_accuracy=storage.question_type_accuracy(window, user_id=user_id),
+        vocabulary_by_day=storage.vocabulary_studied_by_day(days if days > 0 else 3650, user_id=user_id),
     )
 
 
@@ -204,6 +223,22 @@ def stats_analytics(days: int = 30, _: User = Depends(require_admin)) -> AdminAn
     )
 
 
+@router.get("/stats/usage", response_model=AdminUsage)
+def stats_usage(days: int = 30, _: User = Depends(require_admin)) -> AdminUsage:
+    """功能使用监控（监控看板）：各付费 AI 动作调用量/积分消耗、出卷来源页面
+    分布、出卷类型分布、作文批改概况、每日背单词量。`days<=0` = 全部历史。"""
+    span = days if days > 0 else 3650
+    return AdminUsage(
+        by_action=[AdminUsageActionPoint(**a) for a in storage.usage_by_action(span)],
+        by_source=[AdminUsageSourcePoint(**s) for s in storage.papers_by_source(span)],
+        by_mode=[AdminUsageModePoint(**m) for m in storage.papers_by_mode(span)],
+        writing=AdminUsageWriting(**storage.writing_summary(span)),
+        vocabulary_by_day=[AdminVocabularyDay(**v) for v in storage.vocabulary_studied_by_day(span)],
+        credits_by_day=[AdminUsageDayCredits(**c) for c in storage.credits_spent_by_day(span)],
+        top_spenders=[AdminUsageSpender(**s) for s in storage.top_spenders(span, limit=10)],
+    )
+
+
 # ---- credits / orders (本地账本，2026-08 自 payment 服务合并) ----
 
 
@@ -276,9 +311,21 @@ def list_orders(
     status: str = "",
     limit: int = 50,
     offset: int = 0,
+    order_no: str = "",
+    user: str = "",
+    pack_id: str = "",
+    created_from: str = "",
+    created_to: str = "",
+    paid_from: str = "",
+    paid_to: str = "",
     _: User = Depends(require_admin),
 ) -> AdminOrderListView:
-    items, total = order_service.list_orders(status or None, max(1, min(limit, 200)), max(0, offset))
+    items, total = order_service.list_orders(
+        status or None, max(1, min(limit, 200)), max(0, offset),
+        out_trade_no=order_no, user_q=user, pack_id=pack_id,
+        created_from=created_from, created_to=created_to,
+        paid_from=paid_from, paid_to=paid_to,
+    )
     name_map = storage.usernames_by_ids([o["user_id"] for o in items])
     rows = [
         AdminOrderItem(
@@ -371,12 +418,17 @@ def list_audit(
     return AdminAuditList(items=[AdminAuditItem(**i) for i in items], total=total)
 
 
-def _probe_http(url: str, timeout: float = 2.0) -> bool:
+def _probe_http(url: str, *, headers: dict[str, str] | None = None, timeout: float = 5.0) -> bool:
     """Transport-level reachability probe: any HTTP response counts as up
-    (401/404 still prove the service is alive); only transport errors /
-    timeouts count as down."""
+    (400/401/404 still prove the service is alive); only transport errors /
+    timeouts count as down.
+
+    trust_env is left at its default (True) so corporate HTTP(S)_PROXY / CA
+    settings are honoured — this MUST match how the real OpenAI LLM client
+    connects (shared/llm/deepseek.py), otherwise a proxy-only network makes the
+    probe report the LLM "down" while paper generation actually works."""
     try:
-        httpx.get(url, timeout=timeout, trust_env=False)
+        httpx.get(url, timeout=timeout, headers=headers or {})
         return True
     except httpx.HTTPError:
         return False
@@ -385,7 +437,10 @@ def _probe_http(url: str, timeout: float = 2.0) -> bool:
 @router.get("/system/health", response_model=AdminSystemHealth)
 def system_health(_: User = Depends(require_admin)) -> AdminSystemHealth:
     config = get_config()
-    llm_ok = _probe_http(f"{config.llm_base_url.rstrip('/')}/models")
+    # Send the API key so /models answers 200 rather than 401 where the gateway
+    # requires auth; any HTTP status still counts as "reachable" regardless.
+    llm_headers = {"Authorization": f"Bearer {config.llm_api_key}"} if config.llm_api_key.strip() else None
+    llm_ok = _probe_http(f"{config.llm_base_url.rstrip('/')}/models", headers=llm_headers)
     try:
         bank_total = storage.questionbank_stats()["total"]
     except Exception:

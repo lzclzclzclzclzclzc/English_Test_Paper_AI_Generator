@@ -6,13 +6,12 @@ which takes 5-15 seconds, so we isolate it in its own endpoint.
 """
 from __future__ import annotations
 
-from uuid import uuid4
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from pydantic import BaseModel
 
 from backend.deps import current_user, rate_limiter
+from backend.errors import ResourceNotFoundError
 from backend.schemas import (
     CreditChargeInfo,
     User,
@@ -66,9 +65,8 @@ async def grade_writing(
     """
     paper = storage.get_paper(body.paper_id, user.id)
     if not paper:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="paper not found")
-    
+        raise ResourceNotFoundError("试卷不存在")
+
     # Build index -> paper item map (need source_question_id for attempt_items)
     idx_to_item = {item.index: item for item in paper.items}
 
@@ -78,70 +76,66 @@ async def grade_writing(
         for item in body.items
         if item.index in idx_to_item and idx_to_item[item.index].question.question_type == "writing"
     ]
-    charge_ref = uuid4().hex
-    receipt = credits.charge(
-        user.id,
-        credits.price("writing_grade") * len(to_grade),
-        action="writing_grade",
-        ref_type="writing_grade",
-        ref_id=charge_ref,
-        note=f"作文批改 {len(to_grade)} 篇 · paper {body.paper_id[:8]}",
-    )
 
     results: list[WritingGradeResultItem] = []
     save_items: list[dict] = []
     attempt_write_items: list[dict] = []
-    for item, paper_item in to_grade:
-        q = paper_item.question
 
-        # Grade the essay（LLM 失败 → 退回本次全部扣费再抛出）
-        try:
+    # 按篇数一次性扣费；批改过程中任何 LLM 失败 → charged 上下文原路退回全部扣费。
+    with credits.charged(
+        user.id,
+        credits.price("writing_grade") * len(to_grade),
+        action="writing_grade",
+        ref_type="writing_grade",
+        note=f"作文批改 {len(to_grade)} 篇 · paper {body.paper_id[:8]}",
+        refund_note="批改失败退回",
+    ) as receipt:
+        for item, paper_item in to_grade:
+            q = paper_item.question
             grade_result = ai_gateway.grade_writing(q, item.user_essay)
-        except Exception:
-            credits.refund(user.id, ref_type="writing_grade", ref_id=charge_ref, note="批改失败退回")
-            raise
 
-        save_items.append(
-            {
-                "index": item.index,
-                "user_essay": item.user_essay,
-                "total_score": grade_result.total_score,
-                "content_score": grade_result.content_score,
-                "language_score": grade_result.language_score,
-                "organization_score": grade_result.organization_score,
-                "word_count": grade_result.word_count,
-                "level": grade_result.level,
-                "content_analysis": grade_result.content_analysis,
-                "language_analysis": grade_result.language_analysis,
-                "organization_analysis": grade_result.organization_analysis,
-                "overall_comment": grade_result.overall_comment,
-                "revised_version": grade_result.revised_version,
-            },
-        )
-        attempt_write_items.append(
-            {
-                "index": item.index,
-                "source_question_id": paper_item.source_question_id,
-                "knowledge_point_ids": q.knowledge_point_ids,
-                "user_essay": item.user_essay,
-            },
-        )
+            save_items.append(
+                {
+                    "index": item.index,
+                    "user_essay": item.user_essay,
+                    "total_score": grade_result.total_score,
+                    "content_score": grade_result.content_score,
+                    "language_score": grade_result.language_score,
+                    "organization_score": grade_result.organization_score,
+                    "word_count": grade_result.word_count,
+                    "level": grade_result.level,
+                    "content_analysis": grade_result.content_analysis,
+                    "language_analysis": grade_result.language_analysis,
+                    "organization_analysis": grade_result.organization_analysis,
+                    "overall_comment": grade_result.overall_comment,
+                    "revised_version": grade_result.revised_version,
+                },
+            )
+            attempt_write_items.append(
+                {
+                    "index": item.index,
+                    "source_question_id": paper_item.source_question_id,
+                    "knowledge_point_ids": q.knowledge_point_ids,
+                    "user_essay": item.user_essay,
+                },
+            )
 
-        result = WritingGradeResultItem(
-            index=item.index,
-            total_score=grade_result.total_score,
-            content_score=grade_result.content_score,
-            language_score=grade_result.language_score,
-            organization_score=grade_result.organization_score,
-            word_count=grade_result.word_count,
-            level=grade_result.level,
-            content_analysis=grade_result.content_analysis,
-            language_analysis=grade_result.language_analysis,
-            organization_analysis=grade_result.organization_analysis,
-            overall_comment=grade_result.overall_comment,
-            revised_version=grade_result.revised_version,
-        )
-        results.append(result)
+            results.append(
+                WritingGradeResultItem(
+                    index=item.index,
+                    total_score=grade_result.total_score,
+                    content_score=grade_result.content_score,
+                    language_score=grade_result.language_score,
+                    organization_score=grade_result.organization_score,
+                    word_count=grade_result.word_count,
+                    level=grade_result.level,
+                    content_analysis=grade_result.content_analysis,
+                    language_analysis=grade_result.language_analysis,
+                    organization_analysis=grade_result.organization_analysis,
+                    overall_comment=grade_result.overall_comment,
+                    revised_version=grade_result.revised_version,
+                )
+            )
 
     # Persist full essay content + grade + analysis for history replay
     if save_items:
@@ -168,7 +162,7 @@ async def get_writing_grades(
     """
     paper = storage.get_paper(paper_id, user.id)
     if not paper:
-        raise HTTPException(status_code=404, detail="paper not found")
+        raise ResourceNotFoundError("试卷不存在")
     rows = storage.get_writing_grade_results(paper_id, user.id)
     if not rows:
         return None

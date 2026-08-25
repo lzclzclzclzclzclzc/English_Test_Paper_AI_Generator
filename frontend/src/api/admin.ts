@@ -1,7 +1,7 @@
 import { apiFetch } from '@/api/client'
 import type {
   AdminAnalytics, AdminAuditList, AdminCreditAccount, AdminCreditAccountDetail, AdminCreditAccountList, AdminOrderList,
-  AdminOverview, AdminRevenue, AdminSystemHealth, AdminTimeseries, AdminUserAnalytics,
+  AdminOverview, AdminRevenue, AdminSystemHealth, AdminTimeseries, AdminUsage, AdminUserAnalytics,
   AdminUserAttemptList, AdminUserDetail, AdminUserList, AdminUserPaperList, MasteryProfile,
   QuestionBankList, QuestionBankStats, User,
 } from '@/types/api'
@@ -16,8 +16,9 @@ const qs = (params: Record<string, string | number | undefined>) => {
 // 用户 / 统计 → 主后端 (/api)
 export const listUsers = (
   q = '', limit = 50, offset = 0, status = '', sort = 'created_at',
+  role = '', created_from = '', created_to = '',
 ) =>
-  apiFetch<AdminUserList>(`/admin/users${qs({ q, limit, offset, status, sort })}`)
+  apiFetch<AdminUserList>(`/admin/users${qs({ q, limit, offset, status, sort, role, created_from, created_to })}`)
 export const getUserDetail = (id: string) => apiFetch<AdminUserDetail>(`/admin/users/${id}`)
 export const setRole = (id: string, role: 'user' | 'admin') =>
   apiFetch<User>(`/admin/users/${id}/role`, { method: 'POST', body: JSON.stringify({ role }) })
@@ -27,11 +28,12 @@ export const banUser = (id: string) => apiFetch<User>(`/admin/users/${id}/ban`, 
 export const unbanUser = (id: string) => apiFetch<User>(`/admin/users/${id}/unban`, { method: 'POST' })
 export const getOverview = () => apiFetch<AdminOverview>('/admin/stats/overview')
 export const getTimeseries = (days = 30) => apiFetch<AdminTimeseries>(`/admin/stats/timeseries${qs({ days })}`)
-// days=0 = 全部历史；直接拼串确保 0 也传出（不经 qs 的 falsy 过滤）。
-export const getAnalytics = (days = 30) => apiFetch<AdminAnalytics>(`/admin/analytics?days=${days}`)
+// days=0 = 全部历史；qs 只过滤 undefined/''，0 会正常带出（?days=0），与其他窗口端点一致。
+export const getAnalytics = (days = 30) => apiFetch<AdminAnalytics>(`/admin/analytics${qs({ days })}`)
+export const getUsageStats = (days = 30) => apiFetch<AdminUsage>(`/admin/stats/usage${qs({ days })}`)
 export const getUserMastery = (id: string) => apiFetch<MasteryProfile>(`/admin/users/${id}/mastery`)
 export const getUserAnalytics = (id: string, days = 30) =>
-  apiFetch<AdminUserAnalytics>(`/admin/users/${id}/analytics?days=${days}`)
+  apiFetch<AdminUserAnalytics>(`/admin/users/${id}/analytics${qs({ days })}`)
 
 // 用户维度深挖（Spec H B）
 export const getUserPapers = (id: string, limit = 10) =>
@@ -60,7 +62,19 @@ export const adjustCredits = (id: string, delta: number, note: string) =>
   apiFetch<AdminCreditAccount>(`/admin/credits/${id}/adjust`, { method: 'POST', body: JSON.stringify({ delta, note }) })
 export const adjustCreditsByUsername = (username: string, delta: number, note: string) =>
   apiFetch<AdminCreditAccount>('/admin/credits/adjust', { method: 'POST', body: JSON.stringify({ username, delta, note }) })
-export const listOrders = (status = '', limit = 50, offset = 0) =>
-  apiFetch<AdminOrderList>(`/admin/orders${qs({ status, limit, offset })}`)
+export const listOrders = (
+  params: {
+    status?: string
+    order_no?: string
+    user?: string
+    pack_id?: string
+    created_from?: string
+    created_to?: string
+    paid_from?: string
+    paid_to?: string
+    limit?: number
+    offset?: number
+  } = {},
+) => apiFetch<AdminOrderList>(`/admin/orders${qs({ limit: 50, offset: 0, ...params })}`)
 export const reconcileOrders = () =>
   apiFetch<{ reconciled: number }>('/admin/orders/reconcile', { method: 'POST' })

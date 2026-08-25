@@ -356,7 +356,7 @@ def test_system_health(client, monkeypatch):
 
     boss = _mk(client, "boss", admin=True)
     _as(client, boss)
-    monkeypatch.setattr(admin_mod, "_probe_http", lambda url, timeout=2.0: True)
+    monkeypatch.setattr(admin_mod, "_probe_http", lambda url, *, headers=None, timeout=5.0: True)
     monkeypatch.setattr(storage, "questionbank_stats", lambda: {"total": 42})
 
     r = client.get("/api/admin/system/health")

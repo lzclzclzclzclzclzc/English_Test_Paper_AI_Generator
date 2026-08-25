@@ -38,7 +38,7 @@
   `detail={required, available, action}`，production 下也保留 detail 供前端展示）。
 - **幂等**：`charge(ref_type, ref_id)` 同 ref 重复调用返回既有收据（`duplicate=True`）。
 - **退款**：`refund(ref)` 把该 ref 的 `spend` 行按原桶退回（一次性，再次调用返回 0）。
-  管线 / LLM 在扣费后失败一律退款（papers / solutions / writing / agent / 计划出卷）。
+  管线 / LLM 在扣费后失败一律退款（papers / solutions / writing / agent / 计划出卷 / 背词例句）。
 - **入账**：`grant(amount, kind, ref)` 进 `balance` 桶；`amount` 可为负（管理员扣减），
   下限 0；带 ref 时幂等。
 - **每日赠送**不单独记「过期」流水：次日第一次触达直接把 `daily_balance` 重置为满额并记一条
@@ -54,8 +54,9 @@
 | `revise_paper` | 5 + 4 / 题 | `POST /api/papers/revise`（新增限流，与 generate 同桶） | |
 | `solution` | 5 / 次 | `POST /api/solutions` | 每次 1 次 LLM；前端 query 缓存住不重复扣 |
 | `writing_grade` | 20 / 篇 | `POST /api/writing/grade`（按篇数一次性扣） | 结果全量返回，不再分会员字段 |
+| `vocab_example` | 1 / 次 | `POST /api/vocabulary/example`（word_id） | 背单词卡「生成例句」按钮：每次 1 次 LLM 造句（英文例句 + 中译），结果不落库 |
 | `agent_message` | 2 / 条 | `POST /api/agent/chat`（新增限流 `RATE_LIMIT_AGENT_PER_MIN`） | 助手工具里触发的出卷 / 计划按 `generate_*` 价另扣，余额不足以工具文本返回让模型转述 |
-| 免费 | — | 做题判分、错题本、掌握度、学情报告、学生卷 / 教师版打印、背单词、手动脑图、计划查看 | 纯 SQL |
+| 免费 | — | 做题判分、错题本、掌握度、学情报告、学生卷 / 教师版打印、背单词打卡、手动脑图、计划查看 | 纯 SQL |
 
 出卷价格取决于 **Parser 解析出的 `revision_intensity × total_questions`**，请求时（自然语言）
 算不出——所以 `ai_engine.pipeline.generate_paper / revise_paper` 增加了 `on_request(req)` 回调：

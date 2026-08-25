@@ -1,469 +1,427 @@
-# 墨卷 · 中考英语 AI 练习系统
+# 中考英语 AI 试卷生成系统
 
-面向**中考英语**的 AI 出题与练习系统。你用一句话说出想练什么（"来 10 道现在完成时的单选"、"帮我制定 7 天学习计划"），系统就从题库检索、由 AI 加工，生成一份能直接在浏览器作答的试卷；交卷后自动判分、给出逐题解析，还能围绕错题定向再练、按薄弱考点制定学习计划。
+> 学生用一句话（如「来 10 道现在完成时的单选」）描述需求，系统从**真实中考题库**检索匹配题目，
+> 按需用 LLM 加工/补齐，返回一份可在浏览器内直接作答、后端确定性判分的完整试卷；
+> 错题、历史与掌握度沉淀为学情画像，让下一份卷更有针对性。
 
-选择**中考英语**原因：纯文字题目，不涉及图片。
-
-> **状态**：核心链路已跑通——AI 学习助手对话出题、做题判分、错题巩固、学习计划、掌握度画像、积分充值均可用。
-
----
-
-## 用户能做什么
-
-登录后（默认演示账号 `demo / demo123`），`/` 是营销首页、工作台在 `/home`；左侧导航分四组（练习 / 出卷 / 助手 / 复盘）。主要能做的事：
-
-| 页面 | 你能做的事 |
-|------|-----------|
-| **出卷**（一句话 / 主题 / 自选 / 整卷模拟） | 用一句话或结构化面板出卷；题型专项练习覆盖全部 10 题型（含作文），按语法/听力/阅读分色；整卷模拟支持限时 |
-| **学习助手** | 和 AI 对话：说一句话让它出题、查某个考点的例题、或制定学习计划。出题完成后点「开始做题」直接进入试卷 |
-| **背单词** | 间隔重复（SM-2）记忆中考词汇：每日新词 + 到期复习 + 当日重试队列，拼写作答后自评认识/模糊/忘了，另有背词进度画像 |
-| **错题复习** | 做错的题会自动收进错题本，可勾选若干题让 AI 出一份针对性巩固卷，也可以按最近 N 天的答题记录出综合复习卷 |
-| **学习计划** | 让 AI 根据你的历史正确率排出未来几天的每日练习，每天一份针对薄弱考点的卷子，点进去就能练 |
-| **我的试卷** | 生成过的卷都在这里。没做完的随时接着做，做过的点进去直接看**上次的作答结果**（对错、你的答案 vs 正确答案、解析），也能一键重做 |
-| **掌握度 / 学情报告** | 按知识点展示你的掌握程度（Wilson 分数），颜色标出薄弱点；学情报告打印友好 |
-| **积分** | 注册送积分、每天再送一笔；出卷 / 讲解 / 批改 / 助手按次扣积分，扫码充值积分包（支付宝沙盒 / 离线演示模式） |
-
-> 管理员账号登录后左侧多出「管理后台」（`/admin`）：用户管理、做题分析看板、积分与订单。
-
-**做题体验**：交卷后每题标 ✓/✗，卷面右上角盖"对/总"红章；点每题下方「查看解析」由 AI 讲解——**答错的题会专门解释你选的那个选项为什么错**。作文交卷后给出内容/语言/组织三维评分与修改范文。
+**核心原则**：LLM 只负责「意图理解 / 题目改写 / 解析生成」，**题库与判分是确定性代码**，
+向量检索（RAG）在两者之间搭桥。所有跨子系统的数据结构以 `shared/schemas.py` 为唯一真源。
 
 ---
 
-## 项目愿景
+## 目录
 
-一句话：**LLM 只做"意图理解、题目加工、解析生成"，题库和判对错交给确定性代码，中间用向量检索把两者串起来。**
-
-- 用户输入自然语言 → 结构化请求
-- RAG 从本地题库检索候选题
-- LLM 按推断出的改题尺度加工（原题 / 轻改 / 完全新出）
-- 用户在浏览器作答 → 后端做规范化字符串比较判对错
-- 错题、历史答题记录 → 掌握度画像 → 下一份试卷更有针对性
+- [系统架构](#系统架构)
+- [技术栈](#技术栈)
+- [仓库结构](#仓库结构)
+- [本地开发](#本地开发)
+- [生产环境部署](#生产环境部署)
+  - [部署拓扑](#部署拓扑)
+  - [前置条件](#0-前置条件)
+  - [1. 获取代码与数据](#1-获取代码与数据)
+  - [2. 下载嵌入模型](#2-下载嵌入模型)
+  - [3. 安装 Python 依赖](#3-安装-python-依赖)
+  - [4. 配置环境变量 .env](#4-配置环境变量-env)
+  - [5. 初始化数据库与账号](#5-初始化数据库与账号)
+  - [6. 构建前端静态产物](#6-构建前端静态产物)
+  - [7. 启动后端](#7-启动后端)
+  - [8. 启动 Caddy（反向代理 + 静态托管 + HTTPS）](#8-启动-caddy反向代理--静态托管--https)
+  - [9. 部署自检](#9-部署自检)
+  - [支付模式：mock 与支付宝沙盒](#支付模式mock-与支付宝沙盒)
+  - [方案 B：不用 Caddy，后端自托管前端](#方案-b不用-caddy后端自托管前端)
+- [环境变量参考](#环境变量参考)
+- [运维命令速查](#运维命令速查)
+- [测试](#测试)
+- [重建题库（离线，一次性）](#重建题库离线一次性)
 
 ---
 
-## 覆盖范围
+## 系统架构
 
-| 覆盖 | 不覆盖 |
-|------|--------|
-| 单项选择、词性转换、改写句子、听力（选择/判断/填词）、阅读理解、完形填空、阅读首字母填空、英语作文（共 10 题型） | 含图片的题目 |
-| 背单词（间隔重复 SM-2） | 口语 / 手写识别 |
-| 纯文本题目 | 多用户高并发 |
-| AI 对话出题 / 错题巩固 / 学习计划 | 分布式部署、多进程 session 共享 |
-| 用户名+密码本地登录 + 积分充值 | OAuth/SSO/邮箱验证 |
-| 后端持久化试卷、答题、掌握度 | — |
+按依赖顺序划分为 5 个子系统：
+
+| 目录 | 职责 | 运行期是否需要 |
+|------|------|----------------|
+| `ingestion/` | **离线**：EPUB → 题库（SQLite + ChromaDB）、词表构建 | 否（产物已随仓库提供） |
+| `shared/` | 跨子系统契约：`schemas.py`（唯一真源）、`storage.py`、`config.py`、`llm/deepseek.py` | 是 |
+| `ai_engine/` | Parser / Retriever / Reviser / Solutioner / Analyzer / WritingGrader + `pipeline.py` | 是 |
+| `backend/` | FastAPI 后端（13 组路由、鉴权、持久化、判分、**积分账本 + 支付宝沙盒支付**） | 是 |
+| `frontend/` | React + Vite 单页应用（21 个用户页 + 10 个管理页） | 构建期需要；产物由 Caddy 托管 |
+| `agent/` | 学习助手 Coach（OpenAI Agents SDK，跑在 DeepSeek 上），后端 `POST /api/agent/chat` 调用 | 是（学习助手功能） |
+
+**生成流水线**（`ai_engine/pipeline.py`）：意图解析 → 混合检索（SQL 硬过滤 + 向量重排）→ 缺口改写/补题 →
+解析生成 → 学情分析 / 作文批改。向量检索只覆盖 3 类自由形题（`single_choice` / `word_form` /
+`sentence_rewriting`，见 `shared/schemas.py::VECTOR_INDEXED_QUESTION_TYPES`）；其余题型走 SQL。
+
+**数据存储**（三个 SQLite 文件，按归属拆分，互不 JOIN）：
+
+| 文件 | 内容 | 是否入库 git | 何时创建 |
+|------|------|--------------|----------|
+| `data/questions.db` | 只读题库（1428 题 / 10 题型 / 56 知识点） | ✅ 已提交 | 离线构建，随仓库分发 |
+| `data/chroma/` | ChromaDB 向量库（`questions` 集合，2560 维） | ✅ 已提交 | 离线构建，随仓库分发 |
+| `data/app.db` | 用户 / 会话 / 试卷 / 作答 / 掌握度 / 词汇 / **积分账本 / 订单** / 审计日志 | ❌ gitignored | 首次 `init-db` 或首次访问时自建 |
+| `data/agent_sessions.db` | 学习助手对话历史 | ❌ gitignored | 学习助手首次使用时自建 |
 
 ---
 
-## 架构总览
+## 技术栈
+
+- **后端**：Python ≥ 3.11、FastAPI、Uvicorn（单进程 ASGI）、Pydantic v2、pydantic-settings、
+  会话 Cookie 鉴权（bcrypt 哈希，非 JWT）。
+- **AI**：`openai` SDK + `instructor`（结构化 JSON 输出）访问 DeepSeek 兼容端点；
+  `chromadb` 向量库；`sentence-transformers` 加载本地 **Qwen3-Embedding-4B**（CUDA→CPU 自动降级）；
+  学习助手用 **OpenAI Agents SDK**（`openai-agents`）。
+- **前端**：React 19 + Vite + TypeScript（严格模式）、React Router 7、TanStack Query、
+  Tailwind CSS v4 + shadcn/ui、Recharts、markmap（思维导图）、react-hook-form + zod。
+- **支付**：积分制。默认离线 mock；可切支付宝沙盒（`python-alipay-sdk`）。
+- **反向代理**：Caddy（自动 HTTPS + SPA 回退 + 同源反代 `/api`）。
+
+---
+
+## 仓库结构
 
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                              浏览器（React + Vite）                       │
-│  学习助手(AI对话)   错题复习   学习计划   我的试卷   掌握度   积分          │
-│  ────────────     出题/判分/解析/重做 · 错题巩固 · 每日计划 · 掌握度画像    │
-└─────────────────────────┬────────────────────────────────────────────────┘
-                          │ HTTP + Cookie
-                          ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                        FastAPI 后端（backend/）                           │
-│  ─────────────────────────────────────────────────────────────────────   │
-│  /api/auth/*       注册、登录、登出、当前用户                              │
-│  /api/agent/*      AI 学习助手对话、生成/实施学习计划                       │
-│  /api/papers/*     生成、重出、读取、列表                                  │
-│  /api/solutions    按需生成单题解析（含"为何选错"）                        │
-│  /api/attempts     提交答题 + 判对错 + 落库 + 按试卷取历史结果             │
-│  /api/writing/*    英语作文批改评分（内容/语言/组织三维度）                │
-│  /api/vocabulary/* 间隔重复背单词（今日卡片 / 评分 / 进度 / 设置）         │
-│  /api/users/me/mastery  掌握度画像                                         │
-│  /api/admin/*      管理后台（用户 / 统计分析 / 积分 / 订单，需 admin）     │
-│                                                                          │
-│  职责：鉴权、试卷持久化、答题记录、规范化字符串判对错、错误统一封装        │
-└──────────┬───────────────────┬──────────────────┬────────────────────────┘
-           │                   │                  │
-           │ 加载 skill+工具    │ 函数调用          │ 读写
-           ▼                   ▼                  ▼
-┌────────────────────┐ ┌──────────────────┐ ┌──────────────────────────────┐
-│  agent/（学习助手）  │ │ AI Engine        │ │       shared/（共享层）      │
-│  ────────────────  │ │ (ai_engine/)     │ │  ─────────────────────────── │
-│  单 Agent + skill   │ │  Parser          │ │  schemas.py   pydantic 契约  │
-│  (markdown) + 工具  │ │  Retriever       │ │  storage.py   SQLite+Chroma  │
-│  · 出题             │ │  Reviser         │ │  embedding.py Qwen 4B（本地）│
-│  · 查例题           │ │  Solutioner      │ │  llm/deepseek.py DeepSeek    │
-│  · 制定/实施学习计划 │ │  Analyzer        │ │  config.py    AppConfig      │
-│  (OpenAI Agents SDK)│ │  纯函数、无状态   │ │  唯一的跨子系统边界           │
-└────────────────────┘ └──────────────────┘ └──────────────────────────────┘
-                                                    │
-                                                    ▼
-                                     ┌──────────────────────────┐
-                                     │  两个 SQLite + ChromaDB  │
-                                     │  ─────────────────────── │
-                                     │  questions.db（只读题库） │
-                                     │   questions              │
-                                     │   knowledge_points       │
-                                     │   question_kp_map        │
-                                     │   chroma/ (3 类题型向量)  │
-                                     │  ──────────────────────  │
-                                     │  app.db（用户数据,忽略） │
-                                     │   users / sessions       │
-                                     │   papers                 │
-                                     │   attempts / attempt_items│
-                                     │   study_plans            │
-                                     │   writing_grade_results  │
-                                     │   vocabulary_*（7 表）    │
-                                     └──────────────────────────┘
-                                                    ▲
-                                                    │ 只写（离线）
-                                     ┌──────────────────────────┐
-                                     │  ingestion/（题库摄入）    │
-                                     │  EPUB → md → 章节树 →     │
-                                     │  ★人工审核知识点树 →       │
-                                     │  脚本抽题 → Loader        │
-                                     └──────────────────────────┘
+.
+├── backend/          FastAPI 后端（main.py = ASGI 入口, cli.py = 运维命令）
+│   ├── main.py       create_app() → app = backend.main:app
+│   ├── cli.py        python -m backend.cli <serve|init-db|...>
+│   ├── api/          路由组：health/auth/papers/solutions/attempts/writing/
+│   │                 mastery/agent/knowledge_points/admin/vocabulary/credits/payment
+│   ├── auth/         会话与密码（生产下 Secure cookie）
+│   ├── services/     credits/（积分账本+计费）, payment/（支付宝沙盒+订单）
+│   └── static/       内置一份 SPA 产物（可被 BACKEND_STATIC_DIR 覆盖）
+├── ai_engine/        pipeline.py + retriever/reviser/solutioner/analyzer/...
+├── shared/           schemas.py（契约真源）/ config.py / storage.py / llm/deepseek.py
+├── agent/            学习助手 Coach（coach.py / tools.py / skills/*.md）
+├── ingestion/        离线建库 CLI（epub→md→split→kp→sqlite→vec）
+├── frontend/         React + Vite（npm run build → frontend/dist）
+├── data/             questions.db + chroma/（入库）；app.db 等运行期自建（gitignored）
+├── models/           Qwen3-Embedding-4B/（~7.6 GB，gitignored，需自行下载）
+├── docs/             各子系统设计规范（与实现保持同步）
+├── Caddyfile         生产反向代理配置
+├── .env.example      环境变量样例
+└── pyproject.toml    仅声明离线建库依赖（serving 依赖见下文）
 ```
 
 ---
 
-## 本地启动
-
-### 环境要求
-
-- Python 3.11+
-- Node.js 18+
-- `.env` 文件放在项目根目录（见下方模板）
-
-### `.env` 配置模板
-
-```env
-LLM_API_KEY=your_deepseek_api_key
-LLM_BASE_URL=https://api.deepseek.com
-LLM_MODEL=deepseek-v4-flash
-BACKEND_ENV=development
-```
-
-### 首次初始化（只需跑一次）
+## 本地开发
 
 ```bash
-# 初始化数据库表结构
+# 1) 后端（终端 A）：默认 development，:8000
+PYTHONIOENCODING=utf-8 python -m backend.cli init-db
+PYTHONIOENCODING=utf-8 python -m backend.cli serve --reload
+
+# 2) 前端（终端 B）：:5173，/api 自动代理到 :8000（见 vite.config.ts）
+cd frontend && npm install && npm run dev
+```
+
+开发模式下后端启用 CORS（`FRONTEND_ORIGIN`，默认 `http://localhost:5173`），会话 Cookie 不带 `Secure`，
+纯 HTTP 即可登录。浏览器访问 `http://localhost:5173`。
+
+> Windows 上运行任何 Python 命令请前缀 `PYTHONIOENCODING=utf-8`，否则中文输出乱码。
+
+---
+
+## 生产环境部署
+
+### 部署拓扑
+
+```
+浏览器 ──HTTPS──> Caddy(:443)
+                    ├─ /api/*  ──reverse_proxy──> Uvicorn 后端 (127.0.0.1:8000)
+                    └─ /*      ──静态文件──────────> frontend/dist（SPA，找不到回退 index.html）
+```
+
+**为什么必须走 HTTPS**：`BACKEND_ENV=production` 时会话 Cookie 带 `Secure` 标志
+（`backend/auth/session.py`），纯 HTTP 浏览器不回传该 Cookie，会「登录后立刻掉登录态」。
+Caddy 对 `localhost` 自动签发本地证书，对公网域名自动申请 Let's Encrypt。浏览器只与 Caddy 通信，
+天然同源，**无需 CORS**（生产模式后端不挂 CORS 中间件）。
+
+> ⚠️ 后端是**单进程**运行：限流窗口、配置/支付客户端单例都是进程内状态，**不要加 `--workers`**（多进程不共享这些状态）。
+
+---
+
+### 0. 前置条件
+
+- **Python ≥ 3.11**（开发机实测 3.13）。GPU 可选——无 CUDA 时嵌入模型自动降级到 CPU。
+- **Node.js**（建议 20/22 LTS，配套 `npm`）——仅构建前端时需要。
+- **Caddy 2**（[下载](https://caddyserver.com/download)）。
+- 一个 **DeepSeek 兼容** LLM API Key（默认端点 `https://api.scnet.cn/api/llm/v1`，模型 `DeepSeek-V4-Flash`）。
+- 磁盘 ≥ 10 GB（嵌入模型约 7.6 GB）。
+
+### 1. 获取代码与数据
+
+```bash
+git clone <repo-url> && cd English_Test_Paper_AI_Generator
+```
+
+题库 `data/questions.db` 与向量库 `data/chroma/` **已随仓库提交**，无需重建即可直接服务。
+
+### 2. 下载嵌入模型
+
+将 **Qwen3-Embedding-4B** 放到 `models/Qwen3-Embedding-4B/`（该目录 gitignored，需自行下载）：
+
+```bash
+# 例：用 huggingface-cli（或任意方式）下载到指定目录
+huggingface-cli download Qwen/Qwen3-Embedding-4B --local-dir models/Qwen3-Embedding-4B
+```
+
+> 该模型只在**语义检索路径**（请求含自由文本主题时）**惰性加载**；纯配额请求（如「10 道单选」）
+> 走 SQL 随机路径，完全不加载模型。若暂不部署语义检索，可先跳过——但 `deploy-check` 的向量库校验仍会通过（校验的是 `data/chroma/`，不是模型）。
+
+### 3. 安装 Python 依赖
+
+> 本项目**没有 requirements.txt**：`pyproject.toml` 只声明了离线建库依赖。
+> 以下是运行期（serving）所需的完整依赖，建议在虚拟环境中安装，并按需固化为你自己的 `requirements.txt`。
+
+```bash
+python -m venv .venv && source .venv/Scripts/activate   # Windows bash；Linux: source .venv/bin/activate
+
+# 让 backend / ai_engine / shared 可被 import（可编辑安装本仓库）
+pip install -e .
+
+# —— 运行期核心依赖（后端 + AI 引擎 + 学习助手）——
+pip install fastapi uvicorn pydantic pydantic-settings bcrypt httpx \
+            openai instructor jinja2 chromadb torch sentence-transformers openai-agents
+
+# —— 仅「真实支付宝沙盒」模式需要（默认 mock 模式不需要）——
+pip install python-alipay-sdk
+```
+
+依赖用途对照：
+
+| 包 | 用途 |
+|----|------|
+| `fastapi` / `uvicorn` | Web 框架 / ASGI 服务器 |
+| `pydantic` / `pydantic-settings` | 数据契约 / `.env` 配置加载 |
+| `bcrypt` | 密码哈希（会话 Cookie 鉴权） |
+| `httpx` | 后端出站 HTTP |
+| `openai` / `instructor` | 访问 DeepSeek 端点 / 结构化 JSON 输出 |
+| `openai-agents` | 学习助手 Coach（OpenAI Agents SDK） |
+| `jinja2` | Prompt 模板 |
+| `chromadb` | 向量库客户端 |
+| `torch` / `sentence-transformers` | 加载 Qwen 嵌入模型（含 `transformers`/`numpy` 传递依赖） |
+| `python-alipay-sdk` | 支付宝沙盒（仅 `PAYMENT_MOCK=false` 时惰性导入） |
+
+> **CPU-only 部署**：如需省显存/带宽，可先装 CPU 版 torch（`pip install torch --index-url https://download.pytorch.org/whl/cpu`）再装其余依赖。
+
+### 4. 配置环境变量 .env
+
+在仓库根目录创建 `.env`（参考 `.env.example`）。生产最小集：
+
+```dotenv
+# —— 环境 & 鉴权 ——
+BACKEND_ENV=production          # 关键：启用 Secure cookie、关闭 CORS
+BACKEND_HOST=127.0.0.1          # 仅经 Caddy 暴露，绑本地回环即可
+BACKEND_PORT=8000
+
+# —— LLM（必填 API Key）——
+LLM_API_KEY=sk-your-real-key
+LLM_BASE_URL=https://api.scnet.cn/api/llm/v1
+LLM_MODEL=DeepSeek-V4-Flash
+
+# —— 支付 / 积分 ——
+PAYMENT_MOCK=true               # 默认离线 mock；接真实沙盒见下文
+CREDITS_SIGNUP_BONUS=300        # 注册一次性赠送（不过期）
+CREDITS_DAILY_GRANT=30          # 每日赠送（当日有效）
+```
+
+`.env` 已被 gitignore；密钥类文件（`keys/*.pem`）也不入库。完整变量见 [环境变量参考](#环境变量参考)。
+
+### 5. 初始化数据库与账号
+
+```bash
+# 创建/迁移 data/app.db（用户/会话/试卷/积分/订单等）
 PYTHONIOENCODING=utf-8 python -m backend.cli init-db
 
-# 创建测试用户（用户名 demo，密码 demo123）
-PYTHONIOENCODING=utf-8 python -m backend.cli create-user --username demo --password demo123
+# 建一个管理员账号（先建用户，再提权）
+PYTHONIOENCODING=utf-8 python -m backend.cli create-user --username admin --password '强密码'
+PYTHONIOENCODING=utf-8 python -m backend.cli promote-admin --username admin
 
-# 注入演示答题记录（用于学习计划功能）
-PYTHONIOENCODING=utf-8 python agent/seed_demo.py --user demo
+# 灌入词汇表（背单词功能所需，写进 data/app.db）
+PYTHONIOENCODING=utf-8 python -m backend.cli seed-vocabulary
 ```
 
-### 每次启动（三个终端分别运行）
+> 若从旧版独立支付服务迁移，可一次性执行 `python -m backend.cli migrate-payment-db`（把旧
+> `payment/data/payment.db` 的订单与会员剩余天数折算为积分并入 `data/app.db`）。全新部署无需此步。
 
-**终端 1 — 主后端（端口 8000）**
-```bash
-PYTHONIOENCODING=utf-8 python -m backend.cli serve --reload
-```
-
-**终端 2 — 前端开发服务器（端口 5173）**
-```bash
-cd frontend
-npm install   # 首次需要
-npm run dev
-```
-
-浏览器打开 [http://localhost:5173](http://localhost:5173)，用 `demo / demo123` 登录。
-
-> **Windows PowerShell** 设置环境变量方式不同：
-> ```powershell
-> $env:PYTHONIOENCODING="utf-8"; python -m backend.cli serve --reload
-> ```
-
----
-
-## 生产环境运行
-
-生产形态用 **Caddy 反向代理**统一入口:Caddy 直接提供前端静态产物(`frontend/dist`,SPA 路由回退),并把 `/api/*` 转发到主后端(`:8000`,含积分 / 支付)。浏览器只访问 Caddy,天然同源,无需 CORS。后端退化为纯 API 进程。与本地开发的区别:`BACKEND_ENV=production`(httpOnly + **Secure** + SameSite=strict Cookie、关闭 CORS、不挂测试端点)、不带 `--reload`、前端跑 `build` 而非 `dev`。
-
-仓库根目录已提供 [`Caddyfile`](./Caddyfile)。
-
-> ⚠️ **必须走 HTTPS**:`BACKEND_ENV=production` 下 session cookie 带 `Secure` 标志(`backend/auth/session.py`),纯 HTTP 浏览器不会回传 → **登录后立刻掉登录态**。Caddy 站点地址用 `localhost` 会自动启用本地 HTTPS(见下),`https://localhost` 下 Secure cookie 正常工作。只想本机快速自测又不想装本地 CA,可改用上面「本地启动」的开发模式(`BACKEND_ENV=development` + Vite dev,走 http://localhost:5173)。
-
-> ⚠️ **上线前务必先读下方「生产部署注意事项」**:`PAYMENT_MOCK`、演示账号、限流、价目等几处必须确认,否则有安全/计费风险。
-
-### 0. 安装 Caddy(Windows)
-
-```bash
-winget install CaddyServer.Caddy      # 或:choco install caddy
-caddy version                          # 验证(新装后需重开终端让 PATH 生效)
-```
-其他系统见 https://caddyserver.com/docs/install 。
-
-### 1. `.env`(生产)
-
-```env
-LLM_API_KEY=your_deepseek_api_key
-LLM_BASE_URL=https://api.deepseek.com
-LLM_MODEL=deepseek-v4-flash
-BACKEND_ENV=production
-```
-Caddy 直接服务静态产物,因此**不需要** `BACKEND_STATIC_DIR`。真实收单需 `.env` 里 `PAYMENT_MOCK=false` + 沙盒/正式密钥(见 `docs/credits-design.md` § 4)。
-
-### 2. 构建前端
+### 6. 构建前端静态产物
 
 ```bash
 cd frontend
-npm ci
-npm run build          # 产物在 frontend/dist（Caddy 从这里提供）
+npm ci                # 有 package-lock.json，用 ci 保证可复现
+npm run build         # tsc -b（严格类型检查）+ vite build → frontend/dist
 cd ..
 ```
-> 每次改前端都要重新 `npm run build`;Caddy 无需重启(直接读磁盘上的新文件),仅后端/支付改了才重启对应进程。**浏览器记得硬刷新(Ctrl+F5)**。
 
-### 3. 初始化 & 首个管理员（新库只需一次）
+产物落在 `frontend/dist/`。前端不读任何 `VITE_*` 变量，API 一律走同源相对路径 `/api/*`
+（`frontend/src/api/client.ts`），因此**同一份产物在任意域名/端口下都能用**——由 Caddy 保证同源。
+
+### 7. 启动后端
 
 ```bash
-# 表结构（含 role/status 列的迁移会自动应用）
-PYTHONIOENCODING=utf-8 python -m backend.cli init-db
-
-# 创建你的账号，并提升为管理员（管理后台 /admin 的唯一入口）
-PYTHONIOENCODING=utf-8 python -m backend.cli create-user --username <admin_user> --password <strong_password>
-PYTHONIOENCODING=utf-8 python -m backend.cli promote-admin --username <admin_user>
-
-# 部署就绪自检（校验 production 模式、LLM key、题库/向量库）
-PYTHONIOENCODING=utf-8 python -m backend.cli deploy-check
+# 读取 .env（其中 BACKEND_ENV=production），监听回环 :8000
+PYTHONIOENCODING=utf-8 python -m backend.cli serve --host 127.0.0.1 --port 8000
 ```
 
-> 注:`deploy-check` 仍会检查 `backend/static/index.html` 是否存在(它假设后端自挂静态)。用 Caddy 直服方案时这一项会是 `false`——静态由 Caddy 提供,可忽略该项,以能正常访问 `https://localhost/` 为准。
+等价于 `python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000`。
+生产建议用进程守护（systemd / nssm / supervisor 等）拉起该命令并设 `Restart=always`；本仓库未内置守护配置。
 
-### 4. 启动服务（三个进程 / 三个终端）
+> `serve` 的 `--host/--port` 取自命令行参数，**不读** `BACKEND_HOST/BACKEND_PORT`——如需改端口请在命令行显式指定，同时同步修改 `Caddyfile` 的 `reverse_proxy` 目标。
 
-**终端 1 — 主后端（纯 API，:8000）**
+### 8. 启动 Caddy（反向代理 + 静态托管 + HTTPS）
+
+仓库根目录已带 `Caddyfile`（站点为 `localhost`；公网部署把 `localhost` 换成你的域名即可自动签发 Let's Encrypt）。
+
 ```bash
-PYTHONIOENCODING=utf-8 BACKEND_ENV=production \
-  python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+caddy trust     # 首次：安装本地 CA，让浏览器信任 localhost 证书（公网域名可跳过）
+caddy run       # 前台运行，读取当前目录 Caddyfile
 ```
 
-> 支付 / 积分 2026-08-23 起在主后端内（`/api/payment`、`/api/credits`），不再有独立的 :8001 服务；
-> 真实支付宝沙盒需在 `.env` 设 `PAYMENT_MOCK=false` + `ALIPAY_*`（见 `.env.example`、`docs/credits-design.md`）。
+然后访问 **https://localhost**（或你的域名）。Caddy 把 `/api/*` 反代到 `:8000`，其余路径按 SPA 从
+`frontend/dist` 提供并回退 `index.html`（使 `/admin/users` 等前端路由刷新不 404）。
 
-**终端 2 — Caddy（仓库根目录，读 `Caddyfile`）**
+### 9. 部署自检
+
 ```bash
-caddy trust     # 首次:安装本地 CA，让浏览器信任 localhost 证书
-caddy run       # 前台运行
+PYTHONIOENCODING=utf-8 BACKEND_ENV=production python -m backend.cli deploy-check
 ```
 
-浏览器打开 **https://localhost**,用上面创建的管理员账号登录——侧栏会出现「管理后台」入口（`/admin`）。
-
-> **局域网 / 其他设备访问**:Caddy 的本地 CA 只被本机信任,别的设备打开 `https://<你的IP>` 会提示证书不受信。要么在各设备导入/信任该 CA,要么直接上**公网域名**——把 `Caddyfile` 里的 `localhost` 换成你的域名,Caddy 会自动申请 Let's Encrypt 证书(需 80/443 可从公网访问)。
->
-> **备选拓扑**:也可让后端自己挂静态(设 `BACKEND_STATIC_DIR=frontend/dist`,后端在 `/` 提供 SPA),Caddy 把全部请求转发到 `:8000`。本项目默认推荐上面的「Caddy 直服静态」方案(少一层转发)。多核可给 uvicorn 加 `--workers N`(session 存 SQLite,单机多 worker 共享同一库文件即可;跨机部署不在本项目范围)。
+它校验：`BACKEND_ENV==production`、`LLM_API_KEY` 非空、`static_dir/index.html` 存在，以及就绪检查
+（SQLite / 核心表 / 题库 / 向量库）。全绿返回 0，否则退出码 2 并打印哪一项未就绪。
+运行期健康检查端点：`GET /api/health/ready`。
 
 ---
 
-## 生产部署注意事项
+### 支付模式：mock 与支付宝沙盒
 
-本项目当前为本地开发 / 演示配置，部署到生产环境前**必须**调整以下几处，否则存在安全或计费风险：
+- **离线 mock（默认，`PAYMENT_MOCK=true`）**：不连支付宝。会额外挂载开发端点
+  `POST /api/payment/dev/simulate-paid/{out_trade_no}` 模拟买家付款——用于本地/演示环境跑通积分充值闭环。
+- **真实支付宝沙盒（`PAYMENT_MOCK=false`）**：需另装 `python-alipay-sdk`，并配置：
 
-### 1. 付费墙（2026-08-23 起已为服务端积分制）
+  ```dotenv
+  PAYMENT_MOCK=false
+  ALIPAY_APPID=你的沙盒AppId
+  ALIPAY_GATEWAY=https://openapi-sandbox.dl.alipaydev.com/gateway.do
+  ALIPAY_APP_PRIVATE_KEY_PATH=keys/app_private_key.pem     # 放 keys/，已 gitignore
+  ALIPAY_PUBLIC_KEY_PATH=keys/alipay_public_key.pem
+  PAY_RETURN_URL=https://你的域名/credits                  # 网页收银台支付完成跳回页
+  ```
 
-旧版「前端 localStorage 配额 + 会员校验失败即放行」已整体删除：所有出卷 / AI 操作在后端按价目表
-原子扣积分（`backend/services/credits`，余额不足 402 `credits.insufficient`），订单与支付宝沙盒
-逻辑在主后端 `backend/services/payment`。上线前请确认 `.env` 里 `PAYMENT_MOCK=false`（否则
-`/api/payment/dev/simulate-paid` 会被挂载，任何登录用户都能零元「支付」）、`ALIPAY_*` 与 `keys/*.pem`
-就位，并按需调整 `CREDITS_SIGNUP_BONUS` / `CREDITS_DAILY_GRANT` 与
-`backend/services/credits/pricing.py` 的价目。详见 `docs/credits-design.md`。
-
-### 2. 其他建议
-
-- `/api/agent/chat` 已加限流（`RATE_LIMIT_AGENT_PER_MIN`，默认 20）并按条扣积分；助手工具里出卷 / 学习计划按出卷价另扣，余额不足即停。
-- `.env` 中的 `LLM_API_KEY` 等密钥不要提交到仓库；演示账号 `demo / demo123` 应在生产环境禁用或改密。
-
----
-
-## 子系统
-
-按依赖顺序：
-
-### 1. `ingestion/` — 题库摄入（离线）
-
-从 EPUB 教辅书构建题库。脚本 + 一次人工审核关卡（**ingestion 阶段不调用 LLM**——原设计的 LLM 抽题/归并已被脚本+人工取代）：
-
-1. `epub_to_md` — 脚本转换
-2. `chapter_splitter` — 按标题层级切树
-3. **★ 人工归并知识点树** → 固化为 `knowledge_tree.json`
-4. `apply-kp` / `assign-ids` — 回填知识点、分配全库稳定 id
-5. `build-sqlite` — 写入 `data/questions.db`（bank-only）
-6. `build-vec` — 3 类自由题型写入 Chroma（`single_choice`/`word_form`/`sentence_rewriting`）
-
-另有背单词词表构建脚本（`build_vocabulary_wordlist.py` / `build_merged_vocabulary.py`），产出词表种子导入 `data/app.db`，详见 [`docs/vocabulary-design.md`](./docs/vocabulary-design.md)。
-
-题库入库后此子系统不再运行；AI Engine 只读。
-
-详见 [`docs/question-bank-ingestion-design.md`](./docs/question-bank-ingestion-design.md)（Spec A）。
-
-### 2. `ai_engine/` — AI 引擎
-
-纯函数、无状态。核心五模块 + 作文批改：
-
-| 模块 | 职责 |
-|------|------|
-| **Parser** | `user_query` → `GenerateRequest`；`revision_intensity` 由 LLM 从自然语言推断（不暴露给用户面板） |
-| **Retriever** | 属性硬过滤（SQL）+ 语义向量检索（Chroma，取 Top-M 与硬过滤集在 Python 端求交） |
-| **Reviser** | 三档改题：`original`（拷贝）/ `light`（保留结构改词汇）/ `fresh`（按 KP 新出题）；三层防御 + fallback |
-| **Solutioner** | 单题按需生成解析；答错时额外解释用户所选选项为何错误（每次实时调 LLM，不缓存） |
-| **Analyzer** | 用 Wilson score lower bound 计算 KP 掌握度，输出薄弱点画像（含全站画像 `build_site_profile`，供管理后台分析） |
-| **WritingGrader** | 英语作文三维批改（内容 8 / 语言 8 / 组织 4，共 20 分）+ 修改范文；`ai_engine/writing_grader.py`，由 `/api/writing/grade` 调用 |
-
-**关键设计**：
-- 无 Verifier（答案唯一，LLM 直接产出新答案 + 后端字符串判等）
-- Pipeline 单向无回路，任何一步抛异常都在后端层转 HTTP 错误
-- LLM 通过 `instructor` 实现"JSON Mode + pydantic 校验 + 校验失败反馈重试"
-
-详见 [`docs/ai-engine-design.md`](./docs/ai-engine-design.md)（Spec B）。
-
-### 3. `backend/` — FastAPI 后端
-
-11 组路由（含 writing / vocabulary / admin），把 AI Engine 与各功能封装为浏览器可用的接口。
-
-- **鉴权**：用户名+密码 + bcrypt + SQLite session + httpOnly Cookie；用户含 `role`/`status`（管理后台需 `role=admin`）
-- **持久化**：`papers` 表存整份 `Paper` 的 JSON（AI Engine 依然保持无状态，后端负责持久化）；用户数据在 `data/app.db`
-- **判对错**：`backend/services/grading.py` 做规范化字符串比较（小写、trim、空白折叠、末尾标点忽略）
-- **错误体统一**：`{ error_code, message, detail, trace_id }`；稳定 `error_code` 供前端精确分派
-- **速率限制**：软限制 `/papers/generate`、`/papers/revise` 30/min、`/solutions` 60/min、`/writing/grade` 10/min、`/agent/chat` 20/min（个人项目、防意外循环）
-- **积分与支付**：每个出卷 / AI 端点按 `backend/services/credits/pricing.py` 扣积分（先扣今日赠送再扣余额，失败退回，402 `credits.insufficient`）；积分包购买走 `/api/payment/*`（支付宝沙盒 / 离线 mock），账本与订单在 `data/app.db`。详见 [`docs/credits-design.md`](./docs/credits-design.md)（Spec P）
-
-详见 [`docs/backend-design.md`](./docs/backend-design.md)（Spec C）。
-
-### 4. `agent/` — AI 学习助手
-
-学习助手页背后的对话式 Agent（基于 OpenAI Agents SDK + DeepSeek）。采用**单 Agent + skill-as-markdown** 设计：技能写成 markdown（`agent/skills/*.md`）在启动时注入系统提示，Agent 按需调用工具完成任务。
-
-- **工具**：`get_user_history`（按知识点汇总做题记录）、`get_example_questions`（题库随机取例题）、`generate_paper`（调 AI Engine 出卷并落库）、`implement_study_plan`（把自然语言计划解析成结构化的每日安排并逐日出卷）
-- **两段式学习计划**：先用自然语言给出计划；用户说"帮我实施"时才调 `implement_study_plan` 真正生成每日试卷
-- `user_id` 由后端从登录态注入，不经用户输入
-
-### 5. `frontend/` — React + Vite 前端
-
-产品名「墨卷」。`/` 是营销首页，登录后工作台在 `/home`；侧边栏分四组（练习 / 出卷 / 助手 / 复盘）共 21 个用户页 + 7 个管理页。主要页面：
-
-- **工作台**（`/home`）— 登录后主入口
-- **一句话出卷 / 主题出卷 / 自选组卷 / 整卷模拟**（`/generate`、`/themes`、`/practice/custom`、`/mock`）
-- **题型专项练习**（`/practice`、`/practice/:slug`）— 一模板 10 配置（含作文），按语法/听力/阅读分色
-- **每日一练**（`/daily`）
-- **学习助手**（`/assistant`）— 多轮对话 UI，Markdown 渲染，出题后给「开始做题」入口
-- **背单词 / 背词进度**（`/vocabulary`、`/vocabulary/progress`）— 间隔重复 SM-2
-- **错题复习**（`/review`）— 本地错题本 + 错题巩固 / 综合复习出卷入口
-- **学习计划**（`/study-plan`）— 每日卡片，逐日进入练习
-- **我的试卷**（`/papers`、`/papers/:id`）— 列表 + 做题/复盘页；已交卷直接回放，可重做
-- **掌握度 / 学情报告**（`/mastery`、`/report`）— 知识点树 + Wilson 分数
-- **会员 / 设置**（`/membership`、`/settings`）
-- **管理后台**（`/admin/*`）— 概览 / 分析 / 用户 / 会员 / 订单（需 admin）
-
-做题页支持全部 10 题型（选择/填空/听力/阅读/首字母/作文），作文交卷后展示三维批改分数与范文。
-
-技术栈：Vite + React + TypeScript + shadcn/ui + TanStack Query + React Router。所有 HTTP 走一个 `apiFetch` 薄封装；`ApiError` 按 `error_code` 分派处理（401 跳登录、429 toast、其它显 message）。
-
-功能结构详见 [`docs/frontend-design.md`](./docs/frontend-design.md)（Spec D）；视觉规范（色板、字体、卷面语言、组件样式）详见 [`docs/frontend-visual-spec.md`](./docs/frontend-visual-spec.md)（Spec F）。
-
-> **积分 / 充值**（2026-08-23 起）：`/credits` 页展示余额（注册赠送 + 每日赠送）、积分包、价目与流水；每个付费 CTA 旁标「≈ N 积分」，余额不足统一弹充值引导。原独立 `payment/` 服务已并入主后端，详见 [`docs/credits-design.md`](./docs/credits-design.md)。
-
-### 6. `tests/`、`tests_e2e/` — 测试
-
-四层测试结构：
-
-| 层 | 范围 | 工具 | LLM |
-|----|------|------|-----|
-| L1 单元 | 单函数 | pytest / Vitest | mock |
-| L2 后端集成 | FastAPI + SQLite + AI Engine | pytest + TestClient | monkeypatch |
-| L3 前端组件 | 单组件 | Vitest + testing-library + msw | msw 返 fixture |
-| L4 e2e | 真浏览器 → 全链路 | Playwright | 脚本化 client |
-
-一个共享的 `ScriptedDeepSeekClient` 在 L2 与 L4 复用；e2e 通过测试专用端点 `/api/test/llm-scripts` 注入脚本。每晚跑一次 `live-smoke`（真 DeepSeek）探测契约漂移。
-
-> 现状：L1/L2 已落地（`tests/` 下 pytest + Vitest 单元/集成），根目录另有 `test_writing_e2e.py` 等即席脚本；L4 Playwright e2e（`tests_e2e/`、`ScriptedDeepSeekClient`、`LLM_CLIENT_MODE`、CI 分层）是 Spec E 的目标设计，**尚未实现**，`/api/test/llm-scripts` 目前为占位（返回 noop）。
-
-详见 [`docs/testing-design.md`](./docs/testing-design.md)（Spec E）。
+  支持当面付（扫码）与电脑网站支付；无公网回调，靠 `trade.query` 轮询确认。
+  真实模式下**不挂载** `dev/simulate-paid`。可用 `python -m backend.cli reconcile-orders` 对账补账。
 
 ---
 
-## 关键技术选型
+### 方案 B：不用 Caddy，后端自托管前端
 
-| 领域 | 选型 | 理由 |
+后端本身可在 `static_dir` 存在时把它挂到 `/`（SPA 回退已开启）。因此可让后端直接服务前端产物：
+
+```bash
+BACKEND_STATIC_DIR=frontend/dist BACKEND_ENV=production \
+  PYTHONIOENCODING=utf-8 python -m backend.cli serve --host 0.0.0.0 --port 8000
+```
+
+**代价与注意**：这样只有一个 HTTP 端口、没有 TLS 终结。而 `BACKEND_ENV=production` 会给 Cookie 打
+`Secure`，纯 HTTP 下浏览器不回传 → 掉登录态。所以方案 B 要么前面仍需一层 TLS（Nginx/Caddy/云 LB），
+要么把 `BACKEND_ENV` 设为非 production（但那样会重新开启 CORS 且 Cookie 不再 `Secure`，不建议对公网）。
+**生产推荐方案 A（Caddy）**；方案 B 更适合内网演示。仓库 `backend/static/` 内置了一份 SPA 产物，
+故不设 `BACKEND_STATIC_DIR` 时后端也能直接起一个可用界面（可能非最新前端，正式部署请用 `npm run build` 的 `frontend/dist`）。
+
+---
+
+## 环境变量参考
+
+由 `shared/config.py` 读取，`.env`（UTF-8）或进程环境均可。
+
+| 变量 | 默认 | 说明 |
 |------|------|------|
-| LLM | DeepSeek API（OpenAI 兼容） | 中文能力强、成本低；`instructor` 库支持成熟 |
-| Embedding | Qwen Embedding 4B（本地） | 离线稳定，中文语义好；CI 用 fake 向量 |
-| 关系存储 | SQLite | 单文件、无运维；个人项目量级足够 |
-| 向量存储 | ChromaDB（持久化模式） | 本地无服务；`where` metadata 过滤 + Python 求交 |
-| 结构化 LLM 输出 | `instructor` + JSON Mode + pydantic + 重试 | 三层防御，避免自研 200 行解析代码 |
-| 后端 | FastAPI | pydantic 契约天然复用；OpenAPI 免费 |
-| 前端 | Vite + React + shadcn/ui | AI 生成代码模板成熟；shadcn 组件质量高且可拷贝 |
-| 部署 | 生产用 Caddy 直服前端静态 + 反代 `/api`（开发用 Vite dev） | 同源零 CORS；少一层转发 |
+| `BACKEND_ENV` | `development` | `development` / `production` / `test`；决定 CORS 与 Cookie `Secure` |
+| `BACKEND_HOST` | `127.0.0.1` | 配置项（**注意**：`serve` 命令实际取命令行 `--host`，不读此项） |
+| `BACKEND_PORT` | `8000` | 同上，`serve` 取 `--port` |
+| `SESSION_TTL_DAYS` | `30` | 会话/Cookie 有效期 |
+| `BCRYPT_ROUNDS` | `12` | bcrypt 代价因子 |
+| `BACKEND_STATIC_DIR` | `backend/static` | 挂到 `/` 的 SPA 目录；置为 `frontend/dist` 可自托管前端 |
+| `FRONTEND_ORIGIN` | `http://localhost:5173` | CORS 允许来源（仅 dev/test 生效） |
+| `LLM_API_KEY` | `""` | **必填**（LLM 调用与学习助手都用它） |
+| `LLM_BASE_URL` | `https://api.scnet.cn/api/llm/v1` | LLM 端点（OpenAI 兼容） |
+| `LLM_MODEL` | `DeepSeek-V4-Flash` | 模型名 |
+| `LLM_MAX_CONCURRENCY` | `4` | LLM 并发上限 |
+| `LLM_MAX_RETRIES` | `3` | 结构化输出重试次数 |
+| `SQLITE_PATH` | `data/questions.db` | 只读题库路径 |
+| `APP_DB_PATH` | `data/app.db` | 用户/业务库路径 |
+| `CHROMA_PATH` | `data/chroma` | 向量库路径 |
+| `PAYMENT_MOCK` | `true` | 离线 mock 支付；`false` 走真实沙盒 |
+| `PAYMENT_ORDER_TTL_SECONDS` | `300` | 订单有效期 |
+| `ALIPAY_APPID` / `ALIPAY_GATEWAY` | 空 / 沙盒网关 | 支付宝沙盒配置 |
+| `ALIPAY_APP_PRIVATE_KEY_PATH` | `keys/app_private_key.pem` | 应用私钥 PEM（gitignore） |
+| `ALIPAY_PUBLIC_KEY_PATH` | `keys/alipay_public_key.pem` | 支付宝公钥 PEM（gitignore） |
+| `PAY_RETURN_URL` | `http://localhost:5173/credits` | 网页收银台完成跳回页 |
+| `CREDITS_SIGNUP_BONUS` | `300` | 注册一次性赠送积分（不过期） |
+| `CREDITS_DAILY_GRANT` | `30` | 每日赠送积分（当日有效，Asia/Shanghai 日界） |
+| `RATE_LIMIT_GENERATE_PER_MIN` | `30` | 出卷限流 |
+| `RATE_LIMIT_SOLUTIONS_PER_MIN` | `60` | 解析限流 |
+| `RATE_LIMIT_AGENT_PER_MIN` | `20` | 学习助手限流 |
+
+> 说明：`LLM_MAX_CONCURRENCY` / `LLM_MAX_RETRIES` / `RATE_LIMIT_WRITING_PER_MIN` 等字段存在于配置对象中，
+> 但部分未在 `get_config()` 里显式接入环境变量覆盖（以代码为准）。上表列出的是可靠可用的部署开关。
 
 ---
 
-## 目录结构
+## 运维命令速查
 
-```
-English_Test_Paper_AI_Generator/
-├── README.md                  # 本文件
-├── docs/                      # 设计 spec
-│   ├── question-bank-ingestion-design.md  # Spec A（题库摄入）
-│   ├── ai-engine-design.md                # Spec B（AI 引擎）
-│   ├── backend-design.md                  # Spec C（后端）
-│   ├── frontend-design.md                 # Spec D（前端功能）
-│   ├── testing-design.md                  # Spec E（测试）
-│   ├── frontend-visual-spec.md            # Spec F（视觉规范）
-│   ├── admin-design.md                    # 管理后台
-│   ├── agent-design.md                    # AI 学习助手
-│   ├── vocabulary-design.md               # 背单词（间隔重复）
-│   ├── writing-design.md                  # 英语作文批改
-│   └── *-support-design.md                # 各题型（听力/长文/首字母填空）
-│
-├── shared/                    # 跨子系统共享层（唯一的依赖交汇点）
-│   ├── schemas.py             # 全部 pydantic 契约
-│   ├── storage.py             # SQLite + Chroma 门面
-│   ├── embedding.py           # Qwen 4B 单例
-│   ├── llm/deepseek.py        # DeepSeek 客户端 + instructor
-│   └── config.py              # AppConfig
-│
-├── ingestion/                 # 子系统 1：题库摄入（Spec A）
-├── ai_engine/                 # 子系统 2：AI 引擎（Spec B）
-├── backend/                   # 子系统 3：FastAPI 后端（Spec C）
-├── agent/                     # 子系统 4：AI 学习助手（Agents SDK + skills）
-├── frontend/                  # 子系统 5：React 前端（Spec D）
-├── tests/ tests_e2e/          # 子系统 6：单元 / 集成 / 跨系统 e2e（Spec E）
-│
-└── data/                      # 数据（题库与 chroma 已跟踪，其余 gitignored）
-    ├── raw_md/                # EPUB 转出的 md
-    ├── chapters/              # 章节树 JSON（含各题型）
-    ├── kb/knowledge_tree.json # 审核后的知识点树
-    ├── vocabulary/            # 背单词词表种子（moe core / shanghai basic）
-    ├── questions.db           # SQLite 题库（只读、已跟踪）
-    ├── app.db                 # 用户数据（gitignored，backend.cli init-db 创建）
-    ├── agent_sessions.db      # 学习助手对话历史（gitignored）
-    ├── chroma/                # Chroma 向量持久化（已跟踪）
-    └── llm_traces/            # LLM 调用观测
+```bash
+python -m backend.cli serve [--host H] [--port P] [--reload]   # 启动后端（uvicorn）
+python -m backend.cli init-db                                  # 创建/迁移 data/app.db
+python -m backend.cli create-user --username U --password P    # 建用户
+python -m backend.cli promote-admin --username U               # 提权为管理员
+python -m backend.cli seed-vocabulary [--file <json>]          # 灌词汇表
+python -m backend.cli cleanup-sessions                         # 清理过期会话
+python -m backend.cli deploy-check                             # 生产就绪自检
+python -m backend.cli smoke                                    # 内存端到端冒烟（mock LLM）
+python -m backend.cli migrate-payment-db [--src <db>]          # 迁移旧支付库（一次性）
+python -m backend.cli reconcile-orders                         # 订单对账补账
 ```
 
 ---
 
-## 里程碑
+## 测试
 
-| ID | 目标 | 依赖 |
-|----|------|------|
-| M1 | Ingestion 全流程跑通，一本书完整入库 | — |
-| M2 | AI Engine 五个模块 + Pipeline | M1 |
-| M3 | LLM 观测 + CLI + Golden set 首跑 | M2 |
-| M4 | AI Engine 端到端 CLI 验收 | M3 |
-| M5 | Backend MVP（11 端点 + 鉴权 + 持久化 + 集成测试） | M4 |
-| M6 | Frontend MVP（三页 + 组件测试） | M5 |
-| M7 | Cross-system e2e（10 用例 + CI 分层 + live-smoke） | M6 |
-| M8 | 题型扩展（听力/阅读/完形/首字母/作文）+ 前端重构（营销页、题型专项、整卷模拟、管理后台） | M6 |
-| M9 | 背单词模块（SM-2 间隔重复）+ 用户库/题库分离（app.db / questions.db） | M8 |
+```bash
+# 后端 / AI 引擎（用 pytest，切勿 python <file>.py，会破坏 import ai_engine）
+pip install pytest pytest-cov
+PYTHONIOENCODING=utf-8 python -m pytest tests/ -v
 
-## 核心原则
+# 前端
+cd frontend && npm run test        # vitest
+npm run lint                       # oxlint
+```
 
-贯穿所有 spec 的几条硬约束：
+> 标记 `integration` 的用例需真实 LLM Key 与 SQLite；快速冒烟可用 `python -m backend.cli smoke`（LLM 被 mock）。
 
-1. **`shared/` 是唯一的跨子系统依赖交汇点**——`ingestion`/`ai_engine`/`backend` 之间不直接互相 import
-2. **AI Engine 无状态**——一切持久化在后端层；`generate_paper` 是纯函数
-3. **数据契约 pydantic 定义一次，全体复用**——契约变更 = 一次跨 spec 同步（有明确清单）
-4. **知识点 id 一旦入库不变**——改 id 意味着级联重算所有引用，第一版不支持
-5. **改题不改 `question_type` / `knowledge_point_ids`**——否则答题记录的 KP 归属会错乱（注：`difficulty` 字段已废弃，全系统不使用）
-6. **判对错永远是纯字符串比较，不调 LLM**——答案唯一无歧义（用户已确认）
-7. **测试专用端点只在 test env 挂载**——生产构建永不暴露 `/api/test/*`
+---
+
+## 重建题库（离线，一次性）
+
+题库与向量库已入库，正常部署**无需**重建。仅在新增题源时才跑，且需 Qwen 模型与离线依赖
+（`typer ebooklib html2text beautifulsoup4`，加 `chromadb sentence-transformers`）：
+
+```bash
+python -m ingestion.cli epub-to-md <epub> --slug <book_slug>   # 1. EPUB→Markdown
+python -m ingestion.cli split <book_slug>                       # 2. 解析为题目 JSON
+python -m ingestion.cli apply-kp                                # 3b. 挂知识点
+python -m ingestion.cli assign-ids                              # 3c. 分配题号
+python -m ingestion.cli build-sqlite                            # 4. → data/questions.db
+python -m ingestion.cli build-vec                               # 5. → data/chroma/
+```
+
+> ⚠️ `data/chapters/*.json` 是「脚本产物 + 约百处手工修补」的稳态，**切勿重跑 `split` 覆盖**，否则会丢失修补。详见 `docs/question-bank-ingestion-design.md`。
+
+---
+
+## 设计文档
+
+各子系统规范在 `docs/`（与实现保持同步）：`ai-engine-design.md`、`backend-design.md`、
+`frontend-design.md`、`frontend-visual-spec.md`、`credits-design.md`、`agent-design.md`、
+`vocabulary-design.md`、`admin-design.md` 及各题型子规范等。

@@ -188,7 +188,7 @@ payment 的 `payment.db` **只存 `user_id`，没有 username**（见 § 5）。
 | 方法 | 路径 | 作用 |
 |---|---|---|
 | GET | `/api/admin/memberships?q=&limit=&offset=` | 拉 payment 全量会员 → 批量补 `username` → **按用户名 `q` 过滤**（大小写不敏感；user_id 查不到用户名的行在 `q` 非空时不匹配）→ Python 端分页。返回 `{items:[{user_id, username, expires_at, active}], total}` |
-| GET | `/api/admin/orders?status=&limit=&offset=` | 拉 payment 订单（转发 `status`）→ 批量补 `username`。返回 `{items:[{…order, username}]}` |
+| GET | `/api/admin/orders?status=&order_no=&user=&pack_id=&created_from=&created_to=&paid_from=&paid_to=&limit=&offset=` | 本地 `orders` 表，支持表头各列筛选：订单号 / 用户（用户名或 user_id，子查询同库 `users`）/ 积分包 / 状态 / 创建·支付日期区间 → 批量补 `username`。返回 `{items:[{…order, username}], total}` |
 | POST | `/api/admin/memberships/grant` | body `{username, days}`：主后端 `get_user_by_username` 解析 user_id（找不到 → 404 `resource.not_found`），再转发 payment grant |
 | POST | `/api/admin/memberships/{user_id}/grant` \| `/revoke` | 薄封装转发到 payment，使前端会员/订单调用统一走 `/api` |
 
@@ -202,6 +202,9 @@ payment 的 `payment.db` **只存 `user_id`，没有 username**（见 § 5）。
 | GET | `/api/admin/stats/overview` | 聚合：`total_users`、`new_users_today`、`active_members`（需向 payment 查，见 § 5.4）、`total_papers`、`total_attempts` |
 | GET | `/api/admin/stats/timeseries?days=30` | 每日序列：`users_by_day`（按 `users.created_at`）、`papers_by_day`（按 `papers.generated_at`），供前端画折线图 |
 | GET | `/api/admin/analytics?days=30` | 全站做题分析（供 AdminAnalyticsPage）：`site_mastery`（全体用户掌握度概览，复用 `build_site_profile`）、`attempts_by_day`（每日做题量 + 正确率趋势）、`type_accuracy`（按题型正确率）。`days<=0` 表示全部历史（掌握度窗口 `window_days=None`），趋势仍需有限跨度，回退到很宽的窗口 |
+| GET | `/api/admin/stats/usage?days=30` | 功能使用监控（供 AdminDashboardPage「监控看板」）：`by_action`（各付费动作调用量 + 积分消耗，来自 `credit_ledger` `kind='spend'` 按 `action` 聚合）、`by_source`（出卷来源页面分布，来自 `json_extract(papers.payload_json,'$.metadata.source')`）、`by_mode`（出卷类型 fresh/remediation/review，来自 `$.request.mode`）、`writing`（作文批改篇数 + 平均分）、`vocabulary_by_day`（每日背单词量，复用 `vocabulary_studied_by_day`）。`days<=0` = 全部历史。聚合函数在 `shared/storage.py`：`usage_by_action` / `papers_by_source` / `papers_by_mode` / `writing_summary` |
+
+**出卷来源归因**：每次出卷在落库前把来源页面写进 `paper.metadata["source"]`（无需迁移，与已有 `$.request.mode` 同构可查）。来源由前端各出卷入口经 `useGeneratePaper(onFormError, source)` 传入（`generate` / `daily` / `themes` / `custom` / `mock` / `dashboard` / `mastery_review` / `errorbook` / `paper_retry` / `drill:<slug>`），Agent 出卷标 `agent`、学习计划标 `study_plan`；历史卷无此键聚为 `unknown`。
 
 `active_members` 若 payment 不可用则返回 `null`，前端显示"暂不可用"，不阻塞其余指标。
 
@@ -292,7 +295,8 @@ RequireAuth（已登录?）
 在受保护块内加一组（可用嵌套布局路由承载左侧子导航）：
 ```
 /admin             → 概览看板（默认）
-/admin/analytics   → 分析看板
+/admin/dashboard   → 监控看板（功能使用监控 + 全站做题分析，分模块 bento 色块）
+/admin/analytics   → 重定向到 /admin/dashboard（原独立「分析看板」已并入监控看板，2026-08）
 /admin/users       → 用户列表
 /admin/users/:id   → 用户详情
 /admin/memberships → 会员管理
@@ -308,11 +312,18 @@ RequireAuth（已登录?）
 
 - **后台布局**：沿用 `AppLayout` 整体框架；`/admin` 下用**左侧竖向子导航 + 右侧内容区**。卡片/表格/按钮沿用 shadcn + 现有设计 token（`bg-sheet` / `border-line` / `ink-wash`，6px 圆角，衬线页头 `font-serif`）。表格样式对齐 MembershipPage/PapersPage 现有模式（`rounded-md border border-line bg-sheet`，表头 `bg-ink-wash/60`，`text-[13px]`）。
 - **概览看板**：一排指标卡（总用户/今日新增/活跃会员/试卷总数）+ 两张折线图（每日新增用户、每日生成试卷）。**遵守 PRODUCT.md 禁令**——不做"黑底霓虹、密集指标"的冷监控风；用墨卷暖白纸面 + 藏青（`--ink`）线条，图表克制留白。
-- **分析看板**（AdminAnalyticsPage）：全站做题分析——全站掌握度概览（复用 `build_site_profile`）+ 每日做题量/正确率趋势折线图 + 按题型正确率柱状图。同样**遵守 PRODUCT.md 禁令**，用墨卷暖白纸面 + 藏青线条。
-- **用户列表**：搜索框 + 分页表格（用户名/注册时间/role/status/试卷数）；行内操作（详情/封禁·解封/重置密码/设为管理员·取消）。危险操作走二次确认弹窗（复用现有 `components/ui/dialog`）。
+- **分析看板**（原 AdminAnalyticsPage，2026-08 已删除）：全站做题分析已并入下方「监控看板」的「学习质量」模块；`/admin/analytics` 保留重定向到 `/admin/dashboard`。
+- **监控看板**（AdminDashboardPage，`/admin/dashboard`）：一屏汇总运行监控数据，顶部天窗（近 7 / 30 天 / 全部）驱动窗口化区块。采用工作台同款 **bento 色块**（`.card` + `.is-accent/grammar/listening/reading/writing/success` 分科色 + `.col-N`），**分模块**呈现，柱状图按分科色轮多彩着色并带数值标签：
+  - **累计概览**（复用 `getOverview`）：6 张大数字色块（总用户/今日新增/付费用户/试卷总数/总做题数/累计收入）。
+  - **功能使用**（`/stats/usage`）：各 AI 功能调用量（横向多彩柱）、出卷来源分布（页面偏好）、出卷类型分布。
+  - **参与度趋势**（`getTimeseries` + `/stats/usage`）：每日新增用户 / 生成试卷 / 背单词量折线。
+  - **学习质量**（`getAnalytics`）：每日做题量/正确率双轴折线、分题型准确率、最薄弱考点（薄弱标赤、其余淡墨）。
+  - **运营·作文与营收**（`/stats/usage` + `getRevenue`）：作文批改篇数/平均分、按套餐收入、每日收入。
+  - 系统健康折叠。大部分数据复用既有端点，仅「功能使用」走新端点。**遵守 PRODUCT.md 禁令**：暖白纸面 + 分科色，非冷监控风。
+- **用户列表**：分页表格（用户名/注册时间/role/status/试卷数），**筛选内嵌到各列表头**（漏斗下拉，命中变赤陶）：用户名搜索、注册日期区间（原生日历，`created_from`/`created_to`）、角色（全部/用户/管理员）、状态（全部/正常/已封禁）；下拉面板经 Portal 渲染，不被表格 `overflow-hidden` 裁切。行内操作（详情/封禁·解封/重置密码/设为管理员·取消）。危险操作走二次确认弹窗（复用现有 `components/ui/dialog`）。
 - **用户详情**：基础信息 + 做题正确率/掌握度概览 + 会员到期（拼装自 payment）+ 操作区。
 - **会员管理**：会员列表 + "手动开通 N 天 / 取消"（带确认）。
-- **订单列表**：只读表格，按状态筛选。
+- **订单列表**：只读表格，收入统计面板 + 各列表头内嵌筛选（订单号 / 用户搜索、积分包 / 状态下拉、创建·支付日期区间；金额列不筛），复用 `components/admin/HeaderFilter`。
 
 ### 7.6 API 客户端（`frontend/src/api/admin.ts`）
 

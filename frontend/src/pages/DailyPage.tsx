@@ -27,12 +27,15 @@ import { Button } from '@/components/ui/button'
  */
 export function DailyPage() {
   const [serverError, setServerError] = useState<string | null>(null)
-  // 「今天已练过」标记写入后 bump 重渲染(localStorage 非响应式)
-  const [, setTick] = useState(0)
 
   const { data: user } = useAuth()
   const userId = user?.id ?? 'anon'
-  const { generate, guard, isPending } = useGeneratePaper(setServerError)
+  // 「今天已练过」标记仅在出卷成功后写入（onGenerated），失败不标记。
+  const { generate, guard, isPending } = useGeneratePaper(
+    setServerError,
+    'daily',
+    () => localStorage.setItem(dailyDoneKey(userId), 'done'),
+  )
   const { price } = useCredits()
 
   const masteryQuery = useQuery({
@@ -55,8 +58,6 @@ export function DailyPage() {
   const start = () => {
     setServerError(null)
     if (!guard(estimatedCost)) return
-    localStorage.setItem(dailyDoneKey(userId), 'pending')
-    setTick((t) => t + 1)
     generate({ user_query: composeQuery({ entries: todayRecipe.entries }), mode: 'fresh' })
   }
 

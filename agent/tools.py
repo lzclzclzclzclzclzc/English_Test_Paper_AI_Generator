@@ -88,6 +88,7 @@ def get_user_history(window_days: int = 30) -> str:
             FROM attempts a
             JOIN attempt_items ai ON a.id = ai.attempt_id
             WHERE a.user_id = ?
+              AND ai.question_type <> 'writing'
               AND a.answered_at >= datetime('now', '-' || ? || ' days')
             """,
             (user_id, window_days),
@@ -318,6 +319,7 @@ def implement_study_plan(plan_text: str, start_date: str = "") -> str:
         try:
             retrieval = _retriever.retrieve(req)
             paper = _reviser.build_paper(req, retrieval)
+            paper.metadata["source"] = "study_plan"  # 学习计划出卷，供监控看板统计来源
             _storage.save_paper(paper, user_id)
         except Exception as e:
             _credits.refund(user_id, ref_type="plan_day", ref_id=day_ref, note="计划出卷失败退回")
@@ -425,6 +427,7 @@ def generate_paper(
         charge.refund()
         return json.dumps({"error": str(e)}, ensure_ascii=False)
     paper.metadata.update(charge.metadata())
+    paper.metadata["source"] = "agent"  # 学习助手出卷，供监控看板统计来源
 
     # Persist so /api/papers/{id} works. A save failure MUST be surfaced —
     # otherwise the agent advertises a paper_id the frontend can't open (404).

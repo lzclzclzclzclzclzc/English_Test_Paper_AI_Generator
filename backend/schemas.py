@@ -40,6 +40,9 @@ class GeneratePaperRequest(BaseModel):
     mode: GenerateMode = "fresh"
     wrong_items: list[WrongItemRef] | None = None
     review_window_days: int | None = None
+    # 出卷来源页面标签（如 generate / daily / errorbook / drill:single_choice），
+    # 存进 paper.metadata["source"] 供管理端「监控看板」统计页面偏好。见 Spec P / 监控看板计划。
+    source: str = "unknown"
 
 
 class RevisePaperRequest(BaseModel):
@@ -281,6 +284,17 @@ class VocabularySettingsResponse(BaseModel):
     today_new_cards_added: int
 
 
+class VocabularyDailyItem(BaseModel):
+    day: str
+    studied: int
+    new_words: int
+    review_words: int
+
+
+class VocabularyDailyResponse(BaseModel):
+    items: list[VocabularyDailyItem]
+
+
 class ErrorResponse(BaseModel):
     error_code: str
     message: str
@@ -333,6 +347,7 @@ class AdminOverview(BaseModel):
     banned_users: int = 0
     total_papers: int
     total_attempts: int
+    submitted_papers: int = 0        # 已提交（已作答）试卷数
     paying_users: int = 0           # 至少有一笔 PAID 订单的用户数
     total_revenue_cents: int = 0
 
@@ -411,6 +426,13 @@ class AdminTypeAccuracy(BaseModel):
     accuracy: float
 
 
+class AdminVocabularyDay(BaseModel):
+    day: str
+    studied: int
+    new_words: int
+    review_words: int
+
+
 class AdminAnalytics(BaseModel):
     site_mastery: MasteryProfile
     attempts_by_day: list[AdminAttemptDay]
@@ -421,6 +443,7 @@ class AdminUserAnalytics(BaseModel):
     """Single-user answering analytics for the admin learner view."""
     attempts_by_day: list[AdminAttemptDay]
     type_accuracy: list[AdminTypeAccuracy]
+    vocabulary_by_day: list[AdminVocabularyDay]
 
 
 # ---- Admin Pro (Spec H) ----
@@ -510,6 +533,54 @@ class AdminRevenue(BaseModel):
     by_pack: list[AdminPackRevenue]
 
 
+# ---- Usage monitoring (监控看板) ----
+
+
+class AdminUsageActionPoint(BaseModel):
+    """每个付费 AI 动作（credit_ledger.action）的调用量与积分消耗。"""
+    action: str
+    count: int
+    credits_spent: int
+
+
+class AdminUsageSourcePoint(BaseModel):
+    """出卷来源页面（paper.metadata.source）的出卷次数——回答页面偏好。"""
+    source: str
+    count: int
+
+
+class AdminUsageModePoint(BaseModel):
+    """出卷类型（request.mode：fresh/remediation/review）的分布。"""
+    mode: str
+    count: int
+
+
+class AdminUsageWriting(BaseModel):
+    count: int
+    avg_score: float | None = None
+
+
+class AdminUsageDayCredits(BaseModel):
+    day: str
+    credits: int
+
+
+class AdminUsageSpender(BaseModel):
+    user_id: str
+    username: str | None = None
+    credits_spent: int
+
+
+class AdminUsage(BaseModel):
+    by_action: list[AdminUsageActionPoint]
+    by_source: list[AdminUsageSourcePoint]
+    by_mode: list[AdminUsageModePoint]
+    writing: AdminUsageWriting
+    vocabulary_by_day: list[AdminVocabularyDay]
+    credits_by_day: list[AdminUsageDayCredits]
+    top_spenders: list[AdminUsageSpender]
+
+
 class AdminAuditItem(BaseModel):
     id: int
     actor_user_id: str
@@ -587,6 +658,17 @@ class CreditChargeInfo(BaseModel):
     cost: int
     balance_after: int
     daily_after: int
+
+
+class VocabularyExampleRequest(BaseModel):
+    word_id: str = Field(min_length=1, max_length=80)
+
+
+class VocabularyExampleResponse(BaseModel):
+    word_id: str
+    example_en: str
+    example_zh: str
+    credits: CreditChargeInfo
 
 
 class PackOut(BaseModel):

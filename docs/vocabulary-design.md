@@ -97,7 +97,9 @@
 | GET | `/api/vocabulary/today` | — → `VocabularyTodayResponse` | 今日卡片：当前待考卡（题面隐藏例句中的目标词）+ 任务计数（新词/复习/重试） |
 | POST | `/api/vocabulary/judgments` | `VocabularyJudgmentRequest`（word_id + rating）→ `VocabularyJudgmentResponse` | 提交对当前卡的评分，返回词条详情 + 新 stage + next_due_at + 是否入当日重试 + 最新计数 |
 | GET | `/api/vocabulary/progress` | — → `VocabularyProgressResponse` | 学习进度画像（已学/到期/各 stage 分布等） |
+| GET | `/api/vocabulary/daily?days=30` | — → `VocabularyDailyResponse`（`items:[{day, studied, new_words, review_words}]`） | 当前用户每日背词量（新学/复习），供学情报告背词柱状图（与管理端用户详情页 `vocabulary_by_day` 同款，底层 `storage.vocabulary_studied_by_day`）。days<=0 取全部 |
 | PATCH | `/api/vocabulary/settings` | `VocabularySettingsRequest`（daily_new_limit）→ `VocabularySettingsResponse` | 调整每日新词上限（10–50） |
+| POST | `/api/vocabulary/example` | `VocabularyExampleRequest`（word_id）→ `VocabularyExampleResponse` | 「生成例句」按钮：按需 LLM 造句（英文例句 + 中译），扣 `vocab_example` 1 积分（先扣后算、失败退回），结果不落库。词表自带例句仍为占位模板 |
 
 对应 `storage` 函数：`get_vocabulary_today` / `judge_vocabulary_card` /
 `get_vocabulary_progress` / `set_vocabulary_daily_new_limit`；
@@ -138,4 +140,4 @@
 
 - **不进题库/向量库**：词汇与 `questions.db`、ChromaDB 完全无关（题型 `QuestionType` 不含词汇）。
 - **纯用户库**：所有词汇表在 `data/app.db`，`storage.connect()` 访问；`connect_bank()` 不涉及。
-- **无 LLM**：调度、判定、进度全为确定性代码；例句/释义为离线词表内容。
+- **调度无 LLM**：调度、判定、进度全为确定性代码；词表自带例句/释义为离线内容。唯一的 LLM 触点是可选的「生成例句」按钮（`POST /api/vocabulary/example`，扣 1 积分），按需造句、不影响调度。
