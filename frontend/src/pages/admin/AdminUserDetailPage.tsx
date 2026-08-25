@@ -28,7 +28,7 @@ import {
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { prettifyKp, TYPE_LABELS } from '@/lib/kp'
 import { masteryToOutline } from '@/lib/masteryOutline'
-import { cn } from '@/lib/utils'
+import { ChartCard, Metric, WindowPicker } from '@/components/admin/ui'
 import { queryClient } from '@/lib/queryClient'
 import { toastApiError } from '@/lib/errors'
 import { MindmapView } from '@/components/mindmap/MindmapView'
@@ -50,36 +50,12 @@ import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 const ACCENT = '#ef4a2b'
 const WEAK_THRESHOLD = 0.4
 
-const WINDOWS = [
-  { label: '近 7 天', days: 7 },
-  { label: '近 30 天', days: 30 },
-  { label: '全部', days: 0 },
-] as const
-
 function Field({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
       <div className="text-[12px] text-quiet">{label}</div>
       <div className="font-ui text-[15px] text-ink">{value}</div>
       {hint != null && <div className="text-[11px] text-quiet">{hint}</div>}
-    </div>
-  )
-}
-
-function Metric({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-md border border-hairline bg-wash/40 px-4 py-3">
-      <div className="text-[12px] text-quiet">{label}</div>
-      <div className="mt-1 font-ui text-[22px] font-bold tabular-nums text-ink">{value}</div>
-    </div>
-  )
-}
-
-function ChartCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="rounded-md border border-hairline p-4">
-      <div className="mb-2 text-[13px] text-muted-ink">{title}</div>
-      {children}
     </div>
   )
 }
@@ -296,22 +272,7 @@ export function AdminUserDetailPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[20px] text-ink [font-family:var(--font-display)]">{u.username}</h1>
-        <div className="flex gap-1">
-          {WINDOWS.map((w) => (
-            <button
-              key={w.days}
-              onClick={() => setDays(w.days)}
-              className={cn(
-                'h-8 rounded-lg border px-3 font-ui text-[13px] transition-colors',
-                days === w.days
-                  ? 'border-accent bg-wash text-accent'
-                  : 'border-hairline text-muted-ink hover:bg-tint/40',
-              )}
-            >
-              {w.label}
-            </button>
-          ))}
-        </div>
+        <WindowPicker value={days} onChange={setDays} />
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

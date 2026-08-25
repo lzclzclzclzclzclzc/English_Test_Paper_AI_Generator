@@ -58,6 +58,39 @@ VECTOR_INDEXED_QUESTION_TYPES: frozenset[str] = frozenset(
     {"single_choice", "word_form", "sentence_rewriting"}
 )
 
+# Canonical question_type → Chinese display name. Single source of truth for the
+# backend (title inference, revise instructions, agent KP catalog) — labels match
+# the frontend's TYPE_LABELS (frontend/src/lib/kp.ts) so user-facing wording is
+# consistent everywhere. (Previously copy-pasted in reviser/pipeline/coach with a
+# 词形/词性 divergence.)
+QUESTION_TYPE_LABELS: dict[str, str] = {
+    "single_choice": "单项选择",
+    "word_form": "词形转换",
+    "sentence_rewriting": "句子改写",
+    "listening_single_choice": "听力选择",
+    "listening_true_false": "听力判断",
+    "listening_fill_blank": "听力填词",
+    "reading_longtext_single_choice": "阅读理解",
+    "cloze_single_choice": "完形填空",
+    "reading_first_blank": "阅读首字母填空",
+    "writing": "英语作文",
+}
+
+# Passage-sharing / no-standard-answer question types. Two independent literals
+# used to exist (retriever.PASSAGE_TYPES, reviser._PASSTHROUGH_TYPES) — they must
+# stay in lockstep: these types share a passage (revising one breaks the group)
+# and writing has no single answer, so the Reviser passes them through unchanged.
+PASSAGE_QUESTION_TYPES: frozenset[str] = frozenset(
+    {
+        "listening_true_false",
+        "listening_fill_blank",
+        "reading_longtext_single_choice",
+        "cloze_single_choice",
+        "reading_first_blank",
+        "writing",
+    }
+)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Answer structure (Spec A §2.2)

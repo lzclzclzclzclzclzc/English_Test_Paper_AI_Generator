@@ -101,7 +101,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     mutationFn: generatePaper,
     onSuccess: (newPaper) => {
       queryClient.setQueryData(['paper', newPaper.paper_id], newPaper)
-      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: ['papers'] })
       invalidateCredits()
     },
     onError: toastApiError,
@@ -126,7 +126,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     mutationFn: submitAttempt,
     onSuccess: (result) => {
       // 列表页的 submitted 标记随交卷改变
-      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: ['papers'] })
       // 更新历史结果缓存，重新打开可直接复盘
       queryClient.setQueryData(['attempt', 'by-paper', paperId], result)
       // 错题本记账：答错的收进来、答对的清账（仅真实用户，避免串号）
@@ -148,7 +148,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
       setWritingGradeResults(map)
       // 写入历史缓存，刷新后仍可回填
       queryClient.setQueryData(['writing', 'by-paper', paperId], result)
-      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: ['papers'] })
       invalidateCredits()
     },
     onError: toastApiError,
@@ -194,7 +194,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
     mutationFn: revisePaper,
     onSuccess: (newPaper) => {
       queryClient.setQueryData(['paper', newPaper.paper_id], newPaper)
-      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: ['papers'] })
       invalidateCredits()
       navigate(`/papers/${newPaper.paper_id}`)
     },
@@ -270,7 +270,7 @@ function PaperPageInner({ paperId }: { paperId: string }) {
       })
     } else {
       // 只有作文题时，直接标记为已提交
-      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: ['papers'] })
     }
 
     // 作文题走独立批改流程

@@ -5,28 +5,11 @@ import { getQuestionBankStats } from '@/api/admin'
 import { useKnowledgePoints } from '@/hooks/useKnowledgePoints'
 import { prettifyKp, TYPE_LABELS } from '@/lib/kp'
 import { Button } from '@/components/ui/button'
+import { ChartCard, Metric } from '@/components/admin/ui'
 
 const ACCENT = '#ef4a2b'
 /** 图表最多展示的条目数（知识点/章节可能很多，取题量最少的 Top 更能暴露缺题）。 */
 const TOP_N = 15
-
-function Metric({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-md border border-hairline bg-wash/40 px-4 py-3">
-      <div className="text-[12px] text-quiet">{label}</div>
-      <div className="mt-1 font-ui text-[22px] font-bold tabular-nums text-ink">{value}</div>
-    </div>
-  )
-}
-
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-md border border-hairline p-4">
-      <div className="mb-2 text-[13px] text-muted-ink">{title}</div>
-      {children}
-    </div>
-  )
-}
 
 function EmptyChart() {
   return <p className="py-8 text-center text-[13px] text-quiet">暂无数据</p>

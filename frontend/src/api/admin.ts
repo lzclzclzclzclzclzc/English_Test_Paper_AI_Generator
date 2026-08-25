@@ -28,12 +28,12 @@ export const banUser = (id: string) => apiFetch<User>(`/admin/users/${id}/ban`, 
 export const unbanUser = (id: string) => apiFetch<User>(`/admin/users/${id}/unban`, { method: 'POST' })
 export const getOverview = () => apiFetch<AdminOverview>('/admin/stats/overview')
 export const getTimeseries = (days = 30) => apiFetch<AdminTimeseries>(`/admin/stats/timeseries${qs({ days })}`)
-// days=0 = 全部历史；直接拼串确保 0 也传出（不经 qs 的 falsy 过滤）。
-export const getAnalytics = (days = 30) => apiFetch<AdminAnalytics>(`/admin/analytics?days=${days}`)
-export const getUsageStats = (days = 30) => apiFetch<AdminUsage>(`/admin/stats/usage?days=${days}`)
+// days=0 = 全部历史；qs 只过滤 undefined/''，0 会正常带出（?days=0），与其他窗口端点一致。
+export const getAnalytics = (days = 30) => apiFetch<AdminAnalytics>(`/admin/analytics${qs({ days })}`)
+export const getUsageStats = (days = 30) => apiFetch<AdminUsage>(`/admin/stats/usage${qs({ days })}`)
 export const getUserMastery = (id: string) => apiFetch<MasteryProfile>(`/admin/users/${id}/mastery`)
 export const getUserAnalytics = (id: string, days = 30) =>
-  apiFetch<AdminUserAnalytics>(`/admin/users/${id}/analytics?days=${days}`)
+  apiFetch<AdminUserAnalytics>(`/admin/users/${id}/analytics${qs({ days })}`)
 
 // 用户维度深挖（Spec H B）
 export const getUserPapers = (id: string, limit = 10) =>

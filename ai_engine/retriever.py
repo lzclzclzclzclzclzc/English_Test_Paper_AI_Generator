@@ -35,6 +35,7 @@ from ai_engine.errors import RetrieverError
 from ai_engine.question_repo import DEFAULT_DB_PATH, QuestionRepo
 from shared.schemas import (
     GenerateRequest,
+    PASSAGE_QUESTION_TYPES,
     Question,
     QuestionType,
     RetrievalResult,
@@ -49,7 +50,8 @@ COLLECTION_NAME = "questions"
 # Question types that share a passage and must be retrieved as a whole group
 # (never enter the vector store — SQL-only, grouped by passage_id).
 # Writing questions also don't enter the vector store (no correct answer to embed).
-PASSAGE_TYPES = {"listening_true_false", "reading_longtext_single_choice", "cloze_single_choice", "listening_fill_blank", "reading_first_blank", "writing"}
+# Shared with reviser (passthrough) via shared.schemas.PASSAGE_QUESTION_TYPES.
+PASSAGE_TYPES = PASSAGE_QUESTION_TYPES
 
 
 def _dot(a, b) -> float:

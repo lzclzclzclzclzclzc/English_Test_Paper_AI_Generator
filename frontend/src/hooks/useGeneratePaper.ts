@@ -19,7 +19,11 @@ import type { GeneratePaperRequest } from '@/types/api'
  *    先本地预检，余额明显不够就直接弹充值，省一次请求；算不出（一句话出卷）传 null 放行。
  *  - 成功 / 失败都 invalidate 余额。
  */
-export function useGeneratePaper(onFormError: (message: string) => void, source?: string) {
+export function useGeneratePaper(
+  onFormError: (message: string) => void,
+  source?: string,
+  onGenerated?: () => void,
+) {
   const navigate = useNavigate()
   const { total, canAfford, refresh } = useCredits()
 
@@ -27,8 +31,10 @@ export function useGeneratePaper(onFormError: (message: string) => void, source?
     mutationFn: generatePaper,
     onSuccess: (paper) => {
       queryClient.setQueryData(['paper', paper.paper_id], paper)
-      queryClient.invalidateQueries({ queryKey: ['papers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: ['papers'] })
       refresh()
+      // 仅在出卷成功后回调（如「每日一练」写“今天已练过”标记），避免失败也误标记。
+      onGenerated?.()
       navigate(`/papers/${paper.paper_id}`)
     },
     onError: (err) => {

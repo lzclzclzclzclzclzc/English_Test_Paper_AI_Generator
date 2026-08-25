@@ -658,20 +658,10 @@ def papers_by_mode(days: int = 30) -> list[dict]:
 
 
 def writing_summary(days: int = 30) -> dict:
-    """窗口内 AI 作文批改的篇数与平均总分（writing_grade_results）。"""
-    init_db()
-    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-    with connect() as conn:
-        row = conn.execute(
-            """
-            SELECT COUNT(*) AS count, AVG(total_score) AS avg_score
-            FROM writing_grade_results
-            WHERE graded_at >= ?
-            """,
-            (since,),
-        ).fetchone()
-    avg = row["avg_score"]
-    return {"count": row["count"], "avg_score": round(avg, 1) if avg is not None else None}
+    """窗口内 AI 作文批改的篇数与平均总分（供监控看板）。
+    复用 writing_average（站点级），避免两处 AVG/COUNT 查询漂移。"""
+    avg, count = writing_average(user_id=None, window_days=days)
+    return {"count": count, "avg_score": avg}
 
 
 def update_password_hash(user_id: str, password_hash: str) -> None:
@@ -811,7 +801,9 @@ def list_papers(user_id: str, limit: int = 100, offset: int = 0, *,
             "WHERE json_extract(je.value, '$.question.question_type') = ?)"
         )
         params.append(question_type)
-    params.extend([limit, offset])
+    # Clamp to a bounded window (consistent with the other list endpoints);
+    # an unclamped/negative limit would let SQLite load the whole table.
+    params.extend([max(1, min(limit, 200)), max(0, offset)])
     with connect() as conn:
         rows = conn.execute(
             f"""
@@ -1840,8 +1832,6 @@ def _migrate_vocabulary_word_sources(conn: sqlite3.Connection) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_vocabulary_wordlist_sources_list
             ON vocabulary_wordlist_sources(wordlist_id, category);
-        CREATE INDEX IF NOT EXISTS idx_vocabulary_words_category
-            ON vocabulary_words(is_active, source_category, id);
         """
     )
 

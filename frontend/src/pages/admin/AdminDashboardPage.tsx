@@ -17,7 +17,6 @@ import {
   getAnalytics,
   getOverview,
   getRevenue,
-  getSystemHealth,
   getTimeseries,
   getUsageStats,
 } from '@/api/admin'
@@ -26,17 +25,12 @@ import { drillBySlug } from '@/lib/drillConfig'
 import { prettifyKp, TYPE_LABELS } from '@/lib/kp'
 import { formatYuan } from '@/lib/money'
 import { cn } from '@/lib/utils'
+import { SystemHealthPanel, WindowPicker } from '@/components/admin/ui'
 
 const WEAK_THRESHOLD = 0.4
 
 // 分科色轮（复用 colors.css 语义色），给柱状图多彩着色 → 呼应工作台 bento 色块。
 const PALETTE = ['var(--accent)', 'var(--listening)', 'var(--reading)', 'var(--grammar)', 'var(--writing)', 'var(--success)']
-
-const WINDOWS = [
-  { label: '近 7 天', days: 7 },
-  { label: '近 30 天', days: 30 },
-  { label: '全部', days: 0 },
-] as const
 
 /** credit_ledger.action → 中文名。 */
 const ACTION_LABELS: Record<string, string> = {
@@ -181,45 +175,6 @@ function Trend({ data, color, height = 170 }: { data: { day: string; value: numb
   )
 }
 
-/** 系统健康折叠区块。 */
-function SystemHealthPanel() {
-  const [open, setOpen] = useState(false)
-  const health = useQuery({ queryKey: ['admin', 'system-health'], queryFn: getSystemHealth, enabled: open })
-  const Badge = ({ ok, label }: { ok: boolean; label: string }) => (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={cn('h-2 w-2 rounded-full', ok ? 'bg-emerald-500' : 'bg-red-500')} />
-      <span className="text-[13px] text-muted-ink">{label}{ok ? '正常' : '不可用'}</span>
-    </span>
-  )
-  return (
-    <div className="rounded-md border border-hairline">
-      <button className="flex w-full items-center justify-between px-4 py-3 text-left" onClick={() => setOpen((v) => !v)}>
-        <span className="text-[14px] text-ink">系统健康</span>
-        <span className="text-[12px] text-quiet">{open ? '收起' : '展开'}</span>
-      </button>
-      {open && (
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-hairline px-4 py-3">
-          {health.isLoading && <span className="text-[13px] text-quiet">检测中…</span>}
-          {health.isError && (
-            <span className="text-[13px] text-muted-ink">
-              检测失败{' '}
-              <button className="text-accent hover:underline" onClick={() => health.refetch()}>重试</button>
-            </span>
-          )}
-          {health.data && (
-            <>
-              <span className="text-[13px] text-muted-ink">支付 {health.data.payment_mock ? '离线 mock' : '支付宝沙盒'}</span>
-              <Badge ok={health.data.llm} label="LLM 服务 " />
-              <span className="text-[13px] text-muted-ink">题库 {health.data.question_bank_total} 题</span>
-              <span className="text-[13px] text-muted-ink">用户库 {health.data.app_db_size_kb.toLocaleString()} KB</span>
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
 /**
  * 监控看板：一屏汇总运行监控数据，bento 色块分模块（呼应工作台/广告页视觉）。
  * 顶部天窗（近 7 / 30 天 / 全部）驱动窗口化区块；顶部指标卡为累计口径。
@@ -276,20 +231,7 @@ export function AdminDashboardPage() {
     <div className="flex max-w-[64rem] flex-col gap-7">
       <div className="flex items-center justify-between">
         <h1 className="text-[22px] text-ink [font-family:var(--font-display)]">监控看板</h1>
-        <div className="flex gap-1">
-          {WINDOWS.map((w) => (
-            <button
-              key={w.days}
-              onClick={() => setDays(w.days)}
-              className={cn(
-                'h-8 rounded-lg border px-3 font-ui text-[13px] transition-colors',
-                days === w.days ? 'border-accent bg-wash text-accent' : 'border-hairline text-muted-ink hover:bg-tint/40',
-              )}
-            >
-              {w.label}
-            </button>
-          ))}
-        </div>
+        <WindowPicker value={days} onChange={setDays} />
       </div>
 
       {anyError && (

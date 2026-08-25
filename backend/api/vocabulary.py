@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from uuid import uuid4
-
 from fastapi import APIRouter, Depends
 
 from backend.deps import current_user
@@ -65,18 +63,14 @@ async def generate_example(
     if word is None:
         raise ResourceNotFoundError("单词不存在")
 
-    ref_id = uuid4().hex
-    receipt = credits.charge(
+    with credits.charged(
         user.id, credits.price("vocab_example"), action="vocab_example",
-        ref_type="vocab_example", ref_id=ref_id, note=f"AI 例句 · {word['term']}",
-    )
-    try:
+        ref_type="vocab_example", note=f"AI 例句 · {word['term']}",
+        refund_note="例句生成失败退回",
+    ) as receipt:
         example_en, example_zh = ai_gateway.generate_vocabulary_example(
             word["term"], word["part_of_speech"], word["meanings"],
         )
-    except Exception:
-        credits.refund(user.id, ref_type="vocab_example", ref_id=ref_id, note="例句生成失败退回")
-        raise
     return VocabularyExampleResponse(
         word_id=body.word_id,
         example_en=example_en,
