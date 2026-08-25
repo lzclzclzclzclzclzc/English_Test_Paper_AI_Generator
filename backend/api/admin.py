@@ -27,8 +27,10 @@ from backend.schemas import (
     AdminTimeseries,
     AdminUsage,
     AdminUsageActionPoint,
+    AdminUsageDayCredits,
     AdminUsageModePoint,
     AdminUsageSourcePoint,
+    AdminUsageSpender,
     AdminUsageWriting,
     AdminUserAnalytics,
     AdminUserAttemptItem,
@@ -232,6 +234,8 @@ def stats_usage(days: int = 30, _: User = Depends(require_admin)) -> AdminUsage:
         by_mode=[AdminUsageModePoint(**m) for m in storage.papers_by_mode(span)],
         writing=AdminUsageWriting(**storage.writing_summary(span)),
         vocabulary_by_day=[AdminVocabularyDay(**v) for v in storage.vocabulary_studied_by_day(span)],
+        credits_by_day=[AdminUsageDayCredits(**c) for c in storage.credits_spent_by_day(span)],
+        top_spenders=[AdminUsageSpender(**s) for s in storage.top_spenders(span, limit=10)],
     )
 
 

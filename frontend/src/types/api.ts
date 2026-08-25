@@ -470,6 +470,8 @@ export interface AdminOverview {
   banned_users: number
   total_papers: number
   total_attempts: number
+  /** 已提交（已作答）试卷数 */
+  submitted_papers: number
   /** 至少有一笔 PAID 订单的用户数 */
   paying_users: number
   total_revenue_cents: number
@@ -572,12 +574,16 @@ export interface AdminUsageActionPoint { action: string; count: number; credits_
 export interface AdminUsageSourcePoint { source: string; count: number }
 export interface AdminUsageModePoint { mode: string; count: number }
 export interface AdminUsageWriting { count: number; avg_score: number | null }
+export interface AdminUsageDayCredits { day: string; credits: number }
+export interface AdminUsageSpender { user_id: string; username: string | null; credits_spent: number }
 export interface AdminUsage {
   by_action: AdminUsageActionPoint[]
   by_source: AdminUsageSourcePoint[]
   by_mode: AdminUsageModePoint[]
   writing: AdminUsageWriting
   vocabulary_by_day: AdminVocabularyDay[]
+  credits_by_day: AdminUsageDayCredits[]
+  top_spenders: AdminUsageSpender[]
 }
 
 export interface AdminAuditItem {

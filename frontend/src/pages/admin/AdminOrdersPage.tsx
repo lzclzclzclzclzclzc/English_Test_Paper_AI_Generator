@@ -1,15 +1,11 @@
 import { useState } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import {
-  Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from 'recharts'
-import { getRevenue, listOrders } from '@/api/admin'
+import { listOrders } from '@/api/admin'
 import { Pagination } from '@/components/admin/Pagination'
 import { DateRangeFilter, FilterMenu, OptionList, SearchFilter } from '@/components/admin/HeaderFilter'
 import { displayName } from '@/lib/adminDisplay'
 import { formatYuan } from '@/lib/money'
 
-const ACCENT = '#ef4a2b'
 const PAGE_SIZE = 50
 
 const STATUS_OPTIONS = [
@@ -26,73 +22,6 @@ const PACK_OPTIONS = [
   { value: 'standard', label: '标准' },
   { value: 'annual', label: '畅练' },
 ] as const
-
-/** 收入统计区块（Spec H D1）：指标卡 + 按日收入折线 + 套餐分布。 */
-function RevenuePanel() {
-  const revenue = useQuery({ queryKey: ['admin', 'revenue'], queryFn: () => getRevenue(30) })
-  const data = revenue.data
-  if (revenue.isError || !data) return null
-  const byDay = data.revenue_by_day.map((d) => ({
-    day: d.day.slice(5),
-    yuan: Math.round(d.cents) / 100,
-  }))
-  const byPlan = data.by_pack.map((p) => ({
-    name: p.pack_id,
-    yuan: Math.round(p.cents) / 100,
-    orders: p.orders,
-  }))
-  return (
-    <div className="rounded-md border border-hairline p-4">
-      <div className="mb-3 flex flex-wrap items-baseline gap-x-6 gap-y-1">
-        <div>
-          <span className="text-[12px] text-quiet">累计收入</span>
-          <span className="ml-2 font-ui text-[18px] font-bold tabular-nums text-ink">
-            {formatYuan(data.total_cents)}
-          </span>
-        </div>
-        <div className="text-[12px] text-quiet">
-          近 30 天收入{' '}
-          <span className="font-ui font-bold tabular-nums text-muted-ink">
-            {formatYuan(data.revenue_by_day.reduce((s, d) => s + d.cents, 0))}
-          </span>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div>
-          <div className="mb-2 text-[13px] text-muted-ink">近 30 天每日收入（元）</div>
-          {byDay.length === 0 ? (
-            <p className="py-8 text-center text-[13px] text-quiet">暂无收入数据</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={160}>
-              <LineChart data={byDay}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-10)" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} width={40} />
-                <Tooltip />
-                <Line type="monotone" dataKey="yuan" name="收入(元)" stroke={ACCENT} strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-        <div>
-          <div className="mb-2 text-[13px] text-muted-ink">套餐销售分布（近 30 天，元）</div>
-          {byPlan.length === 0 ? (
-            <p className="py-8 text-center text-[13px] text-quiet">暂无收入数据</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={Math.max(120, byPlan.length * 44)}>
-              <BarChart data={byPlan} margin={{ left: 8, right: 16 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} width={40} />
-                <Tooltip />
-                <Bar dataKey="yuan" name="收入(元)" fill={ACCENT} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export function AdminOrdersPage() {
   const [status, setStatus] = useState('')
@@ -127,8 +56,6 @@ export function AdminOrdersPage() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-[20px] text-ink [font-family:var(--font-display)]">订单</h1>
-
-      <RevenuePanel />
 
       <div className="overflow-hidden rounded-md border border-hairline">
         <table className="w-full text-[13px]">

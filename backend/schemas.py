@@ -347,6 +347,7 @@ class AdminOverview(BaseModel):
     banned_users: int = 0
     total_papers: int
     total_attempts: int
+    submitted_papers: int = 0        # 已提交（已作答）试卷数
     paying_users: int = 0           # 至少有一笔 PAID 订单的用户数
     total_revenue_cents: int = 0
 
@@ -559,12 +560,25 @@ class AdminUsageWriting(BaseModel):
     avg_score: float | None = None
 
 
+class AdminUsageDayCredits(BaseModel):
+    day: str
+    credits: int
+
+
+class AdminUsageSpender(BaseModel):
+    user_id: str
+    username: str | None = None
+    credits_spent: int
+
+
 class AdminUsage(BaseModel):
     by_action: list[AdminUsageActionPoint]
     by_source: list[AdminUsageSourcePoint]
     by_mode: list[AdminUsageModePoint]
     writing: AdminUsageWriting
     vocabulary_by_day: list[AdminVocabularyDay]
+    credits_by_day: list[AdminUsageDayCredits]
+    top_spenders: list[AdminUsageSpender]
 
 
 class AdminAuditItem(BaseModel):

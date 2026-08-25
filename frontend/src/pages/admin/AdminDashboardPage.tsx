@@ -201,6 +201,8 @@ export function AdminDashboardPage() {
   const bySource = (u?.by_source ?? []).map((s) => ({ name: sourceLabel(s.source), count: s.count }))
   const byMode = (u?.by_mode ?? []).map((m) => ({ name: MODE_LABELS[m.mode] ?? m.mode, count: m.count }))
   const vocabTrend = (u?.vocabulary_by_day ?? []).map((v) => ({ day: v.day.slice(5), value: v.studied }))
+  const creditsTrend = (u?.credits_by_day ?? []).map((c) => ({ day: c.day.slice(5), value: c.credits }))
+  const topSpenders = (u?.top_spenders ?? []).map((s) => ({ name: s.username ?? s.user_id.slice(0, 8), count: s.credits_spent }))
 
   const usersTrend = (series.data?.users_by_day ?? []).map((d) => ({ day: d.day.slice(5), value: d.count }))
   const papersTrend = (series.data?.papers_by_day ?? []).map((d) => ({ day: d.day.slice(5), value: d.count }))
@@ -227,6 +229,12 @@ export function AdminDashboardPage() {
   // 按套餐：套餐为横坐标，订单数（左轴）与金额（右轴，元）为纵坐标 → 双轴分组柱。
   const packData = byPack.map((p) => ({ name: p.pack_id, orders: p.orders, yuan: p.cents / 100, yuanLabel: formatYuan(p.cents) }))
 
+  // 累计快照（全时口径）
+  const perUserPapers = o && o.total_users > 0 ? (o.total_papers / o.total_users).toFixed(1) : '—'
+  const unsubmittedPct = o && o.total_papers > 0
+    ? `${Math.round(((o.total_papers - o.submitted_papers) / o.total_papers) * 100)}%`
+    : '—'
+
   return (
     <div className="flex max-w-[64rem] flex-col gap-7">
       <div className="flex items-center justify-between">
@@ -250,6 +258,8 @@ export function AdminDashboardPage() {
         <StatCard variant="is-listening" kicker="试卷总数" value={o?.total_papers ?? '—'} />
         <StatCard variant="is-reading" kicker="总做题数" value={o?.total_attempts ?? '—'} />
         <StatCard variant="is-writing" kicker="累计收入" value={o?.total_revenue_cents == null ? '—' : formatYuan(o.total_revenue_cents)} />
+        <StatCard variant="is-accent" kicker="人均出卷数" value={perUserPapers} unit="卷 / 人" />
+        <StatCard variant="is-listening" kicker="未作答试卷占比" value={unsubmittedPct} unit="出了没做" />
       </div>
 
       {/* ── 功能使用 ── */}
@@ -271,6 +281,18 @@ export function AdminDashboardPage() {
           <span className="card-kicker">出卷类型分布</span>
           {usage.isLoading ? <CardLoading /> : byMode.length === 0 ? <CardEmpty /> : (
             <VBar data={byMode} />
+          )}
+        </div>
+        <div className="card is-success col-6">
+          <span className="card-kicker">每日积分总消耗</span>
+          {usage.isLoading ? <CardLoading /> : creditsTrend.length === 0 ? <CardEmpty /> : (
+            <Trend data={creditsTrend} color="var(--success)" />
+          )}
+        </div>
+        <div className="card is-writing col-6">
+          <span className="card-kicker">积分消耗 Top 10 用户</span>
+          {usage.isLoading ? <CardLoading /> : topSpenders.length === 0 ? <CardEmpty /> : (
+            <HBar data={topSpenders} catWidth={110} />
           )}
         </div>
       </div>

@@ -381,12 +381,14 @@ def admin_counts() -> dict:
             "SELECT COUNT(*) FROM users WHERE status = 'banned'"
         ).fetchone()[0]
         total_papers = conn.execute("SELECT COUNT(*) FROM papers").fetchone()[0]
+        submitted_papers = conn.execute("SELECT COUNT(*) FROM papers WHERE submitted = 1").fetchone()[0]
         total_attempts = conn.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]
     return {
         "total_users": total_users,
         "new_users_today": new_today,
         "banned_users": banned_users,
         "total_papers": total_papers,
+        "submitted_papers": submitted_papers,
         "total_attempts": total_attempts,
     }
 
@@ -662,6 +664,48 @@ def writing_summary(days: int = 30) -> dict:
     复用 writing_average（站点级），避免两处 AVG/COUNT 查询漂移。"""
     avg, count = writing_average(user_id=None, window_days=days)
     return {"count": count, "avg_score": avg}
+
+
+def credits_spent_by_day(days: int = 30) -> list[dict]:
+    """窗口内每日积分总消耗（credit_ledger 扣费流水，spend 行 delta 为负 → 取 -delta）。"""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT substr(created_at, 1, 10) AS day, COALESCE(SUM(-delta), 0) AS credits
+            FROM credit_ledger
+            WHERE kind = 'spend' AND created_at >= ?
+            GROUP BY day
+            ORDER BY day
+            """,
+            (since,),
+        ).fetchall()
+    return [{"day": r["day"], "credits": r["credits"]} for r in rows]
+
+
+def top_spenders(days: int = 30, limit: int = 10) -> list[dict]:
+    """窗口内积分消耗最多的前 N 个用户（补上 username）。"""
+    init_db()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT user_id, COALESCE(SUM(-delta), 0) AS credits_spent
+            FROM credit_ledger
+            WHERE kind = 'spend' AND created_at >= ?
+            GROUP BY user_id
+            HAVING credits_spent > 0
+            ORDER BY credits_spent DESC
+            LIMIT ?
+            """,
+            (since, max(1, limit)),
+        ).fetchall()
+    name_map = usernames_by_ids([r["user_id"] for r in rows])
+    return [
+        {"user_id": r["user_id"], "username": name_map.get(r["user_id"]), "credits_spent": r["credits_spent"]}
+        for r in rows
+    ]
 
 
 def update_password_hash(user_id: str, password_hash: str) -> None:
