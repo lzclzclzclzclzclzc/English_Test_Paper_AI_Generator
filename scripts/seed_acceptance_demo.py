@@ -39,6 +39,9 @@ INTENSITY = {"generate_original": "original", "generate_light": "light", "genera
 VOCAB_PER_DAY = {"high": 8, "steady": 5, "light": 3, "new": 2, "admin": 4}
 FIRST_NAMES = ("Olivia", "Ethan", "Ava", "Liam", "Emma", "Noah", "Sophia", "Mason", "Isabella", "Lucas", "Mia", "Henry", "Amelia", "James", "Harper", "Benjamin", "Evelyn", "Alexander", "Ella", "Daniel", "Scarlett", "Michael", "Grace", "Sebastian", "Chloe", "Jack", "Victoria", "Owen", "Riley", "Wyatt", "Aria", "Leo", "Nora", "Julian", "Zoey", "Hudson", "Lily", "Ezra", "Hazel", "Mateo", "Layla", "Carter", "Ellie", "Isaac", "Violet", "Gabriel", "Aurora", "Anthony", "Lucy", "Dylan", "Claire", "Lincoln", "Stella", "Thomas", "Natalie", "Charles", "Alice", "Christopher", "Maya", "Josiah")
 SURNAMES = ("Bennett", "Holloway", "Whitaker", "Marlowe", "Everett", "Langford", "Sullivan", "Hawthorne", "Kensington", "Calloway", "Waverly", "Ashford", "Briarwood", "Fairmont", "Northwood", "Westbrook", "Alderidge", "Rosemont", "Bellamy", "Kingsley")
+PINYIN_SURNAMES = ("zhang", "wang", "li", "chen", "liu", "yang", "huang", "zhou", "wu", "xu", "sun", "zhao", "lin", "he", "gao", "luo", "tang", "feng", "peng", "cao", "guo", "ma", "han", "xie")
+PINYIN_GIVEN_NAMES = ("xiaoyu", "zihao", "yiran", "wenxin", "haoran", "jingyi", "zihan", "yutong", "xinyue", "leilei", "tianyu", "ruoxi", "anran", "mingze", "yuxuan", "lingxi", "moyu", "jiaqi", "yichen", "xiaoran", "chenxi", "yining", "yuhang", "zixuan", "qianqian", "xinyi", "yuqing", "yifan", "kexin", "yutian")
+NICK_ROOTS = ("bookworm", "studyfox", "paperplane", "grammarlab", "quietowl", "vocabtrail", "mangonotes", "bluepencil", "quizharbor", "readingstar", "wordcraft", "campuscat", "dailydose", "softcloud", "maplepage", "tinylamp", "notebooker", "sunnydesk", "cleverleaf", "mintstudy", "coffeepage")
 
 @dataclass(frozen=True)
 class Persona:
@@ -65,12 +68,26 @@ def days_from(start: date) -> list[date]:
     return [start + timedelta(days=i) for i in range((END - start).days + 1)]
 
 def student_names() -> list[str]:
-    pairs = [(first, surname) for first in FIRST_NAMES for surname in SURNAMES]
     rng = random.Random(RNG_SEED + 17)
-    rng.shuffle(pairs)
-    names: list[str] = []
-    for i, (first, surname) in enumerate(pairs[:EXPECTED_STUDENT_COUNT]):
-        names.append(f"{first}_{surname.lower()}" if i % 16 == 0 else f"{first}{surname}{10 + (i * 7) % 90}" if i % 16 == 1 else f"{first}{surname}")
+    english_plain = [f"{first}{surname}" for first in FIRST_NAMES for surname in SURNAMES]
+    pinyin_plain = [f"{surname}{given}" for surname in PINYIN_SURNAMES for given in PINYIN_GIVEN_NAMES]
+    english_underscore = [f"{first.lower()}_{surname.lower()}" for first in FIRST_NAMES for surname in SURNAMES]
+    pinyin_mixed = [
+        f"{surname}_{given}{7 + (index * 13) % 83}" if index % 3 == 0 else f"{given}_{7 + (index * 13) % 83}"
+        for index, (surname, given) in enumerate((surname, given) for surname in PINYIN_SURNAMES for given in PINYIN_GIVEN_NAMES)
+    ]
+    nickname_mixed = [
+        root if index % 12 == 0 else f"{root}_{3 + (index * 11) % 87}" if index % 3 == 0 else f"{root}{3 + (index * 11) % 87}"
+        for index, root in enumerate(root for root in NICK_ROOTS for _ in range(12))
+    ]
+    names = (
+        rng.sample(english_plain, 380)
+        + rng.sample(pinyin_plain, 270)
+        + rng.sample(english_underscore, 120)
+        + rng.sample(pinyin_mixed, 180)
+        + rng.sample(nickname_mixed, 141)
+    )
+    rng.shuffle(names)
     if len(names) != len(set(names)) or any(not USERNAME_PATTERN.fullmatch(name) for name in names):
         raise RuntimeError("invalid fictional usernames")
     return names
