@@ -33,6 +33,7 @@ QUESTION_TYPES = ("single_choice", "word_form", "sentence_rewriting")
 EXPECTED_STUDENT_COUNT, EXPECTED_ADMIN_COUNT = 1091, 3
 # 502 / 1091 = 46.01%; the dashboard rounds this to a 46% paid-user ratio.
 EXPECTED_PAID_STUDENT_COUNT = 502
+EXPECTED_AUDIT_LOG_COUNT = 42
 SHOWCASE_USERNAME = "jingyi_29"
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_]{3,32}$")
 REGISTRATION_OVERRIDES = {date(2026, 8, 27): 3, date(2026, 8, 28): 5}
@@ -270,6 +271,29 @@ def insert_jingyi_showcase(conn: sqlite3.Connection) -> None:
         conn.execute("UPDATE vocabulary_review_logs SET spelling_correct=?, requested_rating=?, applied_rating=? WHERE id=?", (int(last_rating == "known"), first_rating, last_rating, log_id))
         conn.execute("INSERT INTO vocabulary_daily_retry_queue (user_id,study_date,word_id,first_rating,last_rating,retry_count,queue_order,passed_at) VALUES (?,?,?,?,?,?,?,?)", (SHOWCASE_USERNAME, day.isoformat(), word_id, first_rating, last_rating, retry_count, slot + 1, passed_at.isoformat() if passed_at else None))
 
+def insert_admin_audit_logs(conn: sqlite3.Connection, people: list[Persona]) -> None:
+    """Create realistic, read-only historical entries for the admin audit page."""
+    admins = [person.username for person in people if person.role == "admin"]
+    students = [person.username for person in people if person.role == "user" and person.status == "active"]
+    actions = (
+        ("adjust_credits", {"delta": 30, "reason": "活动奖励补发"}),
+        ("reset_password", {"reason": "用户提交找回申请"}),
+        ("grant_membership", {"days": 30, "reason": "暑期活动补偿"}),
+        ("ban", {"reason": "异常请求待核验"}),
+        ("unban", {"reason": "核验通过，恢复使用"}),
+        ("set_role", {"role": "user", "reason": "权限核对后恢复普通账号"}),
+        ("revoke_membership", {"reason": "重复权益已回收"}),
+        ("adjust_credits", {"delta": -20, "reason": "重复发放积分回收"}),
+    )
+    for index in range(EXPECTED_AUDIT_LOG_COUNT):
+        action, detail = actions[index % len(actions)]
+        target = SHOWCASE_USERNAME if index in {6, 22, 38} else students[(index * 47 + 13) % len(students)]
+        day = START + timedelta(days=index + (1 if index >= 24 else 0))
+        conn.execute(
+            "INSERT INTO admin_audit_logs (actor_user_id,action,target_user_id,detail_json,created_at) VALUES (?,?,?,?,?)",
+            (admins[index % len(admins)], action, target, json.dumps(detail, ensure_ascii=False), ts(day, 9 + index % 9, (index * 7) % 60).isoformat()),
+        )
+
 def insert_credits_orders(conn: sqlite3.Connection, rng: random.Random, people: list[Persona], events: list[Spend]) -> tuple[int, int]:
     per_user: dict[str, list[Spend]] = defaultdict(list)
     for event in events: per_user[event.user_id].append(event)
@@ -318,6 +342,7 @@ def seed_database(db: Path, accounts: Path, *, reset: bool = False) -> dict[str,
             papers, attempts, logs, events, submitted = insert_learning(conn,rng,people)
             events += insert_writing_and_agent(conn,rng,people,submitted)
             insert_jingyi_showcase(conn)
+            insert_admin_audit_logs(conn, people)
             orders, paid = insert_credits_orders(conn,rng,people,events)
         write_accounts(accounts,people)
         return {"users":len(people),"admins":EXPECTED_ADMIN_COUNT,"papers":papers,"attempts":attempts,"vocabulary_logs":logs,"orders":orders,"paid_orders":paid}
@@ -338,6 +363,8 @@ def verify_database(db: Path) -> dict[str,int]:
         showcase_plan = conn.execute("SELECT COUNT(*) FROM study_plans WHERE user_id=? AND status='active'", (SHOWCASE_USERNAME,)).fetchone()[0]
         showcase_mindmaps = conn.execute("SELECT COUNT(*) FROM mindmaps WHERE user_id=?", (SHOWCASE_USERNAME,)).fetchone()[0]
         showcase_retries = conn.execute("SELECT COUNT(*) FROM vocabulary_daily_retry_queue WHERE user_id=?", (SHOWCASE_USERNAME,)).fetchone()[0]
+        audit_count = conn.execute("SELECT COUNT(*) FROM admin_audit_logs").fetchone()[0]
+        audit_actions = {row[0] for row in conn.execute("SELECT DISTINCT action FROM admin_audit_logs")}
         generation = conn.execute("SELECT COUNT(*) FROM credit_ledger WHERE kind='spend' AND action IN ('generate_original','generate_light','generate_fresh','revise_paper')").fetchone()[0]
         first,last = conn.execute("SELECT MIN(generated_at),MAX(generated_at) FROM papers").fetchone(); fk = conn.execute("PRAGMA foreign_key_check").fetchall()
         if (users,admins)!=(EXPECTED_STUDENT_COUNT+EXPECTED_ADMIN_COUNT,EXPECTED_ADMIN_COUNT) or len(names)!=len(set(names)) or any(not USERNAME_PATTERN.fullmatch(name) for name in names): raise RuntimeError("invalid accounts")
@@ -345,8 +372,9 @@ def verify_database(db: Path) -> dict[str,int]:
         if len(balances)!=users or any(balance<0 or balance>900 or balance%10 for balance in balances): raise RuntimeError("invalid credits")
         if set(PRICES)-actions or generation!=papers or len(top)!=10 or not writing or packs!={p.id for p in PACKS} or paid_users != EXPECTED_PAID_STUDENT_COUNT: raise RuntimeError("incomplete monitoring data")
         if showcase_writing != 3 or showcase_plan != 1 or showcase_mindmaps != 2 or showcase_retries != 2: raise RuntimeError("incomplete showcase data")
+        if audit_count != EXPECTED_AUDIT_LOG_COUNT or len(audit_actions) < 7: raise RuntimeError("incomplete audit data")
         if not attempts or not logs or first[:10]!=START.isoformat() or last[:10]!=END.isoformat() or fk: raise RuntimeError("incomplete learning data")
-        return {"users":users,"admins":admins,"paid_users":paid_users,"papers":papers,"attempts":attempts,"vocabulary_logs":logs,"writing_results":writing,"showcase_writing":showcase_writing,"showcase_mindmaps":showcase_mindmaps,"top_spenders":len(top)}
+        return {"users":users,"admins":admins,"paid_users":paid_users,"papers":papers,"attempts":attempts,"vocabulary_logs":logs,"writing_results":writing,"showcase_writing":showcase_writing,"showcase_mindmaps":showcase_mindmaps,"audit_logs":audit_count,"top_spenders":len(top)}
     finally: conn.close()
 
 def main() -> None:
