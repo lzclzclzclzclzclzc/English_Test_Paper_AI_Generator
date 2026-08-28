@@ -12,6 +12,7 @@ import random
 import re
 import sqlite3
 import sys
+from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
@@ -34,9 +35,15 @@ END = date(2026, 9, 5)
 PASSWORD = "Demo2026!"
 RNG_SEED = 20260905
 QUESTION_TYPES = ("single_choice", "word_form", "sentence_rewriting")
-EXPECTED_STUDENT_COUNT = 80
+EXPECTED_STUDENT_COUNT = 151
 EXPECTED_ADMIN_COUNT = 3
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_]{3,32}$")
+MAX_STUDENT_REGISTRATIONS_PER_DAY = 6
+ACTIVE_REGISTRATION_DAYS = 44
+REGISTRATION_OVERRIDES = {
+    date(2026, 8, 27): 3,
+    date(2026, 8, 28): 5,
+}
 
 
 @dataclass(frozen=True)
@@ -51,32 +58,78 @@ class Persona:
 
 
 STUDENT_NAMES = (
-    "moonlight27", "studyfox88", "grammar_lab", "readingstar", "xiaoyu_7",
-    "leilei22", "mango_notes", "bluepencil9", "word_wizard", "quietowl_5",
-    "sunnydesk", "mapleleaf8", "campuscat", "paperplane3", "vocab_voyager",
-    "dawnreader", "orbit_notes", "panda_essay", "mintstudy", "grammar_grove",
-    "cloudybook", "brightpath", "studytrail6", "nova_reader", "littlecomet",
-    "quiz_harbor", "echo_pencil", "amberdesk", "silverpage", "focus_finch",
-    "xiaohe_9", "tutu_english", "yoyo_notes", "mimi_study", "lele_path",
-    "xiaoran_3", "anran_book", "wenwen_lab", "chenchen_q", "lulu_vocab",
-    "reading_river", "wordgarden", "campus_moon", "note_nest", "paper_sparrow",
-    "study_lantern", "quizmap_2", "grammarcloud", "vocab_lane", "essay_spark",
-    "bookishbee", "learnloop7", "brightink", "horizon_note", "orange_quiz",
-    "marblebook", "cobaltpen", "ivy_reader", "owlstudy8", "pocketwords",
-    "smartpencil", "tidy_notes", "grammartrail", "studybridge", "readingkite",
-    "wordcraft_6", "quizforest", "paperorbit", "littleatlas", "notebookfox",
-    "softfocus", "dailydrill", "starry_vocab", "readingship", "essaymint",
-    "study_comet", "grammarwave", "bluebooklet", "wordloom", "campus_echo",
+    "StudyMoss47", "LunaNotes_8", "BrightPath62", "QuizHarbor_5", "WordCraft93",
+    "PaperNova_2", "MapleStudy71", "EchoReader_4", "GrammarMint86", "BluePencil_7",
+    "LearnOrbit54", "VocabTrail_9", "CampusSpark38", "SunnyEssay_6", "FocusFinch72",
+    "ReadingComet_3", "NoteGarden58", "StudyBridge_4", "AmberBooklet91", "QuietOwl_6",
+    "GrammarWave37", "PaperLantern_8", "WordRiver64", "QuizForest_2", "StudyLoom85",
+    "NovaPencil_4", "BrightAtlas76", "LearnSparrow_9", "VocabHarbor53", "EssayCloud_7",
+    "ReadingKite48", "FocusMaple_2", "NoteComet67", "StudyMango_5", "WordOrbit94",
+    "PaperIvy_3", "GrammarDawn59", "QuizCobalt_8", "LearnEcho42", "BrightMint_6",
+    "orbit_5296", "vocab2026_73", "note_8842", "quiz_3917", "study_7605",
+    "reader_2486", "grammar_9153", "pencil_6740", "paper_8329", "word_5068",
+    "learn_4275", "comet_1936", "essay_8451", "book_6724", "campus_3089",
+    "daily_9542", "trail_4816", "owl_7360", "maple_2659", "amber_8147",
+    "river_5923", "cloud_1768", "fox_6491", "mint_9380", "atlas_2547",
+    "spark_7609", "harbor_4182", "lantern_6954", "nest_2038", "breeze_8741",
+    "story_3619", "drill_7256", "path_4903", "review_1587", "skill_8362",
+    "answer_2749", "focus_6195", "class_4830", "lesson_9074", "practice_3468",
+    "mason_notes_68", "ivy_reader24", "aria_study_91", "noah_words_47", "luca_paper_35",
+    "emma_quiz_82", "sophie_vocab_19", "oliver_essay_64", "mia_grammar_58", "leo_book_73",
+    "ava_pencil_26", "ethan_notes_84", "mila_reader_39", "jack_study_57", "lily_words_92",
+    "owen_paper_41", "nora_quiz_76", "finn_vocab_23", "ella_essay_69", "theo_grammar_54",
+    "zoe_book_87", "liam_pencil_32", "ruby_notes_61", "kai_reader_45", "iris_study_78",
+    "max_words_24", "jade_paper_56", "ryan_quiz_83", "clara_vocab_37", "hugo_essay_65",
+    "sana_grammar_29", "ben_book_74", "vera_pencil_46", "alex_notes_88", "yuki_reader_31",
+    "nico_study_62", "june_words_49", "eli_paper_75", "tess_quiz_28", "robin_vocab_63",
+    "xiaoyu_7", "leilei22", "yoyo_notes", "xiaohe_9", "tutu_english",
+    "mimi_study", "xiaoran_3", "anran_book", "wenwen_lab", "chenchen_q",
+    "lulu_vocab", "qiqi_reader", "nanan_words", "dingwe_26", "xiaomo_8",
+    "keke_paper", "yanyan_quiz", "zizi_grammar", "tianyu_5", "lingling_book",
+    "baobao_notes", "xiaoxin_4", "jiajia_study", "yueyue_words", "qingqing_6",
+    "xiaobei_9", "momo_reader", "anan_pencil", "xiaotao_2", "lele_vocab", "yiran_7",
 )
+
+
+def _registration_days() -> list[date]:
+    """Return a fixed, non-uniform student registration schedule."""
+    days = [START + timedelta(days=offset) for offset in range((END - START).days + 1)]
+    if not set(REGISTRATION_OVERRIDES).issubset(days):
+        raise RuntimeError("registration overrides must be inside the acceptance range")
+    if ACTIVE_REGISTRATION_DAYS > len(days) or ACTIVE_REGISTRATION_DAYS < len(REGISTRATION_OVERRIDES):
+        raise RuntimeError("invalid active registration day count")
+
+    rng = random.Random(RNG_SEED + EXPECTED_STUDENT_COUNT)
+    counts = {day: 0 for day in days}
+    counts.update(REGISTRATION_OVERRIDES)
+    candidates = [day for day in days if day not in REGISTRATION_OVERRIDES]
+    active_days = rng.sample(candidates, ACTIVE_REGISTRATION_DAYS - len(REGISTRATION_OVERRIDES))
+    for day in active_days:
+        counts[day] = 1
+
+    remaining = EXPECTED_STUDENT_COUNT - sum(counts.values())
+    while remaining:
+        available = [day for day in active_days if counts[day] < MAX_STUDENT_REGISTRATIONS_PER_DAY]
+        if not available:
+            raise RuntimeError("registration schedule cannot satisfy the student count")
+        counts[rng.choice(available)] += 1
+        remaining -= 1
+
+    scheduled = [day for day in days for _ in range(counts[day])]
+    if len(scheduled) != EXPECTED_STUDENT_COUNT or not any(count == 0 for count in counts.values()):
+        raise RuntimeError("registration schedule is incomplete")
+    if max(counts.values()) > MAX_STUDENT_REGISTRATIONS_PER_DAY:
+        raise RuntimeError("registration schedule exceeds the daily limit")
+    return scheduled
 
 
 def _personas() -> list[Persona]:
     people: list[Persona] = []
     groups = (
-        ("high", 20, 0.80, 9, 100),
-        ("steady", 30, 0.62, 6, 55),
-        ("light", 20, 0.45, 3, 22),
-        ("new", 10, 0.56, 1, 8),
+        ("high", 40, 0.80, 9, 100),
+        ("steady", 56, 0.62, 6, 55),
+        ("light", 35, 0.45, 3, 22),
+        ("new", 20, 0.56, 1, 8),
     )
     expected_students = sum(count for _, count, *_ in groups)
     if len(STUDENT_NAMES) != expected_students or expected_students != EXPECTED_STUDENT_COUNT:
@@ -86,11 +139,12 @@ def _personas() -> list[Persona]:
     invalid_names = [username for username in STUDENT_NAMES if not USERNAME_PATTERN.fullmatch(username)]
     if invalid_names:
         raise RuntimeError(f"student usernames do not meet account validation: {invalid_names}")
+    registration_days = _registration_days()
     cursor = 0
     for activity, count, accuracy, papers, words in groups:
         for offset in range(count):
             index = cursor + offset
-            created = START + timedelta(days=(index * 2) % 38)
+            created = registration_days[index]
             people.append(Persona(STUDENT_NAMES[index], activity, created, accuracy, papers, words))
         cursor += count
     people.extend((
@@ -286,8 +340,18 @@ def verify_database(db_path: Path) -> dict[str, int]:
         review_start, review_end = conn.execute("SELECT MIN(reviewed_at), MAX(reviewed_at) FROM vocabulary_review_logs").fetchone()
         fk_errors = conn.execute("PRAGMA foreign_key_check").fetchall()
         invalid_usernames = [username for username in usernames if not USERNAME_PATTERN.fullmatch(username)]
+        registration_counts = Counter({date.fromisoformat(day): count for day, count in conn.execute(
+            "SELECT substr(created_at, 1, 10), COUNT(*) FROM users WHERE role = 'user' GROUP BY substr(created_at, 1, 10)"
+        )})
+        expected_registration_counts = Counter(_registration_days())
         if (users, admins) != (EXPECTED_STUDENT_COUNT + EXPECTED_ADMIN_COUNT, EXPECTED_ADMIN_COUNT) or users != unique_usernames or invalid_usernames or not papers or not attempts or not logs:
             raise RuntimeError("acceptance database is incomplete")
+        if registration_counts != expected_registration_counts:
+            raise RuntimeError("student registration distribution is incomplete")
+        if any(count > MAX_STUDENT_REGISTRATIONS_PER_DAY for count in registration_counts.values()):
+            raise RuntimeError("student registration distribution exceeds the daily limit")
+        if registration_counts[date(2026, 8, 27)] != 3 or registration_counts[date(2026, 8, 28)] != 5:
+            raise RuntimeError("student registration distribution is missing the required daily variation")
         if start[:10] != START.isoformat() or end[:10] != END.isoformat():
             raise RuntimeError("paper timestamps are outside the acceptance range")
         if attempt_start[:10] != START.isoformat() or attempt_end[:10] != END.isoformat():
