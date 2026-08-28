@@ -1,8 +1,4 @@
-"""Build deterministic, fictional acceptance data for the local application.
-
-The generated database is deliberately separate from ``data/app.db``.  It is
-safe to regenerate with ``--reset`` and contains no real-person information.
-"""
+"""Deterministic fictional data for local acceptance demonstrations."""
 from __future__ import annotations
 
 import argparse
@@ -12,7 +8,7 @@ import random
 import re
 import sqlite3
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
@@ -21,30 +17,28 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from ai_engine.question_repo import QuestionRepo
 from backend.auth.password import hash_password
+from backend.services.credits.pricing import PRICES, price
+from backend.services.payment.packs import PACKS
 from shared import storage
 from shared.schemas import GenerateRequest, Paper, PaperItem, RevisedQuestion
-from ai_engine.question_repo import QuestionRepo
-
 
 DEFAULT_DB = ROOT / "data" / "acceptance-demo.db"
 DEFAULT_ACCOUNTS = ROOT / "data" / "acceptance-demo-accounts.csv"
 WORDLIST = ROOT / "data" / "vocabulary" / "national-core-plus-shanghai-extension.json"
-START = date(2026, 7, 15)
-END = date(2026, 9, 5)
-PASSWORD = "Demo2026!"
-RNG_SEED = 20260905
+START, END = date(2026, 7, 15), date(2026, 8, 31)
+PASSWORD, RNG_SEED = "Demo2026!", 20260831
 QUESTION_TYPES = ("single_choice", "word_form", "sentence_rewriting")
-EXPECTED_STUDENT_COUNT = 151
-EXPECTED_ADMIN_COUNT = 3
+EXPECTED_STUDENT_COUNT, EXPECTED_ADMIN_COUNT = 1091, 3
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_]{3,32}$")
-MAX_STUDENT_REGISTRATIONS_PER_DAY = 6
-ACTIVE_REGISTRATION_DAYS = 44
-REGISTRATION_OVERRIDES = {
-    date(2026, 8, 27): 3,
-    date(2026, 8, 28): 5,
-}
-
+REGISTRATION_OVERRIDES = {date(2026, 8, 27): 3, date(2026, 8, 28): 5}
+PAPER_ACTIONS = ("generate_original", "generate_light", "generate_fresh", "revise_paper")
+PAPER_SOURCES = ("generate", "dashboard", "daily", "themes", "custom", "mock", "mastery_review", "errorbook", "agent", "study_plan", "drill:grammar")
+INTENSITY = {"generate_original": "original", "generate_light": "light", "generate_fresh": "fresh", "revise_paper": "fresh"}
+VOCAB_PER_DAY = {"high": 8, "steady": 5, "light": 3, "new": 2, "admin": 4}
+FIRST_NAMES = ("Olivia", "Ethan", "Ava", "Liam", "Emma", "Noah", "Sophia", "Mason", "Isabella", "Lucas", "Mia", "Henry", "Amelia", "James", "Harper", "Benjamin", "Evelyn", "Alexander", "Ella", "Daniel", "Scarlett", "Michael", "Grace", "Sebastian", "Chloe", "Jack", "Victoria", "Owen", "Riley", "Wyatt", "Aria", "Leo", "Nora", "Julian", "Zoey", "Hudson", "Lily", "Ezra", "Hazel", "Mateo", "Layla", "Carter", "Ellie", "Isaac", "Violet", "Gabriel", "Aurora", "Anthony", "Lucy", "Dylan", "Claire", "Lincoln", "Stella", "Thomas", "Natalie", "Charles", "Alice", "Christopher", "Maya", "Josiah")
+SURNAMES = ("Bennett", "Holloway", "Whitaker", "Marlowe", "Everett", "Langford", "Sullivan", "Hawthorne", "Kensington", "Calloway", "Waverly", "Ashford", "Briarwood", "Fairmont", "Northwood", "Westbrook", "Alderidge", "Rosemont", "Bellamy", "Kingsley")
 
 @dataclass(frozen=True)
 class Persona:
@@ -52,334 +46,220 @@ class Persona:
     activity: str
     created_on: date
     accuracy: float
-    papers: int
-    vocabulary_words: int
     role: str = "user"
+    status: str = "active"
 
+@dataclass(frozen=True)
+class Spend:
+    user_id: str
+    action: str
+    amount: int
+    when: datetime
+    ref_type: str
+    ref_id: str
 
-STUDENT_NAMES = (
-    "OliviaStudy", "EthanReads", "AvaLearns", "LiamWrites", "EmmaQuizzes",
-    "NoahGrammar", "SophiaBooks", "MasonNotes", "IsabellaWords", "LucasPaper",
-    "MiaReader", "HenryEssay", "AmeliaVocab", "JamesPractice", "HarperLesson",
-    "BenjaminReview", "EvelynEnglish", "AlexanderStudy", "EllaReads", "DanielWrites",
-    "ScarlettQuiz", "MichaelGrammar", "GraceBooks", "SebastianNotes", "ChloeWords",
-    "JackPaper", "VictoriaReader", "OwenEssay", "RileyVocab", "WyattPractice",
-    "AriaLesson", "LeoReview", "NoraEnglish", "JulianStudy", "ZoeyReads",
-    "HudsonWrites", "LilyQuiz", "EzraGrammar", "HazelBooks", "MateoNotes",
-    "LaylaWords", "CarterPaper", "EllieReader", "IsaacEssay", "VioletVocab",
-    "GabrielPractice", "AuroraLesson", "AnthonyReview", "LucyEnglish", "DylanStudy",
-    "ClaireReads", "LincolnWrites", "StellaQuiz", "ThomasGrammar", "NatalieBooks",
-    "CharlesNotes", "AliceWords", "ChristopherPaper", "MayaReader", "JosiahEssay",
-    "PenelopeVocab", "AndrewPractice", "RubyLesson", "JoshuaReview", "IslaEnglish",
-    "NathanStudy", "IvyReads", "CalebWrites", "SadieQuiz", "RyanGrammar",
-    "ElenaBooks", "AdrianNotes", "LillianWords", "ConnorPaper", "BellaReader",
-    "AaronEssay", "SkylarVocab", "ChristianPractice", "PaisleyLesson", "JonathanReview",
-    "TaylorStudy", "MorganReads", "JordanLearns", "CaseyWrites", "CameronQuiz",
-    "RowanGrammar", "PeytonBooks", "AveryNotes", "DakotaWords", "QuinnPaper",
-    "BlakeReader", "ReeseEssay", "KendallVocab", "ParkerPractice", "BaileyLesson",
-    "FinleyReview", "SloaneEnglish", "EmersonStudy", "LoganReads", "HaydenWrites",
-    "SydneyQuiz", "MarleyGrammar", "ReaganBooks", "BrookeNotes", "CallieWords",
-    "SummerPaper", "TessaReader", "PaigeEssay", "WillaVocab", "FionaPractice",
-    "GeorgiaLesson", "VioletReview", "MadelineEnglish", "DaphneStudy", "CoraReads",
-    "GemmaWrites", "FreyaQuiz", "SelenaGrammar", "NaomiBooks", "PhoebeNotes",
-    "mila_notes", "oliver_reads", "emma_studies", "noah_writes", "sophia_quiz",
-    "lucas_grammar", "ava_books", "ethan_paper", "mia_reader", "james_essay",
-    "harper_vocab", "ben_practice", "lily_lessons", "leo_review", "nora_english",
-    "aria_study", "owen_reads", "chloe_writes", "jack_quiz", "grace_grammar",
-    "Oliver23", "Emma48", "StudyMia7", "NoahReads9", "Ava2026", "LiamStudy12",
-    "Sophia8", "MasonNotes5", "EllaReader27", "HenryQuiz3", "Chloe2026",
-)
-
-
-def _registration_days() -> list[date]:
-    """Return a fixed, non-uniform student registration schedule."""
-    days = [START + timedelta(days=offset) for offset in range((END - START).days + 1)]
-    if not set(REGISTRATION_OVERRIDES).issubset(days):
-        raise RuntimeError("registration overrides must be inside the acceptance range")
-    if ACTIVE_REGISTRATION_DAYS > len(days) or ACTIVE_REGISTRATION_DAYS < len(REGISTRATION_OVERRIDES):
-        raise RuntimeError("invalid active registration day count")
-
-    rng = random.Random(RNG_SEED + EXPECTED_STUDENT_COUNT)
-    counts = {day: 0 for day in days}
-    counts.update(REGISTRATION_OVERRIDES)
-    candidates = [day for day in days if day not in REGISTRATION_OVERRIDES]
-    active_days = rng.sample(candidates, ACTIVE_REGISTRATION_DAYS - len(REGISTRATION_OVERRIDES))
-    for day in active_days:
-        counts[day] = 1
-
-    remaining = EXPECTED_STUDENT_COUNT - sum(counts.values())
-    while remaining:
-        available = [day for day in active_days if counts[day] < MAX_STUDENT_REGISTRATIONS_PER_DAY]
-        if not available:
-            raise RuntimeError("registration schedule cannot satisfy the student count")
-        counts[rng.choice(available)] += 1
-        remaining -= 1
-
-    scheduled = [day for day in days for _ in range(counts[day])]
-    if len(scheduled) != EXPECTED_STUDENT_COUNT or not any(count == 0 for count in counts.values()):
-        raise RuntimeError("registration schedule is incomplete")
-    if max(counts.values()) > MAX_STUDENT_REGISTRATIONS_PER_DAY:
-        raise RuntimeError("registration schedule exceeds the daily limit")
-    return scheduled
-
-
-def _personas() -> list[Persona]:
-    people: list[Persona] = []
-    groups = (
-        ("high", 40, 0.80, 9, 100),
-        ("steady", 56, 0.62, 6, 55),
-        ("light", 35, 0.45, 3, 22),
-        ("new", 20, 0.56, 1, 8),
-    )
-    expected_students = sum(count for _, count, *_ in groups)
-    if len(STUDENT_NAMES) != expected_students or expected_students != EXPECTED_STUDENT_COUNT:
-        raise RuntimeError("student username list does not match the configured activity groups")
-    if len(set(STUDENT_NAMES)) != len(STUDENT_NAMES):
-        raise RuntimeError("student usernames must be unique")
-    invalid_names = [username for username in STUDENT_NAMES if not USERNAME_PATTERN.fullmatch(username)]
-    if invalid_names:
-        raise RuntimeError(f"student usernames do not meet account validation: {invalid_names}")
-    registration_days = _registration_days()
-    cursor = 0
-    for activity, count, accuracy, papers, words in groups:
-        for offset in range(count):
-            index = cursor + offset
-            created = registration_days[index]
-            people.append(Persona(STUDENT_NAMES[index], activity, created, accuracy, papers, words))
-        cursor += count
-    people.extend((
-        Persona("admin_zhou", "admin", START, 0.78, 4, 35, "admin"),
-        Persona("admin_li", "admin", START + timedelta(days=3), 0.72, 3, 28, "admin"),
-        Persona("admin_wang", "admin", START + timedelta(days=6), 0.75, 3, 30, "admin"),
-    ))
-    if sum(person.role == "admin" for person in people) != EXPECTED_ADMIN_COUNT:
-        raise RuntimeError("admin account list does not match the expected count")
-    return people
-
-
-def _timestamp(day: date, hour: int, minute: int = 0) -> datetime:
+def ts(day: date, hour: int, minute: int = 0) -> datetime:
     return datetime.combine(day, time(hour, minute), tzinfo=timezone.utc)
 
+def days_from(start: date) -> list[date]:
+    return [start + timedelta(days=i) for i in range((END - start).days + 1)]
 
-def _day_for(index: int, total: int) -> date:
-    span = (END - START).days
-    return START + timedelta(days=(index * span) // max(total - 1, 1))
+def student_names() -> list[str]:
+    pairs = [(first, surname) for first in FIRST_NAMES for surname in SURNAMES]
+    rng = random.Random(RNG_SEED + 17)
+    rng.shuffle(pairs)
+    names: list[str] = []
+    for i, (first, surname) in enumerate(pairs[:EXPECTED_STUDENT_COUNT]):
+        names.append(f"{first}_{surname.lower()}" if i % 16 == 0 else f"{first}{surname}{10 + (i * 7) % 90}" if i % 16 == 1 else f"{first}{surname}")
+    if len(names) != len(set(names)) or any(not USERNAME_PATTERN.fullmatch(name) for name in names):
+        raise RuntimeError("invalid fictional usernames")
+    return names
 
+def registration_days() -> list[date]:
+    all_days = days_from(START)
+    rng = random.Random(RNG_SEED + EXPECTED_STUDENT_COUNT)
+    counts = {day: 0 for day in all_days}
+    counts.update(REGISTRATION_OVERRIDES)
+    active = rng.sample([day for day in all_days if day not in counts or day not in REGISTRATION_OVERRIDES], 40)
+    for day in active:
+        counts[day] = 12
+    remaining = EXPECTED_STUDENT_COUNT - sum(counts.values())
+    while remaining:
+        choices = [day for day in active if counts[day] < 45]
+        if not choices:
+            raise RuntimeError("registration capacity exhausted")
+        counts[rng.choice(choices)] += 1
+        remaining -= 1
+    result = [day for day in all_days for _ in range(counts[day])]
+    if len(result) != EXPECTED_STUDENT_COUNT or sum(value == 0 for value in counts.values()) != 6:
+        raise RuntimeError("invalid registration schedule")
+    return result
 
-def _clear_existing(path: Path, accounts_path: Path) -> None:
-    if path.exists():
-        path.unlink()
-    if accounts_path.exists():
-        accounts_path.unlink()
+def personas() -> list[Persona]:
+    groups = (("high", 270, .80), ("steady", 410, .64), ("light", 270, .48), ("new", 141, .57))
+    names, created = student_names(), registration_days()
+    people: list[Persona] = []
+    cursor = 0
+    for activity, count, accuracy in groups:
+        for offset in range(count):
+            index = cursor + offset
+            people.append(Persona(names[index], activity, created[index], accuracy, status="banned" if index and index % 173 == 0 else "active"))
+        cursor += count
+    people += [Persona("admin_zhou", "admin", START, .79, "admin"), Persona("admin_li", "admin", START + timedelta(days=3), .74, "admin"), Persona("admin_wang", "admin", START + timedelta(days=6), .76, "admin")]
+    return people
 
+def clear(path: Path, accounts: Path) -> None:
+    if path.exists(): path.unlink()
+    if accounts.exists(): accounts.unlink()
 
-def _question_catalog() -> dict[str, list[str]]:
+def catalog() -> dict[str, list[str]]:
     repo = QuestionRepo(ROOT / "data" / "questions.db")
-    catalog = {kind: repo.filter_ids(question_types=[kind]) for kind in QUESTION_TYPES}
-    missing = [kind for kind, ids in catalog.items() if not ids]
-    if missing:
-        raise RuntimeError(f"question bank has no usable questions for: {', '.join(missing)}")
-    return catalog
+    result = {kind: repo.filter_ids(question_types=[kind]) for kind in QUESTION_TYPES}
+    if any(not ids for ids in result.values()): raise RuntimeError("question bank is incomplete")
+    return result
 
+def paper_days(person: Persona, user_index: int) -> list[date]:
+    result, day, seq = [], person.created_on, 0
+    while day <= END:
+        result.append(day)
+        day += timedelta(days=2 if (user_index + seq) % 2 == 0 else 3)
+        seq += 1
+    return result
 
-def _build_paper(repo: QuestionRepo, catalog: dict[str, list[str]], persona: Persona, seq: int, generated_at: datetime) -> tuple[Paper, list]:
+def add_spend(events: list[Spend], user: str, action: str, when: datetime, ref_type: str, ref_id: str, units: int = 0) -> None:
+    events.append(Spend(user, action, price(action, units), when, ref_type, ref_id))
+
+def insert_learning(conn: sqlite3.Connection, rng: random.Random, people: list[Persona]) -> tuple[int, int, int, list[Spend], list[tuple[str, str, datetime]]]:
+    repo, ids = QuestionRepo(ROOT / "data" / "questions.db"), catalog()
+    papers = attempts = logs = 0
+    events: list[Spend] = []
+    submitted: list[tuple[str, str, datetime]] = []
     pattern = ("single_choice", "single_choice", "single_choice", "word_form", "word_form", "sentence_rewriting")
-    ids = [catalog[kind][(seq * 11 + pos * 7) % len(catalog[kind])] for pos, kind in enumerate(pattern)]
-    source = repo.get_by_ids(ids)
-    questions = [source[item_id] for item_id in ids]
-    distribution = {kind: pattern.count(kind) for kind in QUESTION_TYPES}
-    request = GenerateRequest(
-        mode="fresh", total_questions=len(questions), question_types=list(QUESTION_TYPES),
-        type_distribution=distribution, revision_intensity="original", user_id=persona.username,
-    )
-    items = [
-        PaperItem(index=index, source_question_id=question.id, revision_mode="original",
-                  question=RevisedQuestion.model_validate(question.model_dump()))
-        for index, question in enumerate(questions, start=1)
-    ]
-    paper = Paper(
-        paper_id=f"acceptance-paper-{persona.username}-{seq:03d}",
-        title=f"暑期英语巩固练习 · 第 {seq + 1} 组",
-        generated_at=generated_at,
-        request=request,
-        items=items,
-        metadata={"seed": "acceptance-demo", "activity": persona.activity},
-    )
-    return paper, questions
-
-
-def _insert_papers_and_attempts(conn: sqlite3.Connection, rng: random.Random, personas: list[Persona]) -> tuple[int, int]:
-    repo = QuestionRepo(ROOT / "data" / "questions.db")
-    catalog = _question_catalog()
-    paper_total = attempt_total = 0
-    for user_index, persona in enumerate(personas):
-        for seq in range(persona.papers):
-            day = _day_for(user_index * 9 + seq, len(personas) * 9)
-            if user_index == len(personas) - 1 and seq == persona.papers - 1:
-                day = END
-            generated_at = _timestamp(day, 9 + (seq % 6), 10)
-            paper, questions = _build_paper(repo, catalog, persona, seq, generated_at)
-            submitted = seq < max(1, round(persona.papers * (0.89 if persona.activity in {"high", "steady", "admin"} else 0.65)))
-            submitted_at = generated_at + timedelta(minutes=18 + seq * 2) if submitted else None
-            conn.execute(
-                "INSERT INTO papers (paper_id, user_id, title, generated_at, payload_json, submitted, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (paper.paper_id, persona.username, paper.title, generated_at.isoformat(), paper.model_dump_json(), int(submitted), submitted_at.isoformat() if submitted_at else None),
-            )
-            paper_total += 1
-            if not submitted:
-                continue
-            attempt_id = f"acceptance-attempt-{persona.username}-{seq:03d}"
-            conn.execute("INSERT INTO attempts (id, user_id, paper_id, answered_at) VALUES (?, ?, ?, ?)",
-                         (attempt_id, persona.username, paper.paper_id, submitted_at.isoformat()))
-            for item_index, question in enumerate(questions, start=1):
-                # Make the displayed mastery profile differ across personas and question types.
-                adjustment = {"single_choice": 0.05, "word_form": -0.06, "sentence_rewriting": -0.12}[question.question_type]
-                correct = int(rng.random() < max(0.08, min(0.94, persona.accuracy + adjustment)))
-                user_answer = json.dumps(question.answer if correct else "未掌握", ensure_ascii=False)
-                conn.execute(
-                    "INSERT INTO attempt_items (attempt_id, item_index, source_question_id, question_type, is_correct, kps_json, user_answer_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (attempt_id, item_index, question.id, question.question_type, correct,
-                     json.dumps(question.knowledge_point_ids, ensure_ascii=False), user_answer),
-                )
-            attempt_total += 1
-    return paper_total, attempt_total
-
-
-def _insert_vocabulary(conn: sqlite3.Connection, rng: random.Random, personas: list[Persona]) -> int:
-    word_ids = [row[0] for row in conn.execute("SELECT id FROM vocabulary_words WHERE is_active = 1 ORDER BY id")]
-    if not word_ids:
-        raise RuntimeError("vocabulary wordlist was not seeded")
-    logs = 0
-    for user_index, persona in enumerate(personas):
-        conn.execute("INSERT INTO vocabulary_settings (user_id, daily_new_limit) VALUES (?, ?)",
-                     (persona.username, 20 if persona.activity != "high" else 30))
-        count = persona.vocabulary_words
-        for position, word_id in enumerate(word_ids[(user_index * 37) % len(word_ids):] + word_ids[:(user_index * 37) % len(word_ids)]):
-            if position >= count:
-                break
-            introduced = START + timedelta(days=(position * 3 + user_index) % ((END - START).days + 1))
-            stage = 5 if position % 9 == 0 else 3 if position % 3 == 0 else 1 + position % 3
-            review_count = stage + 1 + position % 3
-            last_reviewed = min(END, introduced + timedelta(days=max(0, review_count - 1)))
-            due = last_reviewed + timedelta(days=storage.VOCABULARY_INTERVALS[stage - 1])
-            conn.execute(
-                "INSERT INTO vocabulary_progress (user_id, word_id, stage, introduced_at, last_reviewed_at, due_at, review_count) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (persona.username, word_id, stage, _timestamp(introduced, 8).isoformat(), _timestamp(last_reviewed, 20).isoformat(), _timestamp(due, 8).isoformat(), review_count),
-            )
-            for review in range(min(review_count, 4)):
-                reviewed = min(END, introduced + timedelta(days=review))
-                rating = "known" if review or position % 5 else "fuzzy"
-                conn.execute(
-                    "INSERT INTO vocabulary_review_logs (id, user_id, word_id, reviewed_at, spelling_correct, requested_rating, applied_rating, stage_after, next_due_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (f"vlog-{persona.username}-{position:03d}-{review}", persona.username, word_id,
-                     _timestamp(reviewed, 19, review).isoformat(), int(rating == "known"), rating, rating,
-                     min(stage, review + 1), _timestamp(reviewed + timedelta(days=1), 8).isoformat()),
-                )
+    for user_index, person in enumerate(people):
+        for seq, day in enumerate(paper_days(person, user_index)):
+            action, source = PAPER_ACTIONS[(user_index + seq) % 4], PAPER_SOURCES[(user_index * 3 + seq) % len(PAPER_SOURCES)]
+            mode = ("fresh", "remediation", "review")[(user_index + seq) % 3]
+            question_ids = [ids[kind][(seq * 11 + position * 7) % len(ids[kind])] for position, kind in enumerate(pattern)]
+            records = repo.get_by_ids(question_ids)
+            questions = [records[question_id] for question_id in question_ids]
+            generated = ts(day, 9 + seq % 6, 10)
+            request = GenerateRequest(mode=mode, total_questions=6, question_types=list(QUESTION_TYPES), type_distribution={kind: pattern.count(kind) for kind in QUESTION_TYPES}, revision_intensity=INTENSITY[action], user_id=person.username)
+            paper_id = f"acceptance-paper-{person.username}-{seq:03d}"
+            paper = Paper(paper_id=paper_id, title=f"暑期英语巩固练习 · 第 {seq + 1} 组", generated_at=generated, request=request, items=[PaperItem(index=i, source_question_id=q.id, revision_mode=INTENSITY[action], question=RevisedQuestion.model_validate(q.model_dump())) for i, q in enumerate(questions, 1)], metadata={"seed": "acceptance-demo", "activity": person.activity, "source": source, "generation_action": action})
+            done = seq == 0 or rng.random() < .90
+            answered = generated + timedelta(minutes=18 + seq % 20) if done else None
+            conn.execute("INSERT INTO papers (paper_id,user_id,title,generated_at,payload_json,submitted,submitted_at) VALUES (?,?,?,?,?,?,?)", (paper_id, person.username, paper.title, generated.isoformat(), paper.model_dump_json(), int(done), answered.isoformat() if answered else None))
+            add_spend(events, person.username, action, generated, "paper", paper_id, 6)
+            papers += 1
+            if done:
+                attempt_id, wrong = f"acceptance-attempt-{person.username}-{seq:03d}", None
+                conn.execute("INSERT INTO attempts (id,user_id,paper_id,answered_at) VALUES (?,?,?,?)", (attempt_id, person.username, paper_id, answered.isoformat()))
+                for item, question in enumerate(questions, 1):
+                    correct = int(rng.random() < max(.08, min(.94, person.accuracy + {"single_choice": .05, "word_form": -.06, "sentence_rewriting": -.12}[question.question_type])))
+                    wrong = wrong or (None if correct else question.id)
+                    conn.execute("INSERT INTO attempt_items (attempt_id,item_index,source_question_id,question_type,is_correct,kps_json,user_answer_json) VALUES (?,?,?,?,?,?,?)", (attempt_id, item, question.id, question.question_type, correct, json.dumps(question.knowledge_point_ids), json.dumps(question.answer if correct else "未掌握")))
+                if wrong and (user_index + seq) % 3 == 0: add_spend(events, person.username, "solution", answered + timedelta(minutes=2), "solution", f"{attempt_id}:{wrong}")
+                submitted.append((person.username, paper_id, answered)); attempts += 1
+        conn.execute("INSERT INTO vocabulary_settings (user_id,daily_new_limit) VALUES (?,?)", (person.username, 30 if person.activity == "high" else 20))
+        word_ids = [row[0] for row in conn.execute("SELECT id FROM vocabulary_words WHERE is_active=1 ORDER BY id")]
+        for day_index, day in enumerate(days_from(person.created_on)):
+            for slot in range(VOCAB_PER_DAY[person.activity]):
+                word_id = word_ids[(user_index * 53 + day_index * VOCAB_PER_DAY[person.activity] + slot) % len(word_ids)]
+                stage, completed = (5 if (day_index + slot) % 11 == 0 else 3), ts(day, 18, slot).isoformat()
+                conn.execute("INSERT OR IGNORE INTO vocabulary_progress (user_id,word_id,stage,introduced_at,last_reviewed_at,due_at,review_count) VALUES (?,?,?,?,?,?,?)", (person.username, word_id, stage, ts(day, 8).isoformat(), ts(day, 20).isoformat(), ts(min(END, day + timedelta(days=stage)), 8).isoformat(), stage))
+                conn.execute("INSERT INTO vocabulary_daily_cards (user_id,study_date,word_id,card_type,completed_at) VALUES (?,?,?,?,?)", (person.username, day.isoformat(), word_id, "new" if day_index < 2 or slot == 0 else "review", completed))
+                conn.execute("INSERT INTO vocabulary_review_logs (id,user_id,word_id,reviewed_at,spelling_correct,requested_rating,applied_rating,stage_after,next_due_at) VALUES (?,?,?,?,1,'known','known',?,?)", (f"vlog-{person.username}-{day:%Y%m%d}-{slot}", person.username, word_id, completed, stage, ts(min(END, day + timedelta(days=1)), 8).isoformat()))
                 logs += 1
-        # Current-day cards make the vocabulary screens useful immediately; some retain an open retry.
-        study_day = date(2026, 8, 14)
-        start_index = (user_index * 37) % len(word_ids)
-        for offset in range(6):
-            word_id = word_ids[(start_index + offset) % len(word_ids)]
-            completed = None if offset == 5 else _timestamp(study_day, 18, offset).isoformat()
-            conn.execute("INSERT OR IGNORE INTO vocabulary_daily_cards (user_id, study_date, word_id, card_type, completed_at) VALUES (?, ?, ?, ?, ?)",
-                         (persona.username, study_day.isoformat(), word_id, "review" if offset < 2 else "new", completed))
-        if user_index % 4 == 0:
-            word_id = word_ids[(start_index + 5) % len(word_ids)]
-            conn.execute("INSERT OR IGNORE INTO vocabulary_daily_retry_queue (user_id, study_date, word_id, first_rating, last_rating, retry_count, queue_order, passed_at) VALUES (?, ?, ?, 'fuzzy', 'fuzzy', 1, 1, NULL)",
-                         (persona.username, study_day.isoformat(), word_id))
-    return logs
+            if day_index % 9 == 0: add_spend(events, person.username, "vocab_example", ts(day, 20), "vocab_word", f"{person.username}:{day}:example")
+    return papers, attempts, logs, events, submitted
 
+def insert_writing_and_agent(conn: sqlite3.Connection, rng: random.Random, people: list[Persona], submitted: list[tuple[str, str, datetime]]) -> list[Spend]:
+    events: list[Spend] = []
+    for index, (user, paper, when) in enumerate(submitted):
+        if index % 11: continue
+        score = round(60 + rng.random() * 32, 1); content = round(score * .36, 1); language = round(score * .34, 1)
+        conn.execute("INSERT INTO writing_grade_results (id,user_id,paper_id,item_index,user_essay,total_score,content_score,language_score,organization_score,word_count,level,content_analysis,language_analysis,organization_analysis,overall_comment,revised_version,graded_at) VALUES (?,?,?,1,?,?,?,?,?,?,?,?,?,?,?,?,?)", (f"demo-writing-{index:05d}", user, paper, "Fictional acceptance writing sample.", score, content, language, round(score-content-language,1), 120 + index % 160, "A" if score >= 75 else "B", "内容完整。", "表达准确。", "结构清晰。", "验收用虚构批改。", "Fictional revision.", when.isoformat()))
+        add_spend(events, user, "writing_grade", when, "writing", paper)
+    for index, person in enumerate(people):
+        for seq in range(3 if index < 10 else 1 + int(index % 5 == 0)):
+            add_spend(events, person.username, "agent_message", ts(min(END, person.created_on + timedelta(days=seq * 9 + index % 4)), 21, seq), "agent", f"{person.username}:{seq}")
+    return events
 
-def _write_accounts(path: Path, personas: list[Persona]) -> None:
-    with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=["username", "password", "role", "activity", "created_on"])
-        writer.writeheader()
-        for person in personas:
-            writer.writerow({"username": person.username, "password": PASSWORD, "role": person.role,
-                             "activity": person.activity, "created_on": person.created_on.isoformat()})
+def insert_credits_orders(conn: sqlite3.Connection, rng: random.Random, people: list[Persona], events: list[Spend]) -> tuple[int, int]:
+    per_user: dict[str, list[Spend]] = defaultdict(list)
+    for event in events: per_user[event.user_id].append(event)
+    packs, purchases = {pack.id: pack for pack in PACKS}, defaultdict(list)
+    orders = paid = 0
+    for index, person in enumerate(people):
+        if person.role == "user" and index % 8 == 0:
+            pack = packs[("starter", "standard", "annual")[index % 3]]; day = min(END, person.created_on + timedelta(days=2 + index % 9)); order = f"DEMO{index:05d}PAID"
+            conn.execute("INSERT INTO orders (out_trade_no,user_id,pack_id,amount_cents,credits,status,channel,qr_code,pay_url,alipay_trade_no,created_at,expires_at,paid_at) VALUES (?,?,?,?,?,'PAID','qr','demo://qr','demo://pay',?,?,?,?)", (order, person.username, pack.id, pack.amount_cents, pack.credits, f"TRADE{index:05d}", ts(day,10).isoformat(), ts(day,10,30).isoformat(), ts(day,10,5).isoformat()))
+            purchases[person.username].append((ts(day,10,5), order, pack.credits, pack.id)); orders += 1; paid += 1
+        elif person.role == "user" and index % 97 == 0:
+            pack, day, status = packs["starter"], min(END, person.created_on + timedelta(days=1)), "EXPIRED" if index % 2 else "CREATED"
+            conn.execute("INSERT INTO orders (out_trade_no,user_id,pack_id,amount_cents,credits,status,channel,qr_code,pay_url,created_at,expires_at) VALUES (?,?,?,?,?,?, 'qr','demo://qr','demo://pay',?,?)", (f"DEMO{index:05d}{status}", person.username, pack.id, pack.amount_cents, pack.credits, status, ts(day,11).isoformat(), ts(day,11,30).isoformat())); orders += 1
+    for person in people:
+        spent = sorted(per_user[person.username], key=lambda e:(e.when,e.ref_id)); current = rng.randrange(91) * 10 + sum(e.amount for e in spent); target = current - sum(e.amount for e in spent)
+        conn.execute("INSERT INTO credit_accounts (user_id,balance,daily_balance,daily_date,updated_at) VALUES (?,?,0,?,?)", (person.username,target,END.isoformat(),ts(END,23,59).isoformat()))
+        conn.execute("INSERT INTO credit_ledger (user_id,delta,bucket,balance_after,kind,ref_type,ref_id,note,created_at) VALUES (?,?,'balance',?,'admin_adjust','demo_seed',?,'验收初始积分',?)", (person.username,current,current,f"seed:{person.username}",ts(START,0).isoformat()))
+        for when, order, credits, pack_id in purchases[person.username]:
+            current += credits; conn.execute("INSERT INTO credit_ledger (user_id,delta,bucket,balance_after,kind,ref_type,ref_id,note,created_at) VALUES (?,?,'balance',?,'purchase','order',?,?,?)", (person.username,credits,current,order,f"购买积分包 {pack_id}",when.isoformat()))
+        for event in spent:
+            current -= event.amount; conn.execute("INSERT INTO credit_ledger (user_id,delta,bucket,balance_after,kind,action,ref_type,ref_id,note,created_at) VALUES (?,?,'balance',?,'spend',?,?,?,?,?)", (person.username,-event.amount,current,event.action,event.ref_type,event.ref_id,PRICES[event.action].label,event.when.isoformat()))
+        purchase_total = sum(row[2] for row in purchases[person.username])
+        if purchase_total:
+            current -= purchase_total; conn.execute("INSERT INTO credit_ledger (user_id,delta,bucket,balance_after,kind,ref_type,ref_id,note,created_at) VALUES (?,?,'balance',?,'admin_adjust','demo_reconcile',?,'验收余额校准',?)", (person.username,-purchase_total,current,f"reconcile:{person.username}",ts(END,23,59).isoformat()))
+        if current != target: raise RuntimeError("credit reconciliation failed")
+    return orders, paid
 
+def write_accounts(path: Path, people: list[Persona]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=("username","password","role","activity","created_on","status")); writer.writeheader()
+        for person in people: writer.writerow({"username":person.username,"password":PASSWORD,"role":person.role,"activity":person.activity,"created_on":person.created_on.isoformat(),"status":person.status})
 
-def seed_database(db_path: Path, accounts_path: Path, *, reset: bool = False) -> dict[str, int]:
-    if db_path.exists() and not reset:
-        raise FileExistsError(f"{db_path} already exists; rerun with --reset to replace it")
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    if reset:
-        _clear_existing(db_path, accounts_path)
-    storage.set_db_path(db_path)
+def seed_database(db: Path, accounts: Path, *, reset: bool = False) -> dict[str,int]:
+    if db.exists() and not reset: raise FileExistsError(f"{db} already exists; rerun with --reset")
+    db.parent.mkdir(parents=True, exist_ok=True)
+    if reset: clear(db, accounts)
+    storage.set_db_path(db)
     try:
-        storage.init_db()
-        storage.seed_vocabulary_from_json(WORDLIST)
-        personas = _personas()
-        password_hash = hash_password(PASSWORD)
-        rng = random.Random(RNG_SEED)
+        storage.init_db(); storage.seed_vocabulary_from_json(WORDLIST)
+        people, rng = personas(), random.Random(RNG_SEED); password = hash_password(PASSWORD)
         with storage.connect() as conn:
-            for person in personas:
-                conn.execute("INSERT INTO users (id, username, password_hash, created_at, role, status) VALUES (?, ?, ?, ?, ?, 'active')",
-                             (person.username, person.username, password_hash, _timestamp(person.created_on, 9).isoformat(), person.role))
-            papers, attempts = _insert_papers_and_attempts(conn, rng, personas)
-            logs = _insert_vocabulary(conn, rng, personas)
-        _write_accounts(accounts_path, personas)
-        return {"users": len(personas), "admins": sum(person.role == "admin" for person in personas), "papers": papers, "attempts": attempts, "vocabulary_logs": logs}
-    finally:
-        storage.set_db_path(None)
+            for person in people: conn.execute("INSERT INTO users (id,username,password_hash,created_at,role,status) VALUES (?,?,?,?,?,?)", (person.username,person.username,password,ts(person.created_on,9).isoformat(),person.role,person.status))
+            papers, attempts, logs, events, submitted = insert_learning(conn,rng,people)
+            events += insert_writing_and_agent(conn,rng,people,submitted)
+            orders, paid = insert_credits_orders(conn,rng,people,events)
+        write_accounts(accounts,people)
+        return {"users":len(people),"admins":EXPECTED_ADMIN_COUNT,"papers":papers,"attempts":attempts,"vocabulary_logs":logs,"orders":orders,"paid_orders":paid}
+    finally: storage.set_db_path(None)
 
-
-def verify_database(db_path: Path) -> dict[str, int]:
-    conn = sqlite3.connect(db_path)
+def verify_database(db: Path) -> dict[str,int]:
+    conn = sqlite3.connect(db)
     try:
-        users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-        admins = conn.execute("SELECT COUNT(*) FROM users WHERE role = 'admin'").fetchone()[0]
-        papers = conn.execute("SELECT COUNT(*) FROM papers").fetchone()[0]
-        attempts = conn.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]
-        logs = conn.execute("SELECT COUNT(*) FROM vocabulary_review_logs").fetchone()[0]
-        unique_usernames = conn.execute("SELECT COUNT(DISTINCT username) FROM users").fetchone()[0]
-        usernames = [row[0] for row in conn.execute("SELECT username FROM users")]
-        start, end = conn.execute("SELECT MIN(generated_at), MAX(generated_at) FROM papers").fetchone()
-        attempt_start, attempt_end = conn.execute("SELECT MIN(answered_at), MAX(answered_at) FROM attempts").fetchone()
-        review_start, review_end = conn.execute("SELECT MIN(reviewed_at), MAX(reviewed_at) FROM vocabulary_review_logs").fetchone()
-        fk_errors = conn.execute("PRAGMA foreign_key_check").fetchall()
-        invalid_usernames = [username for username in usernames if not USERNAME_PATTERN.fullmatch(username)]
-        registration_counts = Counter({date.fromisoformat(day): count for day, count in conn.execute(
-            "SELECT substr(created_at, 1, 10), COUNT(*) FROM users WHERE role = 'user' GROUP BY substr(created_at, 1, 10)"
-        )})
-        expected_registration_counts = Counter(_registration_days())
-        if (users, admins) != (EXPECTED_STUDENT_COUNT + EXPECTED_ADMIN_COUNT, EXPECTED_ADMIN_COUNT) or users != unique_usernames or invalid_usernames or not papers or not attempts or not logs:
-            raise RuntimeError("acceptance database is incomplete")
-        if registration_counts != expected_registration_counts:
-            raise RuntimeError("student registration distribution is incomplete")
-        if any(count > MAX_STUDENT_REGISTRATIONS_PER_DAY for count in registration_counts.values()):
-            raise RuntimeError("student registration distribution exceeds the daily limit")
-        if registration_counts[date(2026, 8, 27)] != 3 or registration_counts[date(2026, 8, 28)] != 5:
-            raise RuntimeError("student registration distribution is missing the required daily variation")
-        if start[:10] != START.isoformat() or end[:10] != END.isoformat():
-            raise RuntimeError("paper timestamps are outside the acceptance range")
-        if attempt_start[:10] != START.isoformat() or attempt_end[:10] != END.isoformat():
-            raise RuntimeError("attempt timestamps are outside the acceptance range")
-        if review_start[:10] != START.isoformat() or review_end[:10] != END.isoformat():
-            raise RuntimeError("vocabulary timestamps are outside the acceptance range")
-        if fk_errors:
-            raise RuntimeError(f"foreign-key validation failed: {fk_errors[:3]}")
-        return {"users": users, "admins": admins, "papers": papers, "attempts": attempts, "vocabulary_logs": logs}
-    finally:
-        conn.close()
-
+        users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]; admins = conn.execute("SELECT COUNT(*) FROM users WHERE role='admin'").fetchone()[0]
+        papers = conn.execute("SELECT COUNT(*) FROM papers").fetchone()[0]; attempts = conn.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]; logs = conn.execute("SELECT COUNT(*) FROM vocabulary_review_logs").fetchone()[0]
+        names = [r[0] for r in conn.execute("SELECT username FROM users")]
+        counts = Counter({date.fromisoformat(day):count for day,count in conn.execute("SELECT substr(created_at,1,10),COUNT(*) FROM users WHERE role='user' GROUP BY substr(created_at,1,10)")})
+        expected = Counter(registration_days()); actions = {r[0] for r in conn.execute("SELECT DISTINCT action FROM credit_ledger WHERE kind='spend'")}
+        balances = [r[0] for r in conn.execute("SELECT balance FROM credit_accounts")]; top = conn.execute("SELECT user_id FROM credit_ledger WHERE kind='spend' GROUP BY user_id HAVING SUM(-delta)>0 ORDER BY SUM(-delta) DESC LIMIT 10").fetchall()
+        packs = {r[0] for r in conn.execute("SELECT DISTINCT pack_id FROM orders WHERE status='PAID'")}; writing = conn.execute("SELECT COUNT(*) FROM writing_grade_results").fetchone()[0]
+        generation = conn.execute("SELECT COUNT(*) FROM credit_ledger WHERE kind='spend' AND action IN ('generate_original','generate_light','generate_fresh','revise_paper')").fetchone()[0]
+        first,last = conn.execute("SELECT MIN(generated_at),MAX(generated_at) FROM papers").fetchone(); fk = conn.execute("PRAGMA foreign_key_check").fetchall()
+        if (users,admins)!=(EXPECTED_STUDENT_COUNT+EXPECTED_ADMIN_COUNT,EXPECTED_ADMIN_COUNT) or len(names)!=len(set(names)) or any(not USERNAME_PATTERN.fullmatch(name) for name in names): raise RuntimeError("invalid accounts")
+        if counts!=expected or counts[date(2026,8,27)]!=3 or counts[date(2026,8,28)]!=5: raise RuntimeError("invalid registrations")
+        if len(balances)!=users or any(balance<0 or balance>900 or balance%10 for balance in balances): raise RuntimeError("invalid credits")
+        if set(PRICES)-actions or generation!=papers or len(top)!=10 or not writing or packs!={p.id for p in PACKS}: raise RuntimeError("incomplete monitoring data")
+        if not attempts or not logs or first[:10]!=START.isoformat() or last[:10]!=END.isoformat() or fk: raise RuntimeError("incomplete learning data")
+        return {"users":users,"admins":admins,"papers":papers,"attempts":attempts,"vocabulary_logs":logs,"writing_results":writing,"top_spenders":len(top)}
+    finally: conn.close()
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate fictional acceptance data for July 15 to September 5, 2026.")
-    parser.add_argument("--db", type=Path, default=DEFAULT_DB, help="target app database (default: data/acceptance-demo.db)")
-    parser.add_argument("--accounts", type=Path, default=DEFAULT_ACCOUNTS, help="generated credentials CSV")
-    parser.add_argument("--reset", action="store_true", help="replace an existing target database")
-    parser.add_argument("--verify", action="store_true", help="verify an existing database without writing data")
+    parser = argparse.ArgumentParser(description="Generate fictional acceptance data for July 15 to August 31, 2026.")
+    parser.add_argument("--db",type=Path,default=DEFAULT_DB); parser.add_argument("--accounts",type=Path,default=DEFAULT_ACCOUNTS); parser.add_argument("--reset",action="store_true"); parser.add_argument("--verify",action="store_true")
     args = parser.parse_args()
-    if args.verify:
-        print(json.dumps(verify_database(args.db), ensure_ascii=False))
-        return
-    result = seed_database(args.db, args.accounts, reset=args.reset)
-    print(json.dumps(result, ensure_ascii=False))
-    print(f"database: {args.db}")
-    print(f"accounts: {args.accounts}")
+    result = verify_database(args.db) if args.verify else seed_database(args.db,args.accounts,reset=args.reset)
+    print(json.dumps(result,ensure_ascii=False))
+    if not args.verify: print(f"database: {args.db}\naccounts: {args.accounts}")
 
-
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()
