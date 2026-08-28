@@ -24,7 +24,7 @@ npm.cmd run dev
 - `data/acceptance-demo.db`：独立的用户数据，不会覆盖日常使用的 `data/app.db`；
 - `data/acceptance-demo-accounts.csv`：全部 154 个验收账号（151 名虚构普通用户、3 名管理员）。
 
-所有账号均使用密码 `Demo2026!`。管理员账号为 `admin_zhou`、`admin_li`、`admin_wang`，建议优先使用 `admin_zhou` 登录后台；普通用户可使用 `StudyMoss47`（高活跃）、`orbit_5296`（稳定）、`nora_quiz_76`（低活跃）或 `qiqi_reader`（新用户）查看不同活跃度的学习记录。用户名为虚构的混合大小写、数字、学习主题或邮箱本地部分风格标识，仍只使用字母、数字和下划线。
+所有账号均使用密码 `Demo2026!`。管理员账号为 `admin_zhou`、`admin_li`、`admin_wang`，建议优先使用 `admin_zhou` 登录后台；普通用户可使用 `OliviaStudy`（高活跃）、`LaylaWords`（稳定）、`SloaneEnglish`（低活跃）或 `Oliver23`（新用户）查看不同活跃度的学习记录。用户名为虚构的英文名与学习主题组合；大多数不含数字或下划线，少量采用邮箱本地部分风格或数字后缀，仍只使用字母、数字和下划线。
 
 普通用户注册时间按固定随机配额分布，部分日期没有新增，单日最多 6 人；其中 2026-08-27 新增 3 人、2026-08-28 新增 5 人。
 
