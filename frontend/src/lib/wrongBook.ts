@@ -72,6 +72,20 @@ export function loadWrongBook(userId: string): WrongBookEntry[] {
   return load(userId).entries
 }
 
+/** 是否已有本浏览器主动维护的错题本快照（空本也算）。 */
+export function hasWrongBookSnapshot(userId: string): boolean {
+  return localStorage.getItem(keyOf(userId)) !== null
+}
+
+/** 本地本子为空时，用数据库中的历史答题记录回填一次。 */
+export function restoreWrongBook(userId: string, entries: WrongBookEntry[]): WrongBookEntry[] {
+  const book = load(userId)
+  if (book.entries.length > 0) return book.entries
+  book.entries = entries.slice(0, MAX_ENTRIES)
+  save(userId, book)
+  return book.entries
+}
+
 /**
  * 交卷判分后记账：本次答错的题收进来（同源题去重、次数累加、最新在前），
  * 本次答对的题从本子里移出（重做答对即清账）。

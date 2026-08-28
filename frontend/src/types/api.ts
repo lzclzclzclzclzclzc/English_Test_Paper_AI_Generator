@@ -176,6 +176,21 @@ export interface GradeSubmissionResponse {
   items: GradeResultItem[]
 }
 
+export interface WrongBookHistoryEntry {
+  source_question_id: string
+  question: RevisedQuestion
+  revision_mode: RevisionMode
+  paper_id: string
+  paper_title: string
+  graded_at: string
+  user_answer: UserAnswerValue
+  times_wrong: number
+}
+
+export interface WrongBookHistoryResponse {
+  entries: WrongBookHistoryEntry[]
+}
+
 // ---- 试卷列表 ----
 
 export interface PaperListItem {

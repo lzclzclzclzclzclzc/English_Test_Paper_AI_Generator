@@ -1,5 +1,5 @@
 import { apiFetch } from '@/api/client'
-import type { GradeSubmissionRequest, GradeSubmissionResponse } from '@/types/api'
+import type { GradeSubmissionRequest, GradeSubmissionResponse, WrongBookHistoryResponse } from '@/types/api'
 
 /**
  * 提交答题并判分。items 必须覆盖试卷全部 index 恰好一次（缺/重/多 → 422）。
@@ -11,3 +11,7 @@ export const submitAttempt = (req: GradeSubmissionRequest) =>
 /** 取该试卷最新一次答题结果（用于复盘展示），未提交过返回 null。 */
 export const getAttemptByPaper = (paperId: string) =>
   apiFetch<GradeSubmissionResponse | null>(`/attempts/by-paper/${paperId}`)
+
+/** 从历史答题记录恢复错题本，供新浏览器或验收数据演示使用。 */
+export const getWrongBookHistory = () =>
+  apiFetch<WrongBookHistoryResponse>('/attempts/history/wrong-book')

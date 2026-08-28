@@ -14,6 +14,8 @@ from backend.schemas import (
     StoredAttempt,
     StoredAttemptItem,
     User,
+    WrongBookHistoryItem,
+    WrongBookHistoryResponse,
 )
 from backend.services.grading import compare
 from shared import storage
@@ -113,3 +115,11 @@ async def get_attempt_by_paper(
         for it in attempt["items"]
     ]
     return GradeSubmissionResponse(attempt_id=attempt["attempt_id"], items=items)
+
+
+@router.get("/history/wrong-book", response_model=WrongBookHistoryResponse)
+async def get_wrong_book_history(user: User = Depends(current_user)) -> WrongBookHistoryResponse:
+    """Persistent fallback for the browser-local wrong book."""
+    return WrongBookHistoryResponse(
+        entries=[WrongBookHistoryItem(**entry) for entry in storage.list_wrong_book_history(user.id)]
+    )
