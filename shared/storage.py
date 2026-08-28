@@ -1241,6 +1241,58 @@ def get_latest_attempt(paper_id: str, user_id: str) -> dict | None:
     return {"attempt_id": attempt_id, "items": items}
 
 
+def list_wrong_book_history(user_id: str, limit: int = 100) -> list[dict]:
+    """Rebuild the current wrong-book state from persisted attempt history.
+
+    The browser keeps its richer immediate cache in localStorage, but this
+    fallback makes historical mistakes available after changing devices or
+    opening a fresh acceptance-demo browser profile.
+    """
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT a.answered_at, a.paper_id, i.item_index, i.source_question_id,
+                   i.is_correct, i.user_answer_json, p.title, p.payload_json
+            FROM attempts a
+            JOIN attempt_items i ON i.attempt_id = a.id
+            JOIN papers p ON p.paper_id = a.paper_id AND p.user_id = a.user_id
+            WHERE a.user_id = ?
+            ORDER BY a.answered_at ASC, a.id ASC, i.item_index ASC
+            """,
+            (user_id,),
+        ).fetchall()
+    states: dict[str, dict] = {}
+    for row in rows:
+        question_id = row["source_question_id"]
+        if row["is_correct"]:
+            states.pop(question_id, None)
+            continue
+        payload = json.loads(row["payload_json"])
+        paper_item = next(
+            (
+                item for item in payload.get("items", [])
+                if item.get("index") == row["item_index"]
+                and item.get("source_question_id") == question_id
+            ),
+            None,
+        )
+        if paper_item is None:
+            continue
+        previous = states.get(question_id)
+        states[question_id] = {
+            "source_question_id": question_id,
+            "question": paper_item["question"],
+            "revision_mode": paper_item["revision_mode"],
+            "paper_id": row["paper_id"],
+            "paper_title": row["title"],
+            "graded_at": row["answered_at"],
+            "user_answer": json.loads(row["user_answer_json"]) if row["user_answer_json"] else "",
+            "times_wrong": (previous["times_wrong"] if previous else 0) + 1,
+        }
+    return sorted(states.values(), key=lambda item: item["graded_at"], reverse=True)[:max(1, min(limit, 100))]
+
+
 def write_attempt(attempt: StoredAttempt) -> str:
     init_db()
     attempt_id = uuid4().hex

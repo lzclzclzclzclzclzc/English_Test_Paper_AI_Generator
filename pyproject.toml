@@ -9,6 +9,7 @@ dependencies = [
     "html2text>=2024.2.26",
     "pydantic>=2.6",
     "pydantic-settings>=2.2",
+    "openai-agents>=0.6",
     "typer>=0.12",
 ]
 

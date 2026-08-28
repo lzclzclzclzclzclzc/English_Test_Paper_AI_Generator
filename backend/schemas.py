@@ -86,6 +86,21 @@ class GradeSubmissionResponse(BaseModel):
     items: list[GradeResultItem]
 
 
+class WrongBookHistoryItem(BaseModel):
+    source_question_id: str
+    question: RevisedQuestion
+    revision_mode: RevisionMode
+    paper_id: str
+    paper_title: str
+    graded_at: datetime
+    user_answer: UserAnswerValue
+    times_wrong: int
+
+
+class WrongBookHistoryResponse(BaseModel):
+    entries: list[WrongBookHistoryItem]
+
+
 class WritingGradeItem(BaseModel):
     index: int = Field(ge=1)
     user_essay: str = Field(min_length=1, max_length=2000)

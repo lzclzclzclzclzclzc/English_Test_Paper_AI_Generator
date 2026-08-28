@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getReadiness } from '@/api/health'
+import { getWrongBookHistory } from '@/api/attempts'
 import { useAuth } from '@/hooks/useAuth'
 import { useGeneratePaper } from '@/hooks/useGeneratePaper'
-import { loadWrongBook, removeEntry, toWrongItemRefs, type WrongBookEntry } from '@/lib/wrongBook'
+import { hasWrongBookSnapshot, loadWrongBook, removeEntry, restoreWrongBook, toWrongItemRefs, type WrongBookEntry } from '@/lib/wrongBook'
 import { stopAll as stopTTS } from '@/lib/tts'
 import { PageHeader } from '@/components/PageHeader'
 import { PipelineProgress } from '@/components/PipelineProgress'
@@ -25,13 +26,32 @@ export function ReviewPage() {
   const [extraQuery, setExtraQuery] = useState('')
   const [serverError, setServerError] = useState<string | null>(null)
 
+  const history = useQuery({
+    queryKey: ['attempts', 'wrong-book-history', user?.id],
+    queryFn: getWrongBookHistory,
+    enabled: Boolean(user?.id),
+    staleTime: 60_000,
+  })
+
   // 用户加载后读错题本，默认全选
   useEffect(() => {
     if (!user?.id) return
     const loaded = loadWrongBook(user.id)
-    setEntries(loaded)
-    setSelected(new Set(loaded.map((e) => e.sourceQuestionId)))
-  }, [user?.id])
+    const restored = loaded.length || hasWrongBookSnapshot(user.id) || !history.data
+      ? loaded
+      : restoreWrongBook(user.id, history.data.entries.map((entry) => ({
+          sourceQuestionId: entry.source_question_id,
+          question: entry.question,
+          revisionMode: entry.revision_mode,
+          paperId: entry.paper_id,
+          paperTitle: entry.paper_title,
+          gradedAt: entry.graded_at,
+          userAnswer: entry.user_answer,
+          timesWrong: entry.times_wrong,
+        })))
+    setEntries(restored)
+    setSelected(new Set(restored.map((e) => e.sourceQuestionId)))
+  }, [user?.id, history.data])
 
   // 离开错题本页面时停止所有 TTS 播放
   useEffect(() => () => stopTTS(), [])
