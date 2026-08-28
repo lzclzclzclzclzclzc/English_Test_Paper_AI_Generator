@@ -31,6 +31,8 @@ START, END = date(2026, 7, 15), date(2026, 8, 31)
 PASSWORD, RNG_SEED = "Demo2026!", 20260831
 QUESTION_TYPES = ("single_choice", "word_form", "sentence_rewriting")
 EXPECTED_STUDENT_COUNT, EXPECTED_ADMIN_COUNT = 1091, 3
+# 502 / 1091 = 46.01%; the dashboard rounds this to a 46% paid-user ratio.
+EXPECTED_PAID_STUDENT_COUNT = 502
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_]{3,32}$")
 REGISTRATION_OVERRIDES = {date(2026, 8, 27): 3, date(2026, 8, 28): 5}
 PAPER_ACTIONS = ("generate_original", "generate_light", "generate_fresh", "revise_paper")
@@ -206,9 +208,10 @@ def insert_credits_orders(conn: sqlite3.Connection, rng: random.Random, people: 
     per_user: dict[str, list[Spend]] = defaultdict(list)
     for event in events: per_user[event.user_id].append(event)
     packs, purchases = {pack.id: pack for pack in PACKS}, defaultdict(list)
+    paid_student_indexes = set(random.Random(RNG_SEED + 46).sample(range(EXPECTED_STUDENT_COUNT), EXPECTED_PAID_STUDENT_COUNT))
     orders = paid = 0
     for index, person in enumerate(people):
-        if person.role == "user" and index % 8 == 0:
+        if person.role == "user" and index in paid_student_indexes:
             pack = packs[("starter", "standard", "annual")[index % 3]]; day = min(END, person.created_on + timedelta(days=2 + index % 9)); order = f"DEMO{index:05d}PAID"
             conn.execute("INSERT INTO orders (out_trade_no,user_id,pack_id,amount_cents,credits,status,channel,qr_code,pay_url,alipay_trade_no,created_at,expires_at,paid_at) VALUES (?,?,?,?,?,'PAID','qr','demo://qr','demo://pay',?,?,?,?)", (order, person.username, pack.id, pack.amount_cents, pack.credits, f"TRADE{index:05d}", ts(day,10).isoformat(), ts(day,10,30).isoformat(), ts(day,10,5).isoformat()))
             purchases[person.username].append((ts(day,10,5), order, pack.credits, pack.id)); orders += 1; paid += 1
@@ -227,6 +230,8 @@ def insert_credits_orders(conn: sqlite3.Connection, rng: random.Random, people: 
         if purchase_total:
             current -= purchase_total; conn.execute("INSERT INTO credit_ledger (user_id,delta,bucket,balance_after,kind,ref_type,ref_id,note,created_at) VALUES (?,?,'balance',?,'admin_adjust','demo_reconcile',?,'验收余额校准',?)", (person.username,-purchase_total,current,f"reconcile:{person.username}",ts(END,23,59).isoformat()))
         if current != target: raise RuntimeError("credit reconciliation failed")
+    if paid != EXPECTED_PAID_STUDENT_COUNT:
+        raise RuntimeError("invalid paid-user count")
     return orders, paid
 
 def write_accounts(path: Path, people: list[Persona]) -> None:
@@ -261,14 +266,15 @@ def verify_database(db: Path) -> dict[str,int]:
         expected = Counter(registration_days()); actions = {r[0] for r in conn.execute("SELECT DISTINCT action FROM credit_ledger WHERE kind='spend'")}
         balances = [r[0] for r in conn.execute("SELECT balance FROM credit_accounts")]; top = conn.execute("SELECT user_id FROM credit_ledger WHERE kind='spend' GROUP BY user_id HAVING SUM(-delta)>0 ORDER BY SUM(-delta) DESC LIMIT 10").fetchall()
         packs = {r[0] for r in conn.execute("SELECT DISTINCT pack_id FROM orders WHERE status='PAID'")}; writing = conn.execute("SELECT COUNT(*) FROM writing_grade_results").fetchone()[0]
+        paid_users = conn.execute("SELECT COUNT(DISTINCT user_id) FROM orders WHERE status='PAID'").fetchone()[0]
         generation = conn.execute("SELECT COUNT(*) FROM credit_ledger WHERE kind='spend' AND action IN ('generate_original','generate_light','generate_fresh','revise_paper')").fetchone()[0]
         first,last = conn.execute("SELECT MIN(generated_at),MAX(generated_at) FROM papers").fetchone(); fk = conn.execute("PRAGMA foreign_key_check").fetchall()
         if (users,admins)!=(EXPECTED_STUDENT_COUNT+EXPECTED_ADMIN_COUNT,EXPECTED_ADMIN_COUNT) or len(names)!=len(set(names)) or any(not USERNAME_PATTERN.fullmatch(name) for name in names): raise RuntimeError("invalid accounts")
         if counts!=expected or counts[date(2026,8,27)]!=3 or counts[date(2026,8,28)]!=5: raise RuntimeError("invalid registrations")
         if len(balances)!=users or any(balance<0 or balance>900 or balance%10 for balance in balances): raise RuntimeError("invalid credits")
-        if set(PRICES)-actions or generation!=papers or len(top)!=10 or not writing or packs!={p.id for p in PACKS}: raise RuntimeError("incomplete monitoring data")
+        if set(PRICES)-actions or generation!=papers or len(top)!=10 or not writing or packs!={p.id for p in PACKS} or paid_users != EXPECTED_PAID_STUDENT_COUNT: raise RuntimeError("incomplete monitoring data")
         if not attempts or not logs or first[:10]!=START.isoformat() or last[:10]!=END.isoformat() or fk: raise RuntimeError("incomplete learning data")
-        return {"users":users,"admins":admins,"papers":papers,"attempts":attempts,"vocabulary_logs":logs,"writing_results":writing,"top_spenders":len(top)}
+        return {"users":users,"admins":admins,"paid_users":paid_users,"papers":papers,"attempts":attempts,"vocabulary_logs":logs,"writing_results":writing,"top_spenders":len(top)}
     finally: conn.close()
 
 def main() -> None:
