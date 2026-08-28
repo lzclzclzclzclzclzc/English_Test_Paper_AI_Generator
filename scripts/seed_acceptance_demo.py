@@ -33,6 +33,7 @@ QUESTION_TYPES = ("single_choice", "word_form", "sentence_rewriting")
 EXPECTED_STUDENT_COUNT, EXPECTED_ADMIN_COUNT = 1091, 3
 # 502 / 1091 = 46.01%; the dashboard rounds this to a 46% paid-user ratio.
 EXPECTED_PAID_STUDENT_COUNT = 502
+SHOWCASE_USERNAME = "jingyi_29"
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_]{3,32}$")
 REGISTRATION_OVERRIDES = {date(2026, 8, 27): 3, date(2026, 8, 28): 5}
 PAPER_ACTIONS = ("generate_original", "generate_light", "generate_fresh", "revise_paper")
@@ -204,6 +205,71 @@ def insert_writing_and_agent(conn: sqlite3.Connection, rng: random.Random, peopl
             add_spend(events, person.username, "agent_message", ts(min(END, person.created_on + timedelta(days=seq * 9 + index % 4)), 21, seq), "agent", f"{person.username}:{seq}")
     return events
 
+def insert_jingyi_showcase(conn: sqlite3.Connection) -> None:
+    """Give one high-activity learner a coherent, inspectable acceptance story."""
+    paper_specs = (
+        (0, "暑期英语诊断卷：词汇与时态", "从基础时态和高频词汇开始复盘"),
+        (5, "非谓语动词与句型转换专项卷", "集中巩固不定式、动名词和被动语态"),
+        (8, "阶段复盘卷：阅读与书面表达", "阅读信息提取与书面表达同步训练"),
+        (12, "定语从句与阅读理解巩固卷", "梳理关系词选择和长难句理解"),
+        (14, "应用文写作表达训练", "练习邮件与活动通知中的衔接表达"),
+        (17, "开学前英语综合自测", "根据错题回顾暑期薄弱知识点"),
+    )
+    paper_titles: dict[int, str] = {}
+    for sequence, title, focus in paper_specs:
+        paper_id = f"acceptance-paper-{SHOWCASE_USERNAME}-{sequence:03d}"
+        row = conn.execute("SELECT payload_json FROM papers WHERE paper_id=? AND user_id=?", (paper_id, SHOWCASE_USERNAME)).fetchone()
+        if row is None:
+            raise RuntimeError("showcase paper is missing")
+        payload = json.loads(row[0])
+        payload["title"] = title
+        payload.setdefault("metadata", {}).update({"showcase": True, "learning_focus": focus})
+        conn.execute("UPDATE papers SET title=?, payload_json=? WHERE paper_id=?", (title, json.dumps(payload, ensure_ascii=False), paper_id))
+        paper_titles[sequence] = title
+
+    writing_rows = (
+        (0, "Last Saturday, I joined a school reading activity in the library. I chose a book about space and shared three new words with my classmates. The activity made me more confident about reading English every day.", 82.5, 30.0, 28.5, 24.0, "A", "内容完整，活动经过交代清楚。", "时态使用基本准确，可增加连接词。", "段落层次清晰。", "继续积累活动类表达，如 take part in 和 share with。"),
+        (5, "Dear Mike, I am writing to invite you to our English corner this Friday. We will discuss summer plans and play a word guessing game. It starts at 4 p.m. in Room 302. I hope you can join us.", 86.0, 31.5, 30.0, 24.5, "A", "邀请信息完整，目的明确。", "句式自然，个别表达可更丰富。", "格式规范，结尾得体。", "下次可尝试补充路线或联系方式。"),
+        (8, "Our class will hold a green campus activity next week. Students can bring reusable bottles and collect waste paper after class. I believe small actions can make our school cleaner and help us build good habits.", 88.5, 32.5, 31.0, 25.0, "A", "观点清楚，细节贴近校园生活。", "词汇使用准确，建议尝试更复杂的从句。", "结构完整，结尾有号召力。", "这是一篇完成度很高的应用文，可继续强化句式多样性。"),
+    )
+    for sequence, essay, score, content, language, organization, level, content_note, language_note, organization_note, comment in writing_rows:
+        paper_id = f"acceptance-paper-{SHOWCASE_USERNAME}-{sequence:03d}"
+        paper_row = conn.execute("SELECT generated_at FROM papers WHERE paper_id=? AND user_id=?", (paper_id, SHOWCASE_USERNAME)).fetchone()
+        if paper_row is None:
+            raise RuntimeError("showcase writing paper is missing")
+        graded_at = datetime.fromisoformat(paper_row[0]) + timedelta(minutes=35)
+        conn.execute(
+            "INSERT INTO writing_grade_results (id,user_id,paper_id,item_index,user_essay,total_score,content_score,language_score,organization_score,word_count,level,content_analysis,language_analysis,organization_analysis,overall_comment,revised_version,graded_at) VALUES (?,?,?,1,?,?,?,?,?,?,?,?,?,?,?,?,?) "
+            "ON CONFLICT(user_id,paper_id,item_index) DO UPDATE SET user_essay=excluded.user_essay,total_score=excluded.total_score,content_score=excluded.content_score,language_score=excluded.language_score,organization_score=excluded.organization_score,word_count=excluded.word_count,level=excluded.level,content_analysis=excluded.content_analysis,language_analysis=excluded.language_analysis,organization_analysis=excluded.organization_analysis,overall_comment=excluded.overall_comment,revised_version=excluded.revised_version,graded_at=excluded.graded_at",
+            (f"showcase-jingyi-writing-{sequence:03d}", SHOWCASE_USERNAME, paper_id, essay, score, content, language, organization, len(essay.split()), level, content_note, language_note, organization_note, comment, essay, graded_at.isoformat()),
+        )
+
+    plan_days = []
+    for index, sequence in enumerate((12, 13, 14, 15, 16, 17, 18), 1):
+        paper_id = f"acceptance-paper-{SHOWCASE_USERNAME}-{sequence:03d}"
+        title = paper_titles.get(sequence, f"暑期巩固练习 · 第 {sequence + 1} 组")
+        plan_days.append({"index": index, "date": (date(2026, 8, 19) + timedelta(days=index - 1)).isoformat(), "theme": "开学前综合复盘", "knowledge_points": ["grammar", "vocabulary"], "kp_names": ["语法基础", "核心词汇"], "question_types": list(QUESTION_TYPES), "total_questions": 6, "note": "已完成；根据错题调整下一日复习重点。", "paper_id": paper_id, "paper_title": title})
+    plan = {"total_days": 7, "days": plan_days}
+    conn.execute("INSERT INTO study_plans (id,user_id,created_at,status,total_days,plan_json) VALUES (?,?,?,'active',?,?)", ("showcase-jingyi-plan", SHOWCASE_USERNAME, ts(date(2026, 8, 18), 20).isoformat(), 7, json.dumps(plan, ensure_ascii=False)))
+
+    mindmaps = (
+        ("showcase-jingyi-grammar", "非谓语动词复习框架", "非谓语动词", "# 非谓语动词\n\n- 不定式：表目的、将来\n- 动名词：作主语或宾语\n- 分词：作定语、状语\n\n## 易错提醒\n\n- avoid 后接动名词\n- decide 后接不定式\n- 被动含义优先判断过去分词", date(2026, 8, 18)),
+        ("showcase-jingyi-writing-map", "应用文写作检查清单", "应用文写作", "# 应用文写作\n\n- 开头：说明写信目的\n- 主体：时间、地点、活动安排\n- 结尾：表达期待或感谢\n\n## 自查\n\n- 时态是否统一\n- 是否使用连接词\n- 是否有明确称呼和落款", date(2026, 8, 27)),
+    )
+    for mindmap_id, title, knowledge_point, outline, day in mindmaps:
+        when = ts(day, 20).isoformat()
+        conn.execute("INSERT INTO mindmaps (id,user_id,created_at,updated_at,title,knowledge_point,outline_md) VALUES (?,?,?,?,?,?,?)", (mindmap_id, SHOWCASE_USERNAME, when, when, title, knowledge_point, outline))
+
+    retry_specs = ((date(2026, 8, 24), 0, "forgot", "known", 2, ts(date(2026, 8, 24), 18, 35)), (date(2026, 8, 29), 1, "fuzzy", "fuzzy", 1, None))
+    for day, slot, first_rating, last_rating, retry_count, passed_at in retry_specs:
+        word = conn.execute("SELECT word_id FROM vocabulary_daily_cards WHERE user_id=? AND study_date=? ORDER BY word_id LIMIT 1 OFFSET ?", (SHOWCASE_USERNAME, day.isoformat(), slot)).fetchone()
+        if word is None:
+            raise RuntimeError("showcase vocabulary card is missing")
+        word_id = word[0]
+        log_id = f"vlog-{SHOWCASE_USERNAME}-{day:%Y%m%d}-{slot}"
+        conn.execute("UPDATE vocabulary_review_logs SET spelling_correct=?, requested_rating=?, applied_rating=? WHERE id=?", (int(last_rating == "known"), first_rating, last_rating, log_id))
+        conn.execute("INSERT INTO vocabulary_daily_retry_queue (user_id,study_date,word_id,first_rating,last_rating,retry_count,queue_order,passed_at) VALUES (?,?,?,?,?,?,?,?)", (SHOWCASE_USERNAME, day.isoformat(), word_id, first_rating, last_rating, retry_count, slot + 1, passed_at.isoformat() if passed_at else None))
+
 def insert_credits_orders(conn: sqlite3.Connection, rng: random.Random, people: list[Persona], events: list[Spend]) -> tuple[int, int]:
     per_user: dict[str, list[Spend]] = defaultdict(list)
     for event in events: per_user[event.user_id].append(event)
@@ -251,6 +317,7 @@ def seed_database(db: Path, accounts: Path, *, reset: bool = False) -> dict[str,
             for person in people: conn.execute("INSERT INTO users (id,username,password_hash,created_at,role,status) VALUES (?,?,?,?,?,?)", (person.username,person.username,password,ts(person.created_on,9).isoformat(),person.role,person.status))
             papers, attempts, logs, events, submitted = insert_learning(conn,rng,people)
             events += insert_writing_and_agent(conn,rng,people,submitted)
+            insert_jingyi_showcase(conn)
             orders, paid = insert_credits_orders(conn,rng,people,events)
         write_accounts(accounts,people)
         return {"users":len(people),"admins":EXPECTED_ADMIN_COUNT,"papers":papers,"attempts":attempts,"vocabulary_logs":logs,"orders":orders,"paid_orders":paid}
@@ -267,14 +334,19 @@ def verify_database(db: Path) -> dict[str,int]:
         balances = [r[0] for r in conn.execute("SELECT balance FROM credit_accounts")]; top = conn.execute("SELECT user_id FROM credit_ledger WHERE kind='spend' GROUP BY user_id HAVING SUM(-delta)>0 ORDER BY SUM(-delta) DESC LIMIT 10").fetchall()
         packs = {r[0] for r in conn.execute("SELECT DISTINCT pack_id FROM orders WHERE status='PAID'")}; writing = conn.execute("SELECT COUNT(*) FROM writing_grade_results").fetchone()[0]
         paid_users = conn.execute("SELECT COUNT(DISTINCT user_id) FROM orders WHERE status='PAID'").fetchone()[0]
+        showcase_writing = conn.execute("SELECT COUNT(*) FROM writing_grade_results WHERE user_id=?", (SHOWCASE_USERNAME,)).fetchone()[0]
+        showcase_plan = conn.execute("SELECT COUNT(*) FROM study_plans WHERE user_id=? AND status='active'", (SHOWCASE_USERNAME,)).fetchone()[0]
+        showcase_mindmaps = conn.execute("SELECT COUNT(*) FROM mindmaps WHERE user_id=?", (SHOWCASE_USERNAME,)).fetchone()[0]
+        showcase_retries = conn.execute("SELECT COUNT(*) FROM vocabulary_daily_retry_queue WHERE user_id=?", (SHOWCASE_USERNAME,)).fetchone()[0]
         generation = conn.execute("SELECT COUNT(*) FROM credit_ledger WHERE kind='spend' AND action IN ('generate_original','generate_light','generate_fresh','revise_paper')").fetchone()[0]
         first,last = conn.execute("SELECT MIN(generated_at),MAX(generated_at) FROM papers").fetchone(); fk = conn.execute("PRAGMA foreign_key_check").fetchall()
         if (users,admins)!=(EXPECTED_STUDENT_COUNT+EXPECTED_ADMIN_COUNT,EXPECTED_ADMIN_COUNT) or len(names)!=len(set(names)) or any(not USERNAME_PATTERN.fullmatch(name) for name in names): raise RuntimeError("invalid accounts")
         if counts!=expected or counts[date(2026,8,27)]!=3 or counts[date(2026,8,28)]!=5: raise RuntimeError("invalid registrations")
         if len(balances)!=users or any(balance<0 or balance>900 or balance%10 for balance in balances): raise RuntimeError("invalid credits")
         if set(PRICES)-actions or generation!=papers or len(top)!=10 or not writing or packs!={p.id for p in PACKS} or paid_users != EXPECTED_PAID_STUDENT_COUNT: raise RuntimeError("incomplete monitoring data")
+        if showcase_writing != 3 or showcase_plan != 1 or showcase_mindmaps != 2 or showcase_retries != 2: raise RuntimeError("incomplete showcase data")
         if not attempts or not logs or first[:10]!=START.isoformat() or last[:10]!=END.isoformat() or fk: raise RuntimeError("incomplete learning data")
-        return {"users":users,"admins":admins,"paid_users":paid_users,"papers":papers,"attempts":attempts,"vocabulary_logs":logs,"writing_results":writing,"top_spenders":len(top)}
+        return {"users":users,"admins":admins,"paid_users":paid_users,"papers":papers,"attempts":attempts,"vocabulary_logs":logs,"writing_results":writing,"showcase_writing":showcase_writing,"showcase_mindmaps":showcase_mindmaps,"top_spenders":len(top)}
     finally: conn.close()
 
 def main() -> None:
