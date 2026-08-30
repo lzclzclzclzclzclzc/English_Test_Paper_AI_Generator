@@ -153,7 +153,7 @@ Caddy 对 `localhost` 自动签发本地证书，对公网域名自动申请 Let
 ### 1. 获取代码与数据
 
 ```bash
-git clone <repo-url> && cd English_Test_Paper_AI_Generator
+git clone https://github.com/lzclzclzclzclzclzc/English_Test_Paper_AI_Generator.git && cd English_Test_Paper_AI_Generator
 ```
 
 题库 `data/questions.db` 与向量库 `data/chroma/` **已随仓库提交**，无需重建即可直接服务。

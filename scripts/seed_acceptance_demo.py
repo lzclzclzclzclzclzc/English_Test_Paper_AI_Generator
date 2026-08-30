@@ -198,8 +198,8 @@ def insert_writing_and_agent(conn: sqlite3.Connection, rng: random.Random, peopl
     events: list[Spend] = []
     for index, (user, paper, when) in enumerate(submitted):
         if index % 11: continue
-        score = round(60 + rng.random() * 32, 1); content = round(score * .36, 1); language = round(score * .34, 1)
-        conn.execute("INSERT INTO writing_grade_results (id,user_id,paper_id,item_index,user_essay,total_score,content_score,language_score,organization_score,word_count,level,content_analysis,language_analysis,organization_analysis,overall_comment,revised_version,graded_at) VALUES (?,?,?,1,?,?,?,?,?,?,?,?,?,?,?,?,?)", (f"demo-writing-{index:05d}", user, paper, "Fictional acceptance writing sample.", score, content, language, round(score-content-language,1), 120 + index % 160, "A" if score >= 75 else "B", "内容完整。", "表达准确。", "结构清晰。", "验收用虚构批改。", "Fictional revision.", when.isoformat()))
+        score = round(12 + rng.random() * 6.4, 1); content = round(score * .4, 1); language = round(score * .4, 1)
+        conn.execute("INSERT INTO writing_grade_results (id,user_id,paper_id,item_index,user_essay,total_score,content_score,language_score,organization_score,word_count,level,content_analysis,language_analysis,organization_analysis,overall_comment,revised_version,graded_at) VALUES (?,?,?,1,?,?,?,?,?,?,?,?,?,?,?,?,?)", (f"demo-writing-{index:05d}", user, paper, "Fictional acceptance writing sample.", score, content, language, round(score-content-language,1), 120 + index % 160, "A" if score >= 15 else "B", "内容完整。", "表达准确。", "结构清晰。", "验收用虚构批改。", "Fictional revision.", when.isoformat()))
         add_spend(events, user, "writing_grade", when, "writing", paper)
     for index, person in enumerate(people):
         for seq in range(3 if index < 10 else 1 + int(index % 5 == 0)):
@@ -229,9 +229,9 @@ def insert_jingyi_showcase(conn: sqlite3.Connection) -> None:
         paper_titles[sequence] = title
 
     writing_rows = (
-        (0, "Last Saturday, I joined a school reading activity in the library. I chose a book about space and shared three new words with my classmates. The activity made me more confident about reading English every day.", 82.5, 30.0, 28.5, 24.0, "A", "内容完整，活动经过交代清楚。", "时态使用基本准确，可增加连接词。", "段落层次清晰。", "继续积累活动类表达，如 take part in 和 share with。"),
-        (5, "Dear Mike, I am writing to invite you to our English corner this Friday. We will discuss summer plans and play a word guessing game. It starts at 4 p.m. in Room 302. I hope you can join us.", 86.0, 31.5, 30.0, 24.5, "A", "邀请信息完整，目的明确。", "句式自然，个别表达可更丰富。", "格式规范，结尾得体。", "下次可尝试补充路线或联系方式。"),
-        (8, "Our class will hold a green campus activity next week. Students can bring reusable bottles and collect waste paper after class. I believe small actions can make our school cleaner and help us build good habits.", 88.5, 32.5, 31.0, 25.0, "A", "观点清楚，细节贴近校园生活。", "词汇使用准确，建议尝试更复杂的从句。", "结构完整，结尾有号召力。", "这是一篇完成度很高的应用文，可继续强化句式多样性。"),
+        (0, "Last Saturday, I joined a school reading activity in the library. I chose a book about space and shared three new words with my classmates. The activity made me more confident about reading English every day.", 16.5, 6.6, 6.6, 3.3, "A", "内容完整，活动经过交代清楚。", "时态使用基本准确，可增加连接词。", "段落层次清晰。", "继续积累活动类表达，如 take part in 和 share with。"),
+        (5, "Dear Mike, I am writing to invite you to our English corner this Friday. We will discuss summer plans and play a word guessing game. It starts at 4 p.m. in Room 302. I hope you can join us.", 17.2, 6.9, 6.9, 3.4, "A", "邀请信息完整，目的明确。", "句式自然，个别表达可更丰富。", "格式规范，结尾得体。", "下次可尝试补充路线或联系方式。"),
+        (8, "Our class will hold a green campus activity next week. Students can bring reusable bottles and collect waste paper after class. I believe small actions can make our school cleaner and help us build good habits.", 17.7, 7.1, 7.1, 3.5, "A", "观点清楚，细节贴近校园生活。", "词汇使用准确，建议尝试更复杂的从句。", "结构完整，结尾有号召力。", "这是一篇完成度很高的应用文，可继续强化句式多样性。"),
     )
     for sequence, essay, score, content, language, organization, level, content_note, language_note, organization_note, comment in writing_rows:
         paper_id = f"acceptance-paper-{SHOWCASE_USERNAME}-{sequence:03d}"

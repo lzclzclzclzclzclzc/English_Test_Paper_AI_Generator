@@ -22,6 +22,7 @@ build/
 models/Qwen3-Embedding-4B
 debug.log
 .playwright-mcp
+node_modules
 
 # env
 .env

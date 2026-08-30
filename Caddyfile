@@ -17,7 +17,12 @@
 # 公网域名部署:把下面的 `localhost` 换成你的域名(如 example.com),
 # Caddy 会自动申请 Let's Encrypt 证书;其余配置不变。
 
-localhost {
+localhost, juanwang.com, www.juanwang.com {
+	# juanwang.com 由本机 hosts 指向 127.0.0.1,是假域名而非公网域名,无法通过
+	# Let's Encrypt(ACME) 申请证书 → 用 Caddy 本地 CA 签发内部证书。localhost
+	# 本就用本地 CA,两者共用同一本地 CA,`caddy trust` 一次即可让浏览器信任。
+	tls internal
+
 	# 主后端 API
 	handle /api/* {
 		reverse_proxy localhost:8000
